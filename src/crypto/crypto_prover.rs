@@ -45,7 +45,7 @@ impl Prover {
     // Will probably be stored in profile/wallet
     let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
     for value in &encoded_credential_values {
-      credential_values_builder.add_dec_hidden(value.0, value.1);
+      credential_values_builder.add_dec_hidden(value.0, value.1).unwrap();
     }
     credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
     let credential_values = credential_values_builder.finalize().unwrap();
