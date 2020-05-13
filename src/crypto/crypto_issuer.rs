@@ -3,11 +3,9 @@ use ursa::cl::{
   CredentialPrivateKey,
   new_nonce,
   RevocationKeyPrivate,
-  SimpleTailsAccessor,
-  CredentialSchema as CryptoCredentialSchema
+  SimpleTailsAccessor
 };
 use ursa::cl::issuer::Issuer as CryptoIssuer;
-use std::collections::HashMap;
 use serde_json::{Value};
 use chrono::{DateTime, Utc};
 use data_encoding::BASE64URL;
@@ -19,7 +17,6 @@ use crate::datatypes::datatypes::{
   CryptoCredentialDefinition,
   CredentialSchema,
   AssertionProof,
-  SchemaProperty,
   SignedCredential,
   RevocationRegistryDefinition
 };
@@ -51,7 +48,7 @@ impl Issuer {
     // TODO: Object handling, how to handle nested object properties?
     let mut credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
     for property in &credential_schema.properties {
-      credential_schema_builder.add_attr(property.0);
+      credential_schema_builder.add_attr(property.0).unwrap();
     }
     let crypto_schema = credential_schema_builder.finalize().unwrap();
 
@@ -110,10 +107,6 @@ impl Issuer {
   // }
 
 
-  fn get_new_did() -> String {
-    return "did".to_string();
-  }
-
   pub fn sign_credential(
     credential_request: &CryptoCredentialRequest,
     credential_private_key: CredentialPrivateKey,
@@ -146,9 +139,10 @@ impl Issuer {
   ) -> SignedCredential {
     let credential_issuance_nonce = new_nonce().unwrap();
 
-    let mut tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails).unwrap();
+    let tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails).unwrap();
 
-    let (cred, proof, delta) = CryptoIssuer::sign_credential_with_revoc(
+    // no delta because we assume issuance_by_default ==true
+    let (cred, proof, _) = CryptoIssuer::sign_credential_with_revoc(
       &credential_request.subject,
       &credential_request.blinded_credential_secrets,
       &credential_request.blinded_credential_secrets_correctness_proof,
