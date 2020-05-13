@@ -6,16 +6,20 @@ pub mod datatypes {
     CredentialPublicKey,
     CredentialKeyCorrectnessProof,
     CredentialSignature,
-    SignatureCorrectnessProof};
+    SignatureCorrectnessProof,
+    RevocationKeyPublic,
+    RevocationRegistry,
+    RevocationRegistryDelta,
+    RevocationTailsGenerator,
+    SubProofRequest,
+    CredentialSchema as CryptoCredentialSchema
+  };
   use ursa::bn::BigNumber;
   use serde::{Serialize, Deserialize};
   use std::collections::HashMap;
 
-  pub struct CredentialRequest {
-    pub schema: String,
-    pub credential_definition: String,
+  pub struct CryptoCredentialRequest {
     pub subject: String,
-    pub r#type: String,
     pub blinded_credential_secrets: BlindedCredentialSecrets,
     pub blinded_credential_secrets_correctness_proof: BlindedCredentialSecretsCorrectnessProof,
     pub credential_nonce: BigNumber,
@@ -35,12 +39,7 @@ pub mod datatypes {
 
   #[derive(Serialize, Deserialize)]
   #[serde(rename_all = "camelCase")]
-  pub struct CredentialDefinition {
-    pub id: String,
-    pub r#type: String,
-    pub issuer: String,
-    pub schema: String,
-    pub created_at: String,
+  pub struct CryptoCredentialDefinition {
     pub public_key: CredentialPublicKey,
     pub credential_key_correctness_proof: CredentialKeyCorrectnessProof,
     pub proof: Option<AssertionProof>
@@ -76,6 +75,21 @@ pub mod datatypes {
     pub signature: CredentialSignature,
     pub correctness_proof: SignatureCorrectnessProof,
     pub issuance_nonce: BigNumber
+  }
+
+  #[derive(Serialize, Deserialize)]
+  #[serde(rename_all = "camelCase")]
+  pub struct RevocationRegistryDefinition {
+    pub registry: RevocationRegistry,
+    pub registryDelta: RevocationRegistryDelta,
+    pub tails: RevocationTailsGenerator,
+    pub revocation_public_key: RevocationKeyPublic,
+    pub maximum_credential_count: u32
+  }
+
+  pub struct ProofRequest {
+    pub credential_schema: CryptoCredentialSchema,
+    pub crypto_proof_request: SubProofRequest,
   }
 }
 

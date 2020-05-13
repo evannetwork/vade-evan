@@ -1083,6 +1083,7 @@ dependencies = [
  "data-encoding",
  "hex",
  "libsecp256k1",
+ "log",
  "rand 0.7.3",
  "serde",
  "serde_json",
