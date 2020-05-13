@@ -3,9 +3,9 @@ extern crate secp256k1;
 extern crate sha3;
 extern crate hex;
 #[macro_use]
+extern crate log;
 
 
-pub mod issuer;
-pub mod prover;
-pub mod verifier;
+
+pub mod crypto;
 pub mod datatypes;
