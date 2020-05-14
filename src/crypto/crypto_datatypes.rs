@@ -63,3 +63,13 @@ pub struct ProofRequest {
   pub credential_schema: CryptoCredentialSchema,
   pub crypto_proof_request: SubProofRequest,
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssertionProof {
+  pub r#type: String,
+  pub created: String,
+  pub proof_purpose: String,
+  pub verification_method: String,
+  pub jws: String
+}
