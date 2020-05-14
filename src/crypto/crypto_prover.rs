@@ -14,7 +14,6 @@ use ursa::cl::{
   RevocationKeyPublic,
   RevocationRegistry,
   Witness,
-  RevocationTailsGenerator,
   SimpleTailsAccessor
 };
 use std::collections::HashMap;

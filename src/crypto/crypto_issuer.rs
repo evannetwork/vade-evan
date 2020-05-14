@@ -8,12 +8,6 @@ use ursa::cl::{
   RevocationRegistry,
 };
 use ursa::cl::issuer::Issuer as CryptoIssuer;
-use serde_json::{Value};
-use chrono::{DateTime, Utc};
-use data_encoding::BASE64URL;
-use sha2::{Digest, Sha256};
-use secp256k1::{Message, Signature, SecretKey, sign};
-use std::convert::TryInto;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialRequest,
   CryptoCredentialDefinition,
@@ -23,7 +17,6 @@ use crate::crypto::crypto_datatypes::{
 use crate::application::datatypes::{
   CredentialSchema
 };
-
 
 pub struct Issuer {
 }
@@ -36,10 +29,8 @@ impl Issuer {
   }
 
   pub fn create_credential_definition(
-    definition_issuer: String,
-    credential_schema: CredentialSchema,
-    include_master_secret: bool,
-    issuer_private_key: String
+    credential_schema: &CredentialSchema,
+    include_master_secret: bool
   ) -> (CredentialPrivateKey, CryptoCredentialDefinition) {
     let mut non_credential_schema_builder = CryptoIssuer::new_non_credential_schema_builder().unwrap();
     if include_master_secret {
@@ -51,20 +42,17 @@ impl Issuer {
     // TODO: Object handling, how to handle nested object properties?
     let mut credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
     for property in &credential_schema.properties {
-      credential_schema_builder.add_attr(property.0).unwrap();
+      credential_schema_builder.add_attr(&property.0).unwrap();
     }
     let crypto_schema = credential_schema_builder.finalize().unwrap();
 
     let (public_key, credential_private_key, credential_key_correctness_proof) =
       CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, false).unwrap();
 
-    let mut definition = CryptoCredentialDefinition {
+    let definition = CryptoCredentialDefinition {
       public_key,
       credential_key_correctness_proof
     };
-
-    let doc_to_sign: Value = serde_json::to_value(&definition).unwrap();
-    let proof_val = Issuer::create_proof(&doc_to_sign, "?", &issuer_private_key, &definition_issuer).unwrap();
 
     return (credential_private_key, definition);
   }
@@ -190,80 +178,4 @@ impl Issuer {
     let new_registry = RevocationRegistry::from(revocation_registry_delta);
     return new_registry;
   }
-
-  /// Creates proof for VC document
-  ///
-  /// # Arguments
-  ///
-  /// * `vc` - vc to create proof for
-  /// * `verification_method` - issuer of VC
-  /// * `private_key` - private key to create proof as 32B hex string
-  /// * `now` - timestamp of issuing, may have also been used to determine `validFrom` in VC
-  fn create_proof(
-    document_to_sign: &Value,
-    verification_method: &str,
-    issuer: &str,
-    private_key: &str
-  ) -> Result<Value, Box<dyn std::error::Error>> {
-    // create to-be-signed jwt
-    let header_str = r#"{"typ":"JWT","alg":"ES256K-R"}"#;
-    let padded = BASE64URL.encode(header_str.as_bytes());
-    let header_encoded = padded.trim_end_matches('=');
-    debug!("header base64 url encdoded: {:?}", &header_encoded);
-
-    // build data object and hash
-    let mut data_json: Value = serde_json::from_str("{}").unwrap();
-    let doc_clone: Value = serde_json::from_str(&format!("{}", &document_to_sign)).unwrap();
-    data_json["iat"] = Value::from(Issuer::get_timestamp_now());
-    data_json["doc"] = doc_clone;
-    data_json["iss"] = Value::from(issuer);
-    let padded = BASE64URL.encode(format!("{}", &data_json).as_bytes());
-    let data_encoded = padded.trim_end_matches('=');
-    debug!("data base64 url encdoded: {:?}", &data_encoded);
-
-    // create hash of data (including header)
-    let header_and_data = format!("{}.{}", header_encoded, data_encoded);
-    let mut hasher = Sha256::new();
-    hasher.input(&header_and_data);
-    let hash = hasher.result();
-    debug!("header_and_data hash {:?}", hash);
-
-    // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
-    let message = Message::parse(&hash_arr);
-    let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(&private_key, &mut private_key_arr).expect("private key invalid");
-    let secret_key = SecretKey::parse(&private_key_arr)?;
-    let (sig, rec): (Signature, _) = sign(&message, &secret_key);
-    // sig to bytes (len 64), append recoveryid
-    let signature_arr = &sig.serialize();
-    let mut sig_and_rec: [u8; 65] = [0; 65];
-    for i in 0..64 {
-        sig_and_rec[i] = signature_arr[i];
-    }
-    sig_and_rec[64] = rec.serialize();
-    let padded = BASE64URL.encode(&sig_and_rec);
-    let sig_base64url = padded.trim_end_matches('=');
-    debug!("signature base64 url encdoded: {:?}", &sig_base64url);
-
-    // build proof property as serde object
-    let jws = format!("{}.{}", &header_and_data, sig_base64url);
-    let utc_now = format!("{}", Issuer::get_timestamp_now());
-    let proof_json_str = format!(r###"{{
-        "type": "EcdsaPublicKeySecp256k1",
-        "created": "{}",
-        "proofPurpose": "assertionMethod",
-        "verificationMethod": "{}",
-        "jws": "{}"
-    }}"###, &utc_now, &verification_method, &jws);
-    let proof: Value = serde_json::from_str(&proof_json_str).unwrap();
-
-    Ok(proof)
-  }
-
-  fn get_timestamp_now() -> String {
-    let now: DateTime<Utc> = Utc::now();
-    return now.format("%Y-%m-%dT%H:%M:%S.000Z").to_string();
-  }
-
 }
