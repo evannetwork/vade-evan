@@ -3,7 +3,9 @@ use ursa::cl::{
   CredentialPrivateKey,
   new_nonce,
   RevocationKeyPrivate,
-  SimpleTailsAccessor
+  SimpleTailsAccessor,
+  RevocationRegistryDelta,
+  RevocationRegistry,
 };
 use ursa::cl::issuer::Issuer as CryptoIssuer;
 use serde_json::{Value};
@@ -12,13 +14,14 @@ use data_encoding::BASE64URL;
 use sha2::{Digest, Sha256};
 use secp256k1::{Message, Signature, SecretKey, sign};
 use std::convert::TryInto;
-use crate::datatypes::datatypes::{
+use crate::crypto::crypto_datatypes::{
   CryptoCredentialRequest,
   CryptoCredentialDefinition,
-  CredentialSchema,
-  AssertionProof,
   SignedCredential,
   RevocationRegistryDefinition
+};
+use crate::application::datatypes::{
+  CredentialSchema
 };
 
 
@@ -57,14 +60,11 @@ impl Issuer {
 
     let mut definition = CryptoCredentialDefinition {
       public_key,
-      credential_key_correctness_proof,
-      proof: None
+      credential_key_correctness_proof
     };
 
     let doc_to_sign: Value = serde_json::to_value(&definition).unwrap();
     let proof_val = Issuer::create_proof(&doc_to_sign, "?", &issuer_private_key, &definition_issuer).unwrap();
-    let proof: AssertionProof = serde_json::from_value(proof_val).unwrap();
-    definition.proof = Some(proof);
 
     return (credential_private_key, definition);
   }
@@ -105,7 +105,6 @@ impl Issuer {
 
   //   return Ok(schema);
   // }
-
 
   pub fn sign_credential(
     credential_request: &CryptoCredentialRequest,
@@ -164,6 +163,32 @@ impl Issuer {
       correctness_proof: proof,
       issuance_nonce: credential_issuance_nonce
     };
+  }
+
+  pub fn create_revocation_registry(
+    credential_public_key: &CredentialPublicKey,
+    maximum_credential_count: u32
+  ) -> (RevocationRegistryDefinition, RevocationKeyPrivate) {
+    let (rev_key_pub, rev_key_priv, rev_registry, rev_tails_gen) = CryptoIssuer::new_revocation_registry_def(
+      credential_public_key,
+      maximum_credential_count,
+      true
+    ).unwrap();
+
+    let rev_def = RevocationRegistryDefinition {
+      registry: rev_registry,
+      registry_delta: None,
+      tails: rev_tails_gen,
+      revocation_public_key: rev_key_pub,
+      maximum_credential_count
+    };
+
+    return (rev_def, rev_key_priv);
+  }
+
+  pub fn update_revocation_registry(revocation_registry_delta: RevocationRegistryDelta) -> RevocationRegistry {
+    let new_registry = RevocationRegistry::from(revocation_registry_delta);
+    return new_registry;
   }
 
   /// Creates proof for VC document

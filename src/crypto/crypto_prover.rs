@@ -10,14 +10,20 @@ use ursa::cl::{
   Proof,
   CredentialSchema,
   Nonce,
-  CredentialValues
+  CredentialValues,
+  RevocationKeyPublic,
+  RevocationRegistry,
+  Witness,
+  RevocationTailsGenerator,
+  SimpleTailsAccessor
 };
 use std::collections::HashMap;
-use crate::datatypes::datatypes::{
+use crate::crypto::crypto_datatypes::{
   CryptoCredentialRequest,
   SignedCredential,
   CryptoCredentialDefinition,
-  ProofRequest
+  ProofRequest,
+  RevocationRegistryDefinition
 };
 
 
@@ -78,7 +84,9 @@ impl Prover {
     credential_definitions: Vec<CryptoCredentialDefinition>,
     credential_schemas: Vec<CredentialSchema>,
     credential_values: Vec<CredentialValues>,
-    proof_request_nonce: Nonce
+    proof_request_nonce: Nonce,
+    revocation_registry: Option<&RevocationRegistry>,
+    witness: Option<&Witness>
   ) -> Proof {
     let mut non_credential_schema_builder = CryptoIssuer::new_non_credential_schema_builder().unwrap();
     non_credential_schema_builder.add_attr("master_secret").unwrap();
@@ -96,8 +104,8 @@ impl Prover {
         &credentials[i].signature,
         &credential_values[i],
         &credential_definitions[i].public_key,
-        None,
-        None).unwrap();
+        revocation_registry,
+        witness).unwrap();
     }
     let proof = proof_builder.finalize(&proof_request_nonce).unwrap();
 
@@ -108,15 +116,40 @@ impl Prover {
     credential: &mut SignedCredential,
     credential_request: &CryptoCredentialRequest,
     credential_public_key: &CredentialPublicKey,
-    credential_blinding_factors: &CredentialSecretsBlindingFactors
+    credential_blinding_factors: &CredentialSecretsBlindingFactors,
+    credential_revocation_id: u32,
+    revocation_registry_definition: Option<RevocationRegistryDefinition>,
   ) {
+
+    let mut revocation_key_public: Option<RevocationKeyPublic> = None;
+    let mut revocation_registry: Option<RevocationRegistry> = None;
+    let mut witness: Option<Witness> = None;
+    if revocation_registry_definition.is_some() {
+      let mut rev_def = revocation_registry_definition.unwrap();
+      revocation_key_public = Some(rev_def.revocation_public_key);
+      revocation_registry = Some(rev_def.registry);
+
+      let tails = SimpleTailsAccessor::new(&mut rev_def.tails).unwrap();
+
+      witness = Some(Witness::new(
+        credential_revocation_id,
+        rev_def.maximum_credential_count,
+        true, // TODO: Global const
+        &rev_def.registry_delta.unwrap(),
+        &tails
+      ).unwrap());
+    }
+
     CryptoProver::process_credential_signature(&mut credential.signature,
       &credential_request.credential_values,
       &credential.correctness_proof,
       credential_blinding_factors,
       &credential_public_key,
       &credential.issuance_nonce,
-      None, None, None).unwrap();
+      revocation_key_public.as_ref(),
+      revocation_registry.as_ref(),
+      witness.as_ref()
+    ).unwrap();
   }
 
   /**
