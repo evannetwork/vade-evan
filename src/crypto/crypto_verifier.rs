@@ -8,7 +8,7 @@ pub mod verifier {
   use ursa::cl::SubProofRequest;
   use ursa::cl::Proof;
 
-  use crate::datatypes::datatypes::ProofRequest;
+  use crate::crypto::crypto_datatypes::ProofRequest;
 
 
   pub struct CredVerifier {
