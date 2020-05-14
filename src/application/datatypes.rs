@@ -126,5 +126,5 @@ pub struct RevocationRegistryDefinition {
   pub tails: RevocationTailsGenerator,
   pub revocation_public_key: RevocationKeyPublic,
   pub maximum_credential_count: u32,
-  pub proof: AssertionProof
+  pub proof: Option<AssertionProof>
 }
