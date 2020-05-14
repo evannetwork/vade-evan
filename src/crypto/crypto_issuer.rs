@@ -5,17 +5,18 @@ use ursa::cl::{
   RevocationKeyPrivate,
   SimpleTailsAccessor,
   RevocationRegistryDelta,
-  RevocationRegistry,
+  RevocationRegistry
 };
 use ursa::cl::issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_datatypes::{
-  CryptoCredentialRequest,
   CryptoCredentialDefinition,
   SignedCredential,
-  RevocationRegistryDefinition
+  CryptoRevocationRegistryDefinition
 };
 use crate::application::datatypes::{
-  CredentialSchema
+  CredentialSchema,
+  CredentialRequest,
+  RevocationRegistryDefinition
 };
 
 pub struct Issuer {
@@ -95,18 +96,24 @@ impl Issuer {
   // }
 
   pub fn sign_credential(
-    credential_request: &CryptoCredentialRequest,
-    credential_private_key: CredentialPrivateKey,
-    credential_public_key: CredentialPublicKey
+    credential_request: &CredentialRequest,
+    credential_private_key: &CredentialPrivateKey,
+    credential_public_key: &CredentialPublicKey
   ) -> SignedCredential {
     let credential_issuance_nonce = new_nonce().unwrap();
+
+    let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+    for pair in &credential_request.credential_values {
+      value_builder.add_dec_known(&pair.0, &pair.1).unwrap();
+    }
+    let values = value_builder.finalize().unwrap();
 
     let (cred, proof) = CryptoIssuer::sign_credential(&credential_request.subject,
                               &credential_request.blinded_credential_secrets,
                               &credential_request.blinded_credential_secrets_correctness_proof,
                               &credential_request.credential_nonce,
                               &credential_issuance_nonce,
-                              &credential_request.credential_values,
+                              &values,
                               &credential_public_key,
                               &credential_private_key).unwrap();
     return SignedCredential {
@@ -117,7 +124,7 @@ impl Issuer {
   }
 
   pub fn sign_credential_with_revocation(
-    credential_request: &CryptoCredentialRequest,
+    credential_request: &CredentialRequest,
     credential_private_key: &CredentialPrivateKey,
     credential_public_key: &CredentialPublicKey,
     credential_revocation_definition: &mut RevocationRegistryDefinition,
@@ -128,6 +135,12 @@ impl Issuer {
 
     let tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails).unwrap();
 
+    let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+    for pair in &credential_request.credential_values {
+      value_builder.add_dec_known(&pair.0, &pair.1).unwrap();
+    }
+    let values = value_builder.finalize().unwrap();
+
     // no delta because we assume issuance_by_default ==true
     let (cred, proof, _) = CryptoIssuer::sign_credential_with_revoc(
       &credential_request.subject,
@@ -135,7 +148,7 @@ impl Issuer {
       &credential_request.blinded_credential_secrets_correctness_proof,
       &credential_request.credential_nonce,
       &credential_issuance_nonce,
-      &credential_request.credential_values,
+      &values,
       credential_public_key,
       credential_private_key,
       credential_revocation_id,
@@ -156,14 +169,14 @@ impl Issuer {
   pub fn create_revocation_registry(
     credential_public_key: &CredentialPublicKey,
     maximum_credential_count: u32
-  ) -> (RevocationRegistryDefinition, RevocationKeyPrivate) {
+  ) -> (CryptoRevocationRegistryDefinition, RevocationKeyPrivate) {
     let (rev_key_pub, rev_key_priv, rev_registry, rev_tails_gen) = CryptoIssuer::new_revocation_registry_def(
       credential_public_key,
       maximum_credential_count,
       true
     ).unwrap();
 
-    let rev_def = RevocationRegistryDefinition {
+    let rev_def = CryptoRevocationRegistryDefinition {
       registry: rev_registry,
       registry_delta: None,
       tails: rev_tails_gen,

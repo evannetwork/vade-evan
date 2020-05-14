@@ -1,16 +1,24 @@
 use crate::application::datatypes::{
   CredentialDefinition,
   CredentialSchema,
-  SchemaProperty
+  SchemaProperty,
+  CredentialOffer,
+  Credential,
+  CredentialSchemaReference,
+  CredentialSubject,
+  CredentialProof,
+  CredentialRequest,
+  RevocationRegistryDefinition
 };
 use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_utils::create_assertion_proof;
 use crate::utils::utils::get_now_as_iso_string;
 use ursa::cl::{
-  CredentialPrivateKey
+  CredentialPrivateKey,
+  new_nonce,
+  RevocationKeyPrivate
 };
 use std::collections::HashMap;
-use chrono::{Utc};
 
 pub struct Issuer {
 }
@@ -103,9 +111,83 @@ impl Issuer {
       return schema;
     }
 
+    pub fn issue_credential (
+      issuer_did: String,
+      subject_did: String,
+      credential_request: CredentialRequest,
+      credential_definition: CredentialDefinition,
+      credential_private_key: CredentialPrivateKey,
+      credential_schema: CredentialSchema,
+      revocation_registry_definition: &mut RevocationRegistryDefinition,
+      revocation_private_key: RevocationKeyPrivate
+    ) -> Credential {
+
+      let credential_subject = CredentialSubject {
+        id: subject_did,
+        data: credential_request.credential_values.clone()
+      };
+
+      let schema_reference = CredentialSchemaReference {
+        id: credential_schema.id,
+        r#type: "EvanZKPSchema".to_string()
+      };
+
+      let new_did = Issuer::mock_get_new_did();
+      let rev_idx = Issuer::mock_get_rev_idx();
+
+      let signed_credential = CryptoIssuer::sign_credential_with_revocation(
+        &credential_request,
+        &credential_private_key,
+        &credential_definition.public_key,
+        revocation_registry_definition,
+        rev_idx,
+        &revocation_private_key
+      );
+
+      let proof = CredentialProof {
+        r#type: "CLSignature2019".to_string(),
+        credential_definition: credential_definition.id,
+        issuance_nonce: signed_credential.issuance_nonce,
+        signature: signed_credential.signature,
+        signature_correctness_proof: signed_credential.correctness_proof,
+        revocation_id: rev_idx,
+        revocation_registry_definition: revocation_registry_definition.id.clone()
+      };
+
+      return Credential {
+        context: vec!("https://www.w3.org/2018/credentials/v1".to_string()),
+        id: new_did,
+        r#type: vec!("VerifiableCredential".to_string()),
+        issuer: issuer_did,
+        credential_subject,
+        credential_schema: schema_reference,
+        proof
+      };
+    }
+
+    pub fn offer_credential(
+      issuer_did: String,
+      subject_did: String,
+      schema_did: String,
+      credential_definition_did: String
+    ) -> CredentialOffer {
+      let nonce = new_nonce().unwrap();
+
+      return CredentialOffer {
+        issuer: issuer_did,
+        subject: subject_did,
+        r#type: "EvanZKPCredentialOffering".to_string(),
+        schema: schema_did,
+        credential_definition: credential_definition_did,
+        nonce
+      }
+    }
+
     fn mock_get_new_did() -> String {
       return "did:evan:zkp:0x123451234512345123451234512345".to_string();
     }
 
-
+    fn mock_get_rev_idx() -> u32 {
+      return 1;
+    }
 }
