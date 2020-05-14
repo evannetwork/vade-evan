@@ -49,16 +49,6 @@ pub struct SignedCredential {
   pub issuance_nonce: BigNumber
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RevocationRegistryDefinition {
-  pub registry: RevocationRegistry,
-  pub registry_delta: Option<RevocationRegistryDelta>, // No delta before a credential has been revoked
-  pub tails: RevocationTailsGenerator,
-  pub revocation_public_key: RevocationKeyPublic,
-  pub maximum_credential_count: u32
-}
-
 pub struct ProofRequest {
   pub credential_schema: CryptoCredentialSchema,
   pub crypto_proof_request: SubProofRequest,
@@ -73,3 +63,14 @@ pub struct AssertionProof {
   pub verification_method: String,
   pub jws: String
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CryptoRevocationRegistryDefinition {
+  pub registry: RevocationRegistry,
+  pub registry_delta: Option<RevocationRegistryDelta>, // No delta before a credential has been revoked
+  pub tails: RevocationTailsGenerator,
+  pub revocation_public_key: RevocationKeyPublic,
+  pub maximum_credential_count: u32,
+}
+
