@@ -111,6 +111,48 @@ impl Issuer {
       return schema;
     }
 
+    pub fn create_revocation_registry_definition(
+      credential_definition: CredentialDefinition,
+      issuer_public_key_did: String,
+      issuer_proving_key: String,
+      maximum_credential_count: u32
+    ) -> (RevocationRegistryDefinition, RevocationKeyPrivate) {
+
+      let (crypto_rev_def, rev_key_private) = CryptoIssuer::create_revocation_registry(
+        &credential_definition.public_key,
+        maximum_credential_count
+      );
+
+      let rev_did = Issuer::mock_get_new_did();
+
+      let updated_at = get_now_as_iso_string();
+
+      let mut rev_reg_def = RevocationRegistryDefinition {
+        id: rev_did,
+        credential_definition: credential_definition.id,
+        registry: crypto_rev_def.registry,
+        registry_delta: crypto_rev_def.registry_delta,
+        maximum_credential_count,
+        revocation_public_key: crypto_rev_def.revocation_public_key,
+        tails: crypto_rev_def.tails,
+        updated_at,
+        proof: None
+      };
+
+      let document_to_sign = serde_json::to_value(&rev_reg_def).unwrap();
+      let proof = create_assertion_proof(
+        &document_to_sign,
+        &issuer_public_key_did,
+        &credential_definition.issuer,
+        &issuer_proving_key
+      ).unwrap();
+
+      rev_reg_def.proof = Some(proof);
+
+      return (rev_reg_def, rev_key_private);
+
+    }
+
     pub fn issue_credential (
       issuer_did: String,
       subject_did: String,
