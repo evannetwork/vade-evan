@@ -65,6 +65,16 @@ fn can_create_schema() {
 
   // TODO: Validate proof
   assert_eq!(&schema.author, &EXAMPLE_DID);
-  assert_eq!(&schema.additional_properties, false);
-  assert_eq!(&schema.properties.keys(), &test_properties.keys());
+  assert_eq!(schema.additional_properties, false);
+  let result_property: &SchemaProperty = &schema.properties.get("test_property_string").unwrap();
+  let expected: SchemaProperty = SchemaProperty {
+    r#type: "string".to_owned(),
+    format: None,
+    items: None
+  };
+  assert_eq!(
+    serde_json::to_string(&result_property).unwrap(),
+    serde_json::to_string(&expected).unwrap(),
+  );
+
 }
