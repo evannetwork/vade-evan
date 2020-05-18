@@ -207,3 +207,11 @@ pub struct ProofPresentation {
   pub verifiable_credential: Vec<ProofCredential>,
   pub proof: AggregatedProof
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProofVerification {
+  presented_proof: String,
+  status: String,
+  proof: AssertionProof
+}
