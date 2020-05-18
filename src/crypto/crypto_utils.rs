@@ -75,3 +75,11 @@ pub fn create_assertion_proof(
 
   Ok(proof)
 }
+
+
+pub fn create_id_hash() -> String {
+  let mut hasher = Sha256::new();
+  hasher.input(b"");
+  let hash: [u8; 32] = hasher.result().try_into().unwrap();
+  return format!("0x{}", hex::encode(hash));
+}

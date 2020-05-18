@@ -5,12 +5,14 @@ use ursa::cl::{
   RevocationKeyPrivate,
   SimpleTailsAccessor,
   RevocationRegistryDelta,
-  RevocationRegistry
+  RevocationRegistry,
+  CredentialSignature,
+  SignatureCorrectnessProof,
+  Nonce
 };
 use ursa::cl::issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition,
-  SignedCredential,
   CryptoRevocationRegistryDefinition
 };
 use crate::application::datatypes::{
@@ -58,48 +60,11 @@ impl Issuer {
     return (credential_private_key, definition);
   }
 
-  /**
-   * Creates a new ISO credential schema and stores it in the registry.
-   * Returns the ID of the schema in the registry.
-   */
-  // pub fn create_credential_schema(
-  //   schema_name: String,
-  //   author: String,
-  //   description: String,
-  //   properties: HashMap<String, SchemaProperty>,
-  //   required: Vec<String>,
-  //   allow_additional_properties: bool,
-  //   author_private_key: String
-  // ) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
-  //   let created_at = Issuer::get_timestamp_now();
-  //   let did = Issuer::get_new_did();
-  //   let schema_type = "EvanVCSchema".to_string();
-  //   let mut schema = CredentialSchema {
-  //     id: did,
-  //     name: schema_name,
-  //     author,
-  //     created_at,
-  //     description,
-  //     properties,
-  //     required,
-  //     r#type: schema_type,
-  //     additional_properties: allow_additional_properties,
-  //     proof: None
-  //   };
-
-  //   let doc_to_sign = serde_json::to_value(schema).unwrap();
-  //   let proof_val = Issuer::create_proof(&doc_to_sign, "?", &author, &author_private_key).unwrap();
-  //   let proof : AssertionProof = serde_json::from_value(proof_val).unwrap();
-  //   schema.proof = Some(proof);
-
-  //   return Ok(schema);
-  // }
-
   pub fn sign_credential(
     credential_request: &CredentialRequest,
     credential_private_key: &CredentialPrivateKey,
     credential_public_key: &CredentialPublicKey
-  ) -> SignedCredential {
+  ) -> (CredentialSignature, SignatureCorrectnessProof, Nonce) {
     let credential_issuance_nonce = new_nonce().unwrap();
 
     let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
@@ -116,11 +81,7 @@ impl Issuer {
                               &values,
                               &credential_public_key,
                               &credential_private_key).unwrap();
-    return SignedCredential {
-      signature: cred,
-      correctness_proof: proof,
-      issuance_nonce: credential_issuance_nonce
-    }
+    return (cred, proof, credential_issuance_nonce);
   }
 
   pub fn sign_credential_with_revocation(
@@ -130,7 +91,7 @@ impl Issuer {
     credential_revocation_definition: &mut RevocationRegistryDefinition,
     credential_revocation_id: u32,
     revocation_private_key: &RevocationKeyPrivate
-  ) -> SignedCredential {
+  ) -> (CredentialSignature, SignatureCorrectnessProof, Nonce) {
     let credential_issuance_nonce = new_nonce().unwrap();
 
     let tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails).unwrap();
@@ -159,11 +120,7 @@ impl Issuer {
       &tails_accessor
     ).unwrap();
 
-    return SignedCredential {
-      signature: cred,
-      correctness_proof: proof,
-      issuance_nonce: credential_issuance_nonce
-    };
+    return (cred, proof, credential_issuance_nonce);
   }
 
   pub fn create_revocation_registry(

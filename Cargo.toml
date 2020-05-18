@@ -1,5 +1,5 @@
 [package]
-name = "vade-zkp"
+name = "vade-tnt"
 version = "0.0.1"
 authors = ["Philip Kaiser <philip.kaiser@evan.team>"]
 edition = "2018"

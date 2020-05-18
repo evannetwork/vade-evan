@@ -8,23 +8,25 @@ use ursa::cl::{
   CredentialSecretsBlindingFactors,
   MasterSecret,
   Proof,
-  CredentialSchema,
   Nonce,
-  CredentialValues,
   RevocationKeyPublic,
   RevocationRegistry,
   Witness,
-  SimpleTailsAccessor
+  SimpleTailsAccessor,
+  verifier::Verifier as CryptoVerifier
 };
 use std::collections::HashMap;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialRequest,
-  SignedCredential,
-  CryptoCredentialDefinition,
-  ProofRequest
+  CryptoCredentialDefinition
 };
 use crate::application::datatypes::{
-  RevocationRegistryDefinition
+  RevocationRegistryDefinition,
+  CredentialSignature,
+  CredentialSchema,
+  Credential,
+  CredentialDefinition,
+  ProofRequest
 };
 
 
@@ -40,7 +42,7 @@ impl Prover {
 
   ///
   pub fn request_credential(
-    requester_did: String,
+    requester_did: &str,
     encoded_credential_values: HashMap<String, String>,
     master_secret: MasterSecret,
     credential_definition: CryptoCredentialDefinition,
@@ -69,52 +71,81 @@ impl Prover {
     ).unwrap();
 
     let req = CryptoCredentialRequest {
-      subject: requester_did,
+      subject: requester_did.to_owned(),
       blinded_credential_secrets,
       blinded_credential_secrets_correctness_proof,
       credential_nonce,
-      credential_values,
+      credential_values: encoded_credential_values,
     };
 
     return (req, blinding_factors);
   }
 
-  pub fn create_proof(
-    proof_requests: Vec<ProofRequest>,
-    credentials: Vec<SignedCredential>,
-    credential_definitions: Vec<CryptoCredentialDefinition>,
-    credential_schemas: Vec<CredentialSchema>,
-    credential_values: Vec<CredentialValues>,
-    proof_request_nonce: Nonce,
-    revocation_registry: Option<&RevocationRegistry>,
-    witness: Option<&Witness>
+  pub fn create_proof_with_revoc(
+    proof_request: &ProofRequest,
+    credentials: &HashMap<String, Credential>,
+    credential_definitions: &HashMap<String, CredentialDefinition>,
+    credential_schemas: &HashMap<String, CredentialSchema>,
+    revocation_registries: &HashMap<String, RevocationRegistryDefinition>
   ) -> Proof {
     let mut non_credential_schema_builder = CryptoIssuer::new_non_credential_schema_builder().unwrap();
     non_credential_schema_builder.add_attr("master_secret").unwrap();
     let non_credential_schema = non_credential_schema_builder.finalize().unwrap();
 
-    // TODO: Check vectors' lengths for equality
     let mut proof_builder = CryptoProver::new_proof_builder().unwrap();
     proof_builder.add_common_attribute("master_secret").unwrap();
 
-    for i in 0 .. proof_requests.len() {
+    let mut credential_schema_builder;
+    let mut sub_proof_request_builder;
+    let mut credential_values_builder;
+    let mut witness;
+    let mut registry;
+    for sub_proof in &proof_request.sub_proof_requests {
+
+      // Build Ursa credential schema & proof requests
+      credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
+      sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
+      for property in credential_schemas.get(&sub_proof.schema).unwrap().properties.keys() {
+        credential_schema_builder.add_attr(property).unwrap();
+        sub_proof_request_builder.add_revealed_attr(property).unwrap();
+      }
+
+      // Build ursa credential values
+      credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+      for values in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
+        credential_values_builder.add_dec_known(&values.0, &values.1).unwrap();
+      }
+
+      // Build witness with revocation data
+      registry = revocation_registries.get(&sub_proof.schema).unwrap();
+      let tails_accessor = SimpleTailsAccessor::new(&mut registry.tails.clone()).unwrap();
+      witness = Some(Witness::new(
+        credentials.get(&sub_proof.schema).unwrap().signature.revocation_id,
+        registry.maximum_credential_count,
+        true, // TODO: Global const
+        &registry.registry_delta.as_ref().unwrap(),
+        &tails_accessor
+      ).unwrap());
+
+      // Build proof for requested schema & attributes
       proof_builder.add_sub_proof_request(
-        &proof_requests[i].crypto_proof_request,
-        &credential_schemas[i],
+        &sub_proof_request_builder.finalize().unwrap(),
+        &credential_schema_builder.finalize().unwrap(),
         &non_credential_schema,
-        &credentials[i].signature,
-        &credential_values[i],
-        &credential_definitions[i].public_key,
-        revocation_registry,
-        witness).unwrap();
+        &credentials.get(&sub_proof.schema).unwrap().signature.signature,
+        &credential_values_builder.finalize().unwrap(),
+        &credential_definitions.get(&sub_proof.schema).unwrap().public_key,
+        Some(&registry.registry),
+        witness.as_ref()).unwrap();
     }
-    let proof = proof_builder.finalize(&proof_request_nonce).unwrap();
+
+    let proof = proof_builder.finalize(&proof_request.nonce).unwrap();
 
     return proof;
   }
 
   pub fn process_credential(
-    credential: &mut SignedCredential,
+    credential: &mut CredentialSignature,
     credential_request: &CryptoCredentialRequest,
     credential_public_key: &CredentialPublicKey,
     credential_blinding_factors: &CredentialSecretsBlindingFactors,
@@ -141,9 +172,15 @@ impl Prover {
       ).unwrap());
     }
 
+    let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+    for value in &credential_request.credential_values {
+      credential_values_builder.add_dec_known(value.0, value.1).unwrap();
+    }
+    let values = credential_values_builder.finalize().unwrap();
+
     CryptoProver::process_credential_signature(&mut credential.signature,
-      &credential_request.credential_values,
-      &credential.correctness_proof,
+      &values,
+      &credential.signature_correctness_proof,
       credential_blinding_factors,
       &credential_public_key,
       &credential.issuance_nonce,

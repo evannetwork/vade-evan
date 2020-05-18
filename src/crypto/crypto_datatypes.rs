@@ -1,11 +1,8 @@
 use ursa::cl::{
   BlindedCredentialSecrets,
   BlindedCredentialSecretsCorrectnessProof,
-  CredentialValues,
   CredentialPublicKey,
   CredentialKeyCorrectnessProof,
-  CredentialSignature,
-  SignatureCorrectnessProof,
   RevocationKeyPublic,
   RevocationRegistry,
   RevocationRegistryDelta,
@@ -17,12 +14,13 @@ use ursa::bn::BigNumber;
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 
+
 pub struct CryptoCredentialRequest {
   pub subject: String,
   pub blinded_credential_secrets: BlindedCredentialSecrets,
   pub blinded_credential_secrets_correctness_proof: BlindedCredentialSecretsCorrectnessProof,
   pub credential_nonce: BigNumber,
-  pub credential_values: CredentialValues
+  pub credential_values: HashMap<String, String>
 }
 
 #[derive(Serialize, Deserialize)]
@@ -41,18 +39,26 @@ pub struct SchemaProperty {
   pub items: Option<Vec<String>>
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SignedCredential {
-  pub signature: CredentialSignature,
-  pub correctness_proof: SignatureCorrectnessProof,
-  pub issuance_nonce: BigNumber
-}
-
-pub struct ProofRequest {
+pub struct CryptoProofRequest {
   pub credential_schema: CryptoCredentialSchema,
   pub crypto_proof_request: SubProofRequest,
 }
+
+// impl From<ProofRequest> for CryptoProofRequest {
+//   fn from(request: ProofRequest) -> Self {
+//     let mut sub_proof_request_builder = UrsaVerifier::new_sub_proof_request_builder().unwrap();
+//     request.sub_proof_requests[0].
+//       for i in 0 .. attributes.len() {
+//         sub_proof_request_builder.add_revealed_attr(&attributes[i]).unwrap();
+//       }
+//       let sub_proof_request = sub_proof_request_builder.finalize().unwrap();
+
+//       return sub_proof_request;
+//     return CryptoProofRequest {
+
+//     };
+//   }
+// }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
