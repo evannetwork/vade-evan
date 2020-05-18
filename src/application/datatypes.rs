@@ -2,14 +2,16 @@ use ursa::cl::{
   CredentialPublicKey,
   CredentialKeyCorrectnessProof,
   Nonce,
-  CredentialSignature,
+  CredentialSignature as CryptoCredentialSignature,
   SignatureCorrectnessProof,
   BlindedCredentialSecrets,
   BlindedCredentialSecretsCorrectnessProof,
   RevocationRegistry,
   RevocationRegistryDelta,
   RevocationTailsGenerator,
-  RevocationKeyPublic
+  RevocationKeyPublic,
+  CredentialSchema as UrsaCredentialSchema,
+  issuer::Issuer as UrsaIssuer
 };
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
@@ -40,7 +42,18 @@ pub struct CredentialSchema {
   pub properties: HashMap<String, SchemaProperty>,
   pub required: Vec<String>,
   pub additional_properties: bool,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub proof: Option<AssertionProof>
+}
+
+impl Into<UrsaCredentialSchema> for CredentialSchema {
+  fn into(self) -> UrsaCredentialSchema {
+    let mut credential_schema_builder = UrsaIssuer::new_credential_schema_builder().unwrap();
+    for property in &self.properties {
+      credential_schema_builder.add_attr(&property.0).unwrap();
+    }
+    return credential_schema_builder.finalize().unwrap();
+  }
 }
 
 // TODO: More supported fields?
@@ -48,7 +61,9 @@ pub struct CredentialSchema {
 #[serde(rename_all = "camelCase")]
 pub struct SchemaProperty {
   pub r#type: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub format: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub items: Option<Vec<String>>
 }
 
@@ -78,17 +93,17 @@ pub struct CredentialRequest {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CredentialProof {
+pub struct CredentialSignature {
   pub r#type: String,
   pub credential_definition: String,
-  pub signature: CredentialSignature,
+  pub signature: CryptoCredentialSignature,
   pub signature_correctness_proof: SignatureCorrectnessProof,
   pub issuance_nonce: Nonce,
   pub revocation_id: u32,
   pub revocation_registry_definition: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialSchemaReference {
   pub id: String,
@@ -112,7 +127,7 @@ pub struct Credential {
   pub issuer: String,
   pub credential_subject: CredentialSubject,
   pub credential_schema: CredentialSchemaReference,
-  pub proof: CredentialProof
+  pub signature: CredentialSignature
 }
 
 #[derive(Serialize, Deserialize)]
@@ -127,4 +142,68 @@ pub struct RevocationRegistryDefinition {
   pub revocation_public_key: RevocationKeyPublic,
   pub maximum_credential_count: u32,
   pub proof: Option<AssertionProof>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialProposal {
+  pub issuer: String,
+  pub subject: String,
+  pub r#type: String,
+  pub schema: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubProofRequest {
+  pub schema: String,
+  pub revealed_attributes: Vec<String>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProofRequest {
+  pub verifier: String,
+  pub prover: String,
+  pub created_at: String,
+  pub nonce: Nonce,
+  pub sub_proof_requests: Vec<SubProofRequest>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialSubProof {
+  pub credential_definition: String,
+  pub proof: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AggregatedProof {
+  pub nonce: Nonce,
+  pub aggregated_proof: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProofCredential {
+  #[serde(rename(serialize = "@context", deserialize = "context"))]
+  pub context: Vec<String>,
+  pub id: String,
+  pub r#type: Vec<String>,
+  pub issuer: String,
+  pub credential_subject: CredentialSubject,
+  pub credential_schema: CredentialSchemaReference,
+  pub proof: CredentialSubProof
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProofPresentation {
+  #[serde(rename(serialize = "@context", deserialize = "context"))]
+  pub context: Vec<String>,
+  pub id: String,
+  pub r#type: Vec<String>,
+  pub verifiable_credential: Vec<ProofCredential>,
+  pub proof: AggregatedProof
 }

@@ -6,7 +6,7 @@ use crate::application::datatypes::{
   Credential,
   CredentialSchemaReference,
   CredentialSubject,
-  CredentialProof,
+  CredentialSignature,
   CredentialRequest,
   RevocationRegistryDefinition
 };
@@ -29,10 +29,10 @@ impl Issuer {
     }
 
     pub fn create_credential_definition(
-      issuer_did: String,
+      issuer_did: &str,
       schema: CredentialSchema,
-      issuer_public_key_did: String,
-      issuer_proving_key: String
+      issuer_public_key_did: &str,
+      issuer_proving_key: &str
     ) -> (CredentialDefinition, CredentialPrivateKey) {
 
       let did = Issuer::mock_get_new_did();
@@ -47,8 +47,8 @@ impl Issuer {
       let mut definition = CredentialDefinition {
         id: did,
         r#type: "EvanZKPCredentialDefinition".to_string(),
-        issuer: issuer_did.clone(),
-        schema: schema.id.clone(),
+        issuer: issuer_did.to_owned(),
+        schema: schema.id,
         created_at,
         public_key: crypto_credential_def.public_key,
         public_key_correctness_proof: crypto_credential_def.credential_key_correctness_proof,
@@ -70,14 +70,14 @@ impl Issuer {
     }
 
     pub fn create_credential_schema(
-      issuer_did: String,
-      schema_name: String,
-      description: String,
+      issuer_did: &str,
+      schema_name: &str,
+      description: &str,
       properties: HashMap<String, SchemaProperty>,
       required_properties: Vec<String>,
       allow_additional_properties: bool,
-      issuer_public_key_did: String,
-      issuer_proving_key: String
+      issuer_public_key_did: &str,
+      issuer_proving_key: &str
     ) -> CredentialSchema {
 
       let schema_did = Issuer::mock_get_new_did();
@@ -87,10 +87,10 @@ impl Issuer {
       let mut schema = CredentialSchema {
         id: schema_did,
         r#type: "EvanVCSchema".to_string(), //TODO: Make enum
-        name: schema_name,
-        author: issuer_did.clone(),
+        name: schema_name.to_owned(),
+        author: issuer_did.to_owned(),
         created_at,
-        description,
+        description: description.to_owned(),
         properties,
         required: required_properties,
         additional_properties: allow_additional_properties,
@@ -113,8 +113,8 @@ impl Issuer {
 
     pub fn create_revocation_registry_definition(
       credential_definition: CredentialDefinition,
-      issuer_public_key_did: String,
-      issuer_proving_key: String,
+      issuer_public_key_did: &str,
+      issuer_proving_key: &str,
       maximum_credential_count: u32
     ) -> (RevocationRegistryDefinition, RevocationKeyPrivate) {
 
@@ -154,8 +154,8 @@ impl Issuer {
     }
 
     pub fn issue_credential (
-      issuer_did: String,
-      subject_did: String,
+      issuer_did: &str,
+      subject_did: &str,
       credential_request: CredentialRequest,
       credential_definition: CredentialDefinition,
       credential_private_key: CredentialPrivateKey,
@@ -165,7 +165,7 @@ impl Issuer {
     ) -> Credential {
 
       let credential_subject = CredentialSubject {
-        id: subject_did,
+        id: subject_did.to_owned(),
         data: credential_request.credential_values.clone()
       };
 
@@ -177,7 +177,11 @@ impl Issuer {
       let new_did = Issuer::mock_get_new_did();
       let rev_idx = Issuer::mock_get_rev_idx();
 
-      let signed_credential = CryptoIssuer::sign_credential_with_revocation(
+      let (
+        signature,
+        signature_correctness_proof,
+        issuance_nonce
+      ) = CryptoIssuer::sign_credential_with_revocation(
         &credential_request,
         &credential_private_key,
         &credential_definition.public_key,
@@ -186,12 +190,12 @@ impl Issuer {
         &revocation_private_key
       );
 
-      let proof = CredentialProof {
+      let cred_signature = CredentialSignature {
         r#type: "CLSignature2019".to_string(),
         credential_definition: credential_definition.id,
-        issuance_nonce: signed_credential.issuance_nonce,
-        signature: signed_credential.signature,
-        signature_correctness_proof: signed_credential.correctness_proof,
+        issuance_nonce,
+        signature,
+        signature_correctness_proof,
         revocation_id: rev_idx,
         revocation_registry_definition: revocation_registry_definition.id.clone()
       };
@@ -200,27 +204,27 @@ impl Issuer {
         context: vec!("https://www.w3.org/2018/credentials/v1".to_string()),
         id: new_did,
         r#type: vec!("VerifiableCredential".to_string()),
-        issuer: issuer_did,
+        issuer: issuer_did.to_owned(),
         credential_subject,
         credential_schema: schema_reference,
-        proof
+        signature: cred_signature
       };
     }
 
     pub fn offer_credential(
-      issuer_did: String,
-      subject_did: String,
-      schema_did: String,
-      credential_definition_did: String
+      issuer_did: &str,
+      subject_did: &str,
+      schema_did: &str,
+      credential_definition_did: &str
     ) -> CredentialOffer {
       let nonce = new_nonce().unwrap();
 
       return CredentialOffer {
-        issuer: issuer_did,
-        subject: subject_did,
+        issuer: issuer_did.to_owned(),
+        subject: subject_did.to_owned(),
         r#type: "EvanZKPCredentialOffering".to_string(),
-        schema: schema_did,
-        credential_definition: credential_definition_did,
+        schema: schema_did.to_owned(),
+        credential_definition: credential_definition_did.to_owned(),
         nonce
       }
     }

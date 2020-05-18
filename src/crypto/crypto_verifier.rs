@@ -8,7 +8,7 @@ pub mod verifier {
   use ursa::cl::SubProofRequest;
   use ursa::cl::Proof;
 
-  use crate::crypto::crypto_datatypes::ProofRequest;
+  use crate::crypto::crypto_datatypes::CryptoProofRequest;
 
 
   pub struct CredVerifier {
@@ -22,7 +22,7 @@ pub mod verifier {
       }
     }
 
-    pub fn request_proof(attributes: Vec<String>) -> SubProofRequest {
+    pub fn request_proof(attributes: Vec<&str>) -> SubProofRequest {
       let mut sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
       for i in 0 .. attributes.len() {
         sub_proof_request_builder.add_revealed_attr(&attributes[i]).unwrap();
@@ -34,7 +34,7 @@ pub mod verifier {
 
     pub fn verify_proof(
       proof: &Proof,
-      proof_requests: Vec<&ProofRequest>,
+      proof_requests: Vec<&CryptoProofRequest>,
       pub_keys: Vec<&CredentialPublicKey>,
       proof_request_nonce: &BigNumber
     ) {

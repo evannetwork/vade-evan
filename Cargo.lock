@@ -1076,7 +1076,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "vade-zkp"
+name = "vade-tnt"
 version = "0.0.1"
 dependencies = [
  "chrono",
