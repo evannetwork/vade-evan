@@ -39,14 +39,23 @@ impl Verifier {
     credential_definitions: HashMap<String, CredentialDefinition>,
     credential_schemas: HashMap<String, CredentialSchema>
   ) -> ProofVerification {
-    // CredVerifier::verify_proof(
-    //   presented_proof,
-    //   proof_request,
-    //   credential_definitions,
-    //   credential_schemas
-    // );
-    unimplemented!();
 
+    let status: &str;
+    let mut reason: Option<String> = None;
+    match CredVerifier::verify_proof(
+      &presented_proof,
+      &proof_request,
+      &credential_definitions,
+      &credential_schemas
+    ) {
+      Ok(()) => { status = "verified" }
+      Err(e) => { status = "rejected"; reason = Some(e.to_string()); }
+    };
 
+    return ProofVerification {
+      presented_proof: presented_proof.id.to_owned(),
+      status: status.to_owned(),
+      reason
+    };
   }
 }
