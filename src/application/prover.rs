@@ -172,6 +172,21 @@ impl Prover {
     return (proof_creds, aggregated);
   }
 
+  /// Encodes values into a format compatible with Ursa's CL algorithm.
+  /// Leaves i32 integers as is and transforms anything into 256 bit integers.
+  /// Implements the encoding algorithm suggested by Hyperledger Indy
+  ///   https://github.com/hyperledger/aries-rfcs/tree/master/features/0036-issue-credential#encoding-claims-for-indy-based-verifiable-credentials
+  ///
+  /// # Arguments
+  ///
+  /// * `credential_values` - A mapping of property names to stringified property values
+  ///
+  /// # Example
+  /// ```
+  /// let mut values: HashMap<String, String> = HashMap::new();
+  /// values.insert("string".to_owned(), "101 Wilson Lane".to_owned());
+  /// let encoded = Prover::encode_values(values);
+  /// ```
   pub fn encode_values(credential_values: HashMap<String, String>) -> HashMap<String, EncodedCredentialValue> {
 
     let mut encoded_values: HashMap<String, EncodedCredentialValue> = HashMap::new();
@@ -180,7 +195,7 @@ impl Prover {
     let mut raw: String;
     for entry in credential_values {
       raw = entry.1.to_owned();
-      match entry.1.to_string().parse::<u32>() {
+      match entry.1.to_string().parse::<i32>() {
         Ok(_) => { // parsing successful, but leave integer as is
           encoded = entry.1.to_owned();
         }
@@ -200,7 +215,7 @@ impl Prover {
           raw: raw.to_owned(),
           encoded: encoded.to_owned()
         }
-      ).unwrap();
+      );
     }
 
     return encoded_values;
