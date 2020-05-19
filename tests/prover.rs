@@ -16,8 +16,6 @@ fn encodes_values_correctly() {
   values.insert("float".to_owned(), "0.0".to_owned());
   values.insert("true".to_owned(), "true".to_owned());
   values.insert("false".to_owned(), "false".to_owned());
-  // floating
-  // boolean
 
   let encoded = Prover::encode_values(values);
   assert_eq!(

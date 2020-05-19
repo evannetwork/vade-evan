@@ -72,7 +72,6 @@ fn can_create_schema() {
     &EXAMPLE_PRIVATE_KEY
   );
 
-  // TODO: Validate proof
   assert_eq!(&schema.author, &EXAMPLE_DID);
   assert_eq!(schema.additional_properties, false);
   let result_property: &SchemaProperty = &schema.properties.get("test_property_string").unwrap();
