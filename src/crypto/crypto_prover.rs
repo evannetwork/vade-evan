@@ -17,8 +17,8 @@ use ursa::cl::{
 };
 use std::collections::HashMap;
 use crate::crypto::crypto_datatypes::{
-  CryptoCredentialRequest,
-  CryptoCredentialDefinition
+  CryptoCredentialDefinition,
+  CryptoCredentialRequest
 };
 use crate::application::datatypes::{
   RevocationRegistryDefinition,
@@ -26,7 +26,9 @@ use crate::application::datatypes::{
   CredentialSchema,
   Credential,
   CredentialDefinition,
-  ProofRequest
+  ProofRequest,
+  EncodedCredentialValue,
+  CredentialRequest
 };
 
 
@@ -43,7 +45,7 @@ impl Prover {
   ///
   pub fn request_credential(
     requester_did: &str,
-    encoded_credential_values: HashMap<String, String>,
+    encoded_credential_values: &HashMap<String, EncodedCredentialValue>,
     master_secret: MasterSecret,
     credential_definition: CryptoCredentialDefinition,
     credential_nonce: Nonce,
@@ -51,10 +53,9 @@ impl Prover {
 
     // Master secret will be used to prove that each proof was really issued to the holder/subject/prover
     // Needs to stay secret
-    // Will probably be stored in profile/wallet
     let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
-    for value in &encoded_credential_values {
-      credential_values_builder.add_dec_known(value.0, value.1).unwrap();
+    for value in encoded_credential_values {
+      credential_values_builder.add_dec_known(value.0, &value.1.encoded).unwrap();
     }
     credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
     let credential_values = credential_values_builder.finalize().unwrap();
@@ -74,8 +75,7 @@ impl Prover {
       subject: requester_did.to_owned(),
       blinded_credential_secrets,
       blinded_credential_secrets_correctness_proof,
-      credential_nonce,
-      credential_values: encoded_credential_values,
+      credential_nonce
     };
 
     return (req, blinding_factors);
@@ -146,7 +146,7 @@ impl Prover {
 
   pub fn process_credential(
     credential: &mut CredentialSignature,
-    credential_request: &CryptoCredentialRequest,
+    credential_request: &CredentialRequest,
     credential_public_key: &CredentialPublicKey,
     credential_blinding_factors: &CredentialSecretsBlindingFactors,
     credential_revocation_id: u32,
@@ -174,7 +174,7 @@ impl Prover {
 
     let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
     for value in &credential_request.credential_values {
-      credential_values_builder.add_dec_known(value.0, value.1).unwrap();
+      credential_values_builder.add_dec_known(value.0, &value.1.encoded).unwrap();
     }
     let values = credential_values_builder.finalize().unwrap();
 
