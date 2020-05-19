@@ -1,10 +1,19 @@
-use serde_json::Value;
+use serde::{Serialize, Deserialize};
+use serde_json::{ Value, value::RawValue };
 use data_encoding::BASE64URL;
 use sha2::{Digest, Sha256};
-use secp256k1::{Message, Signature, SecretKey, sign};
+use secp256k1::{Message, Signature, recover, RecoveryId, SecretKey, sign};
 use std::convert::TryInto;
 use chrono::Utc;
+use sha3::Keccak256;
 use crate::crypto::crypto_datatypes::AssertionProof;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct JwsData<'a> {
+  #[serde(borrow)]
+  doc: &'a RawValue,
+}
+
 /// Creates proof for VC document
 ///
 /// # Arguments
@@ -82,4 +91,124 @@ pub fn create_id_hash() -> String {
   hasher.input(b"");
   let hash: [u8; 32] = hasher.result().try_into().unwrap();
   return format!("0x{}", hex::encode(hash));
+}
+
+/// Checks given Vc document.
+/// A Vc document is considered as valid if returning ().
+/// Resolver may throw to indicate
+/// - that it is not responsible for this Vc
+/// - that it considers this Vc as invalid
+/// 
+/// Currently the test `vc_id` `"test"` is accepted as valid.
+///
+/// # Arguments
+///
+/// * `vc_id` - vc_id to check document for
+/// * `value` - value to check
+pub fn check_assertion_proof(
+  vc_document: &str,
+  signer_address: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+  let mut vc: Value = serde_json::from_str(vc_document)?;
+  if vc["proof"].is_null() {
+      debug!("vcs without a proof are considered as valid");
+      Ok(())
+  } else {
+      debug!("checking vc document");
+
+      // separate proof and vc document (vc document will be a Map after this)
+      let vc_without_proof = vc.as_object_mut().unwrap();
+      let vc_proof =  vc_without_proof.remove("proof").unwrap();
+
+      // recover address and payload text (pure jwt format)
+      let (address, decoded_payload_text) = recover_address_and_data(vc_proof["jws"].as_str().unwrap())?;
+
+      debug!("checking if document given and document from jws are equal");
+      let jws: JwsData = serde_json::from_str(&decoded_payload_text)?;
+      let doc = jws.doc.get();
+      // parse recovered vc document into serde Map
+      let parsed_caps1: Value = serde_json::from_str(&doc)?;
+      let parsed_caps1_map = parsed_caps1.as_object().unwrap();
+      // compare documents
+      if vc_without_proof != parsed_caps1_map {
+          return Err(Box::from("recovered VC document and given VC document do not match"));
+      }
+
+      debug!("checking proof of vc document");
+      let address = format!("0x{}", address);
+      let key_to_use = vc_proof["verificationMethod"].as_str().unwrap();
+      debug!("recovered address: {}", &address);
+      debug!("key to use for verification: {}", &key_to_use);
+      if address != signer_address {
+          return Err(Box::from("recovered and signing given address do not match"));
+      }
+      
+      debug!("vc document is valid");
+      Ok(())
+  }
+}
+
+/// Recovers Ethereum address of signer and data part of a jwt.
+///
+/// # Arguments
+///
+/// * `jwt` - jwt as str&
+fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
+  // jwt text parsing
+  let split: Vec<&str> = jwt.split('.').collect();
+  let (header, data, signature) = (split[0], split[1], split[2]);
+  let header_and_data = format!("{}.{}", header, data);
+  
+  // recover data for later checks
+  let data_decoded = match BASE64URL.decode(data.as_bytes()) {
+      Ok(decoded) => decoded,
+      Err(_) => match BASE64URL.decode(format!("{}=", data).as_bytes()) {
+          Ok(decoded) => decoded,
+          Err(_) => match BASE64URL.decode(format!("{}==", data).as_bytes()) {
+              Ok(decoded) => decoded,
+              Err(_) => BASE64URL.decode(format!("{}===", data).as_bytes()).unwrap(),
+          },
+      },
+  };
+  let data_string = String::from_utf8(data_decoded)?;
+
+  // decode signature for validation
+  let signature_decoded = match BASE64URL.decode(signature.as_bytes()) {
+      Ok(decoded) => decoded,
+      Err(_) => match BASE64URL.decode(format!("{}=", signature).as_bytes()) {
+          Ok(decoded) => decoded,
+          Err(_) => BASE64URL.decode(format!("{}==", signature).as_bytes()).unwrap(),
+      },
+  };
+  debug!("signature_decoded {:?}", &signature_decoded);
+  debug!("signature_decoded.len {:?}", signature_decoded.len());
+
+  // create hash of data (including header)
+  let mut hasher = Sha256::new();
+  hasher.input(&header_and_data);
+  let hash = hasher.result();
+  debug!("header_and_data hash {:?}", hash);
+
+  // prepare arguments for public key recovery
+  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid"); 
+  let ctx_msg = Message::parse(&hash_arr);
+  let mut signature_array = [0u8; 64];
+  for i in 0..64 {
+      signature_array[i] = signature_decoded[i];
+  }
+  // slice signature and recovery for recovery
+  debug!("recovery id: {}", signature_decoded[64]);
+  let ctx_sig = Signature::parse(&signature_array);
+  let recovery_id = RecoveryId::parse(signature_decoded[64]).unwrap();
+
+  // recover public key, build ethereum address from it
+  let recovered_key = recover(&ctx_msg, &ctx_sig, &recovery_id).unwrap();
+  let mut hasher = Keccak256::new();
+  hasher.input(&recovered_key.serialize()[1..65]);
+  let hash = hasher.result();
+  debug!("recovered_key hash {:?}", hash);
+  let address = hex::encode(&hash[12..32]);
+  debug!("address 0x{}", &address);
+
+  Ok((address, data_string))
 }
