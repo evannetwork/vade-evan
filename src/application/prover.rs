@@ -36,6 +36,12 @@ impl Prover {
     Prover { }
   }
 
+  /// Create a new credential proposal to send to a potential issuer.
+  ///
+  /// # Arguments
+  /// * `issuer_did` - DID of the issuer the proposal is for
+  /// * `subject_did` - DID of the proposal creator and potential subject of the credential
+  /// * `schema_did` - DID of the schema to propose the credential for
   pub fn propose_credential(issuer_did: &str, subject_did: &str, schema_did: &str) -> CredentialProposal {
     return CredentialProposal {
       issuer: issuer_did.to_owned(),
@@ -45,6 +51,13 @@ impl Prover {
     };
   }
 
+  /// Request a new credential based on a received credential offering.
+  ///
+  /// # Arguments
+  /// * `credential_offering` - The received credential offering sent by the potential issuer
+  /// * `credential_definition` - The credential definition that is referenced in the credential offering
+  /// * `master_secret` - The master secret to incorporate into the blinded values to be signed by the issuer
+  /// * `credential_values` - A mapping of property names to their stringified cleartext values
   pub fn request_credential(
     credential_offering: CredentialOffer,
     credential_definition: CredentialDefinition,
