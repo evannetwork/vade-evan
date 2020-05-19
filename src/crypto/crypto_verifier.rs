@@ -44,13 +44,11 @@ pub mod verifier {
     }
 
     pub fn verify_proof(
-      presented_proof: ProofPresentation,
-      proof_request: ProofRequest,
+      presented_proof: &ProofPresentation,
+      proof_request: &ProofRequest,
       credential_definitions: &HashMap<String, CredentialDefinition>,
       credential_schemas: &HashMap<String, CredentialSchema>
-    ) {
-
-
+    ) -> Result<(), Box<dyn std::error::Error>>{
 
       let mut proof_verifier = CryptoVerifier::new_proof_verifier().unwrap();
 
@@ -61,14 +59,14 @@ pub mod verifier {
       let mut pub_key;
       let mut credential_schema_builder;
       let mut sub_proof_request_builder;
-      for sub_proof_request in proof_request.sub_proof_requests {
+      for sub_proof_request in &proof_request.sub_proof_requests {
         credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
         for property in credential_schemas.get(&sub_proof_request.schema).unwrap().properties.keys() {
           credential_schema_builder.add_attr(property).unwrap();
         }
 
         sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
-        for property in sub_proof_request.revealed_attributes {
+        for property in &sub_proof_request.revealed_attributes {
           sub_proof_request_builder.add_revealed_attr(&property).unwrap();
         }
 
@@ -85,7 +83,7 @@ pub mod verifier {
 
       // Create Ursa proof object
       let mut sub_proofs: Vec<SubProof> = Vec::new();
-      for vc in presented_proof.verifiable_credential {
+      for vc in &presented_proof.verifiable_credential {
         sub_proofs.push(serde_json::from_str(&vc.proof.proof).unwrap());
       }
       let serialized = format!(r###"
@@ -96,7 +94,11 @@ pub mod verifier {
       );
       let ursa_proof: CryptoProof = serde_json::from_str(&serialized).unwrap();
 
-      assert!(proof_verifier.verify(&ursa_proof, &presented_proof.proof.nonce).unwrap());
+      if proof_verifier.verify(&ursa_proof, &presented_proof.proof.nonce).unwrap() {
+        Ok(())
+      } else {
+        Err(From::from("Proof verification failed"))
+      }
     }
 
     /**

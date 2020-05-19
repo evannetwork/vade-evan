@@ -211,7 +211,8 @@ pub struct ProofPresentation {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofVerification {
-  presented_proof: String,
-  status: String,
-  proof: AssertionProof
+  pub presented_proof: String,
+  pub status: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub reason: Option<String>
 }
