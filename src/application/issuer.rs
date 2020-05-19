@@ -164,9 +164,15 @@ impl Issuer {
       revocation_private_key: RevocationKeyPrivate
     ) -> Credential {
 
+
+      let mut data: HashMap<String, String> = HashMap::new();
+      for entry in &credential_request.credential_values {
+        data.insert(entry.0.to_owned(), entry.1.raw.to_owned()).unwrap();
+      }
+
       let credential_subject = CredentialSubject {
         id: subject_did.to_owned(),
-        data: credential_request.credential_values.clone()
+        data
       };
 
       let schema_reference = CredentialSchemaReference {

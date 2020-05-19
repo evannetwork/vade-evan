@@ -69,7 +69,7 @@ impl Issuer {
 
     let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
     for pair in &credential_request.credential_values {
-      value_builder.add_dec_known(&pair.0, &pair.1).unwrap();
+      value_builder.add_dec_known(&pair.0, &pair.1.encoded).unwrap();
     }
     let values = value_builder.finalize().unwrap();
 
@@ -98,7 +98,7 @@ impl Issuer {
 
     let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
     for pair in &credential_request.credential_values {
-      value_builder.add_dec_known(&pair.0, &pair.1).unwrap();
+      value_builder.add_dec_known(&pair.0, &pair.1.encoded).unwrap();
     }
     let values = value_builder.finalize().unwrap();
 

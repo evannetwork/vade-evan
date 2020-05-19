@@ -11,18 +11,22 @@ use crate::application::datatypes::{
   CredentialSchema,
   RevocationRegistryDefinition,
   CredentialSubProof,
-  AggregatedProof
+  AggregatedProof,
+  EncodedCredentialValue
 };
 use ursa::cl::{
   MasterSecret,
   CredentialSecretsBlindingFactors
 };
+use ursa::bn::BigNumber;
 use crate::crypto::crypto_utils::create_id_hash;
 use crate::crypto::crypto_prover::Prover as CryptoProver;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition
 };
 use std::collections::HashMap;
+use sha2::{Digest, Sha256};
+use std::convert::TryInto;
 
 pub struct Prover {
 }
@@ -57,7 +61,7 @@ impl Prover {
 
     let (crypto_cred_request, blinding_factors) = CryptoProver::request_credential(
       &credential_offering.subject,
-      encoded_credential_values,
+      &encoded_credential_values,
       master_secret,
       crypto_cred_def,
       credential_offering.nonce
@@ -71,7 +75,7 @@ impl Prover {
       schema: credential_definition.schema,
       subject: credential_offering.subject,
       r#type: "EvanZKPCredentialRequest".to_string(),
-      credential_values: crypto_cred_request.credential_values
+      credential_values: encoded_credential_values
     }, blinding_factors);
   }
 
@@ -100,10 +104,6 @@ impl Prover {
       verifiable_credential: vcs,
       proof: aggregated_proof
     };
-  }
-
-  fn encode_values(values: HashMap<String, String>) -> HashMap<String, String> {
-    unimplemented!();
   }
 
   fn create_proof_credentials(
@@ -170,5 +170,39 @@ impl Prover {
     };
 
     return (proof_creds, aggregated);
+  }
+
+  pub fn encode_values(credential_values: HashMap<String, String>) -> HashMap<String, EncodedCredentialValue> {
+
+    let mut encoded_values: HashMap<String, EncodedCredentialValue> = HashMap::new();
+
+    let mut encoded: String;
+    let mut raw: String;
+    for entry in credential_values {
+      raw = entry.1.to_owned();
+      match entry.1.to_string().parse::<u32>() {
+        Ok(_) => { // parsing successful, but leave integer as is
+          encoded = entry.1.to_owned();
+        }
+        Err(_) => { // not an integer, therefore encode it
+          let mut hasher = Sha256::new();
+          hasher.input(&entry.1.to_owned());
+          let hash = hasher.result();
+          let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+          let as_number = BigNumber::from_bytes(&hash_arr).unwrap();
+          encoded = as_number.to_dec().unwrap();
+        }
+      }
+
+      encoded_values.insert(
+        entry.0,
+        EncodedCredentialValue {
+          raw: raw.to_owned(),
+          encoded: encoded.to_owned()
+        }
+      ).unwrap();
+    }
+
+    return encoded_values;
   }
 }

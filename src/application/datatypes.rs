@@ -88,7 +88,7 @@ pub struct CredentialRequest {
   pub blinded_credential_secrets: BlindedCredentialSecrets,
   pub blinded_credential_secrets_correctness_proof: BlindedCredentialSecretsCorrectnessProof,
   pub credential_nonce: Nonce,
-  pub credential_values: HashMap<String, String>
+  pub credential_values: HashMap<String, EncodedCredentialValue>
 }
 
 #[derive(Serialize, Deserialize)]
@@ -215,4 +215,11 @@ pub struct ProofVerification {
   pub status: String,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub reason: Option<String>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EncodedCredentialValue {
+  pub raw: String,
+  pub encoded: String
 }
