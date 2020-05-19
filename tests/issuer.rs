@@ -1,8 +1,11 @@
 extern crate vade_tnt;
-
+extern crate env_logger;
+#[macro_use]
+extern crate log;
 
 use vade_tnt::application::issuer::Issuer;
-use vade_tnt::application::datatypes::SchemaProperty;
+use vade_tnt::application::datatypes::{ CredentialSchema, SchemaProperty };
+use vade_tnt::crypto::crypto_utils::check_assertion_proof;
 use std::collections::HashMap;
 
 const EXAMPLE_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
@@ -39,6 +42,11 @@ const EXAMPLE_PRIVATE_KEY: &str = "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b368
 
 #[test]
 fn can_create_schema() {
+
+  match env_logger::try_init() {
+      Ok(_) | Err(_) => (),
+  };
+
   let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR).unwrap();
   let mut required_properties: Vec<String> = Vec::new();
   let mut test_properties: HashMap<String, SchemaProperty> = HashMap::new();
@@ -52,7 +60,7 @@ fn can_create_schema() {
   );
   required_properties.push("test_property_string".to_owned());
 
-  let schema = Issuer::create_credential_schema(
+  let schema: CredentialSchema = Issuer::create_credential_schema(
     &EXAMPLE_DID,
     "test_schema",
     "Test description",
@@ -77,4 +85,9 @@ fn can_create_schema() {
     serde_json::to_string(&expected).unwrap(),
   );
 
+  let serialized = serde_json::to_string(&schema).unwrap();
+  assert!(match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
+    Ok(()) => true,
+    Err(e) => panic!("assertion check failed with: {}", e),
+  });
 }
