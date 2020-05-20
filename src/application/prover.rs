@@ -196,6 +196,8 @@ impl Prover {
   ///
   /// # Example
   /// ```
+  /// # use std::collections::HashMap;
+  /// # use vade_tnt::application::prover::Prover;
   /// let mut values: HashMap<String, String> = HashMap::new();
   /// values.insert("string".to_owned(), "101 Wilson Lane".to_owned());
   /// let encoded = Prover::encode_values(values);
