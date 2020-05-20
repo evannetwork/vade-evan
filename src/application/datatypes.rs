@@ -15,6 +15,12 @@ use ursa::cl::{
 };
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+pub use ursa::cl::{
+    CredentialPrivateKey,
+    CredentialSecretsBlindingFactors,
+    RevocationKeyPrivate,
+    MasterSecret,
+};
 use crate::crypto::crypto_datatypes::AssertionProof;
 
 #[derive(Serialize, Deserialize)]
