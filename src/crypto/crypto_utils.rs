@@ -98,7 +98,7 @@ pub fn create_id_hash() -> String {
 /// Resolver may throw to indicate
 /// - that it is not responsible for this Vc
 /// - that it considers this Vc as invalid
-/// 
+///
 /// Currently the test `vc_id` `"test"` is accepted as valid.
 ///
 /// # Arguments
@@ -109,6 +109,7 @@ pub fn check_assertion_proof(
   vc_document: &str,
   signer_address: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+  println!("{}", vc_document);
   let mut vc: Value = serde_json::from_str(vc_document)?;
   if vc["proof"].is_null() {
       debug!("vcs without a proof are considered as valid");
@@ -130,6 +131,8 @@ pub fn check_assertion_proof(
       let parsed_caps1: Value = serde_json::from_str(&doc)?;
       let parsed_caps1_map = parsed_caps1.as_object().unwrap();
       // compare documents
+      println!("{}", serde_json::to_string(&parsed_caps1).unwrap());
+      println!("{}", serde_json::to_string(&vc_without_proof).unwrap());
       if vc_without_proof != parsed_caps1_map {
           return Err(Box::from("recovered VC document and given VC document do not match"));
       }
@@ -142,7 +145,7 @@ pub fn check_assertion_proof(
       if address != signer_address {
           return Err(Box::from("recovered and signing given address do not match"));
       }
-      
+
       debug!("vc document is valid");
       Ok(())
   }
@@ -158,7 +161,7 @@ fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::
   let split: Vec<&str> = jwt.split('.').collect();
   let (header, data, signature) = (split[0], split[1], split[2]);
   let header_and_data = format!("{}.{}", header, data);
-  
+
   // recover data for later checks
   let data_decoded = match BASE64URL.decode(data.as_bytes()) {
       Ok(decoded) => decoded,
@@ -190,7 +193,7 @@ fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::
   debug!("header_and_data hash {:?}", hash);
 
   // prepare arguments for public key recovery
-  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid"); 
+  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid");
   let ctx_msg = Message::parse(&hash_arr);
   let mut signature_array = [0u8; 64];
   for i in 0..64 {
