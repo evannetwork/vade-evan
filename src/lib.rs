@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use vade::{
     Vade,
-    traits::MessageConsumer,
+    //traits::MessageConsumer,
 };
 use crate::{
     application::issuer::Issuer,
@@ -136,30 +136,30 @@ impl VadeTnt {
     }
 }
 
-#[async_trait(?Send)]
-impl MessageConsumer for VadeTnt {
-    /// Reacts to `Vade` messages.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `message_data` - arbitrary data for plugin, e.g. a JSON
-    async fn handle_message(
-        &mut self,
-        message_type: &str,
-        message_data: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        match message_type {
-            "proposeCredential" => self.propose_credential(message_data).await,
-            "offerCredential" => self.offer_credential(message_data).await,
-            "requestCredential" => self.request_credential(message_data).await,
-            "issueCredential" => self.issue_credential(message_data).await,
-            "requestProof" => self.request_proof(message_data).await,
-            "presentProof" => self.present_proof(message_data).await,
-            "verifyProof" => self.verify_proof(message_data).await,
-            _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
-        }
-    }
-}
+// #[async_trait(?Send)]
+// impl MessageConsumer for VadeTnt {
+//     /// Reacts to `Vade` messages.
+//     ///
+//     /// # Arguments
+//     ///
+//     /// * `message_data` - arbitrary data for plugin, e.g. a JSON
+//     async fn handle_message(
+//         &mut self,
+//         message_type: &str,
+//         message_data: &str,
+//     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+//         match message_type {
+//             "proposeCredential" => self.propose_credential(message_data).await,
+//             "offerCredential" => self.offer_credential(message_data).await,
+//             "requestCredential" => self.request_credential(message_data).await,
+//             "issueCredential" => self.issue_credential(message_data).await,
+//             "requestProof" => self.request_proof(message_data).await,
+//             "presentProof" => self.present_proof(message_data).await,
+//             "verifyProof" => self.verify_proof(message_data).await,
+//             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
+//         }
+//     }
+// }
 
 impl VadeTnt {
     async fn issue_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
@@ -175,7 +175,7 @@ impl VadeTnt {
             input.revocation_private_key,
         );
 
-        Ok(Some(serde_json::to_string(&result).unwrap())) 
+        Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
     async fn offer_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
@@ -200,7 +200,7 @@ impl VadeTnt {
             input.revocation_registries,
         );
 
-        Ok(Some(serde_json::to_string(&result).unwrap())) 
+        Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
     async fn propose_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {

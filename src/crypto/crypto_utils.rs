@@ -109,7 +109,6 @@ pub fn check_assertion_proof(
   vc_document: &str,
   signer_address: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-  println!("{}", vc_document);
   let mut vc: Value = serde_json::from_str(vc_document)?;
   if vc["proof"].is_null() {
       debug!("vcs without a proof are considered as valid");
@@ -131,8 +130,6 @@ pub fn check_assertion_proof(
       let parsed_caps1: Value = serde_json::from_str(&doc)?;
       let parsed_caps1_map = parsed_caps1.as_object().unwrap();
       // compare documents
-      println!("{}", serde_json::to_string(&parsed_caps1).unwrap());
-      println!("{}", serde_json::to_string(&vc_without_proof).unwrap());
       if vc_without_proof != parsed_caps1_map {
           return Err(Box::from("recovered VC document and given VC document do not match"));
       }
