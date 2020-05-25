@@ -194,18 +194,4 @@ impl Prover {
       witness.as_ref()
     ).unwrap();
   }
-
-  /**
-   * Encoding raw values to BigNumber representations.
-   * Indy currently does not offer a standard for this, everyone is free and obliged to implement that themselves
-   * See: https://jira.hyperledger.org/browse/IS-786
-   */
-  fn encode_value(value: &str) -> String {
-    let string = String::from(value);
-    let bytes = string.as_bytes();
-    let val = BigNumber::from_bytes(bytes).unwrap();
-    println!("Converting {} to {}", string, val.to_dec().unwrap());
-    return val.to_dec().unwrap();
-  }
-
 }
