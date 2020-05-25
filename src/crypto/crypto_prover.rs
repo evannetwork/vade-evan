@@ -15,6 +15,7 @@ use ursa::cl::{
   SimpleTailsAccessor,
   verifier::Verifier as CryptoVerifier
 };
+use ursa::errors::UrsaCryptoResult;
 use std::collections::HashMap;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition,
@@ -79,6 +80,10 @@ impl Prover {
     };
 
     return (req, blinding_factors);
+  }
+
+  pub fn create_master_secret() -> UrsaCryptoResult<MasterSecret> {
+    return CryptoProver::new_master_secret();
   }
 
   pub fn create_proof_with_revoc(
