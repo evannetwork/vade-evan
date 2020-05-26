@@ -127,7 +127,7 @@ pub struct CredentialSubject {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Credential {
-  #[serde(rename(serialize = "@context", deserialize = "context"))]
+  #[serde(rename(serialize = "@context", deserialize = "@context"))]
   pub context: Vec<String>,
   pub id: String,
   pub r#type: Vec<String>,
@@ -195,7 +195,7 @@ pub struct AggregatedProof {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofCredential {
-  #[serde(rename(serialize = "@context", deserialize = "context"))]
+  #[serde(rename(serialize = "@context", deserialize = "@context"))]
   pub context: Vec<String>,
   pub id: String,
   pub r#type: Vec<String>,
@@ -208,7 +208,7 @@ pub struct ProofCredential {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofPresentation {
-  #[serde(rename(serialize = "@context", deserialize = "context"))]
+  #[serde(rename(serialize = "@context", deserialize = "@context"))]
   pub context: Vec<String>,
   pub id: String,
   pub r#type: Vec<String>,

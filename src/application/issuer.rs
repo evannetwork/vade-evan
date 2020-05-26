@@ -112,7 +112,7 @@ impl Issuer {
     }
 
     pub fn create_revocation_registry_definition(
-      credential_definition: CredentialDefinition,
+      credential_definition: &CredentialDefinition,
       issuer_public_key_did: &str,
       issuer_proving_key: &str,
       maximum_credential_count: u32
@@ -129,7 +129,7 @@ impl Issuer {
 
       let mut rev_reg_def = RevocationRegistryDefinition {
         id: rev_did,
-        credential_definition: credential_definition.id,
+        credential_definition: credential_definition.id.to_string(),
         registry: crypto_rev_def.registry,
         registry_delta: crypto_rev_def.registry_delta,
         maximum_credential_count,
@@ -165,7 +165,7 @@ impl Issuer {
 
       let mut data: HashMap<String, String> = HashMap::new();
       for entry in &credential_request.credential_values {
-        data.insert(entry.0.to_owned(), entry.1.raw.to_owned()).unwrap();
+        data.insert(entry.0.to_owned(), entry.1.raw.to_owned());
       }
 
       let credential_subject = CredentialSubject {

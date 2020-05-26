@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use vade::{
     Vade,
-    //traits::MessageConsumer,
+    traits::MessageConsumer,
 };
 use crate::{
     application::issuer::Issuer,
@@ -44,7 +44,7 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateCredentialSchemaArguments {
-    pub issuer_did: String,
+    pub issuer: String,
     pub schema_name: String,
     pub description: String,
     pub properties: HashMap<String, SchemaProperty>,
@@ -57,8 +57,8 @@ struct CreateCredentialSchemaArguments {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct IssueCredentialArguments {
-    pub issuer_did: String,
-    pub subject_did: String,
+    pub issuer: String,
+    pub subject: String,
     pub credential_request: CredentialRequest,
     pub credential_definition: CredentialDefinition,
     pub credential_private_key: CredentialPrivateKey,
@@ -70,10 +70,10 @@ struct IssueCredentialArguments {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct OfferCredentialArguments {
-    pub issuer_did: String,
-    pub subject_did: String,
-    pub schema_did: String,
-    pub credential_definition_did: String,
+    pub issuer: String,
+    pub subject: String,
+    pub schema: String,
+    pub credential_definition: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -88,10 +88,10 @@ struct PresentProofArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ProposeCredentialArguments {
-    pub issuer_did: String,
-    pub subject_did: String,
-    pub schema_did: String,
+struct CreateCredentialProposalArguments {
+    pub issuer: String,
+    pub subject: String,
+    pub schema: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -121,52 +121,50 @@ struct ValidateProofArguments {
 }
 
 pub struct VadeTnt {
-    pub vade: Vade,
 }
 
 impl VadeTnt {
     /// Creates new instance of `VadeTnt`.
-    pub fn new(vade: Vade) -> VadeTnt {
+    pub fn new() -> VadeTnt {
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
         VadeTnt {
-            vade: vade,
         }
     }
 }
 
-// #[async_trait(?Send)]
-// impl MessageConsumer for VadeTnt {
-//     /// Reacts to `Vade` messages.
-//     ///
-//     /// # Arguments
-//     ///
-//     /// * `message_data` - arbitrary data for plugin, e.g. a JSON
-//     async fn handle_message(
-//         &mut self,
-//         message_type: &str,
-//         message_data: &str,
-//     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-//         match message_type {
-//             "proposeCredential" => self.propose_credential(message_data).await,
-//             "offerCredential" => self.offer_credential(message_data).await,
-//             "requestCredential" => self.request_credential(message_data).await,
-//             "issueCredential" => self.issue_credential(message_data).await,
-//             "requestProof" => self.request_proof(message_data).await,
-//             "presentProof" => self.present_proof(message_data).await,
-//             "verifyProof" => self.verify_proof(message_data).await,
-//             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
-//         }
-//     }
-// }
+#[async_trait(?Send)]
+impl MessageConsumer for VadeTnt {
+    /// Reacts to `Vade` messages.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `message_data` - arbitrary data for plugin, e.g. a JSON
+    async fn handle_message(
+        &mut self,
+        message_type: &str,
+        message_data: &str,
+    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        match message_type {
+            "createCredentialProposal" => self.create_credential_proposal(message_data).await,
+            "createCredentialOffer" => self.create_credential_offer(message_data).await,
+            "requestCredential" => self.request_credential(message_data).await,
+            "issueCredential" => self.issue_credential(message_data).await,
+            "requestProof" => self.request_proof(message_data).await,
+            "presentProof" => self.present_proof(message_data).await,
+            "verifyProof" => self.verify_proof(message_data).await,
+            _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
+        }
+    }
+}
 
 impl VadeTnt {
     async fn issue_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let mut input: IssueCredentialArguments = serde_json::from_str(&data)?;
         let result: Credential = Issuer::issue_credential(
-            &input.issuer_did,
-            &input.subject_did,
+            &input.issuer,
+            &input.subject,
             input.credential_request,
             input.credential_definition,
             input.credential_private_key,
@@ -178,13 +176,13 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    async fn offer_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    async fn create_credential_offer(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: OfferCredentialArguments = serde_json::from_str(&data)?;
         let result: CredentialOffer = Issuer::offer_credential(
-            &input.issuer_did,
-            &input.subject_did,
-            &input.schema_did,
-            &input.credential_definition_did,
+            &input.issuer,
+            &input.subject,
+            &input.schema,
+            &input.credential_definition,
         );
 
         Ok(Some(serde_json::to_string(&result).unwrap()))
@@ -203,12 +201,12 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    async fn propose_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let input: ProposeCredentialArguments = serde_json::from_str(&data)?;
+    async fn create_credential_proposal(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let input: CreateCredentialProposalArguments = serde_json::from_str(&data)?;
         let result: CredentialProposal = Prover::propose_credential(
-            &input.issuer_did,
-            &input.subject_did,
-            &input.schema_did,
+            &input.issuer,
+            &input.subject,
+            &input.schema,
         );
 
         Ok(Some(serde_json::to_string(&result).unwrap()))
