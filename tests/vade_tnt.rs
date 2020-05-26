@@ -121,7 +121,7 @@ async fn vade_tnt_can_request_credentials () -> Result<(), Box<dyn std::error::E
 
     let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
-    let (definition, _) = create_credential_definition2().unwrap();
+    let (definition, _) = create_credential_definition().unwrap();
 
     // run test
     let result: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
@@ -142,15 +142,16 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
 
   let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
   let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
-  let (definition, credential_private_key) = create_credential_definition2().unwrap();
+  let (definition, credential_private_key) = create_credential_definition().unwrap();
   let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
 
   // run test
   let result: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request).await?;
   println!("{}", serde_json::to_string(&result).unwrap());
 
-  // check results
-  Err(Box::from("test not implemented"))
+  assert_eq!(result.issuer, ISSUER_DID);
+
+  Ok(())
 }
 
 // #[tokio::test]
@@ -327,7 +328,7 @@ fn get_vade() -> Vade {
     return vade;
 }
 
-fn create_credential_definition2() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
+fn create_credential_definition() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
     Ok(Issuer::create_credential_definition(
         &ISSUER_DID,
         &serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap(),
