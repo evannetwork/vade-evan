@@ -98,7 +98,7 @@ pub fn create_id_hash() -> String {
 /// Resolver may throw to indicate
 /// - that it is not responsible for this Vc
 /// - that it considers this Vc as invalid
-/// 
+///
 /// Currently the test `vc_id` `"test"` is accepted as valid.
 ///
 /// # Arguments
@@ -142,7 +142,7 @@ pub fn check_assertion_proof(
       if address != signer_address {
           return Err(Box::from("recovered and signing given address do not match"));
       }
-      
+
       debug!("vc document is valid");
       Ok(())
   }
@@ -158,7 +158,7 @@ fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::
   let split: Vec<&str> = jwt.split('.').collect();
   let (header, data, signature) = (split[0], split[1], split[2]);
   let header_and_data = format!("{}.{}", header, data);
-  
+
   // recover data for later checks
   let data_decoded = match BASE64URL.decode(data.as_bytes()) {
       Ok(decoded) => decoded,
@@ -190,7 +190,7 @@ fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::
   debug!("header_and_data hash {:?}", hash);
 
   // prepare arguments for public key recovery
-  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid"); 
+  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid");
   let ctx_msg = Message::parse(&hash_arr);
   let mut signature_array = [0u8; 64];
   for i in 0..64 {

@@ -235,4 +235,11 @@ impl Prover {
 
     return encoded_values;
   }
+
+  pub fn create_master_secret() -> MasterSecret {
+    match CryptoProver::create_master_secret() {
+      Ok(secret) => return secret,
+      Err(e) => panic!(e) // TODO how to handle error
+    }
+  }
 }

@@ -30,7 +30,7 @@ impl Issuer {
 
     pub fn create_credential_definition(
       issuer_did: &str,
-      schema: CredentialSchema,
+      schema: &CredentialSchema,
       issuer_public_key_did: &str,
       issuer_proving_key: &str
     ) -> (CredentialDefinition, CredentialPrivateKey) {
@@ -48,7 +48,7 @@ impl Issuer {
         id: did,
         r#type: "EvanZKPCredentialDefinition".to_string(),
         issuer: issuer_did.to_owned(),
-        schema: schema.id,
+        schema: schema.id.to_owned(),
         created_at,
         public_key: crypto_credential_def.public_key,
         public_key_correctness_proof: crypto_credential_def.credential_key_correctness_proof,

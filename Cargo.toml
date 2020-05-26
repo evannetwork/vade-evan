@@ -11,9 +11,10 @@ crate-type = ["cdylib", "rlib"]
 chrono = "0.4.11"
 # we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
 ursa = { path = "./../ursa/libursa", features=["portable_wasm"], default-features = false }
+# ursa = "0.3.2"
 rand = "0.7.3"
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
-serde = { version = "1.0", features = ["derive"] } 
+serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen = "0.2"
 wee_alloc = { version = "0.4.5", optional = true }
 sha3 = "0.8.2"
@@ -29,6 +30,5 @@ vade = { path = "../vade", version = "0.0.6" }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.12"
-tokio = { version = "0.2.21", features = ["macros", "rt-threaded"] }
 
 
