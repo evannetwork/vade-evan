@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use vade::{
     Vade,
-    //traits::MessageConsumer,
+    traits::MessageConsumer,
 };
 use crate::{
     application::issuer::Issuer,
