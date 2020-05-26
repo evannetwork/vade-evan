@@ -59,6 +59,8 @@ fn can_recover_address_and_data_from_signature() {
   let (address, data) = recover_address_and_data(EXPECTED_SIGNATURE).unwrap();
   println!("{}", data);
   assert_eq!(format!("0x{}",address), ISSUER_ETHEREUM_ADDRESS);
+
+  // if we find these strings, we can assume the recovery is fine
   assert_eq!(true, data.contains(r#""id":"did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1""#));
   assert_eq!(true, data.contains(r##""publicKey":[{"id":"did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1""##));
   assert_eq!(true, data.contains(r#"ethereumAddress":"0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d"#));
