@@ -19,6 +19,7 @@ use ursa::cl::{
   RevocationKeyPrivate
 };
 use std::collections::HashMap;
+use ursa::cl::RevocationTailsGenerator;
 
 pub struct Issuer {
 }
@@ -40,8 +41,7 @@ impl Issuer {
       let created_at = get_now_as_iso_string();
 
       let (credential_private_key, crypto_credential_def) = CryptoIssuer::create_credential_definition(
-        &schema,
-        true,
+        &schema
       );
 
       let mut definition = CredentialDefinition {
@@ -150,7 +150,6 @@ impl Issuer {
       rev_reg_def.proof = Some(proof);
 
       return (rev_reg_def, rev_key_private);
-
     }
 
     pub fn issue_credential (
@@ -163,7 +162,6 @@ impl Issuer {
       revocation_registry_definition: &mut RevocationRegistryDefinition,
       revocation_private_key: RevocationKeyPrivate
     ) -> Credential {
-
 
       let mut data: HashMap<String, String> = HashMap::new();
       for entry in &credential_request.credential_values {
@@ -233,6 +231,42 @@ impl Issuer {
         credential_definition: credential_definition_did.to_owned(),
         nonce
       }
+    }
+
+    pub fn revoke_credential(
+      issuer: &str,
+      revocation_registry_definition: &mut RevocationRegistryDefinition,
+      revocation_id: u32,
+      issuer_public_key_did: &str,
+      issuer_proving_key: &str,
+    ) -> RevocationRegistryDefinition {
+
+      let updated_at = get_now_as_iso_string();
+
+      let (new_registry, delta) = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id).unwrap();
+      let tails: RevocationTailsGenerator = revocation_registry_definition.tails.clone().to_owned();
+      let mut rev_reg_def = RevocationRegistryDefinition {
+        id: revocation_registry_definition.id.to_owned(),
+        credential_definition: revocation_registry_definition.credential_definition.to_owned(),
+        registry: new_registry,
+        registry_delta: Some(delta),
+        maximum_credential_count: revocation_registry_definition.maximum_credential_count,
+        revocation_public_key: revocation_registry_definition.revocation_public_key.clone().to_owned(),
+        tails,
+        updated_at,
+        proof: None
+      };
+
+      let document_to_sign = serde_json::to_value(&rev_reg_def).unwrap();
+      let proof = create_assertion_proof(
+        &document_to_sign,
+        issuer_public_key_did,
+        issuer,
+        issuer_proving_key
+      ).unwrap();
+
+      rev_reg_def.proof = Some(proof);
+      return rev_reg_def;
     }
 
     fn mock_get_new_did() -> String {
