@@ -9,9 +9,9 @@ use sha3::Keccak256;
 use crate::crypto::crypto_datatypes::AssertionProof;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JwsData<'a> {
+pub struct JwsData<'a> {
   #[serde(borrow)]
-  doc: &'a RawValue,
+  pub doc: &'a RawValue,
 }
 
 /// Creates proof for VC document
@@ -37,7 +37,7 @@ pub fn create_assertion_proof(
   let now = Utc::now().format("%Y-%m-%dT%H:%M:%S.000Z").to_string();
   // build data object and hash
   let mut data_json: Value = serde_json::from_str("{}").unwrap();
-  let doc_clone: Value = serde_json::from_str(&format!("{}", &document_to_sign)).unwrap();
+  let doc_clone: Value = document_to_sign.clone();
   data_json["iat"] = Value::from(now.clone());
   data_json["doc"] = doc_clone;
   data_json["iss"] = Value::from(issuer);
@@ -153,7 +153,7 @@ pub fn check_assertion_proof(
 /// # Arguments
 ///
 /// * `jwt` - jwt as str&
-fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
   // jwt text parsing
   let split: Vec<&str> = jwt.split('.').collect();
   let (header, data, signature) = (split[0], split[1], split[2]);
