@@ -112,7 +112,7 @@ impl Issuer {
     }
 
     pub fn create_revocation_registry_definition(
-      credential_definition: CredentialDefinition,
+      credential_definition: &CredentialDefinition,
       issuer_public_key_did: &str,
       issuer_proving_key: &str,
       maximum_credential_count: u32
@@ -129,7 +129,7 @@ impl Issuer {
 
       let mut rev_reg_def = RevocationRegistryDefinition {
         id: rev_did,
-        credential_definition: credential_definition.id,
+        credential_definition: credential_definition.id.to_string(),
         registry: crypto_rev_def.registry,
         registry_delta: crypto_rev_def.registry_delta,
         maximum_credential_count,
