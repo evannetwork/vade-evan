@@ -167,7 +167,7 @@ impl Issuer {
 
       let mut data: HashMap<String, String> = HashMap::new();
       for entry in &credential_request.credential_values {
-        data.insert(entry.0.to_owned(), entry.1.raw.to_owned()).unwrap();
+        data.insert(entry.0.to_owned(), entry.1.raw.to_owned());
       }
 
       let credential_subject = CredentialSubject {
