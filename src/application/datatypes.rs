@@ -33,6 +33,7 @@ pub struct CredentialDefinition {
   pub created_at: String,
   pub public_key: CredentialPublicKey,
   pub public_key_correctness_proof: CredentialKeyCorrectnessProof,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub proof: Option<AssertionProof>
 }
 
@@ -147,6 +148,7 @@ pub struct RevocationRegistryDefinition {
   pub tails: RevocationTailsGenerator,
   pub revocation_public_key: RevocationKeyPublic,
   pub maximum_credential_count: u32,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub proof: Option<AssertionProof>
 }
 

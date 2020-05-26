@@ -40,8 +40,34 @@ const EXAMPLE_DID_DOCUMENT_STR: &str = r###"
 }
 "###;
 const EXAMPLE_PRIVATE_KEY: &str = "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
+const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"
+{
+  "id": "did:evan:zkp:0x123451234512345123451234512345",
+  "type": "EvanVCSchema",
+  "name": "test_schema",
+  "author": "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1",
+  "createdAt": "2020-05-19T12:54:55.000Z",
+  "description": "Test description",
+  "properties": {
+    "test_property_string": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "test_property_string"
+  ],
+  "additionalProperties": false,
+  "proof": {
+    "type": "EcdsaPublicKeySecp256k1",
+    "created": "2020-05-19T12:54:55.000Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "null",
+    "jws": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NkstUiJ9.eyJpYXQiOiIyMDIwLTA1LTE5VDEyOjU0OjU1LjAwMFoiLCJkb2MiOnsiaWQiOiJkaWQ6ZXZhbjp6a3A6MHgxMjM0NTEyMzQ1MTIzNDUxMjM0NTEyMzQ1MTIzNDUiLCJ0eXBlIjoiRXZhblZDU2NoZW1hIiwibmFtZSI6InRlc3Rfc2NoZW1hIiwiYXV0aG9yIjoiZGlkOmV2YW46dGVzdGNvcmU6MHgwRjczN0QxNDc4ZUEyOWRmMDg1NjE2OUYyNWNBOTEyOTAzNWQ2RkQxIiwiY3JlYXRlZEF0IjoiMjAyMC0wNS0xOVQxMjo1NDo1NS4wMDBaIiwiZGVzY3JpcHRpb24iOiJUZXN0IGRlc2NyaXB0aW9uIiwicHJvcGVydGllcyI6eyJ0ZXN0X3Byb3BlcnR5X3N0cmluZyI6eyJ0eXBlIjoic3RyaW5nIn19LCJyZXF1aXJlZCI6WyJ0ZXN0X3Byb3BlcnR5X3N0cmluZyJdLCJhZGRpdGlvbmFsUHJvcGVydGllcyI6ZmFsc2V9LCJpc3MiOiJkaWQ6ZXZhbjp0ZXN0Y29yZToweDBGNzM3RDE0NzhlQTI5ZGYwODU2MTY5RjI1Y0E5MTI5MDM1ZDZGRDEifQ.byfS5tIbnCN1M4PtfQQ9mq9mR2pIzgmBFoFNrGkINJBDVxPmKC2S337a2ulytG0G9upyAuOWVMBXESxQdF_MjwA"
+  }
+}
+"###;
 
-#[test]
+
 fn can_create_schema() {
 
   match env_logger::try_init() {
@@ -86,6 +112,35 @@ fn can_create_schema() {
   );
 
   let serialized = serde_json::to_string(&schema).unwrap();
+  assert!(match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
+    Ok(()) => true,
+    Err(e) => panic!("assertion check failed with: {}", e),
+  });
+}
+
+#[test]
+fn can_create_credential_definition() {
+
+  let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR).unwrap();
+  let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+  let (definition, private_key) = Issuer::create_credential_definition(
+    &EXAMPLE_DID,
+    &schema,
+    "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
+    &EXAMPLE_PRIVATE_KEY
+  );
+
+  assert_eq!(
+    serde_json::to_string(&definition.issuer).unwrap(),
+    serde_json::to_string(&EXAMPLE_DID).unwrap(),
+  );
+
+  assert_eq!(
+    serde_json::to_string(&definition.schema).unwrap(),
+    serde_json::to_string(&schema.id).unwrap()
+  );
+
+  let serialized = serde_json::to_string(&definition).unwrap();
   assert!(match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
     Ok(()) => true,
     Err(e) => panic!("assertion check failed with: {}", e),

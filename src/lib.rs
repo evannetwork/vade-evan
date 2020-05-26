@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use vade::{
     Vade,
-    traits::MessageConsumer,
+    //traits::MessageConsumer,
 };
 use crate::{
     application::issuer::Issuer,
@@ -173,7 +173,7 @@ impl VadeTnt {
             input.revocation_private_key,
         );
 
-        Ok(Some(serde_json::to_string(&result).unwrap())) 
+        Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
     async fn create_credential_offer(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
@@ -198,7 +198,7 @@ impl VadeTnt {
             input.revocation_registries,
         );
 
-        Ok(Some(serde_json::to_string(&result).unwrap())) 
+        Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
     async fn create_credential_proposal(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
