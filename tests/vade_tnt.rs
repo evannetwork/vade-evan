@@ -28,6 +28,7 @@ use test_data::{
   CREDENTIAL_DEFINITION_DID,
   ISSUER_DID_DOCUMENT_STR,
   EXAMPLE_CREDENTIAL_SCHEMA,
+  EXAMPLE_CREDENTIAL_SCHEMA_DID,
   ISSUER_PUBLIC_KEY_DID,
   ISSUER_PRIVATE_KEY,
 };
@@ -121,7 +122,7 @@ async fn vade_tnt_can_request_credentials () -> Result<(), Box<dyn std::error::E
 
     let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
-    let (definition, _) = create_credential_definition2().unwrap();
+    let (definition, _) = create_credential_definition().unwrap();
 
     // run test
     let result: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
@@ -138,51 +139,40 @@ async fn vade_tnt_can_request_credentials () -> Result<(), Box<dyn std::error::E
 
 #[tokio::test]
 async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Error>>{
-  let mut vade = get_vade();
+    let mut vade = get_vade();
 
-  let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
-  let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
-  let (definition, credential_private_key) = create_credential_definition2().unwrap();
-  let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
+    let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
+    let (definition, credential_private_key) = create_credential_definition().unwrap();
+    let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
 
-  // run test
-  let result: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request).await?;
-  println!("{}", serde_json::to_string(&result).unwrap());
+    // run test
+    let result: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request).await?;
+    println!("{}", serde_json::to_string(&result).unwrap());
 
   // check results
-  Err(Box::from("test not implemented"))
+    assert_eq!(result.issuer, ISSUER_DID);
+
+    Ok(())
 }
 
-// #[tokio::test]
+#[tokio::test]
 async fn vade_tnt_can_request_proof () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
-
+  
     // run test
-    let message_str = r###"{
-        "type": "requestProof",
-        "data": {
-        }
-    }"###;
-    let _results = vade.send_message(message_str).await;
+    let result: ProofRequest = request_proof(&mut vade).await?;
+    println!("{}", serde_json::to_string(&result).unwrap());
 
     // check results
-    Err(Box::from("test not implemented"))
-}
+    assert_eq!(result.verifier, ISSUER_DID);
+    assert_eq!(result.prover, SUBJECT_DID);
+    assert_eq!(result.sub_proof_requests.len(), 1); 
+    assert_eq!(result.sub_proof_requests[0].schema, EXAMPLE_CREDENTIAL_SCHEMA_DID);
+    assert_eq!(result.sub_proof_requests[0].revealed_attributes.len(), 1);
+    assert_eq!(result.sub_proof_requests[0].revealed_attributes[0], "test_property_string");
 
-// #[tokio::test]
-async fn vade_tnt_can_present_proof () -> Result<(), Box<dyn std::error::Error>>{
-    let mut vade = get_vade();
-
-    // run test
-    let message_str = r###"{
-        "type": "presentProof",
-        "data": {
-        }
-    }"###;
-    let _results = vade.send_message(message_str).await;
-
-    // check results
-    Err(Box::from("test not implemented"))
+    Ok(())
 }
 
 // #[tokio::test]
@@ -307,6 +297,34 @@ async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, cr
   Ok(result)
 }
 
+async fn request_proof(vade: &mut Vade) -> Result<ProofRequest, Box<dyn std::error::Error>> {
+    let message_str = format!(
+    r###"{{
+        "type": "requestProof",
+        "data": {{
+            "verifierDid": "{}",
+            "proverDid": "{}",
+            "subProofRequests": [{{
+                "schema": "{}",
+                "revealedAttributes": ["test_property_string"]
+            }}]
+        }}
+    }}"###,
+    ISSUER_DID,
+    SUBJECT_DID,
+    EXAMPLE_CREDENTIAL_SCHEMA_DID,
+    );
+    println!("{}", &message_str);
+    let results = vade.send_message(&message_str).await?;
+
+    // check results
+    assert_eq!(results.len(), 1);
+    println!("{}", serde_json::to_string(&results[0]).unwrap());
+    let result: ProofRequest = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+
+    Ok(result)
+}
+
 fn get_vade() -> Vade {
     // vade to work with
     let tnt = VadeTnt::new();
@@ -327,7 +345,7 @@ fn get_vade() -> Vade {
     return vade;
 }
 
-fn create_credential_definition2() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
+fn create_credential_definition() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
     Ok(Issuer::create_credential_definition(
         &ISSUER_DID,
         &serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap(),

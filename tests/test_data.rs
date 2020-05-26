@@ -57,5 +57,6 @@ pub const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"
     }
 }
 "###;
+pub const EXAMPLE_CREDENTIAL_SCHEMA_DID: &str = "did:evan:zkp:0x123451234512345123451234512345";
 pub const ISSUER_PUBLIC_KEY_DID: &str = "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1";
 pub const ISSUER_PRIVATE_KEY: &str = "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
