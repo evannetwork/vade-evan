@@ -19,11 +19,11 @@ use ursa::cl::{
   CredentialSecretsBlindingFactors
 };
 use ursa::bn::BigNumber;
-use crate::crypto::crypto_utils::create_id_hash;
 use crate::crypto::crypto_prover::Prover as CryptoProver;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition
 };
+use crate::utils::utils::generate_uuid;
 use std::collections::HashMap;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
@@ -100,8 +100,6 @@ impl Prover {
     revocation_registries: HashMap<String, RevocationRegistryDefinition> // RevDef ID to RevDef
   ) -> ProofPresentation {
 
-    let id = create_id_hash();
-
     let (vcs, aggregated_proof) = Prover::create_proof_credentials(
       proof_request,
       credentials,
@@ -112,7 +110,7 @@ impl Prover {
 
     return ProofPresentation {
       context: vec!["https://www.w3.org/2018/credentials/v1".to_owned()],
-      id,
+      id: generate_uuid(),
       r#type: vec!["VerifiablePresentation".to_owned()],
       verifiable_credential: vcs,
       proof: aggregated_proof
@@ -139,7 +137,7 @@ impl Prover {
     let mut i = 0;
     for sub_request in proof_request.sub_proof_requests {
       let credential = credentials.get(&sub_request.schema).expect("Requested credential not provided");
-      let mut revealed_data: HashMap<String, String> = HashMap::new();
+      let mut revealed_data: HashMap<String, EncodedCredentialValue> = HashMap::new();
 
       for attribute in sub_request.revealed_attributes {
         revealed_data.insert(
@@ -148,7 +146,7 @@ impl Prover {
           .data
           .get(&attribute)
           .expect("Requested attribute not found in credential")
-          .to_owned()
+          .clone()
         );
       }
 
@@ -196,6 +194,8 @@ impl Prover {
   ///
   /// # Example
   /// ```
+  /// # use std::collections::HashMap;
+  /// # use vade_tnt::application::prover::Prover;
   /// let mut values: HashMap<String, String> = HashMap::new();
   /// values.insert("string".to_owned(), "101 Wilson Lane".to_owned());
   /// let encoded = Prover::encode_values(values);
@@ -232,5 +232,12 @@ impl Prover {
     }
 
     return encoded_values;
+  }
+
+  pub fn create_master_secret() -> MasterSecret {
+    match CryptoProver::create_master_secret() {
+      Ok(secret) => return secret,
+      Err(e) => panic!(e) // TODO how to handle error
+    }
   }
 }

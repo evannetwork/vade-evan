@@ -9,9 +9,9 @@ use sha3::Keccak256;
 use crate::crypto::crypto_datatypes::AssertionProof;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JwsData<'a> {
+pub struct JwsData<'a> {
   #[serde(borrow)]
-  doc: &'a RawValue,
+  pub doc: &'a RawValue,
 }
 
 /// Creates proof for VC document
@@ -37,7 +37,7 @@ pub fn create_assertion_proof(
   let now = Utc::now().format("%Y-%m-%dT%H:%M:%S.000Z").to_string();
   // build data object and hash
   let mut data_json: Value = serde_json::from_str("{}").unwrap();
-  let doc_clone: Value = serde_json::from_str(&format!("{}", &document_to_sign)).unwrap();
+  let doc_clone: Value = document_to_sign.clone();
   data_json["iat"] = Value::from(now.clone());
   data_json["doc"] = doc_clone;
   data_json["iss"] = Value::from(issuer);
@@ -85,20 +85,12 @@ pub fn create_assertion_proof(
   Ok(proof)
 }
 
-
-pub fn create_id_hash() -> String {
-  let mut hasher = Sha256::new();
-  hasher.input(b"");
-  let hash: [u8; 32] = hasher.result().try_into().unwrap();
-  return format!("0x{}", hex::encode(hash));
-}
-
 /// Checks given Vc document.
 /// A Vc document is considered as valid if returning ().
 /// Resolver may throw to indicate
 /// - that it is not responsible for this Vc
 /// - that it considers this Vc as invalid
-/// 
+///
 /// Currently the test `vc_id` `"test"` is accepted as valid.
 ///
 /// # Arguments
@@ -142,7 +134,7 @@ pub fn check_assertion_proof(
       if address != signer_address {
           return Err(Box::from("recovered and signing given address do not match"));
       }
-      
+
       debug!("vc document is valid");
       Ok(())
   }
@@ -153,12 +145,12 @@ pub fn check_assertion_proof(
 /// # Arguments
 ///
 /// * `jwt` - jwt as str&
-fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
   // jwt text parsing
   let split: Vec<&str> = jwt.split('.').collect();
   let (header, data, signature) = (split[0], split[1], split[2]);
   let header_and_data = format!("{}.{}", header, data);
-  
+
   // recover data for later checks
   let data_decoded = match BASE64URL.decode(data.as_bytes()) {
       Ok(decoded) => decoded,
@@ -190,7 +182,7 @@ fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::
   debug!("header_and_data hash {:?}", hash);
 
   // prepare arguments for public key recovery
-  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid"); 
+  let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid");
   let ctx_msg = Message::parse(&hash_arr);
   let mut signature_array = [0u8; 64];
   for i in 0..64 {
