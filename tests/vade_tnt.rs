@@ -260,6 +260,7 @@ async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, cr
     let (revocation_registry_definition, revocation_key_private):
         (RevocationRegistryDefinition, RevocationKeyPrivate)
         = Issuer::create_revocation_registry_definition(
+            EXAMPLE_GENERATED_DID,
             &definition,
             ISSUER_PUBLIC_KEY_DID,
             ISSUER_PRIVATE_KEY,

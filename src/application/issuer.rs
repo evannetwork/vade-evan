@@ -70,6 +70,7 @@ impl Issuer {
     }
 
     pub fn create_credential_schema(
+      assigned_did: &str,
       issuer_did: &str,
       schema_name: &str,
       description: &str,
@@ -112,6 +113,7 @@ impl Issuer {
     }
 
     pub fn create_revocation_registry_definition(
+      assigned_did: &str,
       credential_definition: &CredentialDefinition,
       issuer_public_key_did: &str,
       issuer_proving_key: &str,
@@ -123,12 +125,10 @@ impl Issuer {
         maximum_credential_count
       );
 
-      let rev_did = Issuer::mock_get_new_did();
-
       let updated_at = get_now_as_iso_string();
 
       let mut rev_reg_def = RevocationRegistryDefinition {
-        id: rev_did,
+        id: assigned_did.to_string(),
         credential_definition: credential_definition.id.to_string(),
         registry: crypto_rev_def.registry,
         registry_delta: crypto_rev_def.registry_delta,
