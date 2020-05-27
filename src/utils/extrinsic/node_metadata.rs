@@ -26,6 +26,11 @@ use serde::ser::Serialize;
 use sp_storage::StorageKey;
 use crate::utils::substrate;
 
+macro_rules! info {
+    ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
+  }
+  
+
 #[derive(Debug, thiserror::Error)]
 pub enum MetadataError {
     #[error("Error converting substrate metadata: {0}")]
@@ -326,11 +331,16 @@ impl StorageMetadata {
         }
     }
     pub fn get_map<K: Encode, V: Decode + Clone>(&self) -> Result<StorageMap<K, V>, MetadataError> {
+        info!("getMap");
         match &self.ty {
             StorageEntryType::Map { hasher, .. } => {
                 let module_prefix = self.module_prefix.as_bytes().to_vec();
                 let storage_prefix = self.storage_prefix.as_bytes().to_vec();
                 let hasher = hasher.to_owned();
+                info!(
+                    "map2 for '{}' '{}' has default {:?}",
+                    self.module_prefix, self.storage_prefix, &self.default[..]
+                );
                 let default = Decode::decode(&mut &self.default[..])
                     .map_err(|_| MetadataError::MapValueTypeError)?;
 
@@ -346,7 +356,10 @@ impl StorageMetadata {
                     default,
                 })
             }
-            _ => Err(MetadataError::StorageTypeError),
+            _ => {
+                info!("err");
+                Err(MetadataError::StorageTypeError)
+            }
         }
     }
     pub fn get_value(&self) -> Result<StorageValue, MetadataError> {
@@ -391,6 +404,7 @@ impl<K: Encode, V: Decode + Clone> StorageMap<K, V> {
     pub fn key(&self, key: K) -> StorageKey {
         let mut bytes = substrate::twox_128(&self.module_prefix).to_vec();
         bytes.extend(&substrate::twox_128(&self.storage_prefix)[..]);
+        info!("key");
         bytes.extend(key_hash(&key, &self.hasher));
         StorageKey(bytes)
     }
@@ -547,7 +561,9 @@ fn convert_entry(
 
 /// genertes the key's hash depending on the StorageHasher selected
 fn key_hash<K: Encode>(key: &K, hasher: &StorageHasher) -> Vec<u8> {
+    info!("key before");
     let encoded_key = key.encode();
+    info!("key {:?}", encoded_key);
     match hasher {
         StorageHasher::Identity => encoded_key.to_vec(),
         StorageHasher::Blake2_128 => substrate::blake2_128(&encoded_key).to_vec(),
