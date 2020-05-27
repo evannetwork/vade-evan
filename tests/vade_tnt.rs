@@ -20,6 +20,9 @@ extern crate vade_tnt;
 
 mod test_data;
 
+use serde::de::{Deserialize};
+use serde::ser::{Serialize};
+use std::collections::HashMap;
 use vade_tnt::resolver::SubstrateDidResolverEvan;
 use serde_json::Value;
 use test_data::{
@@ -177,21 +180,65 @@ async fn vade_tnt_can_request_proof () -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-// #[tokio::test]
-async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
+#[tokio::test]
+async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
+    let (definition, credential_private_key) = create_credential_definition().unwrap();
+    let proof_request: ProofRequest = request_proof(&mut vade).await?;
+    let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+
+    let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
+    let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
+    let credential: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request).await?;
+
+    let (revocation_registry_definition, _):
+        (RevocationRegistryDefinition, RevocationKeyPrivate)
+        = Issuer::create_revocation_registry_definition(
+            &definition,
+            ISSUER_PUBLIC_KEY_DID,
+            ISSUER_PRIVATE_KEY,
+            42,
+        );
+
     // run test
-    let message_str = r###"{
-        "type": "verifyProof",
-        "data": {
-        }
-    }"###;
-    let _results = vade.send_message(message_str).await;
+    let result: ProofPresentation = present_proof(
+        &mut vade,
+        &proof_request,
+        &credential,
+        &definition,
+        &schema,
+        &revocation_registry_definition,
+    ).await?;
+    println!("{}", serde_json::to_string(&result).unwrap());
 
     // check results
     Err(Box::from("test not implemented"))
 }
+
+// #[tokio::test]
+// async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
+//     let mut vade = get_vade();
+
+//     let (definition, credential_private_key) = create_credential_definition().unwrap();
+//     let proof_request: ProofRequest = request_proof(&mut vade).await?;
+//     let presented_proof: ProofPresentation = present_proof(&mut vade).await?;
+//     let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+
+//     // run test
+//     let result: ProofVerification = verify_proof(
+//         &mut vade,
+//         &presented_proof,
+//         &proof_request,
+//         &definition,
+//         &schema,
+//     ).await?;
+//     println!("{}", serde_json::to_string(&result).unwrap());
+
+//     // check results
+//     Err(Box::from("test not implemented"))
+// }
 
 async fn create_credential_offer(vade: &mut Vade, proposal: &CredentialProposal) -> Result<CredentialOffer, Box<dyn std::error::Error>> {
     let message_str = format!(r###"{{
@@ -235,25 +282,28 @@ async fn create_credential_proposal (vade: &mut Vade) -> Result<CredentialPropos
 async fn create_credential_request(vade: &mut Vade, definition: &CredentialDefinition, offer: &CredentialOffer) -> Result<CredentialRequest, Box<dyn std::error::Error>> {
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
     let message_str = format!(r###"{{
-      "type": "requestCredential",
-      "data": {{
-        "credentialOffering": {},
-        "credentialDefinition": {},
-        "masterSecret": {},
-        "credentialValues": {{
-          "test_property_string": "test_property_string_value"
+        "type": "requestCredential",
+        "data": {{
+            "credentialOffering": {},
+            "credentialDefinition": {},
+            "masterSecret": {},
+            "credentialValues": {{
+                "test_property_string": {{
+                  "raw": "test_property_string_value",
+                  "encoded": "3"
+                }}
+            }}
         }}
-      }}
-  }}"###, serde_json::to_string(&offer).unwrap(), serde_json::to_string(&definition).unwrap(), serde_json::to_string(&master_secret).unwrap());
-  println!("{}", &message_str);
-  let results = vade.send_message(&message_str).await?;
+    }}"###, serde_json::to_string(&offer).unwrap(), serde_json::to_string(&definition).unwrap(), serde_json::to_string(&master_secret).unwrap());
+    println!("{}", &message_str);
+    let results = vade.send_message(&message_str).await?;
 
-  // check results
-  assert_eq!(results.len(), 1);
-  println!("{}", serde_json::to_string(&results[0]).unwrap());
-  let (result, _): (CredentialRequest, Value) = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+    // check results
+    assert_eq!(results.len(), 1);
+    println!("{}", serde_json::to_string(&results[0]).unwrap());
+    let (result, _): (CredentialRequest, Value) = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
 
-  Ok(result)
+    Ok(result)
 }
 
 async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, credential_private_key: &CredentialPrivateKey, request: &CredentialRequest) -> Result<Credential, Box<dyn std::error::Error>> {
@@ -323,6 +373,106 @@ async fn request_proof(vade: &mut Vade) -> Result<ProofRequest, Box<dyn std::err
     assert_eq!(results.len(), 1);
     println!("{}", serde_json::to_string(&results[0]).unwrap());
     let result: ProofRequest = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+
+    Ok(result)
+}
+
+async fn present_proof(
+  vade: &mut Vade,
+  proof_request: &ProofRequest,
+  credential: &Credential,
+  definition: &CredentialDefinition,
+  schema: &CredentialSchema,
+  revocation_registry: &RevocationRegistryDefinition,
+) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
+  let schema_did = &proof_request.sub_proof_requests[0].schema;
+  let mut credential_definitions: HashMap<String, CredentialDefinition> = HashMap::new();
+  credential_definitions.insert(
+      schema_did.clone(),
+      serde_json::from_str(&serde_json::to_string(&definition).unwrap()).unwrap(),
+  );
+  let mut credentials: HashMap<String, Credential> = HashMap::new();
+  credentials.insert(
+      schema_did.clone(),
+      serde_json::from_str(&serde_json::to_string(&credential).unwrap()).unwrap(),
+  );
+  let mut credential_schemas: HashMap<String, CredentialSchema> = HashMap::new();
+  credential_schemas.insert(
+      schema_did.clone(),
+      serde_json::from_str(&serde_json::to_string(&schema).unwrap()).unwrap(),
+  );
+  let mut revocation_registries: HashMap<String, RevocationRegistryDefinition> = HashMap::new();
+  revocation_registries.insert(
+      schema_did.clone(),
+      serde_json::from_str(&serde_json::to_string(&revocation_registry).unwrap()).unwrap(),
+  );
+  let message_str = format!(
+      r###"{{
+          "type": "presentProof",
+          "data": {{
+              "proofRequest": {},
+              "credentials": {},
+              "credentialDefinitions": {},
+              "credentialSchemas": {},
+              "revocationRegistries": {} 
+          }}
+      }}"###,
+      serde_json::to_string(&proof_request).unwrap(),
+      serde_json::to_string(&credentials).unwrap(),
+      serde_json::to_string(&credential_definitions).unwrap(),
+      serde_json::to_string(&credential_schemas).unwrap(),
+      serde_json::to_string(&revocation_registries).unwrap(),
+  );
+  println!("{}", &message_str);
+  let results = vade.send_message(&message_str).await?;
+
+  // check results
+  assert_eq!(results.len(), 1);
+  println!("{}", serde_json::to_string(&results[0]).unwrap());
+  let result: ProofPresentation = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+
+  Ok(result)
+}
+
+async fn verify_proof(
+    vade: &mut Vade,
+    presented_proof: &ProofPresentation,
+    proof_request: &ProofRequest,
+    definition: &CredentialDefinition,
+    schema: &CredentialSchema,
+) -> Result<ProofVerification, Box<dyn std::error::Error>> {
+    let mut credential_definitions: HashMap<String, CredentialDefinition> = HashMap::new();
+    credential_definitions.insert(
+        "i want this".to_string(),
+        serde_json::from_str(&serde_json::to_string(&definition).unwrap()).unwrap(),
+    );
+    let mut credential_schemas: HashMap<String, CredentialSchema> = HashMap::new();
+    credential_schemas.insert(
+        "i want this".to_string(),
+        serde_json::from_str(&serde_json::to_string(&schema).unwrap()).unwrap(),
+    );
+    let message_str = format!(
+    r###"{{
+        "type": "requestProof",
+        "data": {{
+            "presentedProof": {},
+            "proofRequest": {},
+            "credentialDefinitions": {},
+            "credentialSchemas": {}
+        }}
+    }}"###,
+    serde_json::to_string(&presented_proof).unwrap(),
+    serde_json::to_string(&proof_request).unwrap(),
+    serde_json::to_string(&credential_definitions).unwrap(),
+    serde_json::to_string(&credential_schemas).unwrap(),
+    );
+    println!("{}", &message_str);
+    let results = vade.send_message(&message_str).await?;
+
+    // check results
+    assert_eq!(results.len(), 1);
+    println!("{}", serde_json::to_string(&results[0]).unwrap());
+    let result: ProofVerification = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
 
     Ok(result)
 }

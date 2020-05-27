@@ -151,6 +151,11 @@ impl MessageConsumer for VadeTnt {
         message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
+            // whitelist identity + substrate auth (account-key + identity)
+            // create credential definition + substrate auth (account-key + identity)
+            // create credential schema + substrate auth (account-key + identity)
+            // create revocation registry + substrate auth (account-key + identity)
+            // update revocation registry + substrate auth (account-key + identity)
             "createCredentialProposal" => self.create_credential_proposal(message_data).await,
             "createCredentialOffer" => self.create_credential_offer(message_data).await,
             "requestCredential" => self.request_credential(message_data).await,
