@@ -5,6 +5,7 @@ extern crate hex;
 #[macro_use]
 extern crate log;
 extern crate vade;
+extern crate uuid;
 
 pub mod application;
 pub mod crypto;

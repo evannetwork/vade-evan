@@ -13,7 +13,10 @@ use crate::application::datatypes::{
 };
 use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_utils::create_assertion_proof;
-use crate::utils::utils::get_now_as_iso_string;
+use crate::utils::utils::{
+  get_now_as_iso_string,
+  generate_uuid
+};
 use ursa::cl::{
   CredentialPrivateKey,
   new_nonce,
@@ -81,12 +84,10 @@ impl Issuer {
       issuer_proving_key: &str
     ) -> CredentialSchema {
 
-      let schema_did = Issuer::mock_get_new_did();
-
       let created_at = get_now_as_iso_string();
 
       let mut schema = CredentialSchema {
-        id: schema_did,
+        id: assigned_did.to_owned(),
         r#type: "EvanVCSchema".to_string(), //TODO: Make enum
         name: schema_name.to_owned(),
         author: issuer_did.to_owned(),
@@ -178,7 +179,7 @@ impl Issuer {
         r#type: "EvanZKPSchema".to_string()
       };
 
-      let new_did = Issuer::mock_get_new_did();
+
       let rev_idx = Issuer::mock_get_rev_idx();
 
       let (
@@ -206,7 +207,7 @@ impl Issuer {
 
       return Credential {
         context: vec!("https://www.w3.org/2018/credentials/v1".to_string()),
-        id: new_did,
+        id: generate_uuid(),
         r#type: vec!("VerifiableCredential".to_string()),
         issuer: issuer_did.to_owned(),
         credential_subject,
@@ -267,10 +268,6 @@ impl Issuer {
 
       rev_reg_def.proof = Some(proof);
       return rev_reg_def;
-    }
-
-    fn mock_get_new_did() -> String {
-      return "did:evan:zkp:0x123451234512345123451234512345".to_string();
     }
 
     fn mock_get_rev_idx() -> u32 {
