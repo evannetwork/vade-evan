@@ -20,6 +20,7 @@ extern crate vade_tnt;
 
 mod test_data;
 
+use vade_tnt::resolver::SubstrateDidResolverEvan;
 use serde_json::Value;
 use test_data::{
   ISSUER_DID,
@@ -31,6 +32,7 @@ use test_data::{
   EXAMPLE_CREDENTIAL_SCHEMA_DID,
   ISSUER_PUBLIC_KEY_DID,
   ISSUER_PRIVATE_KEY,
+  EXAMPLE_GENERATED_DID
 };
 use ursa::bn::BigNumber;
 use vade::{
@@ -105,7 +107,7 @@ async fn vade_tnt_can_offer_credentials () -> Result<(), Box<dyn std::error::Err
     // run test
     let result: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
-    
+
     assert_eq!(result.issuer, ISSUER_DID);
     assert_eq!(result.subject, SUBJECT_DID);
     assert_eq!(result.r#type, "EvanZKPCredentialOffering");
@@ -159,7 +161,7 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
 #[tokio::test]
 async fn vade_tnt_can_request_proof () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
-  
+
     // run test
     let result: ProofRequest = request_proof(&mut vade).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
@@ -167,7 +169,7 @@ async fn vade_tnt_can_request_proof () -> Result<(), Box<dyn std::error::Error>>
     // check results
     assert_eq!(result.verifier, ISSUER_DID);
     assert_eq!(result.prover, SUBJECT_DID);
-    assert_eq!(result.sub_proof_requests.len(), 1); 
+    assert_eq!(result.sub_proof_requests.len(), 1);
     assert_eq!(result.sub_proof_requests[0].schema, EXAMPLE_CREDENTIAL_SCHEMA_DID);
     assert_eq!(result.sub_proof_requests[0].revealed_attributes.len(), 1);
     assert_eq!(result.sub_proof_requests[0].revealed_attributes[0], "test_property_string");
@@ -226,7 +228,7 @@ async fn create_credential_proposal (vade: &mut Vade) -> Result<CredentialPropos
     // check results
     assert_eq!(results.len(), 1);
     let result: CredentialProposal = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
-  
+
     Ok(result)
 }
 
@@ -281,7 +283,7 @@ async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, cr
     SUBJECT_DID,
     serde_json::to_string(&request).unwrap(),
     serde_json::to_string(&definition).unwrap(),
-    serde_json::to_string(&credential_private_key).unwrap(), 
+    serde_json::to_string(&credential_private_key).unwrap(),
     EXAMPLE_CREDENTIAL_SCHEMA,
     serde_json::to_string(&revocation_registry_definition).unwrap(),
     serde_json::to_string(&revocation_key_private).unwrap(),
@@ -327,7 +329,13 @@ async fn request_proof(vade: &mut Vade) -> Result<ProofRequest, Box<dyn std::err
 
 fn get_vade() -> Vade {
     // vade to work with
-    let tnt = VadeTnt::new();
+    let substrate_resolver = SubstrateDidResolverEvan::new();
+    let substrate_message_handler = SubstrateDidResolverEvan::new();
+    let mut internal_vade = Vade::new();
+    internal_vade.register_did_resolver(Box::from(substrate_resolver));
+    internal_vade.register_message_consumer(&vec!["generateDid".to_owned()], Box::from(substrate_message_handler));
+
+    let tnt = VadeTnt::new(internal_vade);
     let mut vade = Vade::new();
     vade.register_message_consumer(
       &vec![
@@ -347,7 +355,8 @@ fn get_vade() -> Vade {
 
 fn create_credential_definition() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
     Ok(Issuer::create_credential_definition(
-        &ISSUER_DID,
+        EXAMPLE_GENERATED_DID,
+        ISSUER_DID,
         &serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap(),
         ISSUER_PUBLIC_KEY_DID,
         ISSUER_PRIVATE_KEY,

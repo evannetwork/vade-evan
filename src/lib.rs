@@ -9,6 +9,7 @@ extern crate vade;
 pub mod application;
 pub mod crypto;
 pub mod utils;
+pub mod resolver;
 
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -40,6 +41,7 @@ use crate::{
         SubProofRequest,
     },
 };
+use simple_error::SimpleError;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -112,6 +114,14 @@ struct ValidateProofArguments {
     pub proof_request: ProofRequest
 }
 
+#[derive(Serialize, Deserialize)]
+struct CreateCredentialDefinitionArguments {
+  pub issuer_did: String,
+  pub schema_did: String,
+  pub issuer_public_key_did: String,
+  pub issuer_proving_key: String
+}
+
 pub struct VadeTnt {
   vade: Vade
 }
@@ -154,9 +164,44 @@ impl MessageConsumer for VadeTnt {
 }
 
 impl VadeTnt {
+    // create credential definition + substrate auth (account-key + identity)
+    // create credential schema + substrate auth (account-key + identity)
+    // create revocation registry + substrate auth (account-key + identity)
+    // update revocation registry + substrate auth (account-key + identity)
+
+    async fn create_credential_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+      let mut input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
+
+      let schema: CredentialSchema = serde_json::from_str(
+        &self.vade.get_did_document(
+          &input.schema_did
+        ).await?
+      ).unwrap();
+
+      let generate_did_message = r###"{
+        "type": "generateDid",
+        "data": {}
+      }"###;
+      let result = self.vade.send_message(generate_did_message).await.unwrap();
+      if result.len() == 0 {
+        return Err(Box::new(SimpleError::new(format!("Could not generate DID as no listeners were registered for this method"))));
+      }
+
+      let claimed_did = result[0].as_ref().unwrap();
+      let definition = Issuer::create_credential_definition(
+        &claimed_did,
+        &input.issuer_did,
+        &schema,
+        &input.issuer_public_key_did,
+        &input.issuer_proving_key
+      );
+
+      Ok(Some(serde_json::to_string(&definition).unwrap()))
+    }
+
 
     async fn issue_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let mut input: IssueCredentialArguments = serde_json::from_str(&data)?;
+        let input: IssueCredentialArguments = serde_json::from_str(&data)?;
 
         // Resolve credential definition
         let definition: CredentialDefinition = serde_json::from_str(

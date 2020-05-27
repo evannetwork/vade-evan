@@ -9,6 +9,8 @@ use vade_tnt::application::datatypes::{ CredentialSchema, SchemaProperty };
 use vade_tnt::crypto::crypto_utils::check_assertion_proof;
 use std::collections::HashMap;
 
+mod test_data;
+
 const EXAMPLE_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
 const EXAMPLE_DID_DOCUMENT_STR: &str = r###"
 {
@@ -122,10 +124,9 @@ fn can_create_schema() {
 
 #[test]
 fn can_create_credential_definition() {
-
-  let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR).unwrap();
   let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
-  let (definition, private_key) = Issuer::create_credential_definition(
+  let (definition, _) = Issuer::create_credential_definition(
+    test_data::EXAMPLE_GENERATED_DID,
     &EXAMPLE_DID,
     &schema,
     "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
@@ -140,6 +141,11 @@ fn can_create_credential_definition() {
   assert_eq!(
     serde_json::to_string(&definition.schema).unwrap(),
     serde_json::to_string(&schema.id).unwrap()
+  );
+
+  assert_eq!(
+    &definition.id,
+    test_data::EXAMPLE_GENERATED_DID
   );
 
   let serialized = serde_json::to_string(&definition).unwrap();

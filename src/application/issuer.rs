@@ -8,7 +8,8 @@ use crate::application::datatypes::{
   CredentialSubject,
   CredentialSignature,
   CredentialRequest,
-  RevocationRegistryDefinition
+  RevocationRegistryDefinition,
+  EncodedCredentialValue
 };
 use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_utils::create_assertion_proof;
@@ -30,13 +31,12 @@ impl Issuer {
     }
 
     pub fn create_credential_definition(
+      assigned_did: &str,
       issuer_did: &str,
       schema: &CredentialSchema,
       issuer_public_key_did: &str,
       issuer_proving_key: &str
     ) -> (CredentialDefinition, CredentialPrivateKey) {
-
-      let did = Issuer::mock_get_new_did();
 
       let created_at = get_now_as_iso_string();
 
@@ -45,7 +45,7 @@ impl Issuer {
       );
 
       let mut definition = CredentialDefinition {
-        id: did,
+        id: assigned_did.to_owned(),
         r#type: "EvanZKPCredentialDefinition".to_string(),
         issuer: issuer_did.to_owned(),
         schema: schema.id.to_owned(),
@@ -163,9 +163,9 @@ impl Issuer {
       revocation_private_key: RevocationKeyPrivate
     ) -> Credential {
 
-      let mut data: HashMap<String, String> = HashMap::new();
+      let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
       for entry in &credential_request.credential_values {
-        data.insert(entry.0.to_owned(), entry.1.raw.to_owned());
+        data.insert(entry.0.to_owned(), entry.1.clone());
       }
 
       let credential_subject = CredentialSubject {

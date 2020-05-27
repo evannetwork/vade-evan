@@ -15,9 +15,8 @@
 */
 
 extern crate vade;
-use reqwest;
 use async_trait::async_trait;
-use vade::traits::{ DidResolver };
+use vade::traits::{ DidResolver, MessageConsumer };
 
 
 /// Resolver for DIDs on evan.network (currently on testnet)
@@ -28,6 +27,10 @@ impl SubstrateDidResolverEvan {
     /// Creates new instance of `SubstrateDidResolverEvan`.
     pub fn new() -> SubstrateDidResolverEvan {
         SubstrateDidResolverEvan { }
+    }
+
+    async fn generateDid(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
+      Ok(Some("".to_owned()))
     }
 }
 
@@ -55,7 +58,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     ///
     /// * `did_id` - did id to fetch
     async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-        call_substrate();
+        unimplemented!();
     }
 
     /// Sets document for given did name.
@@ -66,5 +69,24 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// * `value` - value to set
     async fn set_did_document(&mut self, _did_id: &str, _value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
         unimplemented!();
+    }
+}
+
+#[async_trait(?Send)]
+impl MessageConsumer for SubstrateDidResolverEvan {
+    /// Reacts to `Vade` messages.
+    ///
+    /// # Arguments
+    ///
+    /// * `message_data` - arbitrary data for plugin, e.g. a JSON
+    async fn handle_message(
+        &mut self,
+        message_type: &str,
+        message_data: &str,
+    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        match message_type {
+            "generateDid" => self.generateDid().await,
+            _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
+        }
     }
 }

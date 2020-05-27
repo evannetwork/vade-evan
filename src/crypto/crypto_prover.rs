@@ -118,7 +118,7 @@ impl Prover {
       // Build ursa credential values
       credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
       for values in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
-        credential_values_builder.add_dec_known(&values.0, &values.1).unwrap();
+        credential_values_builder.add_dec_known(&values.0, &values.1.encoded).unwrap();
       }
 
       // Build witness with revocation data

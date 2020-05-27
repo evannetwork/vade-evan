@@ -139,7 +139,7 @@ impl Prover {
     let mut i = 0;
     for sub_request in proof_request.sub_proof_requests {
       let credential = credentials.get(&sub_request.schema).expect("Requested credential not provided");
-      let mut revealed_data: HashMap<String, String> = HashMap::new();
+      let mut revealed_data: HashMap<String, EncodedCredentialValue> = HashMap::new();
 
       for attribute in sub_request.revealed_attributes {
         revealed_data.insert(
@@ -148,7 +148,7 @@ impl Prover {
           .data
           .get(&attribute)
           .expect("Requested attribute not found in credential")
-          .to_owned()
+          .clone()
         );
       }
 
