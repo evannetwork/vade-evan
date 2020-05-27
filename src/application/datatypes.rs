@@ -121,7 +121,7 @@ pub struct CredentialSchemaReference {
 #[serde(rename_all = "camelCase")]
 pub struct CredentialSubject {
   pub id: String,
-  pub data: HashMap<String, String>
+  pub data: HashMap<String, EncodedCredentialValue>
 }
 
 #[derive(Serialize, Deserialize)]
@@ -225,7 +225,7 @@ pub struct ProofVerification {
   pub reason: Option<String>
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EncodedCredentialValue {
   pub raw: String,

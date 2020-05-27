@@ -2,6 +2,7 @@ pub const ISSUER_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df085616
 pub const SUBJECT_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
 pub const SCHEMA_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD3";
 pub const CREDENTIAL_DEFINITION_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD4";
+pub const EXAMPLE_GENERATED_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
 pub const ISSUER_DID_DOCUMENT_STR: &str = r###"
 {
   "did": {
