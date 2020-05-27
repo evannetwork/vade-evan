@@ -11,11 +11,14 @@ use crate::utils::extrinsic::events::{EventsDecoder, RawEvent, RuntimeEvent};
 use crate::utils::extrinsic::rpc_messages::{
     XtStatus,
     on_extrinsic_msg_until_finalized,
-    on_subscription_msg
+    on_subscription_msg,
+    on_extrinsic_msg_until_in_block,
+    on_extrinsic_msg_until_broadcast,
+    on_extrinsic_msg_until_ready
 };
 use crate::utils::extrinsic::node_metadata::{Metadata};
 use crate::utils::extrinsic::frame_metadata::RuntimeMetadataPrefixed;
-use parity_scale_codec::{ Decode, Error as CodecError };
+use parity_scale_codec::{ Encode, Decode, Error as CodecError };
 use sp_std::prelude::*;
 use futures::channel::mpsc::{
     channel,
@@ -33,7 +36,7 @@ macro_rules! log {
 }
 
 
-pub async fn get_storage_value(storage_prefix: &str, storage_key_name: &str) -> Result<String, Box<dyn std::error::Error>>  {
+pub async fn get_storage_value(url: &str, storage_prefix: &str, storage_key_name: &str) -> Result<String, Box<dyn std::error::Error>>  {
 
 
     let mut bytes = twox_128(&storage_prefix.as_bytes()).to_vec();
@@ -46,7 +49,7 @@ pub async fn get_storage_value(storage_prefix: &str, storage_key_name: &str) -> 
     print!("{}", hexString);
     let json = json_req("state_getStorage", &hexString.to_string(), 1);
     let client = reqwest::Client::new();
-    let body = client.post("http://13.69.59.185:9933")
+    let body = client.post(&format!("http://{}:9933", url).to_string())
         .header("Content-Type", "application/json")
         .body(json.to_string())
         .send()
@@ -58,18 +61,29 @@ pub async fn get_storage_value(storage_prefix: &str, storage_key_name: &str) -> 
     Ok(parsed["result"].as_str().unwrap().to_string())
 }
 
-pub async fn get_storage_map(storage_prefix: &str, storage_key_name: &str, map_key: &str) -> Result<String, Box<dyn std::error::Error>>  {
-    let mut bytes = twox_128(&storage_prefix.as_bytes()).to_vec();
+pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(url: &str, metadata: Metadata, storage_prefix: &'static str, storage_key_name: &'static str, map_key: K) -> Result<Option<V>, Box<dyn std::error::Error>>  {
+   /* let mut bytes = twox_128(&storage_prefix.as_bytes()).to_vec();
     bytes.extend(&twox_128(&storage_key_name.as_bytes())[..]);
     if map_key.starts_with("0x") {
         bytes.extend(&blake2_256(&hex::decode(&map_key.trim_start_matches("0x")).unwrap()[..])[..]);
     } else {
         bytes.extend(&blake2_256(&map_key.as_bytes())[..]);
     }
-    let hexString = format!("0x{}", hex::encode(bytes));
+*/
+log!("map_key: {:?}", map_key);
+    let storagekey: sp_core::storage::StorageKey = metadata
+        .module(storage_prefix)
+        .unwrap()
+        .storage(storage_key_name)
+        .unwrap()
+        .get_map::<K, V>()
+        .unwrap()
+        .key(map_key);
+    let hexString = format!("0x{}", hex::encode(storagekey.0.clone()));
+    log!("hexString: {:?}", hexString);
     let json = json_req("state_getStorage", &hexString.to_string(), 1);
     let client = reqwest::Client::new();
-    let body = client.post("http://13.69.59.185:9933")
+    let body = client.post(&format!("http://{}:9933", url).to_string())
         .header("Content-Type", "application/json")
         .body(json.to_string())
         .send()
@@ -77,10 +91,15 @@ pub async fn get_storage_map(storage_prefix: &str, storage_key_name: &str, map_k
         .text()
         .await?;
     let parsed: Value = serde_json::from_str(&body).unwrap();
-    Ok(parsed["result"].as_str().unwrap().to_string())
+
+    let result = match parsed["result"].as_str().unwrap() {
+        "null" => None,
+        _ => Some(hex::decode(&parsed["result"].as_str().unwrap().trim_start_matches("0x")).unwrap()),
+    };
+    Ok(result.map(|v| Decode::decode(&mut v.as_slice()).unwrap()))
 }
 
-pub async fn get_metadata() -> Result<Metadata, Box<dyn std::error::Error>> {
+pub async fn get_metadata(url: &str) -> Result<Metadata, Box<dyn std::error::Error>> {
     let json = json!({
         "method": "state_getMetadata",
         "params": null,
@@ -89,7 +108,7 @@ pub async fn get_metadata() -> Result<Metadata, Box<dyn std::error::Error>> {
     });
     let client = reqwest::Client::new();
     log!("Get metadata");
-    let body = client.post("http://13.69.59.185:9933")
+    let body = client.post(&format!("http://{}:9933", url).to_string())
         .header("Content-Type", "application/json")
         .body(json.to_string())
         .send()
@@ -108,8 +127,34 @@ pub async fn get_metadata() -> Result<Metadata, Box<dyn std::error::Error>> {
     Ok(metadata2)
 }
 
+/*pub async fn get_storage_by_key_hash<V: Decode>(hash: Vec<u8>) -> Option<V> {
+    self.get_opaque_storage_by_key_hash(hash).await
+        .map(|v| Decode::decode(&mut v.as_slice()).unwrap())
+}
 
-pub async fn send_extrinsic(xthex_prefixed: String, exit_on: XtStatus) -> Result<Option<String>, Box<dyn std::error::Error>> {
+pub async fn get_opaque_storage_by_key_hash(hash: Vec<u8>) -> Option<Vec<u8>> {
+    let mut keyhash_str = hex::encode(hash);
+    keyhash_str.insert_str(0, "0x");
+    let jsonreq = json_req::state_get_storage(&keyhash_str);
+    console_log!("{}", jsonreq);
+    if let Ok(hexstr) = Self::_get_request(self.url.clone(), jsonreq.to_string()).await {
+        console_log!("storage hex = {}", hexstr);
+        let hexstr = hexstr
+            .trim_matches('\"')
+            .to_string()
+            .trim_start_matches("0x")
+            .to_string();
+        match hexstr.as_str() {
+            "null" => None,
+            _ => Some(hex::decode(&hexstr).unwrap()),
+        }
+    } else {
+        None
+    }
+}*/
+
+
+pub async fn send_extrinsic(url: &str, xthex_prefixed: String, exit_on: XtStatus) -> Result<Option<String>, Box<dyn std::error::Error>> {
     let json = json!({
         "method": "author_submitAndWatchExtrinsic",
         "params": [xthex_prefixed],
@@ -121,7 +166,7 @@ pub async fn send_extrinsic(xthex_prefixed: String, exit_on: XtStatus) -> Result
     match exit_on {
         XtStatus::Finalized => {
             log!("start send");
-            rpc::start_rpc_client_thread_sender("ws://13.69.59.185:9944".to_string(), json.to_string(), sender, on_extrinsic_msg_until_finalized);
+            rpc::start_rpc_client_thread_sender(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_finalized);
             log!("finished send");
             if let Some(data) = receiver.next().await {
                 info!("finalized transaction: {}", data.clone());
@@ -129,24 +174,30 @@ pub async fn send_extrinsic(xthex_prefixed: String, exit_on: XtStatus) -> Result
             }
             Ok(Some("Nope".to_string()))
         }
-/*        XtStatus::InBlock => {
-            rpc::send_extrinsic_and_wait_until_in_block(self.url.clone(), jsonreq, result_in.clone()).await;
-            let res = result_in.signal_cloned().before("".to_string()).await;
-            info!("inBlock: {}", res.clone().unwrap());
-            Ok(Some(hexstr_to_hash(res.unwrap()).unwrap()))
+        XtStatus::InBlock => {
+            rpc::start_rpc_client_thread_sender(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_in_block);
+            if let Some(data) = receiver.next().await {
+                info!("inBlock: {}", data.clone());
+                return Ok(Some(data));
+            }
+            Ok(Some("Nope".to_string()))
         }
         XtStatus::Broadcast => {
-            rpc::send_extrinsic_and_wait_until_broadcast(self.url.clone(), jsonreq, result_in.clone()).await;
-            let res = result_in.signal_cloned().before("".to_string()).await;
-            info!("broadcast: {}", res.clone().unwrap());
-            Ok(None)
+            rpc::start_rpc_client_thread_sender(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_broadcast);
+            if let Some(data) = receiver.next().await {
+                info!("broadcast: {}", data.clone());
+                return Ok(Some(data));
+            }
+            Ok(Some("Nope".to_string()))
         }
         XtStatus::Ready => {
-            rpc::send_extrinsic(self.url.clone(), jsonreq, result_in.clone()).await;
-            let res = result_in.signal_cloned().before("".to_string()).await;
-            info!("ready: {}", res.clone().unwrap());
-            Ok(None)
-        }*/
+            rpc::start_rpc_client_thread_sender(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_ready);
+            if let Some(data) = receiver.next().await {
+                info!("ready: {}", data.clone());
+                return Ok(Some(data));
+            }
+            Ok(Some("Nope".to_string()))
+        }
         _ => panic!(
             "can only wait for finalized, in block, broadcast and ready extrinsic status"
         ),
@@ -155,7 +206,7 @@ pub async fn send_extrinsic(xthex_prefixed: String, exit_on: XtStatus) -> Result
 
 
 
-pub async fn subscribe_events(mut sender: Sender<String>) {
+pub async fn subscribe_events(url: &str, mut sender: Sender<String>) {
     log!("subscribing to events");
     let mut bytes = twox_128("System".as_bytes()).to_vec();
     bytes.extend(&twox_128("Events".as_bytes())[..]);
@@ -166,7 +217,7 @@ pub async fn subscribe_events(mut sender: Sender<String>) {
         "jsonrpc": "2.0",
         "id": "1",
     });
-    rpc::start_rpc_client_thread_sender("ws://13.69.59.185:9944".to_string(), jsonreq.to_string(), sender, on_subscription_msg);
+    rpc::start_rpc_client_thread_sender(format!("ws://{}:9944", url).to_string(), jsonreq.to_string(), sender, on_subscription_msg);
 }
 
 pub async fn wait_for_event<E: Decode>(

@@ -22,7 +22,7 @@ use std::{
 
 use parity_scale_codec::{Codec, Compact, Decode, Encode, Error as CodecError, Input, Output};
 use crate::utils::extrinsic::node_metadata::{EventArg, Metadata, MetadataError};
-
+pub use sp_core::H256 as Hash;
 macro_rules! debug {
     ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
 }
@@ -176,6 +176,11 @@ impl TryFrom<Metadata> for EventsDecoder {
         decoder.register_type_size::<u32>("AuthorityIndex")?;
         decoder.register_type_size::<u64>("AuthorityWeight")?;
         decoder.register_type_size::<u32>("MemberCount")?;
+        //decoder.register_type_size::<crate::AccountId>("AccountId")?;
+        //decoder.register_type_size::<crate::BlockNumber>("BlockNumber")?;
+        //decoder.register_type_size::<crate::Moment>("Moment")?;
+        decoder.register_type_size::<Hash>("Hash")?;
+        //decoder.register_type_size::<crate::Balance>("Balance")?;
         // VoteThreshold enum index
         decoder.register_type_size::<u8>("VoteThreshold")?;
 
@@ -234,16 +239,22 @@ impl EventsDecoder {
         output: &mut W,
     ) -> Result<(), EventsError> {
         for arg in args {
+            debug!("EventArg {:?}", arg);
             match arg {
                 EventArg::Vec(arg) => {
+                    debug!("EventArg Vec");
                     let len = <Compact<u32>>::decode(input)?;
                     len.encode_to(output);
                     for _ in 0..len.0 {
                         self.decode_raw_bytes(&[*arg.clone()], input, output)?
                     }
                 }
-                EventArg::Tuple(args) => self.decode_raw_bytes(args, input, output)?,
+                EventArg::Tuple(args) => {
+                    debug!("EventArg Tuple");
+                    self.decode_raw_bytes(args, input, output)?
+                },
                 EventArg::Primitive(name) => {
+                    debug!("EventArg Primitive");
                     if name.contains("PhantomData") {
                         // PhantomData is size 0
                         return Ok(());
@@ -253,6 +264,7 @@ impl EventsDecoder {
                         input.read(&mut buf)?;
                         output.write(&buf);
                     } else {
+                        debug!("EventArg Primitive");
                         return Err(EventsError::TypeSizeUnavailable(name.to_owned()));
                     }
                 }
@@ -293,6 +305,7 @@ impl EventsDecoder {
                 );
 
                 let mut event_data = Vec::<u8>::new();
+
                 self.decode_raw_bytes(&event_metadata.arguments(), input, &mut event_data)?;
 
                 debug!(

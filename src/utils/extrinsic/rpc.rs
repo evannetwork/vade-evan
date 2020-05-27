@@ -59,6 +59,7 @@ pub fn start_rpc_client_thread_sender(
     onerror_callback.forget();
     let cloned_ws = ws.clone();
     let onopen_callback = Closure::wrap(Box::new(move |_| {
+        console_log!("sending message: {:?}", jsonreq);
         match cloned_ws.send_with_str(&jsonreq) {
             Ok(_) => console_log!("message successfully sent"),
             Err(err) => console_log!("error sending message: {:?}", err),
