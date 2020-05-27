@@ -15,6 +15,7 @@ use ursa::cl::{
   SimpleTailsAccessor,
   verifier::Verifier as CryptoVerifier
 };
+use ursa::errors::UrsaCryptoResult;
 use std::collections::HashMap;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition,
@@ -81,6 +82,10 @@ impl Prover {
     return (req, blinding_factors);
   }
 
+  pub fn create_master_secret() -> UrsaCryptoResult<MasterSecret> {
+    return CryptoProver::new_master_secret();
+  }
+
   pub fn create_proof_with_revoc(
     proof_request: &ProofRequest,
     credentials: &HashMap<String, Credential>,
@@ -113,7 +118,7 @@ impl Prover {
       // Build ursa credential values
       credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
       for values in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
-        credential_values_builder.add_dec_known(&values.0, &values.1).unwrap();
+        credential_values_builder.add_dec_known(&values.0, &values.1.encoded).unwrap();
       }
 
       // Build witness with revocation data
@@ -189,18 +194,4 @@ impl Prover {
       witness.as_ref()
     ).unwrap();
   }
-
-  /**
-   * Encoding raw values to BigNumber representations.
-   * Indy currently does not offer a standard for this, everyone is free and obliged to implement that themselves
-   * See: https://jira.hyperledger.org/browse/IS-786
-   */
-  fn encode_value(value: &str) -> String {
-    let string = String::from(value);
-    let bytes = string.as_bytes();
-    let val = BigNumber::from_bytes(bytes).unwrap();
-    println!("Converting {} to {}", string, val.to_dec().unwrap());
-    return val.to_dec().unwrap();
-  }
-
 }
