@@ -9,7 +9,8 @@ use crate::application::datatypes::{
   CredentialSignature,
   CredentialRequest,
   RevocationRegistryDefinition,
-  EncodedCredentialValue
+  EncodedCredentialValue,
+  RevocationIdInformation
 };
 use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_utils::create_assertion_proof;
@@ -22,8 +23,12 @@ use ursa::cl::{
   new_nonce,
   RevocationKeyPrivate
 };
-use std::collections::HashMap;
+use std::collections::{
+  HashMap,
+  HashSet
+};
 use ursa::cl::RevocationTailsGenerator;
+use simple_error::SimpleError;
 
 pub struct Issuer {
 }
@@ -119,7 +124,7 @@ impl Issuer {
       issuer_public_key_did: &str,
       issuer_proving_key: &str,
       maximum_credential_count: u32
-    ) -> (RevocationRegistryDefinition, RevocationKeyPrivate) {
+    ) -> (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation) {
 
       let (crypto_rev_def, rev_key_private) = CryptoIssuer::create_revocation_registry(
         &credential_definition.public_key,
@@ -140,6 +145,12 @@ impl Issuer {
         proof: None
       };
 
+      let revoc_info = RevocationIdInformation {
+        definition_id: assigned_did.to_string(),
+        next_unused_id: 0,
+        used_ids: HashSet::new()
+      };
+
       let document_to_sign = serde_json::to_value(&rev_reg_def).unwrap();
       let proof = create_assertion_proof(
         &document_to_sign,
@@ -150,7 +161,7 @@ impl Issuer {
 
       rev_reg_def.proof = Some(proof);
 
-      return (rev_reg_def, rev_key_private);
+      return (rev_reg_def, rev_key_private, revoc_info);
     }
 
     /// Issue a new credential, based on a credential request received by the credential subject
@@ -164,6 +175,12 @@ impl Issuer {
     /// * `credential_schema` - Credential schema to be used as specified by the credential request
     /// * `revocation_registry_definition` - Revocation registry definition to be used for issuance
     /// * `revocation_private_key` - Private key associated to the revocation registry definition
+    /// * `revocation_info` - Revocation info containing ID counter. Hold by credential definition owner
+    ///
+    /// # Returns
+    /// Tuple containg
+    /// * `Credential` - Issued credential
+    /// * `RevocationIdInformation` - Updated `revocation_info` object that needs to be persisted
     pub fn issue_credential (
       issuer_did: &str,
       subject_did: &str,
@@ -172,8 +189,9 @@ impl Issuer {
       credential_private_key: CredentialPrivateKey,
       credential_schema: CredentialSchema,
       revocation_registry_definition: &mut RevocationRegistryDefinition,
-      revocation_private_key: RevocationKeyPrivate
-    ) -> Credential {
+      revocation_private_key: RevocationKeyPrivate,
+      revocation_info: &RevocationIdInformation
+    ) -> Result<(Credential, RevocationIdInformation), Box<dyn std::error::Error>> {
 
       let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
       for entry in &credential_request.credential_values {
@@ -190,8 +208,21 @@ impl Issuer {
         r#type: "EvanZKPSchema".to_string()
       };
 
+      // Get next unused revocation ID for credential, mark as used & increment counter
+      if revocation_info.next_unused_id == revocation_registry_definition.maximum_credential_count {
+        return Err(Box::new(SimpleError::new("Maximum credential count reached for revocation definition")));
+      }
+      let rev_idx = revocation_info.next_unused_id;
+      let mut used_ids: HashSet<u32> = revocation_info.used_ids.clone();
+      if !used_ids.insert(rev_idx) {
+        return Err(Box::new(SimpleError::new("Could not use next revocation ID as it has already been used - Counter information seems to be corrupted")));
+      }
 
-      let rev_idx = Issuer::mock_get_rev_idx();
+      let new_rev_info = RevocationIdInformation {
+        definition_id: revocation_registry_definition.id.clone(),
+        next_unused_id: rev_idx + 1,
+        used_ids
+      };
 
       let (
         signature,
@@ -216,7 +247,7 @@ impl Issuer {
         revocation_registry_definition: revocation_registry_definition.id.clone()
       };
 
-      return Credential {
+      let credential = Credential {
         context: vec!("https://www.w3.org/2018/credentials/v1".to_string()),
         id: generate_uuid(),
         r#type: vec!("VerifiableCredential".to_string()),
@@ -225,6 +256,8 @@ impl Issuer {
         credential_schema: schema_reference,
         signature: cred_signature
       };
+
+      Ok((credential, new_rev_info))
     }
 
     pub fn offer_credential(
@@ -250,7 +283,7 @@ impl Issuer {
       revocation_registry_definition: &mut RevocationRegistryDefinition,
       revocation_id: u32,
       issuer_public_key_did: &str,
-      issuer_proving_key: &str,
+      issuer_proving_key: &str
     ) -> RevocationRegistryDefinition {
 
       let updated_at = get_now_as_iso_string();

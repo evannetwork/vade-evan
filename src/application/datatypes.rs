@@ -235,6 +235,8 @@ pub struct EncodedCredentialValue {
   pub encoded: String
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct RevocationIdInformation {
   pub definition_id: String,
   pub next_unused_id: u32,

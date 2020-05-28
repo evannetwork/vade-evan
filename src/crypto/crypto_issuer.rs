@@ -19,7 +19,8 @@ use crate::crypto::crypto_datatypes::{
 use crate::application::datatypes::{
   CredentialSchema,
   CredentialRequest,
-  RevocationRegistryDefinition
+  RevocationRegistryDefinition,
+  RevocationIdInformation
 };
 
 pub struct Issuer {
@@ -131,8 +132,8 @@ impl Issuer {
       true
     ).unwrap();
 
-    let mut issued = HashSet::new();
-    let mut revoked = HashSet::new();
+    let issued = HashSet::new();
+    let revoked = HashSet::new();
     let rev_reg_delta = RevocationRegistryDelta::from_parts(None, &rev_registry, &issued, &revoked);
 
     let rev_def = CryptoRevocationRegistryDefinition {
@@ -156,7 +157,7 @@ impl Issuer {
     let tails =  SimpleTailsAccessor::new(&mut tails_gen).unwrap();
     match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
       Ok(delta) => return Ok((RevocationRegistry::from(delta.clone()), delta)),
-      Err(e) => return Err(Box::from("Unable to revoke credential"))
+      Err(_) => return Err(Box::from("Unable to revoke credential"))
     }
   }
 
