@@ -313,7 +313,8 @@ impl Issuer {
       rev_reg_def.proof = Some(proof);
       return rev_reg_def;
     }
-
+    
+    #[allow(dead_code)]
     fn mock_get_rev_idx() -> u32 {
       return 1;
     }
