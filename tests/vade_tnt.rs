@@ -170,7 +170,14 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
         );
 
     // run test
-    let (result, _): (Credential, _) = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private, &revocation_info).await?;
+    let (result, _): (Credential, _) = issue_credential(
+        &mut vade,
+        &definition,
+        &credential_private_key,
+        &request,
+        &revocation_key_private,
+        &revocation_info,
+    ).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
 
     // check results

@@ -95,19 +95,7 @@ pub mod verifier {
       } else {
         Err(From::from("Proof verification failed"))
       }
-    }
 
-    /**
-     * Decoding BigNumber representations to raw values.
-     * Indy currently does not offer a standard for this, everyone is free and obliged to implement that themselves
-     * See: https://jira.hyperledger.org/browse/IS-786
-     */
-    // TODO: BigNumbers will lead to problems when working with predicates, since they only accept i32 values
-    fn decode_value(&self, encoded: &str) -> String{
-      let val = BigNumber::from_dec(encoded).unwrap();
-      let bytes = BigNumber::to_bytes(&val).unwrap();
-      let decoded = String::from_utf8(bytes).unwrap();
-      return decoded;
     }
 
   }
