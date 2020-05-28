@@ -49,6 +49,7 @@ use vade::{
 use vade_evan::plugin::rust_didresolver_evan::RustDidResolverEvan;
 use vade_tnt::{
     VadeTnt,
+    IssueCredentialResult,
     application::issuer::Issuer,
     application::prover::Prover,
     application::verifier::Verifier,
@@ -69,6 +70,7 @@ use vade_tnt::{
         RevocationRegistryDefinition,
         SchemaProperty,
         SubProofRequest,
+        RevocationIdInformation
     },
 };
 
@@ -157,8 +159,8 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
     let (definition, credential_private_key) = create_credential_definition().unwrap();
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
     let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
-    let (revocation_registry_definition, revocation_key_private):
-        (RevocationRegistryDefinition, RevocationKeyPrivate)
+    let (revocation_registry_definition, revocation_key_private, revocation_info):
+        (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
         = Issuer::create_revocation_registry_definition(
             EXAMPLE_GENERATED_DID,
             &definition,
@@ -168,7 +170,7 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
         );
 
     // run test
-    let result: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private).await?;
+    let (result, _): (Credential, _) = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private, &revocation_info).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
 
     // check results
@@ -208,8 +210,9 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
     let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
-    let (revocation_registry_definition, revocation_key_private):
-        (RevocationRegistryDefinition, RevocationKeyPrivate)
+
+    let (revocation_registry_definition, revocation_key_private, revocation_info):
+        (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
         = Issuer::create_revocation_registry_definition(
             EXAMPLE_GENERATED_DID,
             &definition,
@@ -217,7 +220,7 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
             ISSUER_PRIVATE_KEY,
             42,
         );
-    let credential: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private).await?;
+    let (credential, _) : (Credential, _) = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private, &revocation_info).await?;
 
     // run test
     let result: ProofPresentation = present_proof(
@@ -250,8 +253,8 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
     let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
     let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
-    let (revocation_registry_definition, revocation_key_private):
-        (RevocationRegistryDefinition, RevocationKeyPrivate)
+    let (revocation_registry_definition, revocation_key_private, revocation_info):
+        (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
         = Issuer::create_revocation_registry_definition(
             EXAMPLE_GENERATED_DID,
             &definition,
@@ -259,7 +262,7 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
             ISSUER_PRIVATE_KEY,
             42,
         );
-    let credential: Credential = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private).await?;
+    let (credential, _): (Credential, _) = issue_credential(&mut vade, &definition, &credential_private_key, &request, &revocation_key_private, &revocation_info).await?;
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,
         &proof_request,
@@ -359,7 +362,8 @@ async fn issue_credential(
     credential_private_key: &CredentialPrivateKey,
     request: &CredentialRequest,
     revocation_key_private: &RevocationKeyPrivate,
-) -> Result<Credential, Box<dyn std::error::Error>> {
+    revocation_info: &RevocationIdInformation,
+    ) -> Result<(Credential, RevocationIdInformation), Box<dyn std::error::Error>> {
     let message_str = format!(
       r###"{{
         "type": "issueCredential",
@@ -371,7 +375,8 @@ async fn issue_credential(
           "credentialPrivateKey": {},
           "credentialSchema": {},
           "credentialRevocationDefinition": "{}",
-          "revocationPrivateKey": {}
+          "revocationPrivateKey": {},
+          "revocationInformation": {}
         }}
     }}"###,
     ISSUER_DID,
@@ -382,6 +387,7 @@ async fn issue_credential(
     EXAMPLE_CREDENTIAL_SCHEMA,
     EXAMPLE_REVOCATION_REGISTRY_DEFINITION_DID,
     serde_json::to_string(&revocation_key_private).unwrap(),
+    serde_json::to_string(&revocation_info).unwrap(),
   );
   println!("{}", &message_str);
   let results = vade.send_message(&message_str).await?;
@@ -389,9 +395,9 @@ async fn issue_credential(
   // check results
   assert_eq!(results.len(), 1);
   println!("{}", serde_json::to_string(&results[0]).unwrap());
-  let result: Credential = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+  let result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
 
-  Ok(result)
+  Ok((result.credential, result.revocation_info))
 }
 
 async fn request_proof(vade: &mut Vade) -> Result<ProofRequest, Box<dyn std::error::Error>> {
