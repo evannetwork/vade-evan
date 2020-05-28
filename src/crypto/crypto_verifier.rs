@@ -81,11 +81,12 @@ pub mod verifier {
       for vc in &presented_proof.verifiable_credential {
         sub_proofs.push(serde_json::from_str(&vc.proof.proof).unwrap());
       }
-      let serialized = format!(r###"
-        proofs: {},
-        aggregated_proof: {}"###,
-        serde_json::to_string(&sub_proofs).unwrap(),
-        &presented_proof.proof.aggregated_proof
+      let serialized = format!(r###"{{
+              "proofs": {},
+              "aggregated_proof": {}
+          }}"###,
+          serde_json::to_string(&sub_proofs).unwrap(),
+          &presented_proof.proof.aggregated_proof
       );
       let ursa_proof: CryptoProof = serde_json::from_str(&serialized).unwrap();
 
