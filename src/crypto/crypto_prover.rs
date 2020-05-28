@@ -2,7 +2,6 @@ extern crate ursa;
 
 use ursa::cl::prover::Prover as CryptoProver;
 use ursa::cl::issuer::Issuer as CryptoIssuer;
-use ursa::bn::BigNumber;
 use ursa::cl::{
   CredentialPublicKey,
   CredentialSecretsBlindingFactors,
