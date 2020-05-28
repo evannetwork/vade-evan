@@ -3,13 +3,14 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 
+mod test_data;
+
 use vade_tnt::application::prover::Prover;
 use vade_tnt::application::issuer::Issuer;
 use vade_tnt::application::datatypes::{ CredentialSchema, SchemaProperty };
 use vade_tnt::crypto::crypto_utils::check_assertion_proof;
 use std::collections::HashMap;
-
-mod test_data;
+use test_data::EXAMPLE_GENERATED_DID;
 
 const EXAMPLE_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
 const EXAMPLE_DID_DOCUMENT_STR: &str = r###"
@@ -90,7 +91,8 @@ fn can_create_schema() {
   required_properties.push("test_property_string".to_owned());
 
   let schema: CredentialSchema = Issuer::create_credential_schema(
-    &EXAMPLE_DID,
+    EXAMPLE_GENERATED_DID,
+    EXAMPLE_DID,
     "test_schema",
     "Test description",
     test_properties,
@@ -145,7 +147,7 @@ fn can_create_credential_definition() {
 
   assert_eq!(
     &definition.id,
-    test_data::EXAMPLE_GENERATED_DID
+    EXAMPLE_GENERATED_DID
   );
 
   let serialized = serde_json::to_string(&definition).unwrap();

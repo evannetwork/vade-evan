@@ -12,8 +12,6 @@ use ursa::cl::{
 };
 use ursa::bn::BigNumber;
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
-
 
 pub struct CryptoCredentialRequest {
   pub subject: String,

@@ -85,14 +85,6 @@ pub fn create_assertion_proof(
   Ok(proof)
 }
 
-
-pub fn create_id_hash() -> String {
-  let mut hasher = Sha256::new();
-  hasher.input(b"");
-  let hash: [u8; 32] = hasher.result().try_into().unwrap();
-  return format!("0x{}", hex::encode(hash));
-}
-
 /// Checks given Vc document.
 /// A Vc document is considered as valid if returning ().
 /// Resolver may throw to indicate
