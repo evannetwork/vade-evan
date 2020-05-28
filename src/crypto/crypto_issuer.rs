@@ -10,6 +10,7 @@ use ursa::cl::{
   SignatureCorrectnessProof,
   Nonce
 };
+use std::collections::HashSet;
 use ursa::cl::issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition,
@@ -130,9 +131,13 @@ impl Issuer {
       true
     ).unwrap();
 
+    let mut issued = HashSet::new();
+    let mut revoked = HashSet::new();
+    let rev_reg_delta = RevocationRegistryDelta::from_parts(None, &rev_registry, &issued, &revoked);
+
     let rev_def = CryptoRevocationRegistryDefinition {
       registry: rev_registry,
-      registry_delta: None,
+      registry_delta: Some(rev_reg_delta),
       tails: rev_tails_gen,
       revocation_public_key: rev_key_pub,
       maximum_credential_count
