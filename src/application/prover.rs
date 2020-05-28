@@ -97,7 +97,8 @@ impl Prover {
     credentials: HashMap<String, Credential>,
     credential_definitions: HashMap<String, CredentialDefinition>,
     credential_schemas: HashMap<String, CredentialSchema>,
-    revocation_registries: HashMap<String, RevocationRegistryDefinition> // RevDef ID to RevDef
+    revocation_registries: HashMap<String, RevocationRegistryDefinition>, // RevDef ID to RevDef
+    master_secret: &MasterSecret,
   ) -> ProofPresentation {
 
     let (vcs, aggregated_proof) = Prover::create_proof_credentials(
@@ -105,7 +106,8 @@ impl Prover {
       credentials,
       credential_definitions,
       credential_schemas,
-      revocation_registries
+      revocation_registries,
+      &master_secret,
     );
 
     return ProofPresentation {
@@ -122,7 +124,8 @@ impl Prover {
     credentials: HashMap<String, Credential>,
     credential_definitions: HashMap<String, CredentialDefinition>,
     credential_schemas: HashMap<String, CredentialSchema>,
-    revocation_registries: HashMap<String, RevocationRegistryDefinition>
+    revocation_registries: HashMap<String, RevocationRegistryDefinition>,
+    master_secret: &MasterSecret,
   ) -> (Vec<ProofCredential>, AggregatedProof)  {
 
     let crypto_proof = CryptoProver::create_proof_with_revoc(
@@ -130,7 +133,8 @@ impl Prover {
       &credentials,
       &credential_definitions,
       &credential_schemas,
-      &revocation_registries
+      &revocation_registries,
+      &master_secret,
     );
 
     let mut proof_creds: Vec<ProofCredential> = Vec::new();
