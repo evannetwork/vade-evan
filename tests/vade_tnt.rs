@@ -61,6 +61,7 @@ use vade_tnt::{
         RevocationRegistryDefinition,
         SchemaProperty,
         SubProofRequest,
+        RevocationIdInformation
     },
 };
 
@@ -257,8 +258,8 @@ async fn create_credential_request(vade: &mut Vade, definition: &CredentialDefin
 }
 
 async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, credential_private_key: &CredentialPrivateKey, request: &CredentialRequest) -> Result<Credential, Box<dyn std::error::Error>> {
-    let (revocation_registry_definition, revocation_key_private):
-        (RevocationRegistryDefinition, RevocationKeyPrivate)
+    let (revocation_registry_definition, revocation_key_private, revocation_info):
+        (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
         = Issuer::create_revocation_registry_definition(
             EXAMPLE_GENERATED_DID,
             &definition,
@@ -277,7 +278,8 @@ async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, cr
           "credentialPrivateKey": {},
           "credentialSchema": {},
           "revocationRegistryDefinition": {},
-          "revocationPrivateKey": {}
+          "revocationPrivateKey": {},
+          "revocationInformation": {}
         }}
     }}"###,
     ISSUER_DID,
@@ -288,6 +290,7 @@ async fn issue_credential(vade: &mut Vade, definition: &CredentialDefinition, cr
     EXAMPLE_CREDENTIAL_SCHEMA,
     serde_json::to_string(&revocation_registry_definition).unwrap(),
     serde_json::to_string(&revocation_key_private).unwrap(),
+    serde_json::to_string(&revocation_info).unwrap(),
   );
   println!("{}", &message_str);
   let results = vade.send_message(&message_str).await?;

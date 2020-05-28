@@ -40,6 +40,7 @@ use crate::{
         RevocationRegistryDefinition,
         SchemaProperty,
         SubProofRequest,
+        RevocationIdInformation
     },
 };
 use simple_error::SimpleError;
@@ -66,6 +67,7 @@ struct IssueCredentialArguments {
     pub credential_revocation_definition: String,
     pub credential_private_key: CredentialPrivateKey,
     pub revocation_private_key: RevocationKeyPrivate,
+    pub revocation_information: RevocationIdInformation
 }
 
 #[derive(Serialize, Deserialize)]
@@ -142,6 +144,20 @@ struct RevokeCredentialArguments {
   credential_revocation_id: u32,
   issuer_public_key_did: String,
   issuer_proving_key: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateRevocationRegistryDefinitionResult {
+  pub private_key: RevocationKeyPrivate,
+  pub revocation_info: RevocationIdInformation
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct IssueCredentialResult {
+  pub credential: Credential,
+  pub revocation_info: RevocationIdInformation
 }
 
 pub struct VadeTnt {
@@ -252,7 +268,7 @@ impl VadeTnt {
 
       let generated_did = self.generate_did().await?;
 
-      let (definition, private_key) = Issuer::create_revocation_registry_definition(
+      let (definition, private_key, revocation_info) = Issuer::create_revocation_registry_definition(
         &generated_did,
         &definition,
         &input.issuer_public_key_did,
@@ -260,12 +276,18 @@ impl VadeTnt {
         input.maximum_credential_count
       );
 
-      let serialised_key = serde_json::to_string(&private_key).unwrap();
       let serialised_def = serde_json::to_string(&definition).unwrap();
 
       self.vade.set_did_document(&generated_did, &serialised_def).await?;
 
-      Ok(Some(serialised_key))
+      let serialised_result = serde_json::to_string(
+        &CreateRevocationRegistryDefinitionResult {
+          private_key,
+          revocation_info
+        }
+      ).unwrap();
+
+      Ok(Some(serialised_result))
     }
 
 
@@ -293,7 +315,7 @@ impl VadeTnt {
           ).await?
         ).unwrap();
 
-        let result: Credential = Issuer::issue_credential(
+        let (credential, revocation_info) = Issuer::issue_credential(
             &input.issuer,
             &input.subject,
             input.credential_request,
@@ -302,9 +324,21 @@ impl VadeTnt {
             schema,
             &mut revocation_definition,
             input.revocation_private_key,
-        );
+            &input.revocation_information
+        ).unwrap();
 
-        Ok(Some(serde_json::to_string(&result).unwrap()))
+
+
+        Ok(
+          Some(
+            serde_json::to_string(
+              &IssueCredentialResult {
+                credential,
+                revocation_info
+              }
+            ).unwrap()
+          )
+        )
     }
 
     async fn create_credential_offer(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
