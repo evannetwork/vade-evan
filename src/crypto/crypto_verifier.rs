@@ -4,14 +4,9 @@ pub mod verifier {
   use ursa::cl::issuer::Issuer as CryptoIssuer;
   use ursa::cl::verifier::Verifier as CryptoVerifier;
   use ursa::bn::BigNumber;
-  use ursa::cl::CredentialPublicKey;
   use ursa::cl::SubProofRequest;
   use ursa::cl::Proof as CryptoProof;
   use ursa::cl::SubProof;
-
-  use std::error::Error;
-
-  use crate::crypto::crypto_datatypes::CryptoProofRequest;
 
   use crate::application::datatypes::{
     ProofPresentation,

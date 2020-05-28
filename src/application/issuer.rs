@@ -153,6 +153,17 @@ impl Issuer {
       return (rev_reg_def, rev_key_private);
     }
 
+    /// Issue a new credential, based on a credential request received by the credential subject
+    ///
+    /// # Arguments
+    /// * `issuer_did` - DID of the issuer
+    /// * `subject_did` - DID of the subject
+    /// * `credential_request` - Credential request object sent by the subject
+    /// * `credential_definition` - Credential definition to use for issuance as specified by the credential request
+    /// * `credential_private_key` - Issuer's private key associated with the credential definition
+    /// * `credential_schema` - Credential schema to be used as specified by the credential request
+    /// * `revocation_registry_definition` - Revocation registry definition to be used for issuance
+    /// * `revocation_private_key` - Private key associated to the revocation registry definition
     pub fn issue_credential (
       issuer_did: &str,
       subject_did: &str,
