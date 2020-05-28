@@ -5,6 +5,7 @@ extern crate hex;
 #[macro_use]
 extern crate log;
 extern crate vade;
+extern crate uuid;
 
 pub mod application;
 pub mod crypto;
@@ -115,11 +116,32 @@ struct ValidateProofArguments {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct CreateCredentialDefinitionArguments {
   pub issuer_did: String,
   pub schema_did: String,
   pub issuer_public_key_did: String,
   pub issuer_proving_key: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateRevocationRegistryDefinitionArguments {
+  pub credential_definition: String,
+  pub issuer_did: String,
+  pub issuer_public_key_did: String,
+  pub issuer_proving_key: String,
+  pub maximum_credential_count: u32
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RevokeCredentialArguments {
+  issuer: String,
+  revocation_registry_definition_id: String,
+  credential_revocation_id: u32,
+  issuer_public_key_did: String,
+  issuer_proving_key: String
 }
 
 pub struct VadeTnt {
@@ -157,11 +179,16 @@ impl MessageConsumer for VadeTnt {
             // create revocation registry + substrate auth (account-key + identity)
             // update revocation registry + substrate auth (account-key + identity)
             "createCredentialProposal" => self.create_credential_proposal(message_data).await,
+            "createCredentialDefinition" => self.create_credential_definition(message_data).await,
             "createCredentialOffer" => self.create_credential_offer(message_data).await,
-            "requestCredential" => self.request_credential(message_data).await,
+            "createCredentialProposal" => self.create_credential_proposal(message_data).await,
+            "createCredentialSchema" => self.create_credential_schema(message_data).await,
+            "createRevocationRegistryDefinition" => self.create_revocation_registry_definition(message_data).await,
             "issueCredential" => self.issue_credential(message_data).await,
-            "requestProof" => self.request_proof(message_data).await,
             "presentProof" => self.present_proof(message_data).await,
+            "requestCredential" => self.request_credential(message_data).await,
+            "requestProof" => self.request_proof(message_data).await,
+            "revokeCredential" => self.revoke_credential(message_data).await,
             "verifyProof" => self.verify_proof(message_data).await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
@@ -169,13 +196,8 @@ impl MessageConsumer for VadeTnt {
 }
 
 impl VadeTnt {
-    // create credential definition + substrate auth (account-key + identity)
-    // create credential schema + substrate auth (account-key + identity)
-    // create revocation registry + substrate auth (account-key + identity)
-    // update revocation registry + substrate auth (account-key + identity)
-
     async fn create_credential_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-      let mut input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
+      let input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
 
       let schema: CredentialSchema = serde_json::from_str(
         &self.vade.get_did_document(
@@ -183,25 +205,73 @@ impl VadeTnt {
         ).await?
       ).unwrap();
 
-      let generate_did_message = r###"{
-        "type": "generateDid",
-        "data": {}
-      }"###;
-      let result = self.vade.send_message(generate_did_message).await.unwrap();
-      if result.len() == 0 {
-        return Err(Box::new(SimpleError::new(format!("Could not generate DID as no listeners were registered for this method"))));
-      }
+      let generated_did = self.generate_did().await?;
 
-      let claimed_did = result[0].as_ref().unwrap();
       let definition = Issuer::create_credential_definition(
-        &claimed_did,
+        &generated_did,
         &input.issuer_did,
         &schema,
         &input.issuer_public_key_did,
         &input.issuer_proving_key
       );
 
-      Ok(Some(serde_json::to_string(&definition).unwrap()))
+      let serialized = serde_json::to_string(&definition).unwrap();
+
+      self.vade.set_did_document(&generated_did, &serialized).await?;
+
+      Ok(Some(serialized))
+    }
+
+    async fn create_credential_schema(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+      let input: CreateCredentialSchemaArguments = serde_json::from_str(&data)?;
+
+      let generated_did = self.generate_did().await?;
+
+      let schema = Issuer::create_credential_schema(
+        &generated_did,
+        &input.issuer,
+        &input.schema_name,
+        &input.description,
+        input.properties,
+        input.required_properties,
+        input.allow_additional_properties,
+        &input.issuer_public_key_did,
+        &input.issuer_proving_key
+      );
+
+      let serialized = serde_json::to_string(&schema).unwrap();
+
+      self.vade.set_did_document(&generated_did, &serialized).await?;
+
+      Ok(Some(serialized))
+    }
+
+    async fn create_revocation_registry_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+      let input: CreateRevocationRegistryDefinitionArguments = serde_json::from_str(&data)?;
+
+      // Resolve credential definition
+      let definition: CredentialDefinition = serde_json::from_str(
+        &self.vade.get_did_document(
+          &input.credential_definition
+        ).await?
+      ).unwrap();
+
+      let generated_did = self.generate_did().await?;
+
+      let (definition, private_key) = Issuer::create_revocation_registry_definition(
+        &generated_did,
+        &definition,
+        &input.issuer_public_key_did,
+        &input.issuer_proving_key,
+        input.maximum_credential_count
+      );
+
+      let serialised_key = serde_json::to_string(&private_key).unwrap();
+      let serialised_def = serde_json::to_string(&definition).unwrap();
+
+      self.vade.set_did_document(&generated_did, &serialised_def).await?;
+
+      Ok(Some(serialised_key))
     }
 
 
@@ -341,6 +411,33 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
+    async fn revoke_credential(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let input: RevokeCredentialArguments = serde_json::from_str(&data)?;
+
+        // Resolve revocation definition
+        let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
+          &self.vade.get_did_document(
+            &input.revocation_registry_definition_id
+          ).await?
+        ).unwrap();
+
+        let max_cred_count: u32 = revocation_definition.maximum_credential_count;
+
+        let updated_registry = Issuer::revoke_credential(
+          &input.issuer,
+          &mut revocation_definition,
+          max_cred_count,
+          &input.issuer_public_key_did,
+          &input.issuer_proving_key
+        );
+
+        let serialized = serde_json::to_string(&updated_registry).unwrap();
+
+        self.vade.set_did_document(&revocation_definition.id, &serialized).await?;
+
+        Ok(Some(serialized))
+    }
+
     async fn verify_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: ValidateProofArguments = serde_json::from_str(&data)?;
 
@@ -375,5 +472,20 @@ impl VadeTnt {
         );
 
         Ok(Some(serde_json::to_string(&result).unwrap()))
+    }
+
+    async fn generate_did(&mut self) -> Result<String, Box<dyn std::error::Error>> {
+      let generate_did_message = r###"{
+        "type": "generateDid",
+        "data": {}
+      }"###;
+      let result = self.vade.send_message(generate_did_message).await?;
+      if result.len() == 0 {
+        return Err(Box::new(SimpleError::new(format!("Could not generate DID as no listeners were registered for this method"))));
+      }
+
+      let generated_did = result[0].as_ref().unwrap().to_owned();
+
+      Ok(generated_did)
     }
 }

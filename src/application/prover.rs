@@ -19,11 +19,11 @@ use ursa::cl::{
   CredentialSecretsBlindingFactors
 };
 use ursa::bn::BigNumber;
-use crate::crypto::crypto_utils::create_id_hash;
 use crate::crypto::crypto_prover::Prover as CryptoProver;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition
 };
+use crate::utils::utils::generate_uuid;
 use std::collections::HashMap;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
@@ -100,8 +100,6 @@ impl Prover {
     revocation_registries: HashMap<String, RevocationRegistryDefinition> // RevDef ID to RevDef
   ) -> ProofPresentation {
 
-    let id = create_id_hash();
-
     let (vcs, aggregated_proof) = Prover::create_proof_credentials(
       proof_request,
       credentials,
@@ -112,7 +110,7 @@ impl Prover {
 
     return ProofPresentation {
       context: vec!["https://www.w3.org/2018/credentials/v1".to_owned()],
-      id,
+      id: generate_uuid(),
       r#type: vec!["VerifiablePresentation".to_owned()],
       verifiable_credential: vcs,
       proof: aggregated_proof
