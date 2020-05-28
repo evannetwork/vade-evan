@@ -118,6 +118,21 @@ impl Issuer {
       return schema;
     }
 
+    /// Creates a new revocation registry definition. This definition is used to prove the non-revocation state of a credential.
+    /// It needs to be publicly published and updated after every revocation. The definition is signed by the issuer.
+    ///
+    /// # Arguments
+    /// * `assigned_did` - DID that will point to the registry definition
+    /// * `credential_definition` - Credential definition this revocation registry definition will be associated with
+    /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
+    /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
+    /// * `maximum_credential_count` - Capacity of the revocation registry in terms of issuable credentials
+    ///
+    /// # Returns
+    /// A 3-tuple consisting
+    /// * `RevocationRegistryDefinition` - the definition
+    /// * `RevocationKeyPrivate` - the according revocation private key, and an revocaiton
+    /// * `RevocationIdInformation` - object used for keeping track of issued revocation IDs
     pub fn create_revocation_registry_definition(
       assigned_did: &str,
       credential_definition: &CredentialDefinition,
