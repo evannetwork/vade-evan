@@ -20,8 +20,6 @@ extern crate vade_tnt;
 
 mod test_data;
 
-use serde::de::{Deserialize};
-use serde::ser::{Serialize};
 use std::collections::HashMap;
 use vade::plugin::rust_storage_cache::RustStorageCache;
 use vade_tnt::resolver::SubstrateDidResolverEvan;
@@ -31,14 +29,12 @@ use test_data::{
   SCHEMA_DID,
   SUBJECT_DID,
   CREDENTIAL_DEFINITION_DID,
-  ISSUER_DID_DOCUMENT_STR,
   EXAMPLE_CREDENTIAL_SCHEMA,
   EXAMPLE_CREDENTIAL_SCHEMA_DID,
   ISSUER_PUBLIC_KEY_DID,
   ISSUER_PRIVATE_KEY,
   EXAMPLE_GENERATED_DID,
   EXAMPLE_CREDENTIAL_DEFINITION,
-  EXAMPLE_CREDENTIAL_DEFINITION_DID,
   EXAMPLE_CREDENTIAL_DEFINITION_PRIVATE_KEY,
   EXAMPLE_REVOCATION_REGISTRY_DEFINITION_DID,
 };
@@ -46,13 +42,10 @@ use ursa::bn::BigNumber;
 use vade::{
     Vade,
 };
-use vade_evan::plugin::rust_didresolver_evan::RustDidResolverEvan;
 use vade_tnt::{
     VadeTnt,
     IssueCredentialResult,
     application::issuer::Issuer,
-    application::prover::Prover,
-    application::verifier::Verifier,
     application::datatypes::{
         Credential,
         CredentialDefinition,
@@ -61,15 +54,12 @@ use vade_tnt::{
         CredentialProposal,
         CredentialRequest,
         CredentialSchema,
-        CredentialSecretsBlindingFactors,
         MasterSecret,
         ProofPresentation,
         ProofRequest,
         ProofVerification,
         RevocationKeyPrivate,
         RevocationRegistryDefinition,
-        SchemaProperty,
-        SubProofRequest,
         RevocationIdInformation
     },
 };
@@ -159,7 +149,7 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
     let (definition, credential_private_key) = create_credential_definition().unwrap();
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
     let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
-    let (revocation_registry_definition, revocation_key_private, revocation_info):
+    let (_, revocation_key_private, revocation_info):
         (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
         = Issuer::create_revocation_registry_definition(
             EXAMPLE_GENERATED_DID,
