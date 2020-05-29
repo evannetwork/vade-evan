@@ -10,6 +10,7 @@ use ursa::cl::{
   SignatureCorrectnessProof,
   Nonce
 };
+use std::collections::HashSet;
 use ursa::cl::issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_datatypes::{
   CryptoCredentialDefinition,
@@ -18,7 +19,7 @@ use crate::crypto::crypto_datatypes::{
 use crate::application::datatypes::{
   CredentialSchema,
   CredentialRequest,
-  RevocationRegistryDefinition
+  RevocationRegistryDefinition,
 };
 
 pub struct Issuer {
@@ -131,9 +132,13 @@ impl Issuer {
       true
     ).unwrap();
 
+    let issued = HashSet::new();
+    let revoked = HashSet::new();
+    let rev_reg_delta = RevocationRegistryDelta::from_parts(None, &rev_registry, &issued, &revoked);
+
     let rev_def = CryptoRevocationRegistryDefinition {
       registry: rev_registry,
-      registry_delta: None,
+      registry_delta: Some(rev_reg_delta),
       tails: rev_tails_gen,
       revocation_public_key: rev_key_pub,
       maximum_credential_count
@@ -152,7 +157,7 @@ impl Issuer {
     let tails =  SimpleTailsAccessor::new(&mut tails_gen).unwrap();
     match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
       Ok(delta) => return Ok((RevocationRegistry::from(delta.clone()), delta)),
-      Err(e) => return Err(Box::from("Unable to revoke credential"))
+      Err(_) => return Err(Box::from("Unable to revoke credential"))
     }
   }
 

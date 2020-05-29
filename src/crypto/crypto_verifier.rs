@@ -3,15 +3,9 @@ pub mod verifier {
 
   use ursa::cl::issuer::Issuer as CryptoIssuer;
   use ursa::cl::verifier::Verifier as CryptoVerifier;
-  use ursa::bn::BigNumber;
-  use ursa::cl::CredentialPublicKey;
   use ursa::cl::SubProofRequest;
   use ursa::cl::Proof as CryptoProof;
   use ursa::cl::SubProof;
-
-  use std::error::Error;
-
-  use crate::crypto::crypto_datatypes::CryptoProofRequest;
 
   use crate::application::datatypes::{
     ProofPresentation,
@@ -86,11 +80,12 @@ pub mod verifier {
       for vc in &presented_proof.verifiable_credential {
         sub_proofs.push(serde_json::from_str(&vc.proof.proof).unwrap());
       }
-      let serialized = format!(r###"
-        proofs: {},
-        aggregated_proof: {}"###,
-        serde_json::to_string(&sub_proofs).unwrap(),
-        &presented_proof.proof.aggregated_proof
+      let serialized = format!(r###"{{
+              "proofs": {},
+              "aggregated_proof": {}
+          }}"###,
+          serde_json::to_string(&sub_proofs).unwrap(),
+          &presented_proof.proof.aggregated_proof
       );
       let ursa_proof: CryptoProof = serde_json::from_str(&serialized).unwrap();
 
@@ -99,19 +94,7 @@ pub mod verifier {
       } else {
         Err(From::from("Proof verification failed"))
       }
-    }
 
-    /**
-     * Decoding BigNumber representations to raw values.
-     * Indy currently does not offer a standard for this, everyone is free and obliged to implement that themselves
-     * See: https://jira.hyperledger.org/browse/IS-786
-     */
-    // TODO: BigNumbers will lead to problems when working with predicates, since they only accept i32 values
-    fn decode_value(&self, encoded: &str) -> String{
-      let val = BigNumber::from_dec(encoded).unwrap();
-      let bytes = BigNumber::to_bytes(&val).unwrap();
-      let decoded = String::from_utf8(bytes).unwrap();
-      return decoded;
     }
 
   }
