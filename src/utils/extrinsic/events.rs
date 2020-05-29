@@ -23,13 +23,6 @@ use std::{
 use parity_scale_codec::{Codec, Compact, Decode, Encode, Error as CodecError, Input, Output};
 use crate::utils::extrinsic::node_metadata::{EventArg, Metadata, MetadataError};
 pub use sp_core::H256 as Hash;
-macro_rules! debug {
-    ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
-}
-
-macro_rules! warn {
-    ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
-}
 
 /// Event for the System module.
 #[derive(Clone, Debug, Decode)]

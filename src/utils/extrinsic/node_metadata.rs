@@ -26,11 +26,6 @@ use serde::ser::Serialize;
 use sp_storage::StorageKey;
 use crate::utils::substrate;
 
-macro_rules! info {
-    ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
-  }
-  
-
 #[derive(Debug, thiserror::Error)]
 pub enum MetadataError {
     #[error("Error converting substrate metadata: {0}")]
@@ -331,16 +326,11 @@ impl StorageMetadata {
         }
     }
     pub fn get_map<K: Encode, V: Decode + Clone>(&self) -> Result<StorageMap<K, V>, MetadataError> {
-        info!("getMap");
         match &self.ty {
             StorageEntryType::Map { hasher, .. } => {
                 let module_prefix = self.module_prefix.as_bytes().to_vec();
                 let storage_prefix = self.storage_prefix.as_bytes().to_vec();
                 let hasher = hasher.to_owned();
-                info!(
-                    "map2 for '{}' '{}' has default {:?}",
-                    self.module_prefix, self.storage_prefix, &self.default[..]
-                );
                 let default = Decode::decode(&mut &self.default[..])
                     .map_err(|_| MetadataError::MapValueTypeError)?;
 

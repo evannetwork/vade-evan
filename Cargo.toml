@@ -58,6 +58,10 @@ vade = { path = "../vade", version = "0.0.6" }
 simple-error = "0.2.1"
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ws = { version = "0.7", features = ["ssl"] }
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3.12"
 tokio = { version = "0.2.21", features = ["macros", "rt-threaded"] }
