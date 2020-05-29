@@ -34,6 +34,7 @@ impl Issuer {
   pub fn create_credential_definition(
     credential_schema: &CredentialSchema
   ) -> (CredentialPrivateKey, CryptoCredentialDefinition) {
+    println!("Start schema");
     let mut non_credential_schema_builder = CryptoIssuer::new_non_credential_schema_builder().unwrap();
     non_credential_schema_builder.add_attr("master_secret").unwrap();
     let non_credential_schema = non_credential_schema_builder.finalize().unwrap();
@@ -45,10 +46,10 @@ impl Issuer {
       credential_schema_builder.add_attr(&property.0).unwrap();
     }
     let crypto_schema = credential_schema_builder.finalize().unwrap();
-
+    println!("Start cred def");
     let (public_key, credential_private_key, credential_key_correctness_proof) =
       CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true).unwrap();
-
+      println!("finish cred def");
     let definition = CryptoCredentialDefinition {
       public_key,
       credential_key_correctness_proof

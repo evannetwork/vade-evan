@@ -154,7 +154,7 @@ fn end_process(value: Option<String>) -> ResultE {
     // return result to calling thread
     debug!("Thread end value:{:?}", value);
     let val = value.unwrap_or_else(|| "".to_string());
-    ResultE::S(val)
+    ResultE::SClose(val)
 }
 
 fn parse_status(msg: &str) -> (XtStatus, Option<String>) {

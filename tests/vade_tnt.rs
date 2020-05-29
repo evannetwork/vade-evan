@@ -124,7 +124,7 @@ async fn vade_tnt_can_request_credentials () -> Result<(), Box<dyn std::error::E
 
     let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
-    let (definition, _) = create_credential_definition().unwrap();
+    let (definition, _) = create_credential_definition(&mut vade).await?;
 
     // run test
     let result: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
@@ -145,7 +145,9 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
 
     let proposal: CredentialProposal = create_credential_proposal(&mut vade).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
-    let (definition, credential_private_key) = create_credential_definition().unwrap();
+    println!("done credential offer");
+    let (definition, credential_private_key) = create_credential_definition(&mut vade).await?;
+    println!("done credential def");
     let request: CredentialRequest = create_credential_request(&mut vade, &definition, &offer).await?;
 
     // run test
@@ -340,6 +342,7 @@ fn get_vade() -> Vade {
     let mut vade = Vade::new();
     vade.register_message_consumer(
       &vec![
+        "createCredentialDefinition",
         "createCredentialProposal",
         "createCredentialOffer",
         "requestCredential",
@@ -354,12 +357,54 @@ fn get_vade() -> Vade {
     return vade;
 }
 
-fn create_credential_definition() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
-    Ok(Issuer::create_credential_definition(
+async fn create_credential_definition(vade: &mut Vade) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
+    let message_str = format!(r###"{{
+      "type": "createCredentialDefinition",
+      "data": {{
+        "schemaDid": "{}",
+        "issuerDid": "{}",
+        "issuerPublicKeyDid": "{}",
+        "issuerProvingKey": "{}"
+      }}
+    }}"###, EXAMPLE_CREDENTIAL_SCHEMA_DID, ISSUER_DID, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY);
+    let results = vade.send_message(&message_str).await?;
+
+    // check results
+    assert_eq!(results.len(), 1);
+    let result: (CredentialDefinition, CredentialPrivateKey) = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+
+    Ok(result)
+    /*Ok(Issuer::create_credential_definition(
         EXAMPLE_GENERATED_DID,
         ISSUER_DID,
         &serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap(),
         ISSUER_PUBLIC_KEY_DID,
         ISSUER_PRIVATE_KEY,
-    ))
+    ))*/
  }
+
+
+ /*fn create_credential_schema() -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
+  let message_str = format!(r###"{{
+    "type": "createCredentialSchema",
+    "data": {{
+      "issuer": "{}",
+      "subject": "{}",
+      "schema": "{}"
+    }}
+  }}"###, ISSUER_DID, SUBJECT_DID, SCHEMA_DID);
+  let results = vade.send_message(&message_str).await?;
+
+  // check results
+  assert_eq!(results.len(), 1);
+  let result: CredentialProposal = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+
+  Ok(result)
+  Ok(Issuer::create_credential_definition(
+      EXAMPLE_GENERATED_DID,
+      ISSUER_DID,
+      &serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap(),
+      ISSUER_PUBLIC_KEY_DID,
+      ISSUER_PRIVATE_KEY,
+  ))
+}*/
