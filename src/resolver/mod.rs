@@ -94,10 +94,10 @@ impl MessageConsumer for SubstrateDidResolverEvan {
     async fn handle_message(
         &mut self,
         message_type: &str,
-        message_data: &str,
+        _message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
-            "generateDid" => self.generateDid().await,
+            "generateDid" => self.generate_did().await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
     }

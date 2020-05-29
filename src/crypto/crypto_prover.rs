@@ -2,7 +2,6 @@ extern crate ursa;
 
 use ursa::cl::prover::Prover as CryptoProver;
 use ursa::cl::issuer::Issuer as CryptoIssuer;
-use ursa::bn::BigNumber;
 use ursa::cl::{
   CredentialPublicKey,
   CredentialSecretsBlindingFactors,
@@ -91,7 +90,8 @@ impl Prover {
     credentials: &HashMap<String, Credential>,
     credential_definitions: &HashMap<String, CredentialDefinition>,
     credential_schemas: &HashMap<String, CredentialSchema>,
-    revocation_registries: &HashMap<String, RevocationRegistryDefinition>
+    revocation_registries: &HashMap<String, RevocationRegistryDefinition>,
+    master_secret: &MasterSecret,
   ) -> Proof {
     let mut non_credential_schema_builder = CryptoIssuer::new_non_credential_schema_builder().unwrap();
     non_credential_schema_builder.add_attr("master_secret").unwrap();
@@ -120,6 +120,7 @@ impl Prover {
       for values in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
         credential_values_builder.add_dec_known(&values.0, &values.1.encoded).unwrap();
       }
+      credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
 
       // Build witness with revocation data
       registry = revocation_registries.get(&sub_proof.schema).unwrap();

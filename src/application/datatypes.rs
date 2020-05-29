@@ -14,7 +14,10 @@ use ursa::cl::{
   issuer::Issuer as UrsaIssuer
 };
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
+use std::collections::{
+  HashMap,
+  HashSet
+};
 pub use ursa::cl::{
     CredentialPrivateKey,
     CredentialSecretsBlindingFactors,
@@ -230,4 +233,12 @@ pub struct ProofVerification {
 pub struct EncodedCredentialValue {
   pub raw: String,
   pub encoded: String
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RevocationIdInformation {
+  pub definition_id: String,
+  pub next_unused_id: u32,
+  pub used_ids: HashSet<u32>
 }
