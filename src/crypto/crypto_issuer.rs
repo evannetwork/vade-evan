@@ -20,7 +20,6 @@ use crate::application::datatypes::{
   CredentialSchema,
   CredentialRequest,
   RevocationRegistryDefinition,
-  RevocationIdInformation
 };
 
 pub struct Issuer {
