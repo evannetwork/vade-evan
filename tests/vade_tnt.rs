@@ -65,6 +65,11 @@ use vade_tnt::{
     },
 };
 
+// TODO: Test multi-proof presentations
+// TODO: Test revocation
+// TODO: Test multiple sequential proofings of same credential
+// TODO: Test proving after revoking another credential of the same registry
+
 #[tokio::test]
 async fn vade_tnt_can_be_registered_as_plugin () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
