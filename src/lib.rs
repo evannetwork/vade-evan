@@ -516,6 +516,7 @@ impl VadeTnt {
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
+        let mut rev_definitions: HashMap<String, Option<RevocationRegistryDefinition>> = HashMap::new();
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         for req in &input.proof_request.sub_proof_requests {
           // Resolve schema
@@ -539,11 +540,31 @@ impl VadeTnt {
           ).unwrap());
         }
 
+        for credential in &input.presented_proof.verifiable_credential {
+          // Resolve credential definition
+          let definition_did = &credential.proof.credential_definition.clone();
+          definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
+            // &self.vade.get_did_document(
+            //   &definition_did
+            // ).await?
+            EXAMPLE_CREDENTIAL_DEFINITION
+          ).unwrap());
+
+          let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
+          rev_definitions.insert(credential.credential_schema.id.clone(), Some(serde_json::from_str(
+            // &self.vade.get_did_document(
+            //   &rev_definition_did
+            // ).await?
+            EXAMPLE_REVOCATION_REGISTRY_DEFINITION
+          ).unwrap()));
+        }
+
         let result: ProofVerification = Verifier::validate_proof(
             input.presented_proof,
             input.proof_request,
             definitions,
             schemas,
+            rev_definitions
         );
 
         Ok(Some(serde_json::to_string(&result).unwrap()))

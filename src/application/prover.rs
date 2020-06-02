@@ -161,6 +161,7 @@ impl Prover {
 
       let sub_proof = CredentialSubProof {
         credential_definition: credential.signature.credential_definition.to_owned(),
+        revocation_registry_definition: credential.signature.revocation_registry_definition.to_owned(),
         proof: serde_json::to_string(&crypto_proof.proofs[i]).unwrap()
       };
 
@@ -243,5 +244,27 @@ impl Prover {
       Ok(secret) => return secret,
       Err(e) => panic!(e) // TODO how to handle error
     }
+  }
+
+  pub fn post_process_credential_signature(
+    credential: &mut Credential,
+    credential_request: &CredentialRequest,
+    credential_definition: &CredentialDefinition,
+    blinding_factors: CredentialSecretsBlindingFactors,
+    master_secret: &MasterSecret,
+    revocation_registry_definition: &RevocationRegistryDefinition
+  ) {
+    let rev_reg_def: RevocationRegistryDefinition = serde_json::from_str(
+      &serde_json::to_string(revocation_registry_definition).unwrap()
+    ).unwrap();
+
+    CryptoProver::process_credential(
+      &mut credential.signature,
+      credential_request,
+      &credential_definition.public_key,
+      &blinding_factors,
+      master_secret,
+      Some(rev_reg_def)
+    );
   }
 }

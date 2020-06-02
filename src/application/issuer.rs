@@ -162,7 +162,7 @@ impl Issuer {
 
       let revoc_info = RevocationIdInformation {
         definition_id: assigned_did.to_string(),
-        next_unused_id: 0,
+        next_unused_id: 1, // needs to start at 1
         used_ids: HashSet::new()
       };
 
@@ -193,7 +193,7 @@ impl Issuer {
     /// * `revocation_info` - Revocation info containing ID counter. Hold by credential definition owner
     ///
     /// # Returns
-    /// Tuple containg
+    /// Tuple containing
     /// * `Credential` - Issued credential
     /// * `RevocationIdInformation` - Updated `revocation_info` object that needs to be persisted
     pub fn issue_credential (
@@ -242,7 +242,8 @@ impl Issuer {
       let (
         signature,
         signature_correctness_proof,
-        issuance_nonce
+        issuance_nonce,
+        witness
       ) = CryptoIssuer::sign_credential_with_revocation(
         &credential_request,
         &credential_private_key,
@@ -259,7 +260,8 @@ impl Issuer {
         signature,
         signature_correctness_proof,
         revocation_id: rev_idx,
-        revocation_registry_definition: revocation_registry_definition.id.clone()
+        revocation_registry_definition: revocation_registry_definition.id.clone(),
+        witness
       };
 
       let credential = Credential {
@@ -327,9 +329,5 @@ impl Issuer {
 
       rev_reg_def.proof = Some(proof);
       return rev_reg_def;
-    }
-
-    fn mock_get_rev_idx() -> u32 {
-      return 1;
     }
 }

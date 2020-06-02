@@ -2,12 +2,10 @@ extern crate vade_tnt;
 
 use vade_tnt::crypto::crypto_issuer::Issuer as CryptoIssuer;
 use vade_tnt::application::datatypes::{
-  CredentialSchema,
-  CredentialRequest
+  CredentialSchema
 };
 use vade_tnt::crypto::crypto_datatypes::CryptoCredentialDefinition;
 use std::collections::HashMap;
-use vade_tnt::application::prover::Prover;
 
 const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"
 {
