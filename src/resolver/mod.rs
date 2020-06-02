@@ -29,7 +29,7 @@ impl SubstrateDidResolverEvan {
         SubstrateDidResolverEvan { }
     }
 
-    async fn generateDid(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
       Ok(Some("".to_owned()))
     }
 }
@@ -57,7 +57,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// # Arguments
     ///
     /// * `did_id` - did id to fetch
-    async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
+    async fn get_did_document(&self, _did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
         unimplemented!();
     }
 
@@ -82,10 +82,10 @@ impl MessageConsumer for SubstrateDidResolverEvan {
     async fn handle_message(
         &mut self,
         message_type: &str,
-        message_data: &str,
+        _message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
-            "generateDid" => self.generateDid().await,
+            "generateDid" => self.generate_did().await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
     }

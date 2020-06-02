@@ -3,7 +3,6 @@ pub mod verifier {
 
   use ursa::cl::issuer::Issuer as CryptoIssuer;
   use ursa::cl::verifier::Verifier as CryptoVerifier;
-  use ursa::bn::BigNumber;
   use ursa::cl::SubProofRequest;
   use ursa::cl::Proof as CryptoProof;
   use ursa::cl::SubProof;
