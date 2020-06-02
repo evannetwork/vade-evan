@@ -41,12 +41,12 @@ use ursa::bn::BigNumber;
 use vade::{
     Vade,
 };
+use ursa::cl::CredentialSecretsBlindingFactors;
 use vade_tnt::{
     VadeTnt,
     IssueCredentialResult,
     application::issuer::Issuer,
     application::prover::Prover,
-    application::verifier::Verifier,
     application::datatypes::{
         Credential,
         CredentialDefinition,
@@ -55,15 +55,13 @@ use vade_tnt::{
         CredentialProposal,
         CredentialRequest,
         CredentialSchema,
-        CredentialSecretsBlindingFactors,
         MasterSecret,
         ProofPresentation,
         ProofRequest,
         ProofVerification,
         RevocationKeyPrivate,
         RevocationRegistryDefinition,
-        RevocationIdInformation,
-        SubProofRequest
+        RevocationIdInformation
     },
 };
 

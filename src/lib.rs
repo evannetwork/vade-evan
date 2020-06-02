@@ -224,7 +224,6 @@ impl MessageConsumer for VadeTnt {
             // create credential schema + substrate auth (account-key + identity)
             // create revocation registry + substrate auth (account-key + identity)
             // update revocation registry + substrate auth (account-key + identity)
-            "createCredentialProposal" => self.create_credential_proposal(message_data).await,
             "createCredentialDefinition" => self.create_credential_definition(message_data).await,
             "createCredentialOffer" => self.create_credential_offer(message_data).await,
             "createCredentialProposal" => self.create_credential_proposal(message_data).await,
@@ -411,7 +410,7 @@ impl VadeTnt {
           ).unwrap());
 
           // Resolve credential definition
-          let definition_did = input.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
+          let _definition_did = input.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
           definitions.insert(schema_did.clone(), serde_json::from_str(
             // &self.vade.get_did_document(
             //   &definition_did
@@ -420,7 +419,7 @@ impl VadeTnt {
           ).unwrap());
 
           // Resolve revocation definition
-          let rev_definition_did = input.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
+          let _rev_definition_did = input.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
           revocation_definitions.insert(schema_did.clone(), serde_json::from_str(
             // &self.vade.get_did_document(
             //   &rev_definition_did
@@ -531,7 +530,7 @@ impl VadeTnt {
 
         for credential in &input.presented_proof.verifiable_credential {
           // Resolve credential definition
-          let definition_did = credential.proof.credential_definition.clone();
+          let _definition_did = credential.proof.credential_definition.clone();
           definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
             // &self.vade.get_did_document(
             //   &definition_did
