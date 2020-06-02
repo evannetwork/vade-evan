@@ -241,6 +241,7 @@ impl MessageConsumer for VadeTnt {
 }
 
 impl VadeTnt {
+    // TODO: Re-enable resolving
     async fn create_credential_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
 
@@ -326,7 +327,7 @@ impl VadeTnt {
       Ok(Some(serialised_result))
     }
 
-
+    // TODO: Re-enable resolving
     async fn issue_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: IssueCredentialArguments = serde_json::from_str(&data)?;
 
@@ -392,6 +393,7 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
+    // TODO: Re-enable resolving
     async fn present_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: PresentProofArguments = serde_json::from_str(&data)?;
 
@@ -451,6 +453,7 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
+    // TODO: Re-enable resolving
     async fn request_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: RequestCredentialArguments = serde_json::from_str(&data)?;
 
@@ -510,6 +513,7 @@ impl VadeTnt {
         Ok(Some(serialized))
     }
 
+    // TODO: Re-enable resolving
     async fn verify_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: ValidateProofArguments = serde_json::from_str(&data)?;
 
