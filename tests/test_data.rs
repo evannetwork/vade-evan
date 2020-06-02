@@ -93,8 +93,5 @@ pub const ISSUER_PUBLIC_KEY_DID: &str =
     "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1";
 
 #[allow(dead_code)]
-pub const SCHEMA_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD3";
-
-#[allow(dead_code)]
 pub const SUBJECT_DID: &'static str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
