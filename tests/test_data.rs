@@ -9,7 +9,7 @@ pub const EXAMPLE_CREDENTIAL_DEFINITION_DID: &str =
 pub const EXAMPLE_CREDENTIAL_DEFINITION_PRIVATE_KEY: &str = r###"{"p_key":{"p":"156163885607833859773268370722757517091","q":"43434082019566335732826361914356441593"},"r_key":{"x":"2433931125718566E1A06FE5CDC644B3326676BEC928C7EEBAF3B4F5D00DE548","sk":"02610647F0E2943701DEDB718EA632E802553A721D366B7B521B8DD59E12244B"}}"###;
 
 pub const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"{
-    "id": "did:evan:zkp:0x123451234512345123451234512346",
+    "id": "0x562451532eaa2128dc150b36cc60ae08d988c543c7b56227ee9c965c95b53f82",
     "type": "EvanVCSchema",
     "name": "test_schema",
     "author": "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1",
@@ -33,7 +33,7 @@ pub const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"{
     }
 }"###;
 
-pub const EXAMPLE_CREDENTIAL_SCHEMA_DID: &str = "did:evan:zkp:0x123451234512345123451234512346";
+pub const EXAMPLE_CREDENTIAL_SCHEMA_DID: &str = "0x562451532eaa2128dc150b36cc60ae08d988c543c7b56227ee9c965c95b53f82";
 
 pub const EXAMPLE_GENERATED_DID: &str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
@@ -79,7 +79,18 @@ pub const ISSUER_PRIVATE_KEY: &str =
 pub const ISSUER_PUBLIC_KEY_DID: &str =
     "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1";
 
-pub const SCHEMA_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD3";
+pub const SCHEMA_DID: &'static str = "0x562451532eaa2128dc150b36cc60ae08d988c543c7b56227ee9c965c95b53f82";
 
 pub const SUBJECT_DID: &'static str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
+
+pub const SCHEMA_NAME: &'static str = "test_schema";
+pub const SCHEMA_DESCRIPTION: &'static str = "Test description";
+pub const SCHEMA_PROPERTIES: &'static str = r###"{
+  "test_property_string": {
+    "type": "string"
+  }
+}"###;
+pub const SCHEMA_REQUIRED_PROPERTIES: &'static str = r###"[
+  "test_property_string"
+]"###;
