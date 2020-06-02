@@ -171,6 +171,7 @@ struct CreateRevocationRegistryDefinitionArguments {
 struct RevokeCredentialArguments {
   issuer: String,
   revocation_registry_definition_id: String,
+  revocation_registry_definition: RevocationRegistryDefinition,
   credential_revocation_id: u32,
   issuer_public_key_did: String,
   issuer_proving_key: String
@@ -490,17 +491,18 @@ impl VadeTnt {
         let input: RevokeCredentialArguments = serde_json::from_str(&data)?;
 
         // Resolve revocation definition
-        let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-          &self.vade.get_did_document(
-            &input.revocation_registry_definition_id
-          ).await?
-        ).unwrap();
+        // let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
+        //   &self.vade.get_did_document(
+        //     &input.revocation_registry_definition_id
+        //   ).await?
+        // ).unwrap();
 
-        let max_cred_count: u32 = revocation_definition.maximum_credential_count;
+        let max_cred_count: u32 = input.revocation_registry_definition.maximum_credential_count;
+        let mut rev_def = input.revocation_registry_definition;
 
         let updated_registry = Issuer::revoke_credential(
           &input.issuer,
-          &mut revocation_definition,
+          &mut rev_def,
           max_cred_count,
           &input.issuer_public_key_did,
           &input.issuer_proving_key
@@ -508,7 +510,7 @@ impl VadeTnt {
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
 
-        self.vade.set_did_document(&revocation_definition.id, &serialized).await?;
+        self.vade.set_did_document(&rev_def.id, &serialized).await?;
 
         Ok(Some(serialized))
     }
