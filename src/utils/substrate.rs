@@ -288,7 +288,7 @@ pub async fn create_did(url: String, nonce: u64) -> String {
         .unwrap();
 
     info!("Got Event {:?}", args.hash);
-    hex::encode(args.hash)
+    format!("0x{}", hex::encode(args.hash))
 }
 
 
