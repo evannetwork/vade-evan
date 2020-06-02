@@ -1,11 +1,9 @@
 extern crate vade_tnt;
 extern crate env_logger;
-#[macro_use]
 extern crate log;
 
 mod test_data;
 
-use vade_tnt::application::prover::Prover;
 use vade_tnt::application::issuer::Issuer;
 use vade_tnt::application::datatypes::{ CredentialSchema, SchemaProperty };
 use vade_tnt::crypto::crypto_utils::check_assertion_proof;
