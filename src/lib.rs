@@ -167,7 +167,6 @@ struct CreateCredentialDefinitionArguments {
 #[serde(rename_all = "camelCase")]
 struct CreateRevocationRegistryDefinitionArguments {
   pub credential_definition: String,
-  pub issuer_did: String,
   pub issuer_public_key_did: String,
   pub issuer_proving_key: String,
   pub maximum_credential_count: u32
@@ -185,7 +184,7 @@ struct RevokeCredentialArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct CreateRevocationRegistryDefinitionResult {
+pub struct CreateRevocationRegistryDefinitionResult {
   pub private_key: RevocationKeyPrivate,
   pub revocation_info: RevocationIdInformation
 }
@@ -259,7 +258,7 @@ impl VadeTnt {
 
       let generated_did = self.generate_did().await?;
 
-      let definition = Issuer::create_credential_definition(
+      let (definition, pk) = Issuer::create_credential_definition(
         &generated_did,
         &input.issuer_did,
         &schema,
@@ -267,9 +266,9 @@ impl VadeTnt {
         &input.issuer_proving_key
       );
 
-      let serialized = serde_json::to_string(&definition).unwrap();
-
-      self.vade.set_did_document(&generated_did, &serialized).await?;
+      let serialized = serde_json::to_string(&(&definition, &pk)).unwrap();
+      let serialized_definition = serde_json::to_string(&definition).unwrap();
+      self.vade.set_did_document(&generated_did, &serialized_definition).await?;
 
       Ok(Some(serialized))
     }
@@ -458,9 +457,9 @@ impl VadeTnt {
 
         // Resolve credential definition
         let definition: CredentialDefinition = serde_json::from_str(
-           &self.vade.get_did_document(
-             &input.credential_offering.credential_definition
-           ).await?
+          &self.vade.get_did_document(
+            &input.credential_offering.credential_definition
+          ).await?
         ).unwrap();
 
         let result: (CredentialRequest, CredentialSecretsBlindingFactors) = Prover::request_credential(
