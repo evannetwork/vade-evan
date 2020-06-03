@@ -28,7 +28,9 @@ use chrono::Utc;
 
 
 pub struct ResolverConfig {
-  pub target: String
+  pub target: String,
+  pub private_key: String,
+  pub identity: Vec<u8>
 }
 
 /// Resolver for DIDs on evan.network (currently on testnet)
@@ -45,7 +47,7 @@ impl SubstrateDidResolverEvan {
     }
 
     async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        Ok(Some(create_did(self.config.target.clone()/*"13.69.59.185".to_string()*/).await))
+        Ok(Some(create_did(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await))
     }
 }
 
@@ -73,9 +75,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     ///
     /// * `did_id` - did id to fetch
     async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-        println!("DID_ID:{}", &did_id);
-        let didresult = get_did(self.config.target.clone()/*"13.69.59.18".to_string()*/, did_id.to_string()).await;
-        println!("didresult : {:?}", didresult);
+        let didresult = get_did(self.config.target.clone(), did_id.to_string()).await;
         Ok(didresult)
     }
 
@@ -86,15 +86,12 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// * `did_name` - did_name to set value for
     /// * `value` - value to set
     async fn set_did_document(&mut self, did_id: &str, value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        println!("did_id {}", did_id);
-        let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone()/*"13.69.59.185".to_string()*/, did_id.to_string()).await.unwrap();
+        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone(), did_id.to_string()).await.unwrap();
         if payload_count > 0 {
-            update_payload_in_did(self.config.target.clone()/*"13.69.59.185".to_string()*/, 0 as u32, value.to_string(), did_id.to_string(), now_timestamp).await;
+            update_payload_in_did(self.config.target.clone(), 0 as u32, value.to_string(), did_id.to_string(), self.config.private_key.clone(), self.config.identity.clone()).await;
         } else {
-            add_payload_to_did(self.config.target.clone()/*"13.69.59.185".to_string()*/, value.to_string(), did_id.to_string(), now_timestamp).await;
+            add_payload_to_did(self.config.target.clone(), value.to_string(), did_id.to_string(), self.config.private_key.clone(), self.config.identity.clone()).await;
         }
-
         Ok(())
     }
 }
