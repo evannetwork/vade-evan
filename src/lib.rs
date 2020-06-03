@@ -186,7 +186,8 @@ struct RevokeCredentialArguments {
 #[serde(rename_all = "camelCase")]
 pub struct CreateRevocationRegistryDefinitionResult {
   pub private_key: RevocationKeyPrivate,
-  pub revocation_info: RevocationIdInformation
+  pub revocation_info: RevocationIdInformation,
+  pub revocation_registry_definition: RevocationRegistryDefinition
 }
 
 #[derive(Serialize, Deserialize)]
@@ -292,7 +293,7 @@ impl VadeTnt {
       );
 
       let serialized = serde_json::to_string(&schema).unwrap();
-
+      println!("CREATE SCHEMA DID DOCUMENT");
       self.vade.set_did_document(&generated_did, &serialized).await?;
 
       Ok(Some(serialized))
@@ -325,7 +326,8 @@ impl VadeTnt {
       let serialised_result = serde_json::to_string(
         &CreateRevocationRegistryDefinitionResult {
           private_key,
-          revocation_info
+          revocation_info,
+          revocation_registry_definition: definition
         }
       ).unwrap();
 
@@ -507,7 +509,7 @@ impl VadeTnt {
         );
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
-
+        
         self.vade.set_did_document(&revocation_definition.id, &serialized).await?;
 
         Ok(Some(serialized))
