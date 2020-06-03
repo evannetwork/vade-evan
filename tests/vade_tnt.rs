@@ -15,7 +15,6 @@
 */
 
 extern crate vade;
-extern crate vade_evan;
 extern crate vade_tnt;
 
 mod test_data;
@@ -279,14 +278,14 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
     let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
-    let (request, _) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
+    let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
 
 
     //let (revocation_registry_definition, revocation_key_private, revocation_info):
     //(RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
     let rev_reg_def: CreateRevocationRegistryDefinitionResult
         = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
-    let (credential, _): (Credential, _) = issue_credential(
+    let (mut credential, _): (Credential, _) = issue_credential(
         &mut vade, &definition, 
         &credential_private_key, 
         &request, 
@@ -294,11 +293,15 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
         &rev_reg_def.revocation_info, 
         &rev_reg_def.revocation_registry_definition
     ).await?;
-    let revocation_registry_definition: RevocationRegistryDefinition = serde_json::from_str(
-        &vade.get_did_document(
-          &rev_reg_def.revocation_info.definition_id
-        ).await?
-    ).unwrap();
+
+    Prover::post_process_credential_signature(
+      &mut credential,
+      &request,
+      &definition,
+      blinding_factors,
+      &master_secret,
+      &rev_reg_def.revocation_registry_definition
+    );
 
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,

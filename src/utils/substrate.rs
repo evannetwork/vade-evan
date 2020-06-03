@@ -132,7 +132,6 @@ pub async fn send_extrinsic(url: &str, xthex_prefixed: String, exit_on: XtStatus
             info!("start send");
             start_rpc_client_thread(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_finalized);
             info!("finished send");
-            error!("Send Extrinsic: {}", json.to_string());
             if let Some(data) = receiver.next().await {
                 info!("finalized transaction: {}", data.clone());
                 return Ok(Some(data));
@@ -141,7 +140,6 @@ pub async fn send_extrinsic(url: &str, xthex_prefixed: String, exit_on: XtStatus
         }
         XtStatus::InBlock => {
             start_rpc_client_thread(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_in_block);
-            error!("Send Extrinsic: {}", json.to_string());
             if let Some(data) = receiver.next().await {
                 info!("inBlock: {}", data.clone());
                 return Ok(Some(data));
@@ -256,6 +254,7 @@ struct ApprovedIdentity {
 struct Created {
     hash: sp_core::H256,
     owner: Vec<u8>,
+    nonce: u64
 }
 
 #[derive(Decode)]
@@ -284,22 +283,57 @@ pub async fn create_did(url: String) -> String {
     let signed_message = hex::decode("4a5c5d454721bbbb25540c3317521e71c373ae36458f960d2ad46ef088110e95").unwrap();
     let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (sender, receiver2) = channel::<String>(100);
+    let (sender, mut receiver2) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
-    info!("Nonce: {}", now_timestamp);
+    error!("Nonce: {}", now_timestamp);
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
     compose_extrinsic!(metadata.clone(), "DidModule", "create_did", signature, signed_message, identity, now_timestamp);
-    let extrinsic = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized );
-    let event_wait = wait_for_event::<Created>(metadata, "DidModule", "Created", None, receiver2);
-    let combined_future = future::join(extrinsic, event_wait);
-    let results = combined_future.await;
-    info!("Sent Extrinsic");
-    let args: Created = results.1
-        .unwrap()
-        .unwrap();
+    let extrinsic = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await;
 
-    info!("Got Event {:?}", args.hash);
-    format!("0x{}", hex::encode(args.hash))
+    let event_decoder = EventsDecoder::try_from(metadata.clone()).unwrap();
+    let mut created_did;
+    loop {
+        if let Some(data) = receiver2.next().await {
+            let event_str = data;
+            let _unhex = hexstr_to_vec(event_str).unwrap();
+            let mut _er_enc = _unhex.as_slice();
+
+            let _events = event_decoder.decode_events(&mut _er_enc);
+
+            let mut found_event = false;
+            info!("wait for raw event");
+            match _events {
+                Ok(raw_events) => {
+                    for (phase, event) in raw_events.into_iter() {
+                        info!("Decoded Event: {:?}, {:?}", phase, event);
+                        
+                        match event {
+                            RuntimeEvent::Raw(raw)
+                                if raw.module == "DidModule" && raw.variant == "Created" =>
+                            {
+                                let decoded_event: Created = Decode::decode(&mut &raw.data[..]).unwrap();
+                                println!("Decoded Event Nonce: {:?}", decoded_event.nonce);
+                                if now_timestamp == decoded_event.nonce {
+                                    created_did = decoded_event.hash;
+                                    error!("Nonce Received: {}", decoded_event.hash);
+                                    return format!("0x{}", hex::encode(created_did));
+                                }
+                           }
+                            _ => {
+                                debug!("ignoring unsupported module event: {:?}", event);
+                                //return Some(());
+                          
+                            }
+                        };
+
+                    }
+                }
+                Err(_) => error!("couldn't decode event record list"),
+            };
+            
+        }
+        
+    }
 }
 
 
@@ -318,7 +352,7 @@ pub async fn get_did(url: String, did: String) -> String {
     //}
     //if detail_count.unwrap() > 0 {
         let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(url.as_str(), metadata.clone(), "DidModule", "DidsDetails", (bytes_did.clone(), 0)).await.unwrap();
-        let body = reqwest::get(&format!("https://ipfs.infura.io/ipfs/{}", std::str::from_utf8(&detail_hash.unwrap()).unwrap()).to_string())
+        let body = reqwest::get(&format!("http://127.0.0.1:8080/ipfs/{}", std::str::from_utf8(&detail_hash.unwrap()).unwrap()).to_string())
             .await
             .unwrap()
             .text()
