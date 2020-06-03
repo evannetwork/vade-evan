@@ -4,7 +4,8 @@ use crate::application::datatypes::{
   ProofVerification,
   ProofPresentation,
   CredentialDefinition,
-  CredentialSchema
+  CredentialSchema,
+  RevocationRegistryDefinition
 };
 use crate::crypto::crypto_verifier::verifier::CredVerifier;
 use crate::utils::utils::get_now_as_iso_string;
@@ -37,7 +38,8 @@ impl Verifier {
     presented_proof: ProofPresentation,
     proof_request: ProofRequest,
     credential_definitions: HashMap<String, CredentialDefinition>,
-    credential_schemas: HashMap<String, CredentialSchema>
+    credential_schemas: HashMap<String, CredentialSchema>,
+    revocation_registry_definition: HashMap<String, Option<RevocationRegistryDefinition>>
   ) -> ProofVerification {
 
     let status: &str;
@@ -46,7 +48,8 @@ impl Verifier {
       &presented_proof,
       &proof_request,
       &credential_definitions,
-      &credential_schemas
+      &credential_schemas,
+      &revocation_registry_definition
     ) {
       Ok(()) => { status = "verified" }
       Err(e) => { status = "rejected"; reason = Some(e.to_string()); }

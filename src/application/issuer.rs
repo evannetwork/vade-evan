@@ -118,6 +118,21 @@ impl Issuer {
       return schema;
     }
 
+    /// Creates a new revocation registry definition. This definition is used to prove the non-revocation state of a credential.
+    /// It needs to be publicly published and updated after every revocation. The definition is signed by the issuer.
+    ///
+    /// # Arguments
+    /// * `assigned_did` - DID that will point to the registry definition
+    /// * `credential_definition` - Credential definition this revocation registry definition will be associated with
+    /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
+    /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
+    /// * `maximum_credential_count` - Capacity of the revocation registry in terms of issuable credentials
+    ///
+    /// # Returns
+    /// A 3-tuple consisting
+    /// * `RevocationRegistryDefinition` - the definition
+    /// * `RevocationKeyPrivate` - the according revocation private key, and an revocaiton
+    /// * `RevocationIdInformation` - object used for keeping track of issued revocation IDs
     pub fn create_revocation_registry_definition(
       assigned_did: &str,
       credential_definition: &CredentialDefinition,
@@ -147,7 +162,7 @@ impl Issuer {
 
       let revoc_info = RevocationIdInformation {
         definition_id: assigned_did.to_string(),
-        next_unused_id: 0,
+        next_unused_id: 1, // needs to start at 1
         used_ids: HashSet::new()
       };
 
@@ -178,7 +193,7 @@ impl Issuer {
     /// * `revocation_info` - Revocation info containing ID counter. Hold by credential definition owner
     ///
     /// # Returns
-    /// Tuple containg
+    /// Tuple containing
     /// * `Credential` - Issued credential
     /// * `RevocationIdInformation` - Updated `revocation_info` object that needs to be persisted
     pub fn issue_credential (
@@ -227,7 +242,8 @@ impl Issuer {
       let (
         signature,
         signature_correctness_proof,
-        issuance_nonce
+        issuance_nonce,
+        witness
       ) = CryptoIssuer::sign_credential_with_revocation(
         &credential_request,
         &credential_private_key,
@@ -244,7 +260,8 @@ impl Issuer {
         signature,
         signature_correctness_proof,
         revocation_id: rev_idx,
-        revocation_registry_definition: revocation_registry_definition.id.clone()
+        revocation_registry_definition: revocation_registry_definition.id.clone(),
+        witness
       };
 
       let credential = Credential {
@@ -312,10 +329,5 @@ impl Issuer {
 
       rev_reg_def.proof = Some(proof);
       return rev_reg_def;
-    }
-    
-    #[allow(dead_code)]
-    fn mock_get_rev_idx() -> u32 {
-      return 1;
     }
 }
