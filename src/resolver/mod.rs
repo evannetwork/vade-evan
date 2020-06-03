@@ -20,7 +20,9 @@ use vade::traits::{ DidResolver, MessageConsumer };
 use crate::utils::substrate::{
     get_did,
     create_did,
-    add_payload_to_did
+    add_payload_to_did,
+    get_payload_count_for_did,
+    update_payload_in_did
 };
 use chrono::Utc;
 
@@ -35,8 +37,7 @@ impl SubstrateDidResolverEvan {
     }
 
     async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let now_timestamp: u64 = Utc::now().timestamp() as u64;
-        Ok(Some(create_did("13.69.59.185".to_string(), now_timestamp).await))
+        Ok(Some(create_did("127.0.0.1"/*13.69.59.185*/.to_string()).await))
       //Ok(Some("".to_owned()))
     }
 }
@@ -66,7 +67,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// * `did_id` - did id to fetch
     async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
         println!("DID_ID:{}", &did_id);
-        let didresult = get_did("13.69.59.185".to_string(), did_id.to_string()).await;
+        let didresult = get_did("127.0.0.1"/*13.69.59.185*/.to_string(), did_id.to_string()).await;
         println!("didresult : {:?}", didresult);
         Ok(didresult)
     }
@@ -79,7 +80,14 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// * `value` - value to set
     async fn set_did_document(&mut self, did_id: &str, value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
         println!("did_id {}", did_id);
-        add_payload_to_did("13.69.59.185".to_string(), value.to_string(), did_id.to_string()).await;
+        let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+        let payload_count: u32 = get_payload_count_for_did("127.0.0.1"/*13.69.59.185*/.to_string(), did_id.to_string()).await.unwrap();
+        if payload_count > 0 {
+            update_payload_in_did("127.0.0.1"/*13.69.59.185*/.to_string(), 0 as u32, value.to_string(), did_id.to_string(), now_timestamp).await;
+        } else {
+            add_payload_to_did("127.0.0.1"/*13.69.59.185*/.to_string(), value.to_string(), did_id.to_string(), now_timestamp).await;
+        }
+        
         Ok(())
     }
 }

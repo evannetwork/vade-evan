@@ -41,6 +41,9 @@ use futures::future;
 use futures::stream::{self, StreamExt};
 use std::convert::TryFrom;
 
+use chrono::Utc;
+
+
 pub async fn get_storage_value(url: &str, storage_prefix: &str, storage_key_name: &str) -> Result<String, Box<dyn std::error::Error>>  {
 
 
@@ -83,9 +86,8 @@ pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(url
         .text()
         .await?;
     let parsed: Value = serde_json::from_str(&body).unwrap();
-
-    let result = match parsed["result"].as_str().unwrap() {
-        "null" => None,
+    let result = match parsed["result"].as_str() {
+        None => None,
         _ => Some(hex::decode(&parsed["result"].as_str().unwrap().trim_start_matches("0x")).unwrap()),
     };
     Ok(result.map(|v| Decode::decode(&mut v.as_slice()).unwrap()))
@@ -130,6 +132,7 @@ pub async fn send_extrinsic(url: &str, xthex_prefixed: String, exit_on: XtStatus
             info!("start send");
             start_rpc_client_thread(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_finalized);
             info!("finished send");
+            error!("Send Extrinsic: {}", json.to_string());
             if let Some(data) = receiver.next().await {
                 info!("finalized transaction: {}", data.clone());
                 return Ok(Some(data));
@@ -138,6 +141,7 @@ pub async fn send_extrinsic(url: &str, xthex_prefixed: String, exit_on: XtStatus
         }
         XtStatus::InBlock => {
             start_rpc_client_thread(format!("ws://{}:9944", url).to_string(), json.to_string(), sender, on_extrinsic_msg_until_in_block);
+            error!("Send Extrinsic: {}", json.to_string());
             if let Some(data) = receiver.next().await {
                 info!("inBlock: {}", data.clone());
                 return Ok(Some(data));
@@ -254,6 +258,13 @@ struct Created {
     owner: Vec<u8>,
 }
 
+#[derive(Decode)]
+struct UpdatedDid {
+    hash: sp_core::H256,
+    index: u32,
+}
+
+
 #[wasm_bindgen]
 pub async fn watch_event(url:String)->String{
     let metadata = get_metadata(url.as_str()).await.unwrap();
@@ -267,17 +278,17 @@ pub async fn watch_event(url:String)->String{
     return "done".to_string();
 }
 
-pub async fn create_did(url: String, nonce: u64) -> String {
+pub async fn create_did(url: String) -> String {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     let signature = hex::decode("3b83194f7efa3b4a7d59ebe0a38b4d76813157108d8183c2fcbb8a8ce1a6f3d33feac89855dd5a15a397d92917d88572a1f054c6b7105d80f09e8a525b4e6bae1c").unwrap();
     let signed_message = hex::decode("4a5c5d454721bbbb25540c3317521e71c373ae36458f960d2ad46ef088110e95").unwrap();
     let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
-
+    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (sender, receiver2) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
-    info!("Nonce: {}", nonce);
+    info!("Nonce: {}", now_timestamp);
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
-    compose_extrinsic!(metadata.clone(), "DidModule", "create_did", signature, signed_message, identity, nonce);
+    compose_extrinsic!(metadata.clone(), "DidModule", "create_did", signature, signed_message, identity, now_timestamp);
     let extrinsic = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized );
     let event_wait = wait_for_event::<Created>(metadata, "DidModule", "Created", None, receiver2);
     let combined_future = future::join(extrinsic, event_wait);
@@ -319,7 +330,83 @@ pub async fn get_did(url: String, did: String) -> String {
 
 
 #[wasm_bindgen]
-pub async fn add_payload_to_did(url: String, payload: String, did: String) -> Result<String, JsValue> {
+pub async fn add_payload_to_did(url: String, payload: String, did: String, nonce: u64) -> Result<String, JsValue> {
+    let metadata = get_metadata(url.as_str()).await.unwrap();
+    let mut bytes_did_arr = [0; 32];
+    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
+    let bytes_did = sp_core::H256::from(bytes_did_arr);
+    let signature = hex::decode("3b83194f7efa3b4a7d59ebe0a38b4d76813157108d8183c2fcbb8a8ce1a6f3d33feac89855dd5a15a397d92917d88572a1f054c6b7105d80f09e8a525b4e6bae1c").unwrap();
+    let signed_message = hex::decode("4a5c5d454721bbbb25540c3317521e71c373ae36458f960d2ad46ef088110e95").unwrap();
+    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+    let payload_hex = hex::decode(hex::encode(payload)).unwrap();
+
+    let (sender, mut receiver2) = channel::<String>(100);
+    subscribe_events(url.as_str(), sender).await;
+
+    let xt: xt_primitives::UncheckedExtrinsicV4<_> =
+    compose_extrinsic!(metadata.clone(), "DidModule", "add_did_detail", bytes_did.clone(), payload_hex, signature, signed_message, identity, nonce);
+    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await;
+
+    let event_decoder = EventsDecoder::try_from(metadata.clone()).unwrap();
+    loop {
+        if let Some(data) = receiver2.next().await {
+            let event_str = data;
+            let _unhex = hexstr_to_vec(event_str).unwrap();
+            let mut _er_enc = _unhex.as_slice();
+
+            let _events = event_decoder.decode_events(&mut _er_enc);
+
+            let mut found_event = false;
+            info!("wait for raw event");
+            match _events {
+                Ok(raw_events) => {
+                    for (phase, event) in raw_events.into_iter() {
+                        info!("Decoded Event: {:?}, {:?}", phase, event);
+                        
+                        match event {
+                            RuntimeEvent::Raw(raw)
+                                if raw.module == "DidModule" && raw.variant == "UpdatedDid" =>
+                            {
+                                let decoded_event: UpdatedDid = Decode::decode(&mut &raw.data[..]).unwrap();
+                                println!("DECODED EVENT: {:?}", hex::encode(decoded_event.hash));
+                                println!("DID: {:?}", did);
+                                if format!("0x{}", hex::encode(decoded_event.hash)) == did {
+                                    found_event = true
+                                }
+                           }
+                            _ => {
+                                debug!("ignoring unsupported module event: {:?}", event);
+                                //return Some(());
+                          
+                            }
+                        };
+
+                    }
+                }
+                Err(_) => error!("couldn't decode event record list"),
+            };
+            if found_event {
+                info!("UPDATED_EVENT  FIRED");
+                break;
+            }
+            
+        }
+        
+    }
+
+
+
+
+    /*loop {
+        info!("LOOP");
+        let event_wait = wait_for_event::<UpdatedDid>(metadata.clone(), "DidModule", "UpdatedDid", None, receiver2).await.unwrap().unwrap();
+        println!("Updated Hash: {:?}", event_wait.hash)
+    }*/
+    Ok("Huhu".to_string())
+}
+
+#[wasm_bindgen]
+pub async fn update_payload_in_did(url: String, index: u32, payload: String, did: String, nonce: u64) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     let mut bytes_did_arr = [0; 32];
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
@@ -333,9 +420,29 @@ pub async fn add_payload_to_did(url: String, payload: String, did: String) -> Re
     subscribe_events(url.as_str(), sender).await;
 
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
-    compose_extrinsic!(metadata.clone(), "DidModule", "add_did_detail", bytes_did.clone(), payload_hex, signature, signed_message, identity);
+    compose_extrinsic!(metadata.clone(), "DidModule", "update_did_detail", bytes_did.clone(), payload_hex, index,  signature, signed_message, identity, nonce);
     send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized ).await;
     Ok("Huhu".to_string())
+}
+
+#[wasm_bindgen]
+pub async fn get_payload_count_for_did(url: String, did: String) -> Result<u32, JsValue> {
+    let metadata = get_metadata(url.as_str()).await.unwrap();
+    let mut bytes_did_arr = [0; 32];
+    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
+    let bytes_did = sp_core::H256::from(bytes_did_arr);
+    let signature = hex::decode("3b83194f7efa3b4a7d59ebe0a38b4d76813157108d8183c2fcbb8a8ce1a6f3d33feac89855dd5a15a397d92917d88572a1f054c6b7105d80f09e8a525b4e6bae1c").unwrap();
+    let signed_message = hex::decode("4a5c5d454721bbbb25540c3317521e71c373ae36458f960d2ad46ef088110e95").unwrap();
+    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+
+    let detail_count = get_storage_map::<sp_core::H256, u32>(url.as_str(), metadata.clone(), "DidModule", "DidsDetailsCount", bytes_did.clone()).await.unwrap();
+    info!("detail_count: {:?}", detail_count);
+    if detail_count.is_none() {
+        Ok(0)
+    } else {
+        Ok(detail_count.unwrap())
+    }
+   
 }
 
 
