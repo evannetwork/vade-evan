@@ -26,19 +26,26 @@ use crate::utils::substrate::{
 };
 use chrono::Utc;
 
+
+pub struct ResolverConfig {
+  pub target: String
+}
+
 /// Resolver for DIDs on evan.network (currently on testnet)
 pub struct SubstrateDidResolverEvan {
+  config: ResolverConfig
 }
 
 impl SubstrateDidResolverEvan {
     /// Creates new instance of `SubstrateDidResolverEvan`.
-    pub fn new() -> SubstrateDidResolverEvan {
-        SubstrateDidResolverEvan { }
+    pub fn new(config: ResolverConfig) -> SubstrateDidResolverEvan {
+        SubstrateDidResolverEvan {
+          config
+        }
     }
 
     async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        Ok(Some(create_did("127.0.0.1"/*13.69.59.185*/.to_string()).await))
-      //Ok(Some("".to_owned()))
+        Ok(Some(create_did(self.config.target.clone()/*"13.69.59.185".to_string()*/).await))
     }
 }
 
@@ -67,7 +74,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// * `did_id` - did id to fetch
     async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
         println!("DID_ID:{}", &did_id);
-        let didresult = get_did("127.0.0.1"/*13.69.59.185*/.to_string(), did_id.to_string()).await;
+        let didresult = get_did(self.config.target.clone()/*"13.69.59.18".to_string()*/, did_id.to_string()).await;
         println!("didresult : {:?}", didresult);
         Ok(didresult)
     }
@@ -81,13 +88,13 @@ impl DidResolver for SubstrateDidResolverEvan {
     async fn set_did_document(&mut self, did_id: &str, value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
         println!("did_id {}", did_id);
         let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-        let payload_count: u32 = get_payload_count_for_did("127.0.0.1"/*13.69.59.185*/.to_string(), did_id.to_string()).await.unwrap();
+        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone()/*"13.69.59.185".to_string()*/, did_id.to_string()).await.unwrap();
         if payload_count > 0 {
-            update_payload_in_did("127.0.0.1"/*13.69.59.185*/.to_string(), 0 as u32, value.to_string(), did_id.to_string(), now_timestamp).await;
+            update_payload_in_did(self.config.target.clone()/*"13.69.59.185".to_string()*/, 0 as u32, value.to_string(), did_id.to_string(), now_timestamp).await;
         } else {
-            add_payload_to_did("127.0.0.1"/*13.69.59.185*/.to_string(), value.to_string(), did_id.to_string(), now_timestamp).await;
+            add_payload_to_did(self.config.target.clone()/*"13.69.59.185".to_string()*/, value.to_string(), did_id.to_string(), now_timestamp).await;
         }
-        
+
         Ok(())
     }
 }

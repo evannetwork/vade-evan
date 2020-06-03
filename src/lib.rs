@@ -13,10 +13,6 @@ pub mod crypto;
 
 #[macro_use]
 pub mod utils;
-
-
-
-
 pub mod resolver;
 
 use async_trait::async_trait;
@@ -504,7 +500,7 @@ impl VadeTnt {
         );
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
-        
+
         self.vade.set_did_document(&revocation_definition.id, &serialized).await?;
 
         Ok(Some(serialized))

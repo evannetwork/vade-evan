@@ -67,6 +67,7 @@ use vade_tnt::{
         RevocationRegistryDefinition,
         RevocationIdInformation
     },
+    resolver::ResolverConfig
 };
 
 // TODO: Test multi-proof presentations
@@ -243,8 +244,8 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
       &definition,
       &credential_private_key,
       &request,
-      &rev_reg_def.private_key, 
-      &rev_reg_def.revocation_info, 
+      &rev_reg_def.private_key,
+      &rev_reg_def.revocation_info,
       &rev_reg_def.revocation_registry_definition
     ).await?;
 
@@ -286,11 +287,11 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
     let rev_reg_def: CreateRevocationRegistryDefinitionResult
         = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
     let (mut credential, _): (Credential, _) = issue_credential(
-        &mut vade, &definition, 
-        &credential_private_key, 
-        &request, 
-        &rev_reg_def.private_key, 
-        &rev_reg_def.revocation_info, 
+        &mut vade, &definition,
+        &credential_private_key,
+        &request,
+        &rev_reg_def.private_key,
+        &rev_reg_def.revocation_info,
         &rev_reg_def.revocation_registry_definition
     ).await?;
 
@@ -565,8 +566,8 @@ async fn verify_proof(
 fn get_vade() -> Vade {
     // vade to work with
     // let substrate_resolver = SubstrateDidResolverEvan::new();
-    let substrate_resolver = SubstrateDidResolverEvan::new();
-    let substrate_message_handler = SubstrateDidResolverEvan::new();
+    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{target: "13.69.59.185".to_string()});
+    let substrate_message_handler = SubstrateDidResolverEvan::new(ResolverConfig{target: "13.69.59.185".to_string()});
     let mut internal_vade = Vade::new();
     internal_vade.register_did_resolver(Box::from(substrate_resolver));
     internal_vade.register_message_consumer(&vec!["generateDid".to_owned()], Box::from(substrate_message_handler));
