@@ -1,7 +1,6 @@
 extern crate vade_tnt;
 
 use vade_tnt::crypto::crypto_utils::{
-  check_assertion_proof,
   create_assertion_proof,
   recover_address_and_data,
   JwsData
@@ -11,8 +10,6 @@ use vade_tnt::application::datatypes::{
   CredentialSchema,
   SchemaProperty
 };
-use data_encoding::BASE64URL;
-use serde_json::value::RawValue;
 use std::collections::HashMap;
 
 const DOCUMENT_TO_SIGN: &str = r###"
@@ -47,11 +44,9 @@ struct JwsDoc {
   r#type: String,
   name: String,
   author: String,
-  createdAt: String,
   description: String,
   properties: HashMap<String, SchemaProperty>,
   required: Vec<String>,
-  additionalProperties: bool
 }
 
 #[test]

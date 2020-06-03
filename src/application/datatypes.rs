@@ -11,7 +11,8 @@ use ursa::cl::{
   RevocationTailsGenerator,
   RevocationKeyPublic,
   CredentialSchema as UrsaCredentialSchema,
-  issuer::Issuer as UrsaIssuer
+  issuer::Issuer as UrsaIssuer,
+  Witness
 };
 use serde::{Serialize, Deserialize};
 use std::collections::{
@@ -110,7 +111,8 @@ pub struct CredentialSignature {
   pub signature_correctness_proof: SignatureCorrectnessProof,
   pub issuance_nonce: Nonce,
   pub revocation_id: u32,
-  pub revocation_registry_definition: String
+  pub revocation_registry_definition: String,
+  pub witness: Witness
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -185,6 +187,7 @@ pub struct ProofRequest {
 #[serde(rename_all = "camelCase")]
 pub struct CredentialSubProof {
   pub credential_definition: String,
+  pub revocation_registry_definition: String,
   pub proof: String
 }
 

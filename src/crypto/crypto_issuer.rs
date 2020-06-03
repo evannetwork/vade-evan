@@ -8,7 +8,8 @@ use ursa::cl::{
   RevocationRegistry,
   CredentialSignature,
   SignatureCorrectnessProof,
-  Nonce
+  Nonce,
+  Witness
 };
 use std::collections::HashSet;
 use ursa::cl::issuer::Issuer as CryptoIssuer;
@@ -90,7 +91,7 @@ impl Issuer {
     credential_revocation_definition: &mut RevocationRegistryDefinition,
     credential_revocation_id: u32,
     revocation_private_key: &RevocationKeyPrivate
-  ) -> (CredentialSignature, SignatureCorrectnessProof, Nonce) {
+  ) -> (CredentialSignature, SignatureCorrectnessProof, Nonce, Witness) {
     let credential_issuance_nonce = new_nonce().unwrap();
 
     let tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails).unwrap();
@@ -100,6 +101,8 @@ impl Issuer {
       value_builder.add_dec_known(&pair.0, &pair.1.encoded).unwrap();
     }
     let values = value_builder.finalize().unwrap();
+
+    let delta = credential_revocation_definition.registry_delta.as_ref().unwrap();
 
     // no delta because we assume issuance_by_default == true
     let (cred, proof, _) = CryptoIssuer::sign_credential_with_revoc(
@@ -119,7 +122,15 @@ impl Issuer {
       &tails_accessor
     ).unwrap();
 
-    return (cred, proof, credential_issuance_nonce);
+    let witness = Witness::new(
+      credential_revocation_id,
+      credential_revocation_definition.maximum_credential_count,
+      true, // TODO: Global const
+      &delta,
+      &tails_accessor
+    ).unwrap();
+
+    return (cred, proof, credential_issuance_nonce, witness);
   }
 
   pub fn create_revocation_registry(
@@ -132,8 +143,8 @@ impl Issuer {
       true
     ).unwrap();
 
-    let issued = HashSet::new();
     let revoked = HashSet::new();
+    let issued = HashSet::new();
     let rev_reg_delta = RevocationRegistryDelta::from_parts(None, &rev_registry, &issued, &revoked);
 
     let rev_def = CryptoRevocationRegistryDefinition {

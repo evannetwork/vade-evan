@@ -103,8 +103,7 @@ impl Prover {
     let mut credential_schema_builder;
     let mut sub_proof_request_builder;
     let mut credential_values_builder;
-    let mut witness;
-    let mut registry;
+
     for sub_proof in &proof_request.sub_proof_requests {
 
       // Build Ursa credential schema & proof requests
@@ -122,17 +121,6 @@ impl Prover {
       }
       credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
 
-      // Build witness with revocation data
-      registry = revocation_registries.get(&sub_proof.schema).unwrap();
-      let tails_accessor = SimpleTailsAccessor::new(&mut registry.tails.clone()).unwrap();
-      witness = Some(Witness::new(
-        credentials.get(&sub_proof.schema).unwrap().signature.revocation_id,
-        registry.maximum_credential_count,
-        true, // TODO: Global const
-        &registry.registry_delta.as_ref().unwrap(),
-        &tails_accessor
-      ).unwrap());
-
       // Build proof for requested schema & attributes
       proof_builder.add_sub_proof_request(
         &sub_proof_request_builder.finalize().unwrap(),
@@ -141,8 +129,9 @@ impl Prover {
         &credentials.get(&sub_proof.schema).unwrap().signature.signature,
         &credential_values_builder.finalize().unwrap(),
         &credential_definitions.get(&sub_proof.schema).unwrap().public_key,
-        Some(&registry.registry),
-        witness.as_ref()).unwrap();
+        Some(&revocation_registries.get(&sub_proof.schema).unwrap().registry),
+        Some(&credentials.get(&sub_proof.schema).unwrap().signature.witness)
+      ).unwrap();
     }
 
     let proof = proof_builder.finalize(&proof_request.nonce).unwrap();
@@ -155,36 +144,26 @@ impl Prover {
     credential_request: &CredentialRequest,
     credential_public_key: &CredentialPublicKey,
     credential_blinding_factors: &CredentialSecretsBlindingFactors,
-    credential_revocation_id: u32,
+    master_secret: &MasterSecret,
     revocation_registry_definition: Option<RevocationRegistryDefinition>,
   ) {
-
     let mut revocation_key_public: Option<RevocationKeyPublic> = None;
     let mut revocation_registry: Option<RevocationRegistry> = None;
-    let mut witness: Option<Witness> = None;
     if revocation_registry_definition.is_some() {
-      let mut rev_def = revocation_registry_definition.unwrap();
+      let rev_def = revocation_registry_definition.unwrap();
       revocation_key_public = Some(rev_def.revocation_public_key);
       revocation_registry = Some(rev_def.registry);
-
-      let tails = SimpleTailsAccessor::new(&mut rev_def.tails).unwrap();
-
-      witness = Some(Witness::new(
-        credential_revocation_id,
-        rev_def.maximum_credential_count,
-        true, // TODO: Global const
-        &rev_def.registry_delta.unwrap(),
-        &tails
-      ).unwrap());
     }
 
     let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
     for value in &credential_request.credential_values {
       credential_values_builder.add_dec_known(value.0, &value.1.encoded).unwrap();
     }
+    credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
     let values = credential_values_builder.finalize().unwrap();
 
-    CryptoProver::process_credential_signature(&mut credential.signature,
+    CryptoProver::process_credential_signature(
+      &mut credential.signature,
       &values,
       &credential.signature_correctness_proof,
       credential_blinding_factors,
@@ -192,7 +171,7 @@ impl Prover {
       &credential.issuance_nonce,
       revocation_key_public.as_ref(),
       revocation_registry.as_ref(),
-      witness.as_ref()
+      Some(&credential.witness)
     ).unwrap();
   }
 }
