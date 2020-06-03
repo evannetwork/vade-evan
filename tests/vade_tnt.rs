@@ -477,7 +477,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
       &revocation_registry_definition
     );
 
-    let updated_registry = revoke_credential(
+     let updated_registry = revoke_credential(
       &mut vade,
       &other_credential,
       &revocation_registry_definition
@@ -501,7 +501,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
         &proof_request,
         &definition,
         &schema,
-        &revocation_registry_definition
+        &updated_registry
     ).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
 
@@ -596,7 +596,7 @@ async fn issue_credential(
           "credentialRequest": {},
           "credentialDefinition": {},
           "credentialPrivateKey": {},
-          "credentialRevocationDefinition": {},
+          "credentialRevocationDefinition": "{}",
           "revocationPrivateKey": {},
           "revocationInformation": {}
         }}
@@ -606,7 +606,7 @@ async fn issue_credential(
     serde_json::to_string(&request).unwrap(),
     serde_json::to_string(&definition).unwrap(),
     serde_json::to_string(&credential_private_key).unwrap(),
-    serde_json::to_string(&revocation_definition.id).unwrap(),
+    &revocation_definition.id,
     serde_json::to_string(&revocation_key_private).unwrap(),
     serde_json::to_string(&revocation_info).unwrap(),
   );
@@ -671,6 +671,7 @@ async fn revoke_credential(vade: &mut Vade, credential: &Credential, revocation_
     );
     println!("{}", &message_str);
     let result = vade.send_message(&message_str).await?;
+    assert_eq!(result.len(), 1);
     let updated_registry: RevocationRegistryDefinition = serde_json::from_str(result[0].as_ref().unwrap()).unwrap();
 
     Ok(updated_registry)
@@ -792,6 +793,7 @@ fn get_vade() -> Vade {
         "requestProof",
         "presentProof",
         "verifyProof",
+        "revokeCredential"
       ].iter().map(|&x| String::from(x)).collect(),
       Box::from(tnt),
     );
