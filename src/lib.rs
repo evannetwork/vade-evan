@@ -251,7 +251,6 @@ impl VadeTnt {
     // TODO: Re-enable resolving
     async fn create_credential_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
-      println!("schma did : {:?}", &input.schema_did);
       let schema: CredentialSchema = serde_json::from_str(
           &self.vade.get_did_document(
               &input.schema_did
@@ -293,7 +292,6 @@ impl VadeTnt {
       );
 
       let serialized = serde_json::to_string(&schema).unwrap();
-      println!("CREATE SCHEMA DID DOCUMENT");
       self.vade.set_did_document(&generated_did, &serialized).await?;
 
       Ok(Some(serialized))
@@ -386,8 +384,6 @@ impl VadeTnt {
     }
 
     async fn create_credential_offer(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-
-        println!("create_credential_offer");
         let input: OfferCredentialArguments = serde_json::from_str(&data)?;
         let result: CredentialOffer = Issuer::offer_credential(
             &input.issuer,
@@ -395,7 +391,6 @@ impl VadeTnt {
             &input.schema,
             &input.credential_definition,
         );
-        println!("offer_credential");
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
@@ -535,30 +530,18 @@ impl VadeTnt {
 
         for credential in &input.presented_proof.verifiable_credential {
           // Resolve credential definition
-          let definition_did = credential.proof.credential_definition.clone();
-          definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
-            &self.vade.get_did_document(
-             &definition_did
-           ).await?
-          ).unwrap());
-        }
-
-        for credential in &input.presented_proof.verifiable_credential {
-          // Resolve credential definition
           let definition_did = &credential.proof.credential_definition.clone();
           definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
-            // &self.vade.get_did_document(
-            //   &definition_did
-            // ).await?
-            EXAMPLE_CREDENTIAL_DEFINITION
+            &self.vade.get_did_document(
+              &definition_did
+            ).await?
           ).unwrap());
 
           let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
           rev_definitions.insert(credential.credential_schema.id.clone(), Some(serde_json::from_str(
-            // &self.vade.get_did_document(
-            //   &rev_definition_did
-            // ).await?
-            EXAMPLE_REVOCATION_REGISTRY_DEFINITION
+            &self.vade.get_did_document(
+              &rev_definition_did
+            ).await?
           ).unwrap()));
         }
 
