@@ -12,7 +12,8 @@ use ursa::cl::{
   RevocationRegistry,
   Witness,
   SimpleTailsAccessor,
-  verifier::Verifier as CryptoVerifier
+  verifier::Verifier as CryptoVerifier,
+  RevocationTailsGenerator
 };
 use ursa::errors::UrsaCryptoResult;
 use std::collections::HashMap;
@@ -121,6 +122,16 @@ impl Prover {
       }
       credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
 
+      let mut witness: Witness = serde_json::from_str(&serde_json::to_string(&credentials.get(&sub_proof.schema).unwrap().signature.witness).unwrap()).unwrap();
+      let mut generator: RevocationTailsGenerator = serde_json::from_str(&serde_json::to_string(&revocation_registries.get(&sub_proof.schema).unwrap().tails).unwrap()).unwrap();
+      
+      witness.update(
+        credentials.get(&sub_proof.schema).unwrap().signature.revocation_id,
+        revocation_registries.get(&sub_proof.schema).unwrap().maximum_credential_count,
+        &revocation_registries.get(&sub_proof.schema).unwrap().registry_delta.as_ref().unwrap(),
+        &SimpleTailsAccessor::new(&mut generator).unwrap()
+      ).unwrap();
+
       // Build proof for requested schema & attributes
       proof_builder.add_sub_proof_request(
         &sub_proof_request_builder.finalize().unwrap(),
@@ -130,7 +141,7 @@ impl Prover {
         &credential_values_builder.finalize().unwrap(),
         &credential_definitions.get(&sub_proof.schema).unwrap().public_key,
         Some(&revocation_registries.get(&sub_proof.schema).unwrap().registry),
-        Some(&credentials.get(&sub_proof.schema).unwrap().signature.witness)
+        Some(&witness)
       ).unwrap();
     }
 

@@ -166,7 +166,11 @@ impl Issuer {
     let max_cred_num = revocation_registry_definition.maximum_credential_count;
     let tails =  SimpleTailsAccessor::new(&mut tails_gen).unwrap();
     match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
-      Ok(delta) => return Ok((RevocationRegistry::from(delta.clone()), delta)),
+      Ok(delta) => {
+        let mut orig_delta: RevocationRegistryDelta = revocation_registry_definition.registry_delta.as_ref().unwrap().clone();
+        orig_delta.merge(&delta).unwrap();
+        Ok((RevocationRegistry::from(orig_delta.clone()), orig_delta))
+      }
       Err(_) => return Err(Box::from("Unable to revoke credential"))
     }
   }
