@@ -111,7 +111,7 @@ async fn vade_tnt_can_create_schema () -> Result<(), Box<dyn std::error::Error>>
     let mut vade = get_vade();
 
     // run test
-    let result: CredentialSchema = create_credential_schema(&mut vade).await?;
+    let _result: CredentialSchema = create_credential_schema(&mut vade).await?;
 
     Ok(())
 }

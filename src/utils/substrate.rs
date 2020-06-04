@@ -18,16 +18,8 @@ use crate::utils::extrinsic::rpc::{
 
 use crate::crypto::crypto_utils::sign_message;
 
-use crate::utils::extrinsic::events;
 use crate::utils::extrinsic::events::{EventsDecoder, RawEvent, RuntimeEvent};
-use crate::utils::extrinsic::rpc_messages::{
-    XtStatus,
-    /*on_extrinsic_msg_until_finalized,
-    on_subscription_msg,
-    on_extrinsic_msg_until_in_block,
-    on_extrinsic_msg_until_broadcast,
-    on_extrinsic_msg_until_ready*/
-};
+use crate::utils::extrinsic::rpc_messages::XtStatus;
 use crate::compose_extrinsic;
 use crate::utils::extrinsic::node_metadata::{Metadata};
 use crate::utils::extrinsic::frame_metadata::RuntimeMetadataPrefixed;
@@ -39,8 +31,7 @@ use futures::channel::mpsc::{
     Sender,
     Receiver
 };
-use futures::future;
-use futures::stream::{self, StreamExt};
+use futures::stream::{StreamExt};
 use std::convert::TryFrom;
 
 use chrono::Utc;
@@ -51,9 +42,8 @@ pub async fn get_storage_value(url: &str, storage_prefix: &str, storage_key_name
 
     let mut bytes = twox_128(&storage_prefix.as_bytes()).to_vec();
     bytes.extend(&twox_128(&storage_key_name.as_bytes())[..]);
-    let hexString = format!("0x{}", hex::encode(bytes));
-    print!("{}", hexString);
-    let json = json_req("state_getStorage", &hexString.to_string(), 1);
+    let hex_string = format!("0x{}", hex::encode(bytes));
+    let json = json_req("state_getStorage", &hex_string.to_string(), 1);
     let client = reqwest::Client::new();
     let body = client.post(&format!("http://{}:9933", url).to_string())
         .header("Content-Type", "application/json")
@@ -76,9 +66,8 @@ pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(url
         .get_map::<K, V>()
         .unwrap()
         .key(map_key);
-    let hexString = format!("0x{}", hex::encode(storagekey.0.clone()));
-    info!("hexString: {:?}", hexString);
-    let json = json_req("state_getStorage", &hexString.to_string(), 1);
+    let hex_string = format!("0x{}", hex::encode(storagekey.0.clone()));
+    let json = json_req("state_getStorage", &hex_string.to_string(), 1);
     let client = reqwest::Client::new();
     let body = client.post(&format!("http://{}:9933", url).to_string())
         .header("Content-Type", "application/json")
@@ -111,8 +100,8 @@ pub async fn get_metadata(url: &str) -> Result<Metadata, Box<dyn std::error::Err
         .text()
         .await?;
     let parsed: Value = serde_json::from_str(&body).unwrap();
-    let hexValue = parsed["result"].as_str().unwrap().to_string();
-    let _unhex = hexstr_to_vec(hexValue).unwrap();
+    let hex_value = parsed["result"].as_str().unwrap().to_string();
+    let _unhex = hexstr_to_vec(hex_value).unwrap();
     let mut _om = _unhex.as_slice();
     let meta = RuntimeMetadataPrefixed::decode(&mut _om).unwrap();
     let metadata2 =  Metadata::parse(meta).unwrap();
@@ -172,7 +161,7 @@ pub async fn send_extrinsic(url: &str, xthex_prefixed: String, exit_on: XtStatus
 
 
 
-pub async fn subscribe_events(url: &str, mut sender: Sender<String>) {
+pub async fn subscribe_events(url: &str, sender: Sender<String>) {
     info!("subscribing to events");
     let mut bytes = twox_128("System".as_bytes()).to_vec();
     bytes.extend(&twox_128("Events".as_bytes())[..]);
@@ -252,20 +241,20 @@ pub async fn wait_for_raw_event(
 #[derive(Decode)]
 struct ApprovedIdentity {
     identity: Vec<u8>,
-    account: Vec<u8>,
+    _account: Vec<u8>,
 }
 
 #[derive(Decode)]
 struct Created {
     hash: sp_core::H256,
-    owner: Vec<u8>,
+    _owner: Vec<u8>,
     nonce: u64
 }
 
 #[derive(Decode)]
 struct UpdatedDid {
     hash: sp_core::H256,
-    index: u32,
+    _index: u32,
 }
 
 
@@ -273,11 +262,11 @@ pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> 
     let metadata = get_metadata(url.as_str()).await.unwrap();
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
-    let (sender, mut receiver) = channel::<String>(100);
+    let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
     compose_extrinsic!(metadata.clone(), "DidModule", "create_did", signature.to_vec(), signed_message.to_vec(), identity.to_vec(), now_timestamp);
-    let extrinsic = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await;
+    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await.unwrap();
     let event_watch = move |raw: &RawEvent| -> bool {
         let decoded_event: Created = Decode::decode(&mut &raw.data[..]).unwrap();
         if now_timestamp == decoded_event.nonce {
@@ -325,12 +314,12 @@ pub async fn add_payload_to_did(url: String, payload: String, did: String, priva
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
     let payload_hex = hex::decode(hex::encode(payload)).unwrap();
 
-    let (sender, mut receiver) = channel::<String>(100);
+    let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
 
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
     compose_extrinsic!(metadata.clone(), "DidModule", "add_did_detail", bytes_did.clone(), payload_hex, signature.to_vec(), signed_message.to_vec(), identity.to_vec(), now_timestamp);
-    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await;
+    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await.unwrap();
 
     fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
@@ -341,7 +330,7 @@ pub async fn add_payload_to_did(url: String, payload: String, did: String, priva
             false
         }
     }
-    let event_wait: UpdatedDid = wait_for_event(metadata.clone(), "DidModule", "UpdatedDid", None, receiver, event_watch(&did)).await.unwrap().unwrap();
+    let _event_result: UpdatedDid = wait_for_event(metadata.clone(), "DidModule", "UpdatedDid", None, receiver, event_watch(&did)).await.unwrap().unwrap();
     Ok(())
 }
 
@@ -355,12 +344,24 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
     let payload_hex = hex::decode(hex::encode(payload)).unwrap();
 
-    let (sender, receiver2) = channel::<String>(100);
+    let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
 
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
     compose_extrinsic!(metadata.clone(), "DidModule", "update_did_detail", bytes_did.clone(), payload_hex, index,  signature.to_vec(), signed_message.to_vec(), identity, now_timestamp);
-    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized ).await;
+    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await.unwrap();
+
+    fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
+        move |raw: &RawEvent| -> bool {
+            let decoded_event: UpdatedDid = Decode::decode(&mut &raw.data[..]).unwrap();
+            if &format!("0x{}", hex::encode(decoded_event.hash)) == did {
+                return true;
+            }
+            false
+        }
+    }
+
+    let _event_result: UpdatedDid = wait_for_event(metadata.clone(), "DidModule", "UpdatedDid", None, receiver, event_watch(&did)).await.unwrap().unwrap();
     Ok(())
 }
 
@@ -375,7 +376,7 @@ pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<
 
     let xt: xt_primitives::UncheckedExtrinsicV4<_> =
     compose_extrinsic!(metadata.clone(), "DidModule", "whitelist_identity",  signature.to_vec(), signed_message.to_vec(), identity.clone(), now_timestamp);
-    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await;
+    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await.unwrap();
     fn event_watch(identity: &Vec<u8>) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: ApprovedIdentity = Decode::decode(&mut &raw.data[..]).unwrap();
@@ -385,7 +386,7 @@ pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<
             false
         }
     }
-    let event_wait: ApprovedIdentity = wait_for_event(metadata.clone(), "DidModule", "ApprovedIdentity", None, receiver, event_watch(&identity)).await.unwrap().unwrap();
+    let _event_result: ApprovedIdentity = wait_for_event(metadata.clone(), "DidModule", "ApprovedIdentity", None, receiver, event_watch(&identity)).await.unwrap().unwrap();
     Ok("".to_string())
 }
 

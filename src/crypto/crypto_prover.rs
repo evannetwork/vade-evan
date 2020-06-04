@@ -10,8 +10,6 @@ use ursa::cl::{
   Nonce,
   RevocationKeyPublic,
   RevocationRegistry,
-  Witness,
-  SimpleTailsAccessor,
   verifier::Verifier as CryptoVerifier
 };
 use ursa::errors::UrsaCryptoResult;

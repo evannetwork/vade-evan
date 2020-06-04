@@ -18,7 +18,7 @@
 #[cfg(feature = "std")]
 use std::fmt;
 
-use parity_scale_codec::{Compact, Decode, Encode, Error, Input};
+use parity_scale_codec::{Decode, Encode, Error, Input};
 use sp_std;
 /// Mirrors the currently used Extrinsic format (V3) from substrate. Has less traits and methods though.
 /// The SingedExtra used does not need to implement SingedExtension here.
@@ -80,7 +80,7 @@ where
 
         let version = input.read_byte()?;
 
-        let is_signed = version & 0b1000_0000 != 0;
+        let _is_signed = version & 0b1000_0000 != 0;
         let version = version & 0b0111_1111;
         if version != V4 {
             return Err("Invalid transaction version".into());
