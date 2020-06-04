@@ -88,6 +88,8 @@ struct CreateCredentialSchemaArguments {
     pub allow_additional_properties: bool,
     pub issuer_public_key_did: String,
     pub issuer_proving_key: String,
+    pub private_key: String,
+    pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -153,7 +155,8 @@ struct ValidateProofArguments {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct WhitelistIdentityArguments {
-    pub identity: String
+  pub private_key: String,
+  pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -162,7 +165,9 @@ struct CreateCredentialDefinitionArguments {
   pub issuer_did: String,
   pub schema_did: String,
   pub issuer_public_key_did: String,
-  pub issuer_proving_key: String
+  pub issuer_proving_key: String,
+  pub private_key: String,
+  pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -171,7 +176,9 @@ struct CreateRevocationRegistryDefinitionArguments {
   pub credential_definition: String,
   pub issuer_public_key_did: String,
   pub issuer_proving_key: String,
-  pub maximum_credential_count: u32
+  pub maximum_credential_count: u32,
+  pub private_key: String,
+  pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -181,7 +188,9 @@ struct RevokeCredentialArguments {
   revocation_registry_definition_id: String,
   credential_revocation_id: u32,
   issuer_public_key_did: String,
-  issuer_proving_key: String
+  issuer_proving_key: String,
+  pub private_key: String,
+  pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -260,7 +269,7 @@ impl VadeTnt {
           ).await?
       ).unwrap();
 
-      let generated_did = self.generate_did().await?;
+      let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
 
       let (definition, pk) = Issuer::create_credential_definition(
         &generated_did,
@@ -272,7 +281,7 @@ impl VadeTnt {
 
       let serialized = serde_json::to_string(&(&definition, &pk)).unwrap();
       let serialized_definition = serde_json::to_string(&definition).unwrap();
-      self.vade.set_did_document(&generated_did, &serialized_definition).await?;
+      self.set_did_document(&generated_did, &serialized_definition, &input.private_key, &input.identity).await?;
 
       Ok(Some(serialized))
     }
@@ -280,7 +289,7 @@ impl VadeTnt {
     async fn create_credential_schema(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateCredentialSchemaArguments = serde_json::from_str(&data)?;
 
-      let generated_did = self.generate_did().await?;
+      let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
 
       let schema = Issuer::create_credential_schema(
         &generated_did,
@@ -295,7 +304,7 @@ impl VadeTnt {
       );
 
       let serialized = serde_json::to_string(&schema).unwrap();
-      self.vade.set_did_document(&generated_did, &serialized).await?;
+      self.set_did_document(&generated_did, &serialized, &input.private_key, &input.identity).await?;
 
       Ok(Some(serialized))
     }
@@ -310,7 +319,7 @@ impl VadeTnt {
         ).await?
       ).unwrap();
 
-      let generated_did = self.generate_did().await?;
+      let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
 
       let (definition, private_key, revocation_info) = Issuer::create_revocation_registry_definition(
         &generated_did,
@@ -322,7 +331,7 @@ impl VadeTnt {
 
       let serialised_def = serde_json::to_string(&definition).unwrap();
 
-      self.vade.set_did_document(&generated_did, &serialised_def).await?;
+      self.set_did_document(&generated_did, &serialised_def, &input.private_key, &input.identity).await?;
 
       let serialised_result = serde_json::to_string(
         &CreateRevocationRegistryDefinitionResult {
@@ -508,7 +517,7 @@ impl VadeTnt {
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
 
-        self.vade.set_did_document(&revocation_definition.id, &serialized).await?;
+        self.set_did_document(&revocation_definition.id, &serialized, &input.private_key, &input.identity).await?;
 
         Ok(Some(serialized))
     }
@@ -559,12 +568,15 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    async fn generate_did(&mut self) -> Result<String, Box<dyn std::error::Error>> {
-      let generate_did_message = r###"{
+    async fn generate_did(&mut self, private_key: &str, identity: &str) -> Result<String, Box<dyn std::error::Error>> {
+      let generate_did_message = format!(r###"{{
         "type": "generateDid",
-        "data": {}
-      }"###;
-      let result = self.vade.send_message(generate_did_message).await?;
+        "data": {{
+            "privateKey": "{}",
+            "identity": "{}"
+        }}
+      }}"###, private_key, identity);
+      let result = self.vade.send_message(&generate_did_message).await?;
       if result.len() == 0 {
         return Err(Box::new(SimpleError::new(format!("Could not generate DID as no listeners were registered for this method"))));
       }
@@ -580,14 +592,35 @@ impl VadeTnt {
     let message_str = format!(r###"{{
       "type": "whitelistIdentity",
       "data": {{
+        "privateKey": "{}",
         "identity": "{}"
       }}
-    }}"###, input.identity);
+    }}"###, input.private_key, input.identity);
 
     let result = self.vade.send_message(&message_str).await?;
 
     if result.len() == 0 {
       return Err(Box::new(SimpleError::new(format!("Could not generate DID as no listeners were registered for this method"))));
+    }
+
+    Ok(Some("".to_string()))
+  }
+
+  async fn set_did_document(&mut self, did: &str, payload: &str, private_key: &str, identity: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let message_str = format!(r###"{{
+      "type": "setDidDocument",
+      "data": {{
+        "did": "{}",
+        "payload": "{}",
+        "privateKey": "{}",
+        "identity": "{}"
+      }}
+    }}"###, did, payload.replace("\"", "\\\""), private_key, identity);
+    error!("{}", message_str);
+    let result = self.vade.send_message(&message_str).await?;
+
+    if result.len() == 0 {
+      return Err(Box::new(SimpleError::new(format!("Could not set did document as no listeners were registered for this method"))));
     }
 
     Ok(Some("".to_string()))
