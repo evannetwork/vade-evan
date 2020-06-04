@@ -31,6 +31,8 @@ use test_data::{
   EXAMPLE_CREDENTIAL_SCHEMA,
   ISSUER_PUBLIC_KEY_DID,
   ISSUER_PRIVATE_KEY,
+  SIGNER_IDENTITY,
+  SIGNER_PRIVATE_KEY,
   EXAMPLE_GENERATED_DID,
   EXAMPLE_CREDENTIAL_DEFINITION,
   EXAMPLE_CREDENTIAL_DEFINITION_PRIVATE_KEY,
@@ -101,7 +103,7 @@ async fn vade_tnt_can_whitelist_identity () -> Result<(), Box<dyn std::error::Er
     let mut vade = get_vade();
 
     // run test
-    whitelist_identity(&mut vade, "9670f7974e7021e4940c56d47f6b31fdfdd37de8".to_string()).await?;
+    whitelist_identity(&mut vade).await?;
 
     Ok(())
 }
@@ -589,7 +591,7 @@ fn get_vade() -> Vade {
     });
     let mut internal_vade = Vade::new();
     internal_vade.register_did_resolver(Box::from(substrate_resolver));
-    internal_vade.register_message_consumer(&vec!["generateDid".to_owned(), "whitelistIdentity".to_owned()], Box::from(substrate_message_handler));
+    internal_vade.register_message_consumer(&vec!["generateDid".to_owned(), "whitelistIdentity".to_owned(), "setDidDocument".to_owned()], Box::from(substrate_message_handler));
 
     let tnt = VadeTnt::new(internal_vade);
     let mut vade = Vade::new();
@@ -620,23 +622,17 @@ async fn create_credential_definition(vade: &mut Vade, schema: &CredentialSchema
         "schemaDid": "{}",
         "issuerDid": "{}",
         "issuerPublicKeyDid": "{}",
-        "issuerProvingKey": "{}"
+        "issuerProvingKey": "{}",
+        "privateKey": "{}",
+        "identity": "{}"
       }}
-    }}"###, schema.id, ISSUER_DID, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY);
+    }}"###, schema.id, ISSUER_DID, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY, SIGNER_PRIVATE_KEY, SIGNER_IDENTITY);
     let results = vade.send_message(&message_str).await?;
 
     // check results
     assert_eq!(results.len(), 1);
     let result: (CredentialDefinition, CredentialPrivateKey) = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
-    println!("CRED DEF: {}", results[0].as_ref().unwrap());
     Ok(result)
-    /*Ok(Issuer::create_credential_definition(
-        EXAMPLE_GENERATED_DID,
-        ISSUER_DID,
-        &serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap(),
-        ISSUER_PUBLIC_KEY_DID,
-        ISSUER_PRIVATE_KEY,
-    ))*/
  }
 
 
@@ -651,9 +647,11 @@ async fn create_credential_schema(vade: &mut Vade) -> Result<CredentialSchema, B
       "requiredProperties": {},
       "allowAdditionalProperties": false,
       "issuerPublicKeyDid": "{}",
-      "issuerProvingKey": "{}"
+      "issuerProvingKey": "{}",
+      "privateKey": "{}",
+      "identity": "{}"
     }}
-  }}"###, ISSUER_DID, SCHEMA_NAME, SCHEMA_DESCRIPTION, SCHEMA_PROPERTIES, SCHEMA_REQUIRED_PROPERTIES, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY);
+  }}"###, ISSUER_DID, SCHEMA_NAME, SCHEMA_DESCRIPTION, SCHEMA_PROPERTIES, SCHEMA_REQUIRED_PROPERTIES, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY, SIGNER_PRIVATE_KEY, SIGNER_IDENTITY);
   let results = vade.send_message(&message_str).await?;
 
   // check results
@@ -661,7 +659,6 @@ async fn create_credential_schema(vade: &mut Vade) -> Result<CredentialSchema, B
 
 
   let result: CredentialSchema = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
-  println!("schema {:#?}", results[0].as_ref().unwrap());
   Ok(result)
 }
 
@@ -673,9 +670,11 @@ async fn create_revocation_registry_definition(vade: &mut Vade, credential_defin
         "credentialDefinition": "{}",
         "issuerPublicKeyDid": "{}",
         "issuerProvingKey": "{}",
-        "maximumCredentialCount": {}
+        "maximumCredentialCount": {},
+        "privateKey": "{}",
+        "identity": "{}"
       }}
-    }}"###, credential_definition.id, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY, max_credential_count);
+    }}"###, credential_definition.id, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY, max_credential_count, SIGNER_PRIVATE_KEY, SIGNER_IDENTITY);
     let results = vade.send_message(&message_str).await?;
 
     // check results
@@ -685,13 +684,14 @@ async fn create_revocation_registry_definition(vade: &mut Vade, credential_defin
     Ok(result)
   }
 
-  async fn whitelist_identity(vade: &mut Vade, identity: String) -> Result<(), Box<dyn std::error::Error>> {
+  async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
     let message_str = format!(r###"{{
       "type": "whitelistIdentity",
       "data": {{
-        "identity": "{}"
+        "identity": "{}",
+        "privateKey": "{}"
       }}
-    }}"###, identity);
+    }}"###, SIGNER_IDENTITY, SIGNER_PRIVATE_KEY);
     let results = vade.send_message(&message_str).await?;
 
     // check results
