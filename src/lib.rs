@@ -178,8 +178,7 @@ struct CreateRevocationRegistryDefinitionArguments {
 #[serde(rename_all = "camelCase")]
 struct RevokeCredentialArguments {
   issuer: String,
-  revocation_registry_definition_id: String,
-  revocation_registry_definition: RevocationRegistryDefinition,
+  revocation_registry_definition: String,
   credential_revocation_id: u32,
   issuer_public_key_did: String,
   issuer_proving_key: String
@@ -491,31 +490,34 @@ impl VadeTnt {
         let input: RevokeCredentialArguments = serde_json::from_str(&data)?;
 
         // Resolve revocation definition
-        // let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-        //   &self.vade.get_did_document(
-        //     &input.revocation_registry_definition_id
-        //   ).await?
-        // ).unwrap();
-
-        let max_cred_count: u32 = input.revocation_registry_definition.maximum_credential_count;
-        let mut rev_def = input.revocation_registry_definition;
+        let mut rev_def: RevocationRegistryDefinition = serde_json::from_str(
+          &self.vade.get_did_document(
+            &input.revocation_registry_definition
+          ).await?
+        ).unwrap();
 
         let updated_registry = Issuer::revoke_credential(
           &input.issuer,
           &mut rev_def,
-          max_cred_count,
+          input.credential_revocation_id,
           &input.issuer_public_key_did,
           &input.issuer_proving_key
         );
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
 
-        self.vade.set_did_document(&rev_def.id, &serialized).await?;
+        self.vade.set_did_document(&updated_registry.id, &serialized).await?;
+
+        // Resolve revocation definition
+        let mut rev_def: RevocationRegistryDefinition = serde_json::from_str(
+          &self.vade.get_did_document(
+            &input.revocation_registry_definition
+          ).await?
+        ).unwrap();
 
         Ok(Some(serialized))
     }
 
-    // TODO: Re-enable resolving
     async fn verify_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: ValidateProofArguments = serde_json::from_str(&data)?;
 
