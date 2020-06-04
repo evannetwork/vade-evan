@@ -22,7 +22,8 @@ use crate::utils::substrate::{
     create_did,
     add_payload_to_did,
     get_payload_count_for_did,
-    update_payload_in_did
+    update_payload_in_did,
+    whitelist_identity
 };
 use chrono::Utc;
 
@@ -47,7 +48,11 @@ impl SubstrateDidResolverEvan {
     }
 
     async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        Ok(Some(create_did(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await))
+        Ok(Some(create_did(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
+    }
+
+    async fn whitelist_identity(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        Ok(Some(whitelist_identity(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
     }
 }
 
@@ -76,7 +81,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// * `did_id` - did id to fetch
     async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
         let didresult = get_did(self.config.target.clone(), did_id.to_string()).await;
-        Ok(didresult)
+        Ok(didresult.unwrap())
     }
 
     /// Sets document for given did name.
@@ -106,10 +111,11 @@ impl MessageConsumer for SubstrateDidResolverEvan {
     async fn handle_message(
         &mut self,
         message_type: &str,
-        _message_data: &str,
+        message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
             "generateDid" => self.generate_did().await,
+            "whitelistIdentity" => self.whitelist_identity().await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
     }

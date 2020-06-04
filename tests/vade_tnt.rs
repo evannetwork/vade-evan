@@ -97,6 +97,16 @@ async fn vade_tnt_can_be_registered_as_plugin () -> Result<(), Box<dyn std::erro
 
 
 #[tokio::test]
+async fn vade_tnt_can_whitelist_identity () -> Result<(), Box<dyn std::error::Error>>{
+    let mut vade = get_vade();
+
+    // run test
+    whitelist_identity(&mut vade, "9670f7974e7021e4940c56d47f6b31fdfdd37de8".to_string()).await?;
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn vade_tnt_can_create_schema () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
@@ -579,7 +589,7 @@ fn get_vade() -> Vade {
     });
     let mut internal_vade = Vade::new();
     internal_vade.register_did_resolver(Box::from(substrate_resolver));
-    internal_vade.register_message_consumer(&vec!["generateDid".to_owned()], Box::from(substrate_message_handler));
+    internal_vade.register_message_consumer(&vec!["generateDid".to_owned(), "whitelistIdentity".to_owned()], Box::from(substrate_message_handler));
 
     let tnt = VadeTnt::new(internal_vade);
     let mut vade = Vade::new();
@@ -595,6 +605,7 @@ fn get_vade() -> Vade {
         "requestProof",
         "presentProof",
         "verifyProof",
+        "whitelistIdentity",
       ].iter().map(|&x| String::from(x)).collect(),
       Box::from(tnt),
     );
@@ -672,4 +683,19 @@ async fn create_revocation_registry_definition(vade: &mut Vade, credential_defin
 
     let result: CreateRevocationRegistryDefinitionResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
     Ok(result)
+  }
+
+  async fn whitelist_identity(vade: &mut Vade, identity: String) -> Result<(), Box<dyn std::error::Error>> {
+    let message_str = format!(r###"{{
+      "type": "whitelistIdentity",
+      "data": {{
+        "identity": "{}"
+      }}
+    }}"###, identity);
+    let results = vade.send_message(&message_str).await?;
+
+    // check results
+    assert_eq!(results.len(), 1);
+
+    Ok(())
   }
