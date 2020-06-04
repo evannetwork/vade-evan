@@ -124,7 +124,7 @@ impl Prover {
 
       let mut witness: Witness = serde_json::from_str(&serde_json::to_string(&credentials.get(&sub_proof.schema).unwrap().signature.witness).unwrap()).unwrap();
       let mut generator: RevocationTailsGenerator = serde_json::from_str(&serde_json::to_string(&revocation_registries.get(&sub_proof.schema).unwrap().tails).unwrap()).unwrap();
-      
+
       witness.update(
         credentials.get(&sub_proof.schema).unwrap().signature.revocation_id,
         revocation_registries.get(&sub_proof.schema).unwrap().maximum_credential_count,

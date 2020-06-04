@@ -17,20 +17,41 @@
 extern crate vade;
 use async_trait::async_trait;
 use vade::traits::{ DidResolver, MessageConsumer };
+use crate::utils::substrate::{
+    get_did,
+    create_did,
+    add_payload_to_did,
+    get_payload_count_for_did,
+    update_payload_in_did,
+    whitelist_identity
+};
 
+
+pub struct ResolverConfig {
+  pub target: String,
+  pub private_key: String,
+  pub identity: Vec<u8>
+}
 
 /// Resolver for DIDs on evan.network (currently on testnet)
 pub struct SubstrateDidResolverEvan {
+  config: ResolverConfig
 }
 
 impl SubstrateDidResolverEvan {
     /// Creates new instance of `SubstrateDidResolverEvan`.
-    pub fn new() -> SubstrateDidResolverEvan {
-        SubstrateDidResolverEvan { }
+    pub fn new(config: ResolverConfig) -> SubstrateDidResolverEvan {
+        SubstrateDidResolverEvan {
+          config
+        }
     }
 
     async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-      Ok(Some("".to_owned()))
+        Ok(Some(create_did(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
+    }
+
+    async fn whitelist_identity(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        Ok(Some(whitelist_identity(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
     }
 }
 
@@ -57,8 +78,9 @@ impl DidResolver for SubstrateDidResolverEvan {
     /// # Arguments
     ///
     /// * `did_id` - did id to fetch
-    async fn get_did_document(&self, _did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-        unimplemented!();
+    async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let didresult = get_did(self.config.target.clone(), did_id.to_string()).await;
+        Ok(didresult.unwrap())
     }
 
     /// Sets document for given did name.
@@ -67,8 +89,14 @@ impl DidResolver for SubstrateDidResolverEvan {
     ///
     /// * `did_name` - did_name to set value for
     /// * `value` - value to set
-    async fn set_did_document(&mut self, _did_id: &str, _value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        unimplemented!();
+    async fn set_did_document(&mut self, did_id: &str, value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone(), did_id.to_string()).await.unwrap();
+        if payload_count > 0 {
+            update_payload_in_did(self.config.target.clone(), 0 as u32, value.to_string(), did_id.to_string(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap();
+        } else {
+            add_payload_to_did(self.config.target.clone(), value.to_string(), did_id.to_string(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap();
+        }
+        Ok(())
     }
 }
 
@@ -86,6 +114,7 @@ impl MessageConsumer for SubstrateDidResolverEvan {
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
             "generateDid" => self.generate_did().await,
+            "whitelistIdentity" => self.whitelist_identity().await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
     }

@@ -3,7 +3,8 @@ extern crate vade_tnt;
 use vade_tnt::crypto::crypto_utils::{
   create_assertion_proof,
   recover_address_and_data,
-  JwsData
+  JwsData,
+  sign_message
 };
 use serde::{Serialize, Deserialize};
 use vade_tnt::application::datatypes::{
@@ -84,4 +85,11 @@ fn can_create_assertion_proof() {
   let orig: JwsDoc = serde_json::from_str(DOCUMENT_TO_SIGN).unwrap();
   assert_eq!(serde_json::to_string(&doc).unwrap(), serde_json::to_string(&orig).unwrap());
   assert_eq!(format!("0x{}",address), ISSUER_ETHEREUM_ADDRESS);
+}
+
+#[test]
+fn can_sign_messages() {
+  let (_signature, message): ([u8; 65], [u8; 32]) = sign_message("hallo", "087d321d9474af5ed4ab1e55c713825b91550f8e491376c768a0d67204f59c49");
+  let message_hash = format!("0x{}", hex::encode(message));
+  assert_eq!(message_hash, "0xd123f0a85b26264de171387e5503b75ee1f33737c297fdba8c43a3191ff2f8d0");
 }
