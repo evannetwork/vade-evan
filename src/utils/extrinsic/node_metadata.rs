@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with substrate-subxt.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, convert::TryFrom, marker::PhantomData, str::FromStr};
+use std::{collections::HashMap, marker::PhantomData, str::FromStr};
 
 use parity_scale_codec::{Decode, Encode};
 
@@ -22,7 +22,6 @@ use parity_scale_codec::{Decode, Encode};
 use super::frame_metadata::{
     DecodeDifferent, StorageEntryType,RuntimeMetadata, RuntimeMetadataPrefixed,  META_RESERVED, StorageHasher, StorageEntryModifier,
 };
-use serde::ser::Serialize;
 use sp_storage::StorageKey;
 use crate::utils::substrate;
 

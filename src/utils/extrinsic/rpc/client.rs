@@ -87,7 +87,7 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
 
                     match changes[0][1].as_str() {
                         Some(change_set) => {
-                            result.clone().try_send(change_set.to_owned());
+                            let _ = result.clone().try_send(change_set.to_owned());
                         },
                         None => println!("No events happened"),
                     };

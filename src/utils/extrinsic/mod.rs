@@ -22,7 +22,6 @@ macro_rules! compose_extrinsic {
 	$call: expr
 	$(, $args: expr) *) => {
 		{
-            use $crate::utils::extrinsic::parity_scale_codec::Compact;
             use $crate::log::info;
             use $crate::utils::extrinsic::xt_primitives::*;
 
