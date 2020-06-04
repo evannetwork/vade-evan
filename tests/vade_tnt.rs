@@ -346,14 +346,14 @@ async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Err
     let mut vade = get_vade();
 
     // Issue credential
-    let (definition, credential_private_key) = create_credential_definition().unwrap();
     let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+    let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
 
     let proof_request: ProofRequest = request_proof(&mut vade, &schema).await?;
 
     let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
-    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
 
     let (revocation_registry_definition, revocation_key_private, revocation_info):
@@ -423,14 +423,14 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
     let mut vade = get_vade();
 
     // Issue main credential
-    let (definition, credential_private_key) = create_credential_definition().unwrap();
     let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+    let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
 
     let proof_request: ProofRequest = request_proof(&mut vade, &schema).await?;
 
     let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
-    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
 
     let (revocation_registry_definition, revocation_key_private, revocation_info):
@@ -463,7 +463,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
 
     // Issue different credential & revoke it
     let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
-    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &other_proposal).await?;
+    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
 
     let (mut other_credential, _): (Credential, _) = issue_credential(
@@ -811,7 +811,7 @@ fn get_vade() -> Vade {
         "requestProof",
         "presentProof",
         "verifyProof",
-        "revokeCredential"
+        "revokeCredential",
         "whitelistIdentity",
       ].iter().map(|&x| String::from(x)).collect(),
       Box::from(tnt),
