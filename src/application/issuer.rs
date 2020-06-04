@@ -47,11 +47,11 @@ impl Issuer {
     ) -> (CredentialDefinition, CredentialPrivateKey) {
 
       let created_at = get_now_as_iso_string();
-
+      println!("Starte crypto issuer creddef");
       let (credential_private_key, crypto_credential_def) = CryptoIssuer::create_credential_definition(
         &schema
       );
-
+      println!("Done crypto issuer creddef");
       let mut definition = CredentialDefinition {
         id: assigned_did.to_owned(),
         r#type: "EvanZKPCredentialDefinition".to_string(),

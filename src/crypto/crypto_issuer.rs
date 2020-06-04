@@ -47,10 +47,8 @@ impl Issuer {
       credential_schema_builder.add_attr(&property.0).unwrap();
     }
     let crypto_schema = credential_schema_builder.finalize().unwrap();
-
     let (public_key, credential_private_key, credential_key_correctness_proof) =
       CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true).unwrap();
-
     let definition = CryptoCredentialDefinition {
       public_key,
       credential_key_correctness_proof
