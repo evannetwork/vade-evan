@@ -251,8 +251,8 @@ pub async fn wait_for_raw_event(
 
 #[derive(Decode)]
 struct ApprovedIdentity {
-    account: Vec<u8>,
     identity: Vec<u8>,
+    account: Vec<u8>,
 }
 
 #[derive(Decode)]
@@ -268,7 +268,8 @@ struct UpdatedDid {
     index: u32,
 }
 
-pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> String {
+
+pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
@@ -285,12 +286,12 @@ pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> 
         false
     };
     let event_wait: Created = wait_for_event(metadata.clone(), "DidModule", "Created", None, receiver, event_watch).await.unwrap().unwrap();
-    format!("0x{}", hex::encode(event_wait.hash))
+    Ok(format!("0x{}", hex::encode(event_wait.hash)))
 }
 
 
 #[wasm_bindgen]
-pub async fn get_did(url: String, did: String) -> String {
+pub async fn get_did(url: String, did: String) -> Result<String, JsValue> {
     let mut bytes_did_arr = [0; 32];
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
@@ -310,7 +311,7 @@ pub async fn get_did(url: String, did: String) -> String {
             .await
             .unwrap();
     //}
-    body
+    Ok(body)
 }
 
 
@@ -361,6 +362,31 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
     compose_extrinsic!(metadata.clone(), "DidModule", "update_did_detail", bytes_did.clone(), payload_hex, index,  signature.to_vec(), signed_message.to_vec(), identity, now_timestamp);
     send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized ).await;
     Ok(())
+}
+
+#[wasm_bindgen]
+pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
+    let metadata = get_metadata(url.as_str()).await.unwrap();
+    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+    let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
+
+    let (sender, receiver) = channel::<String>(100);
+    subscribe_events(url.as_str(), sender).await;
+
+    let xt: xt_primitives::UncheckedExtrinsicV4<_> =
+    compose_extrinsic!(metadata.clone(), "DidModule", "whitelist_identity",  signature.to_vec(), signed_message.to_vec(), identity.clone(), now_timestamp);
+    send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock ).await;
+    fn event_watch(identity: &Vec<u8>) -> impl Fn(&RawEvent) -> bool + '_ {
+        move |raw: &RawEvent| -> bool {
+            let decoded_event: ApprovedIdentity = Decode::decode(&mut &raw.data[..]).unwrap();
+            if &decoded_event.identity == identity {
+                return true;
+            }
+            false
+        }
+    }
+    let event_wait: ApprovedIdentity = wait_for_event(metadata.clone(), "DidModule", "ApprovedIdentity", None, receiver, event_watch(&identity)).await.unwrap().unwrap();
+    Ok("".to_string())
 }
 
 #[wasm_bindgen]

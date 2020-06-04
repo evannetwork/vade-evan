@@ -152,6 +152,12 @@ struct ValidateProofArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct WhitelistIdentityArguments {
+    pub identity: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct CreateCredentialDefinitionArguments {
   pub issuer_did: String,
   pub schema_did: String,
@@ -238,6 +244,7 @@ impl MessageConsumer for VadeTnt {
             "requestProof" => self.request_proof(message_data).await,
             "revokeCredential" => self.revoke_credential(message_data).await,
             "verifyProof" => self.verify_proof(message_data).await,
+            "whitelistIdentity" => self.whitelist_identity(message_data).await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
     }
@@ -566,4 +573,23 @@ impl VadeTnt {
 
       Ok(generated_did)
     }
+
+
+  async fn whitelist_identity(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let input: WhitelistIdentityArguments = serde_json::from_str(&data)?;
+    let message_str = format!(r###"{{
+      "type": "whitelistIdentity",
+      "data": {{
+        "identity": "{}"
+      }}
+    }}"###, input.identity);
+
+    let result = self.vade.send_message(&message_str).await?;
+
+    if result.len() == 0 {
+      return Err(Box::new(SimpleError::new(format!("Could not generate DID as no listeners were registered for this method"))));
+    }
+
+    Ok(Some("".to_string()))
+  }
 }
