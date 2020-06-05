@@ -110,7 +110,7 @@ impl DidResolver for SubstrateDidResolverEvan {
     ///
     /// * `did_name` - did_name to set value for
     /// * `value` - value to set
-    async fn set_did_document(&mut self, did_id: &str, value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    async fn set_did_document(&mut self, _did_id: &str, _value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
         unimplemented!();
     }
 }

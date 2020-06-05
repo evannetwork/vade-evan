@@ -15,6 +15,8 @@ pub mod crypto;
 pub mod utils;
 pub mod resolver;
 
+pub mod wasm_lib;
+
 use async_trait::async_trait;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
@@ -44,7 +46,7 @@ use crate::{
         SchemaProperty,
         SubProofRequest,
         RevocationIdInformation
-    },
+    }
 };
 use simple_error::SimpleError;
 
