@@ -267,9 +267,6 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
         &mut vade,
         &proof_request,
         &credential,
-        &definition,
-        &schema,
-        &rev_reg_def.revocation_registry_definition,
         &master_secret,
     ).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
@@ -321,9 +318,6 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
         &mut vade,
         &proof_request,
         &credential,
-        &definition,
-        &schema,
-        &rev_reg_def.revocation_registry_definition,
         &master_secret,
     ).await?;
 
@@ -331,10 +325,170 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
     let result: ProofVerification = verify_proof(
         &mut vade,
         &presented_proof,
+        &proof_request
+    ).await?;
+    println!("{}", serde_json::to_string(&result).unwrap());
+
+    // check results
+    assert_ne!(result.status, "rejected");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Error>>{
+    let mut vade = get_vade();
+
+    // Issue credential
+    let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
+    let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
+    let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
+
+    let proof_request: ProofRequest = request_proof(&mut vade, &schema).await?;
+
+    let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
+
+    let rev_result: CreateRevocationRegistryDefinitionResult
+        = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
+
+    let revocation_registry_definition = rev_result.revocation_registry_definition;
+    let revocation_key_private = rev_result.private_key;
+    let revocation_info = rev_result.revocation_info;
+
+    let (mut credential, _): (Credential, _) = issue_credential(
+      &mut vade,
+      &definition,
+      &credential_private_key,
+      &request,
+      &revocation_key_private,
+      &revocation_info,
+      &revocation_registry_definition
+    ).await?;
+
+    Prover::post_process_credential_signature(
+      &mut credential,
+      &request,
+      &definition,
+      blinding_factors,
+      &master_secret,
+      &revocation_registry_definition
+    );
+
+    let updated_registry = revoke_credential(
+      &mut vade,
+      &credential,
+      &revocation_registry_definition
+    ).await?;
+
+    // Verify proof for credential, using the updated revocation registry
+    let presented_proof: ProofPresentation = present_proof(
+        &mut vade,
         &proof_request,
-        &definition,
-        &schema,
-        &rev_reg_def.revocation_registry_definition
+        &credential,
+        &master_secret,
+    ).await?;
+
+    let result: ProofVerification = verify_proof(
+        &mut vade,
+        &presented_proof,
+        &proof_request
+    ).await?;
+    println!("{}", serde_json::to_string(&result).unwrap());
+
+    // check results
+    assert_eq!(result.status, "rejected");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<dyn std::error::Error>>{
+    let mut vade = get_vade();
+
+    // Issue main credential
+    let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+    let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
+    let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
+
+    let proof_request: ProofRequest = request_proof(&mut vade, &schema).await?;
+
+    let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
+
+    let (revocation_registry_definition, revocation_key_private, revocation_info):
+        (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
+        = Issuer::create_revocation_registry_definition(
+            EXAMPLE_GENERATED_DID,
+            &definition,
+            ISSUER_PUBLIC_KEY_DID,
+            ISSUER_PRIVATE_KEY,
+            42,
+        );
+    let (mut credential, _): (Credential, _) = issue_credential(
+      &mut vade,
+      &definition,
+      &credential_private_key,
+      &request,
+      &revocation_key_private,
+      &revocation_info,
+      &revocation_registry_definition
+    ).await?;
+
+    Prover::post_process_credential_signature(
+      &mut credential,
+      &request,
+      &definition,
+      blinding_factors,
+      &master_secret,
+      &revocation_registry_definition
+    );
+
+    // Issue different credential & revoke it
+    let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
+
+    let (mut other_credential, _): (Credential, _) = issue_credential(
+      &mut vade,
+      &definition,
+      &credential_private_key,
+      &other_request,
+      &revocation_key_private,
+      &revocation_info,
+      &revocation_registry_definition
+    ).await?;
+
+    Prover::post_process_credential_signature(
+      &mut other_credential,
+      &other_request,
+      &definition,
+      other_blinding_factors,
+      &master_secret,
+      &revocation_registry_definition
+    );
+
+    let updated_registry = revoke_credential(
+      &mut vade,
+      &other_credential,
+      &revocation_registry_definition
+    ).await?;
+
+    // Verify proof for main credential, using the updated revocation registry
+    let presented_proof: ProofPresentation = present_proof(
+        &mut vade,
+        &proof_request,
+        &credential,
+        &master_secret,
+    ).await?;
+
+    // run test
+    let result: ProofVerification = verify_proof(
+        &mut vade,
+        &presented_proof,
+        &proof_request
     ).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
 
@@ -427,7 +581,7 @@ async fn issue_credential(
           "credentialRequest": {},
           "credentialDefinition": {},
           "credentialPrivateKey": {},
-          "credentialRevocationDefinition": {},
+          "credentialRevocationDefinition": "{}",
           "revocationPrivateKey": {},
           "revocationInformation": {}
         }}
@@ -437,7 +591,7 @@ async fn issue_credential(
     serde_json::to_string(&request).unwrap(),
     serde_json::to_string(&definition).unwrap(),
     serde_json::to_string(&credential_private_key).unwrap(),
-    serde_json::to_string(&revocation_definition.id).unwrap(),
+    &revocation_definition.id,
     serde_json::to_string(&revocation_key_private).unwrap(),
     serde_json::to_string(&revocation_info).unwrap(),
   );
@@ -480,53 +634,56 @@ async fn request_proof(vade: &mut Vade, schema: &CredentialSchema) -> Result<Pro
     Ok(result)
 }
 
+async fn revoke_credential(vade: &mut Vade, credential: &Credential, revocation_registry_definition: &RevocationRegistryDefinition) -> Result<RevocationRegistryDefinition, Box<dyn std::error::Error>> {
+  let message_str = format!(
+    r###"{{
+        "type": "revokeCredential",
+        "data": {{
+            "issuer": "{}",
+            "revocationRegistryDefinition": "{}",
+            "credentialRevocationId": {},
+            "issuerPublicKeyDid": "{}",
+            "issuerProvingKey" : "{}"
+        }}
+    }}"###,
+    ISSUER_DID,
+    revocation_registry_definition.id.clone(),
+    credential.signature.revocation_id.clone(),
+    ISSUER_PUBLIC_KEY_DID,
+    ISSUER_PRIVATE_KEY
+    );
+    println!("{}", &message_str);
+    let result = vade.send_message(&message_str).await?;
+    assert_eq!(result.len(), 1);
+    let updated_registry: RevocationRegistryDefinition = serde_json::from_str(result[0].as_ref().unwrap()).unwrap();
+
+    Ok(updated_registry)
+}
+
 async fn present_proof(
   vade: &mut Vade,
   proof_request: &ProofRequest,
   credential: &Credential,
-  definition: &CredentialDefinition,
-  schema: &CredentialSchema,
-  revocation_registry: &RevocationRegistryDefinition,
   master_secret: &MasterSecret,
 ) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
   let schema_did = &proof_request.sub_proof_requests[0].schema;
-  let mut credential_definitions: HashMap<String, CredentialDefinition> = HashMap::new();
-  credential_definitions.insert(
-      schema_did.clone(),
-      serde_json::from_str(&serde_json::to_string(&definition).unwrap()).unwrap(),
-  );
   let mut credentials: HashMap<String, Credential> = HashMap::new();
   credentials.insert(
       schema_did.clone(),
       serde_json::from_str(&serde_json::to_string(&credential).unwrap()).unwrap(),
   );
-  let mut credential_schemas: HashMap<String, CredentialSchema> = HashMap::new();
-  credential_schemas.insert(
-      schema_did.clone(),
-      serde_json::from_str(&serde_json::to_string(&schema).unwrap()).unwrap(),
-  );
-  let mut revocation_registries: HashMap<String, RevocationRegistryDefinition> = HashMap::new();
-  revocation_registries.insert(
-      schema_did.clone(),
-      serde_json::from_str(&serde_json::to_string(&revocation_registry).unwrap()).unwrap(),
-  );
+
   let message_str = format!(
       r###"{{
           "type": "presentProof",
           "data": {{
               "proofRequest": {},
               "credentials": {},
-              "credentialDefinitions": {},
-              "credentialSchemas": {},
-              "revocationRegistries": {},
               "masterSecret": {}
           }}
       }}"###,
       serde_json::to_string(&proof_request).unwrap(),
       serde_json::to_string(&credentials).unwrap(),
-      serde_json::to_string(&credential_definitions).unwrap(),
-      serde_json::to_string(&credential_schemas).unwrap(),
-      serde_json::to_string(&revocation_registries).unwrap(),
       serde_json::to_string(&master_secret).unwrap(),
   );
   error!("{}", &message_str);
@@ -543,27 +700,18 @@ async fn present_proof(
 async fn verify_proof(
     vade: &mut Vade,
     presented_proof: &ProofPresentation,
-    proof_request: &ProofRequest,
-    definition: &CredentialDefinition,
-    schema: &CredentialSchema,
-    revocation_registry_definition: &RevocationRegistryDefinition
+    proof_request: &ProofRequest
 ) -> Result<ProofVerification, Box<dyn std::error::Error>> {
     let message_str = format!(
         r###"{{
             "type": "verifyProof",
             "data": {{
                 "presentedProof": {},
-                "proofRequest": {},
-                "credentialDefinition": {},
-                "credentialSchema": {},
-                "revocationRegistryDefinition": {}
+                "proofRequest": {}
             }}
         }}"###,
         serde_json::to_string(presented_proof).unwrap(),
-        serde_json::to_string(proof_request).unwrap(),
-        serde_json::to_string(definition).unwrap(),
-        serde_json::to_string(schema).unwrap(),
-        serde_json::to_string(revocation_registry_definition).unwrap(),
+        serde_json::to_string(proof_request).unwrap()
     );
     println!("{}", &message_str);
     let results = vade.send_message(&message_str).await?;
@@ -608,6 +756,7 @@ fn get_vade() -> Vade {
         "requestProof",
         "presentProof",
         "verifyProof",
+        "revokeCredential",
         "whitelistIdentity",
       ].iter().map(|&x| String::from(x)).collect(),
       Box::from(tnt),
