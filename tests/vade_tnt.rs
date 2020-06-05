@@ -405,7 +405,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
     let mut vade = get_vade();
 
     // Issue main credential
-    let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+    let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
     let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
 
@@ -415,16 +415,14 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
 
-    let (revocation_registry_definition, revocation_key_private, revocation_info):
-        (RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
-        = Issuer::create_revocation_registry_definition(
-            EXAMPLE_GENERATED_DID,
-            &definition,
-            ISSUER_PUBLIC_KEY_DID,
-            ISSUER_PRIVATE_KEY,
-            42,
-        );
-    let (mut credential, _): (Credential, _) = issue_credential(
+    let rev_result: CreateRevocationRegistryDefinitionResult
+        = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
+
+    let revocation_registry_definition = rev_result.revocation_registry_definition;
+    let revocation_key_private = rev_result.private_key;
+    let revocation_info = rev_result.revocation_info;
+
+    let (mut credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -448,7 +446,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
     let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
 
-    let (mut other_credential, _): (Credential, _) = issue_credential(
+    let (mut other_credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -478,6 +476,132 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
         &mut vade,
         &proof_request,
         &credential,
+        &master_secret,
+    ).await?;
+
+    // run test
+    let result: ProofVerification = verify_proof(
+        &mut vade,
+        &presented_proof,
+        &proof_request
+    ).await?;
+    println!("{}", serde_json::to_string(&result).unwrap());
+
+    // check results
+    assert_ne!(result.status, "rejected");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<dyn std::error::Error>>{
+    let mut vade = get_vade();
+
+    // Issue main credential
+    let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
+    let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
+    let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
+
+    let proof_request: ProofRequest = request_proof(&mut vade, &schema).await?;
+
+    let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
+
+    let rev_result: CreateRevocationRegistryDefinitionResult
+        = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
+
+    let revocation_registry_definition = rev_result.revocation_registry_definition;
+    let revocation_key_private = rev_result.private_key;
+    let revocation_info = rev_result.revocation_info;
+
+    let (mut credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+      &mut vade,
+      &definition,
+      &credential_private_key,
+      &request,
+      &revocation_key_private,
+      &revocation_info,
+      &revocation_registry_definition
+    ).await?;
+
+    Prover::post_process_credential_signature(
+      &mut credential,
+      &request,
+      &definition,
+      blinding_factors,
+      &master_secret,
+      &revocation_registry_definition
+    );
+
+    let updated_registry = &revocation_registry_definition;
+    let updated_registry = revoke_credential(
+      &mut vade,
+      &credential,
+      &revocation_registry_definition
+    ).await?;
+
+
+    // Issue another credential & revoke it
+    let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
+
+    let (mut other_credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+      &mut vade,
+      &definition,
+      &credential_private_key,
+      &other_request,
+      &revocation_key_private,
+      &revocation_info,
+      &updated_registry
+    ).await?;
+
+    Prover::post_process_credential_signature(
+      &mut other_credential,
+      &other_request,
+      &definition,
+      other_blinding_factors,
+      &master_secret,
+      &updated_registry
+    );
+
+    // Issue third credential & revoke it
+    let third_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+    let third_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let (third_request, third_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
+
+    let (mut third_credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+      &mut vade,
+      &definition,
+      &credential_private_key,
+      &third_request,
+      &revocation_key_private,
+      &revocation_info,
+      &updated_registry
+    ).await?;
+
+    Prover::post_process_credential_signature(
+      &mut third_credential,
+      &third_request,
+      &definition,
+      third_blinding_factors,
+      &master_secret,
+      &updated_registry
+    );
+
+    // let updated_registry = revoke_credential(
+    //   &mut vade,
+    //   &third_credential,
+    //   &updated_registry
+    // ).await?;
+
+
+    // Verify proof for main credential, using the updated revocation registry
+    let presented_proof: ProofPresentation = present_proof(
+        &mut vade,
+        &proof_request,
+        &other_credential,
         &master_secret,
     ).await?;
 
