@@ -111,8 +111,7 @@ pub struct CredentialSignature {
   pub signature_correctness_proof: SignatureCorrectnessProof,
   pub issuance_nonce: Nonce,
   pub revocation_id: u32,
-  pub revocation_registry_definition: String,
-  pub witness: Witness
+  pub revocation_registry_definition: String
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -149,7 +148,8 @@ pub struct RevocationRegistryDefinition {
   pub credential_definition: String,
   pub updated_at: String,
   pub registry: RevocationRegistry,
-  pub registry_delta: Option<RevocationRegistryDelta>, // No delta before a credential has been revoked
+  pub registry_delta: RevocationRegistryDelta, // No delta before a credential has been revoked
+  pub delta_history: Vec<DeltaHistory>,
   pub tails: RevocationTailsGenerator,
   pub revocation_public_key: RevocationKeyPublic,
   pub maximum_credential_count: u32,
@@ -157,9 +157,19 @@ pub struct RevocationRegistryDefinition {
   pub proof: Option<AssertionProof>
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DeltaHistory {
+  pub created: u64,
+  pub delta: RevocationRegistryDelta
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct RevocationState {
-  pub delta: RevocationRegistryDelta,
-  pub registry: RevocationRegistry,
+  pub credential_id: String,
+  pub revocation_id: u32,
+  pub updated: u64,
   pub witness: Witness
 }
 

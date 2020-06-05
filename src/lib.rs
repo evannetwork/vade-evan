@@ -22,6 +22,7 @@ use vade::{
     Vade,
     traits::MessageConsumer,
 };
+use ursa::cl::Witness;
 use crate::{
     application::issuer::Issuer,
     application::prover::Prover,
@@ -43,7 +44,8 @@ use crate::{
         RevocationRegistryDefinition,
         SchemaProperty,
         SubProofRequest,
-        RevocationIdInformation
+        RevocationIdInformation,
+        RevocationState
     },
 };
 use simple_error::SimpleError;
@@ -116,7 +118,8 @@ struct OfferCredentialArguments {
 struct PresentProofArguments {
     pub proof_request: ProofRequest,
     pub credentials: HashMap<String, Credential>,
-    pub master_secret: MasterSecret,
+    pub witnesses: HashMap<String, Witness>,
+    pub master_secret: MasterSecret
 }
 
 #[derive(Serialize, Deserialize)]
@@ -196,7 +199,8 @@ pub struct CreateRevocationRegistryDefinitionResult {
 #[serde(rename_all = "camelCase")]
 pub struct IssueCredentialResult {
   pub credential: Credential,
-  pub revocation_info: RevocationIdInformation
+  pub revocation_info: RevocationIdInformation,
+  pub revocation_state: RevocationState
 }
 
 pub struct VadeTnt {
@@ -360,7 +364,7 @@ impl VadeTnt {
            ).await?
         ).unwrap();
 
-        let (credential, revocation_info) = Issuer::issue_credential(
+        let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
             &input.issuer,
             &input.subject,
             input.credential_request,
@@ -379,6 +383,7 @@ impl VadeTnt {
             serde_json::to_string(
               &IssueCredentialResult {
                 credential,
+                revocation_state,
                 revocation_info
               }
             ).unwrap()
@@ -437,6 +442,7 @@ impl VadeTnt {
             definitions,
             schemas,
             revocation_definitions,
+            input.witnesses,
             &input.master_secret,
         );
 
@@ -490,7 +496,7 @@ impl VadeTnt {
         let input: RevokeCredentialArguments = serde_json::from_str(&data)?;
 
         // Resolve revocation definition
-        let mut rev_def: RevocationRegistryDefinition = serde_json::from_str(
+        let rev_def: RevocationRegistryDefinition = serde_json::from_str(
           &self.vade.get_did_document(
             &input.revocation_registry_definition
           ).await?
@@ -498,7 +504,7 @@ impl VadeTnt {
 
         let updated_registry = Issuer::revoke_credential(
           &input.issuer,
-          &mut rev_def,
+          &rev_def,
           input.credential_revocation_id,
           &input.issuer_public_key_did,
           &input.issuer_proving_key
@@ -508,12 +514,6 @@ impl VadeTnt {
 
         self.vade.set_did_document(&updated_registry.id, &serialized).await?;
 
-        // Resolve revocation definition
-        let mut rev_def: RevocationRegistryDefinition = serde_json::from_str(
-          &self.vade.get_did_document(
-            &input.revocation_registry_definition
-          ).await?
-        ).unwrap();
 
         Ok(Some(serialized))
     }
