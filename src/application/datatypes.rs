@@ -157,6 +157,12 @@ pub struct RevocationRegistryDefinition {
   pub proof: Option<AssertionProof>
 }
 
+pub struct RevocationState {
+  pub delta: RevocationRegistryDelta,
+  pub registry: RevocationRegistry,
+  pub witness: Witness
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialProposal {
