@@ -4,6 +4,7 @@ use data_encoding::BASE64URL;
 use sha2::{Digest, Sha256};
 use secp256k1::{Message, Signature, recover, RecoveryId, SecretKey, sign};
 use std::convert::TryInto;
+#[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
 use sha3::Keccak256;
 use crate::crypto::crypto_datatypes::AssertionProof;
@@ -34,7 +35,11 @@ pub fn create_assertion_proof(
   let header_encoded = padded.trim_end_matches('=');
   debug!("header base64 url encdoded: {:?}", &header_encoded);
 
+  #[cfg(target_arch = "wasm32")]
+  let now: String = js_sys::Date::new_0().to_iso_string().to_string().into();
+  #[cfg(not(target_arch = "wasm32"))]
   let now = Utc::now().format("%Y-%m-%dT%H:%M:%S.000Z").to_string();
+
   // build data object and hash
   let mut data_json: Value = serde_json::from_str("{}").unwrap();
   let doc_clone: Value = document_to_sign.clone();

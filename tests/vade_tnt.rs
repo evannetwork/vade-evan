@@ -71,6 +71,7 @@ use vade_tnt::{
     },
     resolver::ResolverConfig
 };
+use log::*;
 
 // TODO: Test multi-proof presentations
 // TODO: Test revocation
@@ -440,7 +441,7 @@ async fn issue_credential(
     serde_json::to_string(&revocation_key_private).unwrap(),
     serde_json::to_string(&revocation_info).unwrap(),
   );
-  println!("{}", &message_str);
+  error!("{}", &message_str);
   let results = vade.send_message(&message_str).await?;
 
   // check results
@@ -528,7 +529,7 @@ async fn present_proof(
       serde_json::to_string(&revocation_registries).unwrap(),
       serde_json::to_string(&master_secret).unwrap(),
   );
-  println!("{}", &message_str);
+  error!("{}", &message_str);
   let results = vade.send_message(&message_str).await?;
 
   // check results

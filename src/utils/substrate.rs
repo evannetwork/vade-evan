@@ -33,7 +33,7 @@ use futures::channel::mpsc::{
 };
 use futures::stream::{StreamExt};
 use std::convert::TryFrom;
-
+#[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
 
 
@@ -260,6 +260,9 @@ struct UpdatedDid {
 
 pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
     let (sender, receiver) = channel::<String>(100);
@@ -310,6 +313,9 @@ pub async fn add_payload_to_did(url: String, payload: String, did: String, priva
     let mut bytes_did_arr = [0; 32];
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
     let payload_hex = hex::decode(hex::encode(payload)).unwrap();
@@ -340,6 +346,9 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
     let mut bytes_did_arr = [0; 32];
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
     let payload_hex = hex::decode(hex::encode(payload)).unwrap();
@@ -368,6 +377,9 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
 #[wasm_bindgen]
 pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) = sign_message(&now_timestamp.to_string(), &private_key.to_string());
 
