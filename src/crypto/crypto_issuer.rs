@@ -21,7 +21,9 @@ use crate::application::datatypes::{
   CredentialSchema,
   CredentialRequest,
   RevocationRegistryDefinition,
+  RevocationState
 };
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Issuer {
 }
@@ -99,8 +101,6 @@ impl Issuer {
     }
     let values = value_builder.finalize().unwrap();
 
-    let delta = credential_revocation_definition.registry_delta.as_ref().unwrap();
-
     // no delta because we assume issuance_by_default == true
     let (cred, proof, _) = CryptoIssuer::sign_credential_with_revoc(
       &credential_request.subject,
@@ -123,7 +123,7 @@ impl Issuer {
       credential_revocation_id,
       credential_revocation_definition.maximum_credential_count,
       true, // TODO: Global const
-      &delta,
+      &credential_revocation_definition.registry_delta,
       &tails_accessor
     ).unwrap();
 
@@ -146,7 +146,7 @@ impl Issuer {
 
     let rev_def = CryptoRevocationRegistryDefinition {
       registry: rev_registry,
-      registry_delta: Some(rev_reg_delta),
+      registry_delta: rev_reg_delta,
       tails: rev_tails_gen,
       revocation_public_key: rev_key_pub,
       maximum_credential_count
@@ -165,7 +165,7 @@ impl Issuer {
     let tails =  SimpleTailsAccessor::new(&mut tails_gen).unwrap();
     match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
       Ok(delta) => {
-        let mut orig_delta: RevocationRegistryDelta = revocation_registry_definition.registry_delta.as_ref().unwrap().clone();
+        let mut orig_delta: RevocationRegistryDelta = revocation_registry_definition.registry_delta.clone();
         orig_delta.merge(&delta).unwrap();
         Ok((RevocationRegistry::from(orig_delta.clone()), orig_delta))
       }

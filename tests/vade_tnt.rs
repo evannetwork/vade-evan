@@ -44,7 +44,10 @@ use ursa::bn::BigNumber;
 use vade::{
     Vade,
 };
-use ursa::cl::CredentialSecretsBlindingFactors;
+use ursa::cl::{
+  CredentialSecretsBlindingFactors,
+  Witness
+};
 use vade_tnt::{
     VadeTnt,
     IssueCredentialResult,
@@ -65,7 +68,8 @@ use vade_tnt::{
         ProofVerification,
         RevocationKeyPrivate,
         RevocationRegistryDefinition,
-        RevocationIdInformation
+        RevocationIdInformation,
+        RevocationState
     },
     resolver::ResolverConfig
 };
@@ -196,7 +200,7 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
         = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
 
     // run test
-    let (result, _): (Credential, _) = issue_credential(
+    let (result, _, _): (Credential, _, _) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -244,12 +248,12 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
     let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
-    let (request, _) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
+    let (request, blinding_factors) = create_credential_request(&mut vade, &definition, &offer, &master_secret).await?;
 
     let rev_reg_def: CreateRevocationRegistryDefinitionResult
         = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
 
-    let (credential, _) : (Credential, _) = issue_credential(
+    let (mut credential, revocation_state, _) : (Credential, RevocationState, _) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -259,11 +263,22 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
       &rev_reg_def.revocation_registry_definition
     ).await?;
 
+    Prover::post_process_credential_signature(
+      &mut credential,
+      &request,
+      &definition,
+      blinding_factors,
+      &master_secret,
+      &rev_reg_def.revocation_registry_definition,
+      &revocation_state.witness
+    );
+
     // run test
     let result: ProofPresentation = present_proof(
         &mut vade,
         &proof_request,
         &credential,
+        &revocation_state.witness,
         &master_secret,
     ).await?;
     println!("{}", serde_json::to_string(&result).unwrap());
@@ -293,7 +308,7 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
     //(RevocationRegistryDefinition, RevocationKeyPrivate, RevocationIdInformation)
     let rev_reg_def: CreateRevocationRegistryDefinitionResult
         = create_revocation_registry_definition(&mut vade, &definition, 42).await?;
-    let (mut credential, _): (Credential, _) = issue_credential(
+    let (mut credential, revocation_state, _): (Credential, RevocationState, _) = issue_credential(
         &mut vade, &definition,
         &credential_private_key,
         &request,
@@ -308,13 +323,15 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
       &definition,
       blinding_factors,
       &master_secret,
-      &rev_reg_def.revocation_registry_definition
+      &rev_reg_def.revocation_registry_definition,
+      &revocation_state.witness
     );
 
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,
         &proof_request,
         &credential,
+        &revocation_state.witness,
         &master_secret,
     ).await?;
 
@@ -354,7 +371,7 @@ async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Err
     let revocation_key_private = rev_result.private_key;
     let revocation_info = rev_result.revocation_info;
 
-    let (mut credential, _): (Credential, _) = issue_credential(
+    let (mut credential, revocation_state, _): (Credential, RevocationState, _) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -370,7 +387,8 @@ async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Err
       &definition,
       blinding_factors,
       &master_secret,
-      &revocation_registry_definition
+      &revocation_registry_definition,
+      &revocation_state.witness
     );
 
     let updated_registry = revoke_credential(
@@ -379,11 +397,17 @@ async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Err
       &revocation_registry_definition
     ).await?;
 
+    let updated_revocation_state = Prover::update_revocation_state_for_credential(
+      revocation_state.clone(),
+      updated_registry
+    );
+
     // Verify proof for credential, using the updated revocation registry
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,
         &proof_request,
         &credential,
+        &updated_revocation_state.witness,
         &master_secret,
     ).await?;
 
@@ -422,7 +446,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
     let revocation_key_private = rev_result.private_key;
     let revocation_info = rev_result.revocation_info;
 
-    let (mut credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+    let (mut credential, revocation_state, revocation_info): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -438,7 +462,8 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
       &definition,
       blinding_factors,
       &master_secret,
-      &revocation_registry_definition
+      &revocation_registry_definition,
+      &revocation_state.witness
     );
 
     // Issue different credential & revoke it
@@ -446,7 +471,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
     let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
 
-    let (mut other_credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+    let (mut other_credential, other_revocation_state, revocation_info): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -462,7 +487,8 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
       &definition,
       other_blinding_factors,
       &master_secret,
-      &revocation_registry_definition
+      &revocation_registry_definition,
+      &other_revocation_state.witness
     );
 
     let updated_registry = revoke_credential(
@@ -471,11 +497,17 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
       &revocation_registry_definition
     ).await?;
 
+    let updated_revocation_state = Prover::update_revocation_state_for_credential(
+      revocation_state.clone(),
+      updated_registry
+    );
+
     // Verify proof for main credential, using the updated revocation registry
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,
         &proof_request,
         &credential,
+        &revocation_state.witness,
         &master_secret,
     ).await?;
 
@@ -515,7 +547,7 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
     let revocation_key_private = rev_result.private_key;
     let revocation_info = rev_result.revocation_info;
 
-    let (mut credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+    let (mut credential, revocation_state, revocation_info): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -531,7 +563,8 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
       &definition,
       blinding_factors,
       &master_secret,
-      &revocation_registry_definition
+      &revocation_registry_definition,
+      &revocation_state.witness
     );
 
     let updated_registry = &revocation_registry_definition;
@@ -547,7 +580,7 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
     let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
 
-    let (mut other_credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+    let (mut other_credential, other_revocation_state, revocation_info): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -563,7 +596,8 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
       &definition,
       other_blinding_factors,
       &master_secret,
-      &updated_registry
+      &updated_registry,
+      &other_revocation_state.witness
     );
 
     // Issue third credential & revoke it
@@ -571,7 +605,7 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
     let third_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let (third_request, third_blinding_factors) = create_credential_request(&mut vade, &definition, &other_offer, &master_secret).await?;
 
-    let (mut third_credential, revocation_info): (Credential, RevocationIdInformation) = issue_credential(
+    let (mut third_credential, third_revocation_state, revocation_info): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
       &mut vade,
       &definition,
       &credential_private_key,
@@ -587,21 +621,29 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
       &definition,
       third_blinding_factors,
       &master_secret,
-      &updated_registry
+      &updated_registry,
+      &third_revocation_state.witness
     );
 
-    // let updated_registry = revoke_credential(
-    //   &mut vade,
-    //   &third_credential,
-    //   &updated_registry
-    // ).await?;
+    let updated_registry = revoke_credential(
+      &mut vade,
+      &third_credential,
+      &updated_registry
+    ).await?;
 
+
+    let updated_first_revocation_state = Prover::update_revocation_state_for_credential(
+      revocation_state.clone(),
+      updated_registry
+    );
 
     // Verify proof for main credential, using the updated revocation registry
-    let presented_proof: ProofPresentation = present_proof(
+    println!("So far so good");
+    let presented_proof = present_proof(
         &mut vade,
         &proof_request,
         &other_credential,
+        &updated_first_revocation_state.witness,
         &master_secret,
     ).await?;
 
@@ -692,7 +734,7 @@ async fn issue_credential(
     revocation_key_private: &RevocationKeyPrivate,
     revocation_info: &RevocationIdInformation,
     revocation_definition: &RevocationRegistryDefinition
-    ) -> Result<(Credential, RevocationIdInformation), Box<dyn std::error::Error>> {
+    ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn std::error::Error>> {
     let message_str = format!(
       r###"{{
         "type": "issueCredential",
@@ -724,7 +766,7 @@ async fn issue_credential(
   println!("{}", serde_json::to_string(&results[0]).unwrap());
   let result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
 
-  Ok((result.credential, result.revocation_info))
+  Ok((result.credential, result.revocation_state, result.revocation_info))
 }
 
 async fn request_proof(vade: &mut Vade, schema: &CredentialSchema) -> Result<ProofRequest, Box<dyn std::error::Error>> {
@@ -785,6 +827,7 @@ async fn present_proof(
   vade: &mut Vade,
   proof_request: &ProofRequest,
   credential: &Credential,
+  witness: &Witness,
   master_secret: &MasterSecret,
 ) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
   let schema_did = &proof_request.sub_proof_requests[0].schema;
@@ -794,17 +837,22 @@ async fn present_proof(
       serde_json::from_str(&serde_json::to_string(&credential).unwrap()).unwrap(),
   );
 
+  let mut witnesses: HashMap<String, Witness> = HashMap::new();
+  witnesses.insert(credential.id.clone(), witness.clone());
+
   let message_str = format!(
       r###"{{
           "type": "presentProof",
           "data": {{
               "proofRequest": {},
               "credentials": {},
+              "witnesses": {},
               "masterSecret": {}
           }}
       }}"###,
       serde_json::to_string(&proof_request).unwrap(),
       serde_json::to_string(&credentials).unwrap(),
+      serde_json::to_string(&witnesses).unwrap(),
       serde_json::to_string(&master_secret).unwrap(),
   );
   println!("{}", &message_str);
