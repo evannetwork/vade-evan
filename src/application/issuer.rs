@@ -10,7 +10,9 @@ use crate::application::datatypes::{
   CredentialRequest,
   RevocationRegistryDefinition,
   EncodedCredentialValue,
-  RevocationIdInformation
+  RevocationIdInformation,
+  DeltaHistory,
+  RevocationState
 };
 use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
 use crate::crypto::crypto_utils::create_assertion_proof;
@@ -21,7 +23,9 @@ use crate::utils::utils::{
 use ursa::cl::{
   CredentialPrivateKey,
   new_nonce,
-  RevocationKeyPrivate
+  RevocationKeyPrivate,
+  RevocationRegistryDelta,
+  RevocationRegistry
 };
 use std::collections::{
   HashMap,
@@ -29,6 +33,7 @@ use std::collections::{
 };
 use ursa::cl::RevocationTailsGenerator;
 use simple_error::SimpleError;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Issuer {
 }
@@ -47,11 +52,11 @@ impl Issuer {
     ) -> (CredentialDefinition, CredentialPrivateKey) {
 
       let created_at = get_now_as_iso_string();
-
+      println!("Starte crypto issuer creddef");
       let (credential_private_key, crypto_credential_def) = CryptoIssuer::create_credential_definition(
         &schema
       );
-
+      println!("Done crypto issuer creddef");
       let mut definition = CredentialDefinition {
         id: assigned_did.to_owned(),
         r#type: "EvanZKPCredentialDefinition".to_string(),
@@ -148,11 +153,17 @@ impl Issuer {
 
       let updated_at = get_now_as_iso_string();
 
+      let delta_history = DeltaHistory {
+        created: SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs(),
+        delta: crypto_rev_def.registry_delta.clone()
+      };
+
       let mut rev_reg_def = RevocationRegistryDefinition {
         id: assigned_did.to_string(),
         credential_definition: credential_definition.id.to_string(),
         registry: crypto_rev_def.registry,
         registry_delta: crypto_rev_def.registry_delta,
+        delta_history: vec![delta_history],
         maximum_credential_count,
         revocation_public_key: crypto_rev_def.revocation_public_key,
         tails: crypto_rev_def.tails,
@@ -206,7 +217,7 @@ impl Issuer {
       revocation_registry_definition: &mut RevocationRegistryDefinition,
       revocation_private_key: RevocationKeyPrivate,
       revocation_info: &RevocationIdInformation
-    ) -> Result<(Credential, RevocationIdInformation), Box<dyn std::error::Error>> {
+    ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn std::error::Error>> {
 
       let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
       for entry in &credential_request.credential_values {
@@ -253,6 +264,18 @@ impl Issuer {
         &revocation_private_key
       );
 
+      let credential_id = generate_uuid();
+
+      let delta: RevocationRegistryDelta = serde_json::from_str(&serde_json::to_string(&revocation_registry_definition.registry).unwrap()).unwrap();
+
+      let revocation_state = RevocationState {
+        credential_id: credential_id.clone(),
+        revocation_id: rev_idx,
+        delta: delta.clone(),
+        updated: SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs(),
+        witness
+      };
+
       let cred_signature = CredentialSignature {
         r#type: "CLSignature2019".to_string(),
         credential_definition: credential_definition.id,
@@ -260,13 +283,12 @@ impl Issuer {
         signature,
         signature_correctness_proof,
         revocation_id: rev_idx,
-        revocation_registry_definition: revocation_registry_definition.id.clone(),
-        witness
+        revocation_registry_definition: revocation_registry_definition.id.clone()
       };
 
       let credential = Credential {
         context: vec!("https://www.w3.org/2018/credentials/v1".to_string()),
-        id: generate_uuid(),
+        id: credential_id.clone(),
         r#type: vec!("VerifiableCredential".to_string()),
         issuer: issuer_did.to_owned(),
         credential_subject,
@@ -274,7 +296,7 @@ impl Issuer {
         signature: cred_signature
       };
 
-      Ok((credential, new_rev_info))
+      Ok((credential, revocation_state, new_rev_info))
     }
 
     pub fn offer_credential(
@@ -297,7 +319,7 @@ impl Issuer {
 
     pub fn revoke_credential(
       issuer: &str,
-      revocation_registry_definition: &mut RevocationRegistryDefinition,
+      revocation_registry_definition: &RevocationRegistryDefinition,
       revocation_id: u32,
       issuer_public_key_did: &str,
       issuer_proving_key: &str
@@ -305,13 +327,27 @@ impl Issuer {
 
       let updated_at = get_now_as_iso_string();
 
-      let (new_registry, delta) = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id).unwrap();
+      let delta = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id).unwrap();
+
+      let mut full_delta: RevocationRegistryDelta = revocation_registry_definition.registry_delta.clone();
+      full_delta.merge(&delta).unwrap();
+
+      let unix_timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs();
+      let delta_history = DeltaHistory {
+        created: unix_timestamp,
+        delta: delta.clone()
+      };
+
+      let mut history_vec = revocation_registry_definition.delta_history.clone();
+      history_vec.push(delta_history);
+
       let tails: RevocationTailsGenerator = revocation_registry_definition.tails.clone().to_owned();
       let mut rev_reg_def = RevocationRegistryDefinition {
         id: revocation_registry_definition.id.to_owned(),
         credential_definition: revocation_registry_definition.credential_definition.to_owned(),
-        registry: new_registry,
-        registry_delta: Some(delta),
+        registry: RevocationRegistry::from(full_delta.clone()),
+        registry_delta: full_delta,
+        delta_history: history_vec,
         maximum_credential_count: revocation_registry_definition.maximum_credential_count,
         revocation_public_key: revocation_registry_definition.revocation_public_key.clone().to_owned(),
         tails,
