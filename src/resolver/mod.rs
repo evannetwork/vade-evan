@@ -25,7 +25,17 @@ use crate::utils::substrate::{
     update_payload_in_did,
     whitelist_identity
 };
+use serde::{Serialize, Deserialize};
 
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetDidDocumentArguments {
+  pub did: String,
+  pub payload: String,
+  pub private_key: String,
+  pub identity: String,
+}
 
 pub struct ResolverConfig {
   pub target: String,
@@ -52,6 +62,17 @@ impl SubstrateDidResolverEvan {
 
     async fn whitelist_identity(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
         Ok(Some(whitelist_identity(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
+    }
+
+    async fn set_did_document_message(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let input: SetDidDocumentArguments = serde_json::from_str(&data)?;
+        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone(), input.did.to_string()).await.unwrap();
+        if payload_count > 0 {
+            update_payload_in_did(self.config.target.clone(), 0 as u32, input.payload.to_string(), input.did.to_string(), input.private_key.to_string(), hex::decode(input.identity).unwrap()).await.unwrap();
+        } else {
+            add_payload_to_did(self.config.target.clone(), input.payload.to_string(), input.did.to_string(), input.private_key.to_string(), hex::decode(input.identity).unwrap()).await.unwrap();
+        }
+        Ok(Some("".to_string()))
     }
 }
 
@@ -89,14 +110,8 @@ impl DidResolver for SubstrateDidResolverEvan {
     ///
     /// * `did_name` - did_name to set value for
     /// * `value` - value to set
-    async fn set_did_document(&mut self, did_id: &str, value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone(), did_id.to_string()).await.unwrap();
-        if payload_count > 0 {
-            update_payload_in_did(self.config.target.clone(), 0 as u32, value.to_string(), did_id.to_string(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap();
-        } else {
-            add_payload_to_did(self.config.target.clone(), value.to_string(), did_id.to_string(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap();
-        }
-        Ok(())
+    async fn set_did_document(&mut self, _did_id: &str, _value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        unimplemented!();
     }
 }
 
@@ -110,11 +125,12 @@ impl MessageConsumer for SubstrateDidResolverEvan {
     async fn handle_message(
         &mut self,
         message_type: &str,
-        _message_data: &str,
+        message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
             "generateDid" => self.generate_did().await,
             "whitelistIdentity" => self.whitelist_identity().await,
+            "setDidDocument" => self.set_did_document_message(message_data).await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
     }

@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-chrono = "0.4.11"
+chrono = { version = "0.4.11",  default-features = false, features=["wasm-bindgen", "js-sys"] }
 # we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
 ursa = { path = "./../ursa/libursa", features=["portable_wasm"], default-features = false }
 # ursa = "0.3.2"
@@ -53,10 +53,12 @@ web-sys = { version = "0.3.39", features = [
 	'ErrorEvent',
     'console'
 ] }
+js-sys = { version = "0.3" }
 async-trait = "0.1.31"
 vade = { path = "../vade", version = "0.0.6" }
 simple-error = "0.2.1"
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
+console_log = { version = "0.2", features = ["color"] }
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

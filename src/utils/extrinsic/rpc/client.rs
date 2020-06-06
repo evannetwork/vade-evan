@@ -39,7 +39,7 @@ pub type OnMessageFn = fn(msg: Message, out: Sender, result: ThreadOut<String>) 
 
 
 #[cfg(target_arch = "wasm32")]
-pub type OnMessageFn = fn(msg: Message, out: WebSocket, result: ThreadOut<String>) -> Result<()>;
+pub type OnMessageFn = fn(msg: &str, out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn std::error::Error>>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub struct RpcClient {
@@ -187,21 +187,19 @@ fn end_process(out: Sender, result: ThreadOut<String>, value: Option<String>) {
 // WASM implementation
 
 #[cfg(target_arch = "wasm32")]
-pub fn on_get_request_msg(msg: Message, out: WebSocket, result: ThreadOut<String>) -> Result<()> {
+pub fn on_get_request_msg(msg: &str, out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn std::error::Error>> {
     info!("Got get_request_msg {}", msg);
-    let retstr = msg.as_text().unwrap();
-    let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
+    let value: serde_json::Value = serde_json::from_str(msg).unwrap();
 
-    result.send(value["result"].to_string()).unwrap();
-    out.close(CloseCode::Normal).unwrap();
+    result.clone().try_send(value["result"].to_string()).unwrap();
+    out.close_with_code(1000).unwrap();
     Ok(())
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn on_subscription_msg(msg: Message, _out: WebSocket, result: ThreadOut<String>) -> Result<()> {
+pub fn on_subscription_msg(msg: &str, _out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn std::error::Error>> {
     info!("got on_subscription_msg {}", msg);
-    let retstr = msg.as_text().unwrap();
-    let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
+    let value: serde_json::Value = serde_json::from_str(msg).unwrap();
     match value["id"].as_str() {
         Some(_idstr) => {}
         _ => {
@@ -211,15 +209,14 @@ pub fn on_subscription_msg(msg: Message, _out: WebSocket, result: ThreadOut<Stri
             match value["method"].as_str() {
                 Some("state_storage") => {
                     let changes = &value["params"]["result"]["changes"];
-
                     match changes[0][1].as_str() {
-                        Some(change_set) => result.send(change_set.to_owned()).unwrap(),
+                        Some(change_set) => result.clone().try_send(change_set.to_owned()).unwrap(),
                         None => println!("No events happened"),
                     };
                 }
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
-                        .map(|head| result.send(head).unwrap())
+                        .map(|head| result.clone().try_send(head).unwrap())
                         .unwrap_or_else(|_| error!("Could not parse header"));
                 }
                 _ => error!("unsupported method"),
@@ -231,13 +228,12 @@ pub fn on_subscription_msg(msg: Message, _out: WebSocket, result: ThreadOut<Stri
 
 #[cfg(target_arch = "wasm32")]
 pub fn on_extrinsic_msg_until_finalized(
-    msg: Message,
-    out: WebSocket,
+    msg: &str,
+    out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<()> {
-    let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
-    match parse_status(retstr) {
+) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("got msg {}", msg);
+    match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Error, e) => end_process(out, result, e),
         (XtStatus::Future, _) => {
@@ -251,13 +247,12 @@ pub fn on_extrinsic_msg_until_finalized(
 
 #[cfg(target_arch = "wasm32")]
 pub fn on_extrinsic_msg_until_in_block(
-    msg: Message,
-    out: WebSocket,
+    msg: &str,
+    out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<()> {
-    let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
-    match parse_status(retstr) {
+) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("got msg {}", msg);
+    match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::InBlock, val) => end_process(out, result, val),
         (XtStatus::Future, _) => end_process(out, result, None),
@@ -269,13 +264,12 @@ pub fn on_extrinsic_msg_until_in_block(
 
 #[cfg(target_arch = "wasm32")]
 pub fn on_extrinsic_msg_until_broadcast(
-    msg: Message,
-    out: WebSocket,
+    msg: &str,
+    out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<()> {
-    let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
-    match parse_status(retstr) {
+) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("got msg {}", msg);
+    match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Broadcast, _) => end_process(out, result, None),
         (XtStatus::Future, _) => end_process(out, result, None),
@@ -287,13 +281,12 @@ pub fn on_extrinsic_msg_until_broadcast(
 
 #[cfg(target_arch = "wasm32")]
 pub fn on_extrinsic_msg_until_ready(
-    msg: Message,
-    out: WebSocket,
+    msg: &str,
+    out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<()> {
-    let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
-    match parse_status(retstr) {
+) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("got msg {}", msg);
+    match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Ready, _) => end_process(out, result, None),
         (XtStatus::Future, _) => end_process(out, result, None),
@@ -304,12 +297,12 @@ pub fn on_extrinsic_msg_until_ready(
 }
 
 #[cfg(target_arch = "wasm32")]
-fn end_process(out: WebSocket, result: ThreadOut<String>, value: Option<String>) {
+fn end_process(out: &WebSocket, result: ThreadOut<String>, value: Option<String>) {
     // return result to calling thread
     debug!("Thread end result :{:?} value:{:?}", result, value);
     let val = value.unwrap_or_else(|| "".to_string());
-    result.clone().try_send(val);
-    ws_c.close_with_code(1000).unwrap();
+    result.clone().try_send(val).unwrap();
+    out.close_with_code(1000).unwrap();
 }
 
 
