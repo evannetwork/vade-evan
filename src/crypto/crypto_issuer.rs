@@ -158,17 +158,13 @@ impl Issuer {
   pub fn revoke_credential(
     revocation_registry_definition: &RevocationRegistryDefinition,
     revocation_id: u32
-  ) -> Result<(RevocationRegistry, RevocationRegistryDelta), Box<dyn std::error::Error>>{
+  ) -> Result<RevocationRegistryDelta, Box<dyn std::error::Error>>{
     let mut registry = revocation_registry_definition.registry.clone();
     let mut tails_gen = revocation_registry_definition.tails.clone();
     let max_cred_num = revocation_registry_definition.maximum_credential_count;
     let tails =  SimpleTailsAccessor::new(&mut tails_gen).unwrap();
     match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
-      Ok(delta) => {
-        let mut orig_delta: RevocationRegistryDelta = revocation_registry_definition.registry_delta.clone();
-        orig_delta.merge(&delta).unwrap();
-        Ok((RevocationRegistry::from(orig_delta.clone()), orig_delta))
-      }
+      Ok(delta) => Ok(delta),
       Err(_) => return Err(Box::from("Unable to revoke credential"))
     }
   }

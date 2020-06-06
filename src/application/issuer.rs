@@ -23,7 +23,9 @@ use crate::utils::utils::{
 use ursa::cl::{
   CredentialPrivateKey,
   new_nonce,
-  RevocationKeyPrivate
+  RevocationKeyPrivate,
+  RevocationRegistryDelta,
+  RevocationRegistry
 };
 use std::collections::{
   HashMap,
@@ -264,9 +266,12 @@ impl Issuer {
 
       let credential_id = generate_uuid();
 
+      let delta: RevocationRegistryDelta = serde_json::from_str(&serde_json::to_string(&revocation_registry_definition.registry).unwrap()).unwrap();
+
       let revocation_state = RevocationState {
         credential_id: credential_id.clone(),
         revocation_id: rev_idx,
+        delta: delta.clone(),
         updated: SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs(),
         witness
       };
@@ -322,10 +327,14 @@ impl Issuer {
 
       let updated_at = get_now_as_iso_string();
 
-      let (new_registry, delta) = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id).unwrap();
+      let delta = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id).unwrap();
 
+      let mut full_delta: RevocationRegistryDelta = revocation_registry_definition.registry_delta.clone();
+      full_delta.merge(&delta).unwrap();
+
+      let unix_timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs();
       let delta_history = DeltaHistory {
-        created: SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs(),
+        created: unix_timestamp,
         delta: delta.clone()
       };
 
@@ -336,8 +345,8 @@ impl Issuer {
       let mut rev_reg_def = RevocationRegistryDefinition {
         id: revocation_registry_definition.id.to_owned(),
         credential_definition: revocation_registry_definition.credential_definition.to_owned(),
-        registry: new_registry,
-        registry_delta: delta,
+        registry: RevocationRegistry::from(full_delta.clone()),
+        registry_delta: full_delta,
         delta_history: history_vec,
         maximum_credential_count: revocation_registry_definition.maximum_credential_count,
         revocation_public_key: revocation_registry_definition.revocation_public_key.clone().to_owned(),
