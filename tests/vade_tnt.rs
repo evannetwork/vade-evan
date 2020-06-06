@@ -807,14 +807,18 @@ async fn revoke_credential(vade: &mut Vade, credential: &Credential, revocation_
             "revocationRegistryDefinition": "{}",
             "credentialRevocationId": {},
             "issuerPublicKeyDid": "{}",
-            "issuerProvingKey" : "{}"
+            "issuerProvingKey" : "{}",
+            "privateKey": "{}",
+            "identity": "{}"
         }}
     }}"###,
     ISSUER_DID,
     revocation_registry_definition.id.clone(),
     credential.signature.revocation_id.clone(),
     ISSUER_PUBLIC_KEY_DID,
-    ISSUER_PRIVATE_KEY
+    ISSUER_PRIVATE_KEY,
+    SIGNER_PRIVATE_KEY,
+    SIGNER_IDENTITY
     );
     println!("{}", &message_str);
     let result = vade.send_message(&message_str).await?;
