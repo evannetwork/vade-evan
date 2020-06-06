@@ -523,7 +523,7 @@ impl VadeTnt {
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
 
-        self.set_did_document(&revocation_definition.id, &serialized, &input.private_key, &input.identity).await?;
+        self.set_did_document(&rev_def.id, &serialized, &input.private_key, &input.identity).await?;
 
         Ok(Some(serialized))
     }

@@ -65,9 +65,9 @@ pub const ISSUER_PRIVATE_KEY: &str =
     "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
 
 #[allow(dead_code)]
-pub const SIGNER_PRIVATE_KEY: &str = 
+pub const SIGNER_PRIVATE_KEY: &str =
     "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
-    
+
 #[allow(dead_code)]
 pub const SIGNER_IDENTITY: &str =
     "9670f7974e7021e4940c56d47f6b31fdfdd37de8";
@@ -75,7 +75,7 @@ pub const SIGNER_IDENTITY: &str =
 #[allow(dead_code)]
 pub const SUBJECT_DID: &'static str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
-        
+
 
 fn get_vade() -> Vade {
   // vade to work with
@@ -149,7 +149,7 @@ pub async fn create_schema() -> Result<String, JsValue>{
 #[wasm_bindgen]
 pub async fn create_credential_definition(schema_id: String) -> Result<String, JsValue> {
   let mut vade = get_vade();
-  
+
   let message_str = format!(r###"{{
     "type": "createCredentialDefinition",
     "data": {{
@@ -306,8 +306,6 @@ pub async fn issue_credential(
     let blinding_factors_parsed: CredentialSecretsBlindingFactors = serde_json::from_str(&blinding_factors).unwrap();
     let master_secret_parsed: MasterSecret = serde_json::from_str(&master_secret).unwrap();
     let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition).unwrap();
-    
-
 
     let message_str = format!(
       r###"{{
@@ -347,7 +345,8 @@ pub async fn issue_credential(
     &definition_parsed,
     blinding_factors_parsed,
     &master_secret_parsed,
-    &revocation_definition_parsed
+    &revocation_definition_parsed,
+    &result.revocation_state.witness
   );
 
   Ok(serde_json::to_string(&result).unwrap())
@@ -408,13 +407,13 @@ pub async fn present_proof(
     );
     debug!("{}", &message_str);
     let results = vade.send_message(&message_str).await.unwrap();
-  
+
     // check results
     assert_eq!(results.len(), 1);
-  
+
     Ok(results[0].as_ref().unwrap().to_string())
   }
-  
+
   #[wasm_bindgen]
   pub async fn verify_proof(
       presented_proof: String,
@@ -442,9 +441,9 @@ pub async fn present_proof(
           revocation_registry_definition,
       );
       let results = vade.send_message(&message_str).await.unwrap();
-  
+
       // check results
       assert_eq!(results.len(), 1);
-  
+
       Ok(results[0].as_ref().unwrap().to_string())
   }
