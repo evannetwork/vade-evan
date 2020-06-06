@@ -170,6 +170,7 @@ pub struct RevocationState {
   pub credential_id: String,
   pub revocation_id: u32,
   pub updated: u64,
+  pub delta: RevocationRegistryDelta,
   pub witness: Witness
 }
 

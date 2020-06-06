@@ -286,24 +286,27 @@ impl Prover {
   ) -> RevocationState {
     let mut witness: Witness = revocation_state.witness.clone();
 
-    let deltas: Vec<DeltaHistory> = rev_reg_def.delta_history.iter().cloned().filter(|entry| entry.created > revocation_state.updated).collect();
-
+    let mut deltas: Vec<DeltaHistory> = rev_reg_def.delta_history.iter().cloned().filter(|entry| entry.created > revocation_state.updated).collect();
+    deltas.sort_by(|a, b| a.created.cmp(&b.created));
     let max_cred = rev_reg_def.maximum_credential_count;
-    let generator: RevocationTailsGenerator = rev_reg_def.tails.clone();
+    let mut generator: RevocationTailsGenerator = rev_reg_def.tails.clone();
+    let mut big_delta = revocation_state.delta.clone();
     for delta in deltas {
-      let mut generator_copy = generator.clone();
-      witness.update(
-        revocation_state.revocation_id,
-        max_cred,
-        &delta.delta,
-        &SimpleTailsAccessor::new(&mut generator_copy).unwrap()
-      ).unwrap();
+      big_delta.merge(&delta.delta).unwrap();
     }
+
+    witness.update(
+      revocation_state.revocation_id,
+      max_cred,
+      &big_delta,
+      &SimpleTailsAccessor::new(&mut generator).unwrap()
+    ).unwrap();
 
     return RevocationState {
       credential_id: revocation_state.credential_id.clone(),
       revocation_id: revocation_state.revocation_id,
       witness: witness.clone(),
+      delta: big_delta.clone(),
       updated: SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs(),
     }
   }

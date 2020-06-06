@@ -507,7 +507,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
         &mut vade,
         &proof_request,
         &credential,
-        &revocation_state.witness,
+        &updated_revocation_state.witness,
         &master_secret,
     ).await?;
 
@@ -567,7 +567,6 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
       &revocation_state.witness
     );
 
-    let updated_registry = &revocation_registry_definition;
     let updated_registry = revoke_credential(
       &mut vade,
       &credential,
@@ -631,19 +630,18 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
       &updated_registry
     ).await?;
 
-
-    let updated_first_revocation_state = Prover::update_revocation_state_for_credential(
-      revocation_state.clone(),
+    // We need the second credential's witness to be up to date before creating proofs
+    let updated_second_revocation_state = Prover::update_revocation_state_for_credential(
+      other_revocation_state.clone(),
       updated_registry
     );
 
     // Verify proof for main credential, using the updated revocation registry
-    println!("So far so good");
     let presented_proof = present_proof(
         &mut vade,
         &proof_request,
         &other_credential,
-        &updated_first_revocation_state.witness,
+        &updated_second_revocation_state.witness,
         &master_secret,
     ).await?;
 
