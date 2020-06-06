@@ -16,10 +16,15 @@
 */
 
 use futures::channel::mpsc::Sender as ThreadOut;
+#[cfg(not(target_arch = "wasm32"))]
 use std::thread;
 
 #[cfg(target_arch = "wasm32")]
 use web_sys::{MessageEvent, WebSocket,ErrorEvent};
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
 
 #[cfg(not(target_arch = "wasm32"))]
 use ws::connect;
@@ -92,7 +97,7 @@ pub fn start_rpc_client_thread(
 pub fn start_rpc_client_thread(
     url: String,
     jsonreq: String,
-    result_in: mpsc_Sender<String>,
+    result_in: ThreadOut<String>,
     on_message_fn: OnMessageFn,
   ) {
     let ws = WebSocket::new(&url).unwrap();
@@ -103,8 +108,7 @@ pub fn start_rpc_client_thread(
           let msgg = evt.data()
                       .as_string()
           .expect("Can't convert received data to a string");
-          debug!("{}",&msgg, ws_c, result_in);
-          let res_e = (on_message_fn)(&msgg);
+          let _res_e = (on_message_fn)(&msgg, &ws_c, result_in.clone());
       }) as Box<dyn FnMut(MessageEvent)>)
     };
     
