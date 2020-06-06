@@ -21,7 +21,9 @@ use crate::application::datatypes::{
   CredentialSchema,
   CredentialRequest,
   RevocationRegistryDefinition,
+  RevocationState
 };
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Issuer {
 }
@@ -47,10 +49,8 @@ impl Issuer {
       credential_schema_builder.add_attr(&property.0).unwrap();
     }
     let crypto_schema = credential_schema_builder.finalize().unwrap();
-
     let (public_key, credential_private_key, credential_key_correctness_proof) =
       CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true).unwrap();
-
     let definition = CryptoCredentialDefinition {
       public_key,
       credential_key_correctness_proof
@@ -101,8 +101,6 @@ impl Issuer {
     }
     let values = value_builder.finalize().unwrap();
 
-    let delta = credential_revocation_definition.registry_delta.as_ref().unwrap();
-
     // no delta because we assume issuance_by_default == true
     let (cred, proof, _) = CryptoIssuer::sign_credential_with_revoc(
       &credential_request.subject,
@@ -125,7 +123,7 @@ impl Issuer {
       credential_revocation_id,
       credential_revocation_definition.maximum_credential_count,
       true, // TODO: Global const
-      &delta,
+      &credential_revocation_definition.registry_delta,
       &tails_accessor
     ).unwrap();
 
@@ -148,7 +146,7 @@ impl Issuer {
 
     let rev_def = CryptoRevocationRegistryDefinition {
       registry: rev_registry,
-      registry_delta: Some(rev_reg_delta),
+      registry_delta: rev_reg_delta,
       tails: rev_tails_gen,
       revocation_public_key: rev_key_pub,
       maximum_credential_count
@@ -160,13 +158,13 @@ impl Issuer {
   pub fn revoke_credential(
     revocation_registry_definition: &RevocationRegistryDefinition,
     revocation_id: u32
-  ) -> Result<(RevocationRegistry, RevocationRegistryDelta), Box<dyn std::error::Error>>{
+  ) -> Result<RevocationRegistryDelta, Box<dyn std::error::Error>>{
     let mut registry = revocation_registry_definition.registry.clone();
     let mut tails_gen = revocation_registry_definition.tails.clone();
     let max_cred_num = revocation_registry_definition.maximum_credential_count;
     let tails =  SimpleTailsAccessor::new(&mut tails_gen).unwrap();
     match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
-      Ok(delta) => return Ok((RevocationRegistry::from(delta.clone()), delta)),
+      Ok(delta) => Ok(delta),
       Err(_) => return Err(Box::from("Unable to revoke credential"))
     }
   }

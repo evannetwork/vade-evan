@@ -12,11 +12,16 @@ use crate::application::datatypes::{
   RevocationRegistryDefinition,
   CredentialSubProof,
   AggregatedProof,
-  EncodedCredentialValue
+  EncodedCredentialValue,
+  RevocationState,
+  DeltaHistory
 };
 use ursa::cl::{
   MasterSecret,
-  CredentialSecretsBlindingFactors
+  CredentialSecretsBlindingFactors,
+  Witness,
+  RevocationTailsGenerator,
+  SimpleTailsAccessor
 };
 use ursa::bn::BigNumber;
 use crate::crypto::crypto_prover::Prover as CryptoProver;
@@ -27,6 +32,7 @@ use crate::utils::utils::generate_uuid;
 use std::collections::HashMap;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Prover {
 }
@@ -98,6 +104,7 @@ impl Prover {
     credential_definitions: HashMap<String, CredentialDefinition>,
     credential_schemas: HashMap<String, CredentialSchema>,
     revocation_registries: HashMap<String, RevocationRegistryDefinition>, // RevDef ID to RevDef
+    witnesses: HashMap<String, Witness>,
     master_secret: &MasterSecret,
   ) -> ProofPresentation {
 
@@ -107,6 +114,7 @@ impl Prover {
       credential_definitions,
       credential_schemas,
       revocation_registries,
+      witnesses,
       &master_secret,
     );
 
@@ -125,9 +133,10 @@ impl Prover {
     credential_definitions: HashMap<String, CredentialDefinition>,
     credential_schemas: HashMap<String, CredentialSchema>,
     revocation_registries: HashMap<String, RevocationRegistryDefinition>,
-    master_secret: &MasterSecret,
+    witnesses: HashMap<String, Witness>,
+    master_secret: &MasterSecret
   ) -> (Vec<ProofCredential>, AggregatedProof)  {
-
+    println!("Creating proof credentials");
     let crypto_proof = CryptoProver::create_proof_with_revoc(
       &proof_request,
       &credentials,
@@ -135,6 +144,7 @@ impl Prover {
       &credential_schemas,
       &revocation_registries,
       &master_secret,
+      &witnesses
     );
 
     let mut proof_creds: Vec<ProofCredential> = Vec::new();
@@ -252,7 +262,8 @@ impl Prover {
     credential_definition: &CredentialDefinition,
     blinding_factors: CredentialSecretsBlindingFactors,
     master_secret: &MasterSecret,
-    revocation_registry_definition: &RevocationRegistryDefinition
+    revocation_registry_definition: &RevocationRegistryDefinition,
+    witness: &Witness
   ) {
     let rev_reg_def: RevocationRegistryDefinition = serde_json::from_str(
       &serde_json::to_string(revocation_registry_definition).unwrap()
@@ -264,7 +275,39 @@ impl Prover {
       &credential_definition.public_key,
       &blinding_factors,
       master_secret,
-      Some(rev_reg_def)
+      Some(rev_reg_def),
+      witness
     );
+  }
+
+  pub fn update_revocation_state_for_credential(
+    revocation_state: RevocationState,
+    rev_reg_def: RevocationRegistryDefinition
+  ) -> RevocationState {
+    let mut witness: Witness = revocation_state.witness.clone();
+
+    let mut deltas: Vec<DeltaHistory> = rev_reg_def.delta_history.iter().cloned().filter(|entry| entry.created > revocation_state.updated).collect();
+    deltas.sort_by(|a, b| a.created.cmp(&b.created));
+    let max_cred = rev_reg_def.maximum_credential_count;
+    let mut generator: RevocationTailsGenerator = rev_reg_def.tails.clone();
+    let mut big_delta = revocation_state.delta.clone();
+    for delta in deltas {
+      big_delta.merge(&delta.delta).unwrap();
+    }
+
+    witness.update(
+      revocation_state.revocation_id,
+      max_cred,
+      &big_delta,
+      &SimpleTailsAccessor::new(&mut generator).unwrap()
+    ).unwrap();
+
+    return RevocationState {
+      credential_id: revocation_state.credential_id.clone(),
+      revocation_id: revocation_state.revocation_id,
+      witness: witness.clone(),
+      delta: big_delta.clone(),
+      updated: SystemTime::now().duration_since(UNIX_EPOCH).expect("Error generating unix timestamp for delta history").as_secs(),
+    }
   }
 }

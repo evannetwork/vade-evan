@@ -55,7 +55,7 @@ pub struct AssertionProof {
 #[serde(rename_all = "camelCase")]
 pub struct CryptoRevocationRegistryDefinition {
   pub registry: RevocationRegistry,
-  pub registry_delta: Option<RevocationRegistryDelta>, // No delta before a credential has been revoked
+  pub registry_delta: RevocationRegistryDelta, // No delta before a credential has been revoked
   pub tails: RevocationTailsGenerator,
   pub revocation_public_key: RevocationKeyPublic,
   pub maximum_credential_count: u32,
