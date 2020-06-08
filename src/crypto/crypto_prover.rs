@@ -12,7 +12,8 @@ use ursa::cl::{
   RevocationRegistry,
   Witness,
   SimpleTailsAccessor,
-  verifier::Verifier as CryptoVerifier
+  verifier::Verifier as CryptoVerifier,
+  RevocationTailsGenerator
 };
 use ursa::errors::UrsaCryptoResult;
 use std::collections::HashMap;
@@ -28,7 +29,9 @@ use crate::application::datatypes::{
   CredentialDefinition,
   ProofRequest,
   EncodedCredentialValue,
-  CredentialRequest
+  CredentialRequest,
+  RevocationState,
+  DeltaHistory
 };
 
 
@@ -92,6 +95,7 @@ impl Prover {
     credential_schemas: &HashMap<String, CredentialSchema>,
     revocation_registries: &HashMap<String, RevocationRegistryDefinition>,
     master_secret: &MasterSecret,
+    witnesses: &HashMap<String, Witness>
   ) -> Proof {
     let mut non_credential_schema_builder = CryptoIssuer::new_non_credential_schema_builder().unwrap();
     non_credential_schema_builder.add_attr("master_secret").unwrap();
@@ -104,6 +108,7 @@ impl Prover {
     let mut sub_proof_request_builder;
     let mut credential_values_builder;
 
+    println!("In crypto");
     for sub_proof in &proof_request.sub_proof_requests {
 
       // Build Ursa credential schema & proof requests
@@ -121,6 +126,8 @@ impl Prover {
       }
       credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
 
+      let witness = witnesses.get(&credentials.get(&sub_proof.schema).unwrap().id).unwrap();
+
       // Build proof for requested schema & attributes
       proof_builder.add_sub_proof_request(
         &sub_proof_request_builder.finalize().unwrap(),
@@ -130,7 +137,7 @@ impl Prover {
         &credential_values_builder.finalize().unwrap(),
         &credential_definitions.get(&sub_proof.schema).unwrap().public_key,
         Some(&revocation_registries.get(&sub_proof.schema).unwrap().registry),
-        Some(&credentials.get(&sub_proof.schema).unwrap().signature.witness)
+        Some(&witness)
       ).unwrap();
     }
 
@@ -146,6 +153,7 @@ impl Prover {
     credential_blinding_factors: &CredentialSecretsBlindingFactors,
     master_secret: &MasterSecret,
     revocation_registry_definition: Option<RevocationRegistryDefinition>,
+    witness: &Witness
   ) {
     let mut revocation_key_public: Option<RevocationKeyPublic> = None;
     let mut revocation_registry: Option<RevocationRegistry> = None;
@@ -171,7 +179,7 @@ impl Prover {
       &credential.issuance_nonce,
       revocation_key_public.as_ref(),
       revocation_registry.as_ref(),
-      Some(&credential.witness)
+      Some(witness)
     ).unwrap();
   }
 }

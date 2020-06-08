@@ -4,6 +4,7 @@ use data_encoding::BASE64URL;
 use sha2::{Digest, Sha256};
 use secp256k1::{Message, Signature, recover, RecoveryId, SecretKey, sign};
 use std::convert::TryInto;
+#[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
 use sha3::Keccak256;
 use crate::crypto::crypto_datatypes::AssertionProof;
@@ -34,7 +35,11 @@ pub fn create_assertion_proof(
   let header_encoded = padded.trim_end_matches('=');
   debug!("header base64 url encdoded: {:?}", &header_encoded);
 
+  #[cfg(target_arch = "wasm32")]
+  let now: String = js_sys::Date::new_0().to_iso_string().to_string().into();
+  #[cfg(not(target_arch = "wasm32"))]
   let now = Utc::now().format("%Y-%m-%dT%H:%M:%S.000Z").to_string();
+
   // build data object and hash
   let mut data_json: Value = serde_json::from_str("{}").unwrap();
   let doc_clone: Value = document_to_sign.clone();
@@ -203,4 +208,33 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
   debug!("address 0x{}", &address);
 
   Ok((address, data_string))
+}
+
+///
+/// # Returns
+/// `[u8; 65]` - Signature
+/// `[u8; 32]` - Hashed Message
+pub fn sign_message(message_to_sign: &str, signing_key: &str) -> ([u8; 65], [u8; 32]) {
+  // create hash of data (including header)
+  let mut hasher = Keccak256::new();
+  hasher.input(&message_to_sign);
+  let hash = hasher.result();
+
+  // sign this hash
+  let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+  let message = Message::parse(&hash_arr);
+  let mut private_key_arr = [0u8; 32];
+  hex::decode_to_slice(signing_key, &mut private_key_arr).expect("private key invalid");
+  let secret_key = SecretKey::parse(&private_key_arr).unwrap();
+  let (sig, rec): (Signature, _) = sign(&message, &secret_key);
+
+  // sig to bytes (len 64), append recoveryid
+  let signature_arr = &sig.serialize();
+  let mut sig_and_rec: [u8; 65] = [0; 65];
+  for i in 0..64 {
+      sig_and_rec[i] = signature_arr[i];
+  }
+  sig_and_rec[64] = rec.serialize();
+
+  return (sig_and_rec, hash_arr);
 }
