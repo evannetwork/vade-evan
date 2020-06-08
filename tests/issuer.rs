@@ -114,8 +114,6 @@ fn can_create_schema() {
   );
 
   let serialized = serde_json::to_string(&schema).unwrap();
-  println!("-------");
-  println!("{}", serialized);
   assert!(match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
     Ok(()) => true,
     Err(e) => panic!("assertion check failed with: {}", e),

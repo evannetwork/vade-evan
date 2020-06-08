@@ -52,7 +52,6 @@ struct JwsDoc {
 #[test]
 fn can_recover_address_and_data_from_signature() {
   let (address, data) = recover_address_and_data(EXPECTED_SIGNATURE).unwrap();
-  println!("{}", data);
   assert_eq!(format!("0x{}",address), ISSUER_ETHEREUM_ADDRESS);
 
   // if we find these strings, we can assume the recovery is fine
