@@ -433,6 +433,47 @@ async function presentProof(params) {
   return JSON.parse(proof);
 }
 
+/**
+ * issues a credential for a given definition for a given subject
+ * @param {object} params parameters for the revocation registry
+ * @param {object} params.proof credential definition object
+ * @param {object} params.proofRequest credential definition object
+ * @param {object} params.credentialDefinition credential request object
+ * @param {object} params.schema revocation registry definition object
+ * @param {object} params.revocationRegistryDefinition revocation registry definition object
+ */
+async function verifyProof(params) {
+
+  if(params && !params.proof) {
+    throw new Error(`proofRequest must be provided in params`);
+  }
+
+  if(params && !params.proofRequest) {
+    throw new Error(`proofRequest must be provided in params`);
+  }
+  if(params && !params.credentialDefinition) {
+    throw new Error(`credential must be provided in params`);
+  }
+
+  if(params && !params.schema) {
+    throw new Error(`schema must be provided in params`);
+  }
+
+  if(params && !params.revocationRegistryDefinition) {
+    throw new Error(`revocationRegistryDefinition must be provided in params`);
+  }
+
+  const verifiedProof = await wasm.verify_proof(
+    JSON.stringify(params.proof),
+    JSON.stringify(params.proofRequest),
+    JSON.stringify(params.credentialDefinition),
+    JSON.stringify(params.schema),
+    JSON.stringify(params.revocationRegistryDefinition),
+  );
+
+  return JSON.parse(verifiedProof);
+}
+
 
 /*const vadeApi = {
   whitelistIdentity: async(privateKey, identity) {
@@ -686,6 +727,16 @@ async function workflow_self_issue_credential() {
   })
 
   console.dir(JSON.stringify(presentedProof))
+
+  const verifiedProof = await verifyProof({
+    proof: presentedProof,
+    proofRequest: proof,
+    credentialDefinition: TEST_CRED_DEF.definition,
+    schema: TEST_SCHEMA,
+    revocationRegistryDefinition: TEST_REV_REG.revocationRegistryDefinition
+  })
+
+  console.dir(verifiedProof)
 }
 
 workflow_self_issue_credential()
