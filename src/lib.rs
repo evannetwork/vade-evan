@@ -243,11 +243,6 @@ impl MessageConsumer for VadeTnt {
         message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
-            // whitelist identity + substrate auth (account-key + identity)
-            // create credential definition + substrate auth (account-key + identity)
-            // create credential schema + substrate auth (account-key + identity)
-            // create revocation registry + substrate auth (account-key + identity)
-            // update revocation registry + substrate auth (account-key + identity)
             "createCredentialDefinition" => self.create_credential_definition(message_data).await,
             "createCredentialOffer" => self.create_credential_offer(message_data).await,
             "createCredentialProposal" => self.create_credential_proposal(message_data).await,
@@ -266,7 +261,13 @@ impl MessageConsumer for VadeTnt {
 }
 
 impl VadeTnt {
-    // TODO: Re-enable resolving
+    /// Creates a new credential definition and stores it on-chain.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `CreateCredentialDefinitionArguments`
+    ///
+    /// # Returns
+    /// * `Option<String>` - The created definition as a JSON object
     async fn create_credential_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
       let schema: CredentialSchema = serde_json::from_str(
@@ -292,6 +293,13 @@ impl VadeTnt {
       Ok(Some(serialized))
     }
 
+    /// Creates a new credential schema and stores it on-chain.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `CreateCredentialSchemaArguments`
+    ///
+    /// # Returns
+    /// * `Option<String>` - The created schema as a JSON object
     async fn create_credential_schema(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateCredentialSchemaArguments = serde_json::from_str(&data)?;
 
@@ -315,6 +323,13 @@ impl VadeTnt {
       Ok(Some(serialized))
     }
 
+    /// Creates a new revocation registry definition and stores it on-chain.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `CreateRevocationRegistryDefinitionArguments`
+    ///
+    /// # Returns
+    /// * `Option<String>` - The created revocation registry definition as a JSON object
     async fn create_revocation_registry_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateRevocationRegistryDefinitionArguments = serde_json::from_str(&data)?;
 
@@ -350,7 +365,14 @@ impl VadeTnt {
       Ok(Some(serialised_result))
     }
 
-    // TODO: Re-enable resolving
+    /// Issues a new credential.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `CreateRevocationRegistryDefinitionArguments`
+    ///
+    /// # Returns
+    /// * `Option<String>` - A JSON object consisting of the credential, this credential's initial revocation state and
+    /// the updated revocation info, only interesting for the issuer (needs to be stored privately)
     async fn issue_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: IssueCredentialArguments = serde_json::from_str(&data)?;
 
@@ -402,6 +424,13 @@ impl VadeTnt {
         )
     }
 
+    /// Creates a `CredentialOffer` message.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `OfferCredentialArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - The offer as a JSON object
     async fn create_credential_offer(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: OfferCredentialArguments = serde_json::from_str(&data)?;
         let result: CredentialOffer = Issuer::offer_credential(
@@ -413,7 +442,13 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    // TODO: Re-enable resolving
+    /// Creates a `CredentialOffer` message.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `PresentProofArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - The offer as a JSON object
     async fn present_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: PresentProofArguments = serde_json::from_str(&data)?;
 
@@ -460,6 +495,13 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
+    /// Creates a `CredentialProposal` message.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `CreateCredentialProposalArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - The proposal as a JSON object
     async fn create_credential_proposal(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: CreateCredentialProposalArguments = serde_json::from_str(&data)?;
         let result: CredentialProposal = Prover::propose_credential(
@@ -471,7 +513,13 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    // TODO: Re-enable resolving
+    /// Creates a `CredentialRequest` message.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `RequestCredentialArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - A JSON object consisting of the `CredentialRequest` and `CredentialSecretsBlindingFactors` (to be stored at the prover's site in a private manner)
     async fn request_credential(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: RequestCredentialArguments = serde_json::from_str(&data)?;
 
@@ -492,6 +540,13 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
+    /// Creates a `ProofRequest` message.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `RequestProofArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofRequest` as JSON
     async fn request_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: RequestProofArguments = serde_json::from_str(&data)?;
         let result: ProofRequest = Verifier::request_proof(
@@ -503,6 +558,13 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
+    /// Revokes a credential and updates the revocation registry definition.
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `RevokeCredentialArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - The updated revocation registry definition as a JSON object
     async fn revoke_credential(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: RevokeCredentialArguments = serde_json::from_str(&data)?;
 
@@ -528,6 +590,13 @@ impl VadeTnt {
         Ok(Some(serialized))
     }
 
+    /// Verifies a given `ProofPresentation` in accordance to the specified `ProofRequest`
+    ///
+    /// # Arguments
+    /// * `data` - Expects a JSON object representing a `ValidateProofArguments` type
+    ///
+    /// # Returns
+    /// * `Option<String>` - A JSON object representing a `ProofVerification` type, specifying whether verificatin was successful
     async fn verify_proof(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: ValidateProofArguments = serde_json::from_str(&data)?;
 
