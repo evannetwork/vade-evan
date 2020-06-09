@@ -1,3 +1,23 @@
+/*
+  Copyright (C) 2018-present evan GmbH.
+
+  This program is free software: you can redistribute it and/or modify it
+  under the terms of the GNU Affero General Public License, version 3,
+  as published by the Free Software Foundation.
+
+  ,
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program. If not, see http://www.gnu.org/licenses/ or
+  write to the Free Software Foundation, Inc., 51 Franklin Street,
+  Fifth Floor, Boston, MA, 02110-1301 USA, or download the license from
+  the following URL: https://evan.network/license/
+*/
+
 use ursa::cl::{
   CredentialPublicKey,
   CredentialKeyCorrectnessProof,
@@ -27,6 +47,9 @@ pub use ursa::cl::{
 };
 use crate::crypto::crypto_datatypes::AssertionProof;
 
+/// Holds metadata and the key material used to issue and process credentials,
+/// and create and verify proofs.
+/// Needs to be stored publicly available and temper-proof.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialDefinition {
@@ -41,6 +64,8 @@ pub struct CredentialDefinition {
   pub proof: Option<AssertionProof>
 }
 
+/// Specifies the properties of a credential, as well as metadata.
+/// Needs to be stored publicly available and temper-proof.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialSchema {
@@ -78,6 +103,9 @@ pub struct SchemaProperty {
   pub items: Option<Vec<String>>
 }
 
+/// Message following a `CredentialProposal`, sent by an issuer.
+/// Specifies the DIDs of both the `CredentialSchema` and `CredentialDefinition`
+/// to be used for issuance.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialOffer {
@@ -89,6 +117,9 @@ pub struct CredentialOffer {
   pub nonce: Nonce
 }
 
+/// Messsage following a `CredentialOffer`, sent by a potential credential prover.
+/// Provides the values that need to be signed by the issuer in both encoded/cleartext, and blinded format.
+/// Incorporates the nonce value sent in `CredentialOffer`.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialRequest {
@@ -128,6 +159,9 @@ pub struct CredentialSubject {
   pub data: HashMap<String, EncodedCredentialValue>
 }
 
+/// A verifiable credential issued by an issuer upon receiving a `CredentialRequest`.
+/// Specifies the signed values, the DID of the prover/subject, the `CredentialSchema`, and the `CredentialSignature`
+/// including revocation info.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Credential {
@@ -141,6 +175,11 @@ pub struct Credential {
   pub signature: CredentialSignature
 }
 
+/// Contains all necessary cryptographic information for credential revocation.
+/// The `registry` and `registry_delta` properties need to be updated after every revocation
+/// (and, depending on the type of the revocation registry, after every issuance).
+/// Contains a `DeltaHistory` to let provers update their credential's `Witness` before proving non-revocation.
+/// Needs to be stored publicly available and temper-proof.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RevocationRegistryDefinition {
@@ -148,7 +187,7 @@ pub struct RevocationRegistryDefinition {
   pub credential_definition: String,
   pub updated_at: String,
   pub registry: RevocationRegistry,
-  pub registry_delta: RevocationRegistryDelta, // No delta before a credential has been revoked
+  pub registry_delta: RevocationRegistryDelta,
   pub delta_history: Vec<DeltaHistory>,
   pub tails: RevocationTailsGenerator,
   pub revocation_public_key: RevocationKeyPublic,
@@ -164,6 +203,9 @@ pub struct DeltaHistory {
   pub delta: RevocationRegistryDelta
 }
 
+/// Holds the current `Witness` for a credential. Witnesses need to be updated before creating proofs.
+/// To do this, the prover needs to retrieve the `DeltaHistory` of the relevant `RevocationRegistryDefinition`
+/// and update the witness with all deltas that are newer than the `updated` property of the `RevocationState`.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RevocationState {
@@ -174,6 +216,8 @@ pub struct RevocationState {
   pub witness: Witness
 }
 
+/// Message to initiate credential issuance, sent by (potential) prover.
+/// Specifies the schema to be used for the credential.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialProposal {
@@ -190,6 +234,7 @@ pub struct SubProofRequest {
   pub revealed_attributes: Vec<String>
 }
 
+/// Message sent by a verifier to prompt a prover to prove one or many assertions.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofRequest {
@@ -215,6 +260,7 @@ pub struct AggregatedProof {
   pub aggregated_proof: String
 }
 
+/// A single proof of a schema requested in a `ProofRequest` that reveals the requested attributes.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofCredential {
@@ -228,6 +274,8 @@ pub struct ProofCredential {
   pub proof: CredentialSubProof
 }
 
+/// A collection of all proofs requested in a `ProofRequest`. Sent to a verifier as the response to
+/// a `ProofRequest`.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProofPresentation {

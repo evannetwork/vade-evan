@@ -43,6 +43,19 @@ impl Issuer {
         Issuer { }
     }
 
+    /// Creates a new credential definition for a `CredentialSchema`. The definition needs to be stored
+    /// in a publicly available and temper-proof way.
+    ///
+    /// # Arguments
+    /// * `assigned_did` - DID to be used to revole this credential definition
+    /// * `issuer_did` - DID of the issuer
+    /// * `schema` - The `CredentialSchema` this definition belongs to
+    /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
+    /// * `issuer_proving_key` - Private key used to create the assertion proof
+    ///
+    /// # Returns
+    /// * `CredentialDefinition` - The definition object to be saved in a publicly available and temper-proof way
+    /// * `CredentialPrivateKey` - The private key used to sign credentials. Needs to be stored privately & securely
     pub fn create_credential_definition(
       assigned_did: &str,
       issuer_did: &str,
@@ -82,6 +95,22 @@ impl Issuer {
       return (definition, credential_private_key);
     }
 
+    /// Creates a new credential schema specifying properties credentials issued under this schema need to incorporate.
+    /// The schema needs to be stored in a publicly available and temper-proof way.
+    ///
+    /// # Arguments
+    /// * `assigned_did` - DID to be used to revole this credential definition
+    /// * `issuer_did` - DID of the issuer
+    /// * `schema_name` - Name of the schema
+    /// * `description` - Description for the schema. Can be left blank
+    /// * `properties` - The properties of the schema as Key-Object pairs#
+    /// * `required_properties` - The keys of properties that need to be provided when issuing a credential under this schema.
+    /// * `allow_additional_properties` - Specifies whether a credential under this schema is considered valid if it specifies more properties than the schema specifies.
+    /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
+    /// * `issuer_proving_key` - Private key used to create the assertion proof
+    ///
+    /// # Returns
+    /// * `CredentialSchema` - The schema object to be saved in a publicly available and temper-proof way
     pub fn create_credential_schema(
       assigned_did: &str,
       issuer_did: &str,
@@ -299,6 +328,16 @@ impl Issuer {
       Ok((credential, revocation_state, new_rev_info))
     }
 
+    /// Creates a new credential offer, as a response to a `CredentialProposal` sent by a prover.
+    ///
+    /// # Arguments
+    /// * `issuer_did` - DID of the issuer
+    /// * `subject_did` - DID of the subject
+    /// * `schema_did` - DID of the `CredentialSchema` to be offered
+    /// * `credential_definition_did` - DID of the `CredentialDefinition` to be offered
+    ///
+    /// # Returns
+    /// * `CredentialOffer` - The message to be sent to the prover.
     pub fn offer_credential(
       issuer_did: &str,
       subject_did: &str,
@@ -317,6 +356,17 @@ impl Issuer {
       }
     }
 
+    /// Revokes a credential.
+    ///
+    /// # Arguments
+    /// * `issuer` - DID of the issuer
+    /// * `revocation_registry_definition` - Revocation registry definition the credential belongs to
+    /// * `revocation_id` - Revocation ID of the credential
+    /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
+    /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
+    ///
+    /// # Returns
+    /// * `RevocationRegistryDefinition` - The updated revocation registry definition that needs to be stored in the original revocation registry definition's place.
     pub fn revoke_credential(
       issuer: &str,
       revocation_registry_definition: &RevocationRegistryDefinition,
