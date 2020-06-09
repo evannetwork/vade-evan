@@ -23,6 +23,9 @@ use crate::application::datatypes::{
   RevocationRegistryDefinition,
   RevocationState
 };
+#[cfg(target_arch = "wasm32")]
+use wasm_timer::{SystemTime, UNIX_EPOCH};
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Issuer {
