@@ -374,7 +374,6 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
     Ok(())
 }
 
-#[wasm_bindgen]
 pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     #[cfg(target_arch = "wasm32")]

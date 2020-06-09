@@ -32,6 +32,9 @@ use crate::utils::utils::generate_uuid;
 use std::collections::HashMap;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
+#[cfg(target_arch = "wasm32")]
+use wasm_timer::{SystemTime, UNIX_EPOCH};
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Prover {
