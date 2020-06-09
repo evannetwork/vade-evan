@@ -12,6 +12,7 @@ use crate::utils::utils::get_now_as_iso_string;
 use ursa::cl::new_nonce;
 use std::collections::HashMap;
 
+/// Holds the logic needed to verify proofs
 pub struct Verifier {}
 
 impl Verifier {
@@ -19,6 +20,15 @@ impl Verifier {
     Verifier { }
   }
 
+  /// Request a proof from a prover.
+  ///
+  /// # Arguments
+  /// * `verifier_did` - DID of the verifier
+  /// * `prover_did` - DID of the prover
+  /// * `sub_proof_requests` - Collection of subproof requests to be requested from the prover
+  ///
+  /// # Returns
+  /// * `ProofRequest` - The message to be sent to a prover
   pub fn request_proof(
     verifier_did: &str,
     prover_did: &str,
@@ -34,7 +44,18 @@ impl Verifier {
     }
   }
 
-  pub fn validate_proof(
+  /// Validates a proof presentation received from a prover.
+  ///
+  /// # Arguments
+  /// * `presented_proof` - The proof presentation from a prover
+  /// * `proof_request` - The proof request sent by the verifier to the prover beforehand
+  /// * `credential_definitions` - All definitions associated to the sent proofs, indexed by the according `CredentialSchema`'s ID
+  /// * `credential_schemas` - All schemas associated to the sent proofs, indexed by their ID
+  /// * `revocation_registry_definition` - All revocation registry definitions associated to the sent proofs, indexed by the according `CredentialSchema`'s ID
+  ///
+  /// # Returns
+  /// * `ProofVerification` - States whether the verification was successful or not
+  pub fn verify_proof(
     presented_proof: ProofPresentation,
     proof_request: ProofRequest,
     credential_definitions: HashMap<String, CredentialDefinition>,

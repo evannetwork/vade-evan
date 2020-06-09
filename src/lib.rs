@@ -562,7 +562,7 @@ impl VadeTnt {
           ).unwrap()));
         }
 
-        let result: ProofVerification = Verifier::validate_proof(
+        let result: ProofVerification = Verifier::verify_proof(
             input.presented_proof,
             input.proof_request,
             definitions,

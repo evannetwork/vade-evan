@@ -35,6 +35,7 @@ use ursa::cl::RevocationTailsGenerator;
 use simple_error::SimpleError;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Holds the logic needed to issue and revoke credentials.
 pub struct Issuer {
 }
 
