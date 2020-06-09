@@ -236,7 +236,20 @@ impl MessageConsumer for VadeTnt {
     ///
     /// # Arguments
     ///
-    /// * `message_data` - arbitrary data for plugin, e.g. a JSON
+    /// * `message_type` - type of message. supports:
+    /// * * `createCredentialDefinition`
+    /// * * `createCredentialOffer`
+    /// * * `createCredentialProposal`
+    /// * * `createCredentialSchema`
+    /// * * `createRevocationRegistryDefinition`
+    /// * * `issueCredential`
+    /// * * `presentProof`
+    /// * * `requestCredential`
+    /// * * `requestProof`
+    /// * * `revokeCredential`
+    /// * * `verifyProof`
+    /// * * `whitelistIdentity`
+    /// * `message_data` - relevant data depending on the type of the message sent
     async fn handle_message(
         &mut self,
         message_type: &str,
