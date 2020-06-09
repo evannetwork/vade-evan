@@ -25,6 +25,7 @@ use crate::application::datatypes::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 
+// Mediator class to broker between the high-level vade-tnt application issuer and the Ursa issuer class
 pub struct Issuer {
 }
 

@@ -34,7 +34,7 @@ use crate::application::datatypes::{
   DeltaHistory
 };
 
-
+// Mediator class to broker between the high-level vade-tnt application prover and the Ursa prover class
 pub struct Prover {
 }
 
@@ -45,7 +45,6 @@ impl Prover {
     }
   }
 
-  ///
   pub fn request_credential(
     requester_did: &str,
     encoded_credential_values: &HashMap<String, EncodedCredentialValue>,
