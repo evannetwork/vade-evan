@@ -37,6 +37,13 @@ struct SetDidDocumentArguments {
   pub identity: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct IdentityArguments {
+  pub private_key: String,
+  pub identity: String,
+}
+
 pub struct ResolverConfig {
   pub target: String,
   pub private_key: String,
@@ -56,12 +63,14 @@ impl SubstrateDidResolverEvan {
         }
     }
 
-    async fn generate_did(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        Ok(Some(create_did(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
+    async fn generate_did(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let input: IdentityArguments = serde_json::from_str(&data)?;
+        Ok(Some(create_did(self.config.target.clone(), input.private_key.clone(), hex::decode(input.identity).unwrap()).await.unwrap()))
     }
 
-    async fn whitelist_identity(&self) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        Ok(Some(whitelist_identity(self.config.target.clone(), self.config.private_key.clone(), self.config.identity.clone()).await.unwrap()))
+    async fn whitelist_identity(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let input: IdentityArguments = serde_json::from_str(&data)?;
+        Ok(Some(whitelist_identity(self.config.target.clone(), input.private_key.clone(), hex::decode(input.identity).unwrap()).await.unwrap()))
     }
 
     async fn set_did_document_message(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
@@ -128,8 +137,8 @@ impl MessageConsumer for SubstrateDidResolverEvan {
         message_data: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         match message_type {
-            "generateDid" => self.generate_did().await,
-            "whitelistIdentity" => self.whitelist_identity().await,
+            "generateDid" => self.generate_did(message_data).await,
+            "whitelistIdentity" => self.whitelist_identity(message_data).await,
             "setDidDocument" => self.set_did_document_message(message_data).await,
             _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
         }
