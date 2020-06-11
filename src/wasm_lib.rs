@@ -85,8 +85,14 @@ pub const SUBJECT_DID: &'static str =
 fn get_vade() -> Vade {
   // vade to work with
   // let substrate_resolver = SubstrateDidResolverEvan::new();
+  let _ = console_log::init_with_level(log::Level::Debug);
   let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
   let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
+    target: "13.69.59.185".to_string(),
+    private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
+    identity: identity.clone(),
+  });
+  let substrate_resolver2 = SubstrateDidResolverEvan::new(ResolverConfig{
     target: "13.69.59.185".to_string(),
     private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
     identity: identity.clone(),
@@ -102,6 +108,7 @@ fn get_vade() -> Vade {
 
   let tnt = VadeTnt::new(internal_vade);
   let mut vade = Vade::new();
+  vade.register_did_resolver(Box::from(substrate_resolver2));
   vade.register_message_consumer(
     &vec![
       "createCredentialSchema",
@@ -124,7 +131,6 @@ fn get_vade() -> Vade {
 
 #[wasm_bindgen]
 pub async fn create_schema(issuer: String, schema_name: String, description: String, properties: String, required_properties: String, issuer_public_key_did: String, issuer_proving_key: String, private_key: String, identity: String) -> Result<String, JsValue>{
-  console_log::init_with_level(log::Level::Debug).unwrap();
   let mut vade = get_vade();
 
   let message_str = format!(r###"{{
@@ -163,7 +169,6 @@ pub async fn create_schema(issuer: String, schema_name: String, description: Str
 
 #[wasm_bindgen]
 pub async fn create_credential_definition(schema_id: String, issuer_did: String, issuer_public_key_did_id: String, issuer_private_key: String, private_key: String, identity: String) -> Result<String, JsValue> {
-  console_log::init_with_level(log::Level::Debug).unwrap();
   let mut vade = get_vade();
 
   let message_str = format!(r###"{{
@@ -221,7 +226,6 @@ pub fn create_master_secret() -> String {
 
 #[wasm_bindgen]
 pub async fn create_credential_proposal (schema_id: String, subject_did: String, issuer_did: String) -> Result<String, JsValue> {
-  console_log::init_with_level(log::Level::Debug).unwrap();
     let mut vade = get_vade();
 
     let message_str = format!(r###"{{
@@ -261,7 +265,6 @@ pub async fn create_credential_offer(proposal: String, credential_definition_id:
 
 #[wasm_bindgen]
 pub async fn create_credential_request(
-    definition: String,
     offer: String,
     master_secret: String,
     credential_values: String,
@@ -271,11 +274,10 @@ pub async fn create_credential_request(
         "type": "requestCredential",
         "data": {{
             "credentialOffering": {},
-            "credentialDefinition": {},
             "masterSecret": {},
             "credentialValues": {}
         }}
-    }}"###, offer, definition, master_secret, credential_values);
+    }}"###, offer, master_secret, credential_values);
     let results = vade.send_message(&message_str).await.unwrap();
 
     // check results
@@ -285,8 +287,7 @@ pub async fn create_credential_request(
 }
 
 #[wasm_bindgen]
-pub async fn create_revocation_registry_definition(credential_definition_id: String, max_credential_count: u32, issuer_public_key_did: String, issuer_private_key: String, private_key: String, identity: String) -> Result<String, JsValue> {
-  console_log::init_with_level(log::Level::Debug).unwrap();  
+pub async fn create_revocation_registry_definition(credential_definition_id: String, max_credential_count: u32, issuer_public_key_did: String, issuer_private_key: String, private_key: String, identity: String) -> Result<String, JsValue> { 
   let mut vade = get_vade();
     let message_str = format!(r###"{{
       "type": "createRevocationRegistryDefinition",
@@ -319,19 +320,20 @@ pub async fn issue_credential(
     issuer_did: String,
     subject_did: String
     ) -> Result<String, JsValue> {
-    //console_log::init_with_level(log::Level::Debug).unwrap();
-    info!("vade");
     let mut vade = get_vade();
-    info!("definition");
-    let definition_parsed: CredentialDefinition = serde_json::from_str(&definition).unwrap();
-    info!("request");
+    debug!("get did {}", definition);
+    let credential_definition_doc = vade.get_did_document(
+      &definition
+    ).await.unwrap();
+    debug!("parse doc");
+    let definition_parsed: CredentialDefinition = serde_json::from_str(&credential_definition_doc).unwrap();
     let request_parsed: CredentialRequest = serde_json::from_str(&request).unwrap();
-    info!("blinding");
     let blinding_factors_parsed: CredentialSecretsBlindingFactors = serde_json::from_str(&blinding_factors).unwrap();
-    info!("ms");
     let master_secret_parsed: MasterSecret = serde_json::from_str(&master_secret).unwrap();
-    info!("rev reg");
-    let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition).unwrap();
+    let revocation_definition_doc = vade.get_did_document(
+      &revocation_definition
+    ).await.unwrap();
+    let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition_doc).unwrap();
 
     let message_str = format!(
       r###"{{
@@ -340,7 +342,6 @@ pub async fn issue_credential(
           "issuer": "{}",
           "subject": "{}",
           "credentialRequest": {},
-          "credentialDefinition": {},
           "credentialPrivateKey": {},
           "credentialRevocationDefinition": "{}",
           "revocationPrivateKey": {},
@@ -350,7 +351,6 @@ pub async fn issue_credential(
     issuer_did,
     subject_did,
     request,
-    definition,
     credential_private_key,
     revocation_definition_parsed.id,
     revocation_key_private,
@@ -386,13 +386,9 @@ pub async fn present_proof(
     master_secret: String,
     witness: String
   ) -> Result<String, JsValue> {
-    info!("vade");
     let mut vade = get_vade();
-    info!("pr_parse");
     let proof_request_parsed: ProofRequest = serde_json::from_str(&proof_request).unwrap();
-    info!("schema");
     let schema_did = &proof_request_parsed.sub_proof_requests[0].schema;
-    info!("def");
     let credential_parsed: Credential = serde_json::from_str(&credential).unwrap();
     let witness_parsed: Witness = serde_json::from_str(&witness).unwrap();
     let mut credentials: HashMap<String, Credential> = HashMap::new();
