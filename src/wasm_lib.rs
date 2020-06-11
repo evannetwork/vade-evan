@@ -80,6 +80,7 @@ pub const SUBJECT_DID: &'static str =
 fn get_vade() -> Vade {
   // vade to work with
   // let substrate_resolver = SubstrateDidResolverEvan::new();
+  let _ = console_log::init_with_level(log::Level::Error);
   let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
   let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
     target: "13.69.59.185".to_string(),
