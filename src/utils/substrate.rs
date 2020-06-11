@@ -209,7 +209,7 @@ pub async fn wait_for_raw_event(
                 Ok(raw_events) => {
                     for (phase, event) in raw_events.into_iter() {
                         info!("Decoded Event: {:?}, {:?}", phase, event);
-                        
+
                         match event {
                             RuntimeEvent::Raw(raw)
                                 if raw.module == module && raw.variant == variant =>
@@ -229,7 +229,7 @@ pub async fn wait_for_raw_event(
                 Err(_) => error!("couldn't decode event record list"),
             }
         }
-        
+
     }
 }
 
@@ -257,7 +257,15 @@ struct UpdatedDid {
     _index: u32,
 }
 
-
+/// Anchors a new DID on the chain.
+///
+/// # Arguments
+/// * `url` - Substrate URL
+/// * `private_key` - Private key used to sign a message
+/// * `identity` - Identity requesting the DID
+///
+/// # Returns
+/// * `String` - The anchored DID
 pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     #[cfg(target_arch = "wasm32")]
@@ -281,7 +289,14 @@ pub async fn create_did(url: String, private_key: String, identity: Vec<u8>) -> 
     Ok(format!("0x{}", hex::encode(event_wait.hash)))
 }
 
-
+/// Retrieve the content saved at a DID reference.
+///
+/// # Arguments
+/// * `url` - Substrate URL
+/// * `did` - DID to resolve
+///
+/// # Returns
+/// * `String` - Content saved behind the DID
 #[wasm_bindgen]
 pub async fn get_did(url: String, did: String) -> Result<String, JsValue> {
     let mut bytes_did_arr = [0; 32];
@@ -306,7 +321,14 @@ pub async fn get_did(url: String, did: String) -> Result<String, JsValue> {
     Ok(body)
 }
 
-
+/// Add a new payload under a DID
+///
+/// # Arguments
+/// * `url` - Substrate URL
+/// * `payload` - Payload to save
+/// * `did` - DID to save payload under
+/// * `private_key` - Private key used to sign a message
+/// * `identity` - Identity of the caller
 #[wasm_bindgen]
 pub async fn add_payload_to_did(url: String, payload: String, did: String, private_key: String, identity: Vec<u8>) -> Result<(), JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
@@ -340,6 +362,15 @@ pub async fn add_payload_to_did(url: String, payload: String, did: String, priva
     Ok(())
 }
 
+/// Updates the object at the index in the payload array at this DID
+///
+/// # Arguments
+/// * `url` - Substrate URL
+/// * `index` - Index of the payload to update
+/// * `payload` - Payload to save
+/// * `did` - DID to save payload under
+/// * `private_key` - Private key used to sign a message
+/// * `identity` - Identity of the caller
 #[wasm_bindgen]
 pub async fn update_payload_in_did(url: String, index: u32, payload: String, did: String, private_key: String, identity: Vec<u8>) -> Result<(), JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
@@ -374,6 +405,13 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
     Ok(())
 }
 
+/// Whilelists an identity to send transactions to the substrate chain.
+///
+/// # Arguments
+/// * `url` - Substrate URL
+/// * `private_key` - Private key used to sign a message
+/// * `identity` - Identity of the caller
+#[wasm_bindgen]
 pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<u8>) -> Result<String, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     #[cfg(target_arch = "wasm32")]
@@ -401,6 +439,11 @@ pub async fn whitelist_identity(url: String, private_key: String, identity: Vec<
     Ok("".to_string())
 }
 
+/// Retrieves the number of payloads attached to a DID.
+///
+/// # Arguments
+/// * `url` - Substrate URL
+/// * `did` - DID to retrieve the count for
 #[wasm_bindgen]
 pub async fn get_payload_count_for_did(url: String, did: String) -> Result<u32, JsValue> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
@@ -413,7 +456,7 @@ pub async fn get_payload_count_for_did(url: String, did: String) -> Result<u32, 
     } else {
         Ok(detail_count.unwrap())
     }
-   
+
 }
 
 

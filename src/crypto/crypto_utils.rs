@@ -18,11 +18,13 @@ pub struct JwsData<'a> {
 /// Creates proof for VC document
 ///
 /// # Arguments
-///
 /// * `vc` - vc to create proof for
 /// * `verification_method` - issuer of VC
 /// * `private_key` - private key to create proof as 32B hex string
 /// * `now` - timestamp of issuing, may have also been used to determine `validFrom` in VC
+///
+/// # Returns
+/// * `AssertionProof` - Proof object containing a JWT and metadata
 pub fn create_assertion_proof(
   document_to_sign: &Value,
   verification_method: &str,
@@ -148,8 +150,10 @@ pub fn check_assertion_proof(
 /// Recovers Ethereum address of signer and data part of a jwt.
 ///
 /// # Arguments
-///
 /// * `jwt` - jwt as str&
+///
+/// # Returns
+/// * `(String, String)` - (Address, Data) tuple
 pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
   // jwt text parsing
   let split: Vec<&str> = jwt.split('.').collect();
@@ -210,6 +214,11 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
   Ok((address, data_string))
 }
 
+/// Signs a message using Keccak256
+///
+/// # Arguments
+/// * `message_to_sign` - String to sign
+/// * `signing_key` - Key to be used for signing
 ///
 /// # Returns
 /// `[u8; 65]` - Signature
