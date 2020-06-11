@@ -50,7 +50,7 @@ pub struct ResolverConfig {
   pub identity: Vec<u8>
 }
 
-/// Resolver for DIDs on evan.network (currently on testnet)
+/// Resolver for DIDs on the Trust&Trace substrate chain
 pub struct SubstrateDidResolverEvan {
   config: ResolverConfig
 }

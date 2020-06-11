@@ -37,6 +37,7 @@ use wasm_timer::{SystemTime, UNIX_EPOCH};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Holds the logic needed to request credentials and create proofs.
 pub struct Prover {
 }
 
@@ -51,6 +52,9 @@ impl Prover {
   /// * `issuer_did` - DID of the issuer the proposal is for
   /// * `subject_did` - DID of the proposal creator and potential subject of the credential
   /// * `schema_did` - DID of the schema to propose the credential for
+  ///
+  /// # Returns
+  /// * `CredentialProposal` - The message to be sent to an issuer
   pub fn propose_credential(issuer_did: &str, subject_did: &str, schema_did: &str) -> CredentialProposal {
     return CredentialProposal {
       issuer: issuer_did.to_owned(),
@@ -67,6 +71,10 @@ impl Prover {
   /// * `credential_definition` - The credential definition that is referenced in the credential offering
   /// * `master_secret` - The master secret to incorporate into the blinded values to be signed by the issuer
   /// * `credential_values` - A mapping of property names to their stringified cleartext values
+  ///
+  /// # Returns
+  /// * `CredentialRequest` - The request to be sent to the issuer
+  /// * `CredentialSecretsBlindingFactors` - Blinding factors used for blinding the credential values. Need to be stored privately at the prover's site
   pub fn request_credential(
     credential_offering: CredentialOffer,
     credential_definition: CredentialDefinition,
@@ -101,12 +109,25 @@ impl Prover {
     }, blinding_factors);
   }
 
+  /// Create a `ProofPresentation` to send to a verifier based on a received `ProofRequest`
+  ///
+  /// # Arguments
+  /// * `proof_request` - The received proof_requested sent by the verifier
+  /// * `credentials` - All credentials necessary for answering the proof request, indexed by their according `CredentialSchema`'s ID.
+  /// * `credential_definitions` - All credential definitions necessary for answering the proof request, indexed by their according `CredentialSchema`'s ID.
+  /// * `credential_schemas` - All credential schemas necessary for answering the proof request, indexed by their ID.
+  /// * `revocation_registries` - All revocation registry definitions necessary for answering the proof request, indexed by their according `CredentialSchema`'s ID.
+  /// * `witnesses` - All witnesses needed to prove non-revocation, indexed by their according **`Credential`'s ID**
+  /// * `master_secret` - The master secret all credentials share
+  ///
+  /// # Returns
+  /// * `ProofPresentation` - All proofs collected into a presentation object that is to be sent to the verifier
   pub fn present_proof(
     proof_request: ProofRequest,
     credentials: HashMap<String, Credential>,
     credential_definitions: HashMap<String, CredentialDefinition>,
     credential_schemas: HashMap<String, CredentialSchema>,
-    revocation_registries: HashMap<String, RevocationRegistryDefinition>, // RevDef ID to RevDef
+    revocation_registries: HashMap<String, RevocationRegistryDefinition>,
     witnesses: HashMap<String, Witness>,
     master_secret: &MasterSecret,
   ) -> ProofPresentation {
@@ -252,6 +273,7 @@ impl Prover {
     return encoded_values;
   }
 
+  /// Create a new master secret to be stored privately on the prover's site.
   pub fn create_master_secret() -> MasterSecret {
     match CryptoProver::create_master_secret() {
       Ok(secret) => return secret,
@@ -259,6 +281,16 @@ impl Prover {
     }
   }
 
+  /// Incorporate the prover's master secret into the credential signature after issuance.
+  ///
+  /// # Arguments
+  /// * `credential` - The credential to alter
+  /// * `credential_request` - The original credential request for this credential
+  /// * `credential_definition` - The definition the credential was issued with
+  /// * `blinding_factors` - The blinding factors created by the prover while creating the credential request
+  /// * `master_secret` - The master secret to incorporate in this credential
+  /// * `revocation_registry_definition` - The revocation registry definition for this credential
+  /// * `witnesses` - All witnesses needed to prove non-revocation, indexed by their according **`Credential`'s ID**
   pub fn post_process_credential_signature(
     credential: &mut Credential,
     credential_request: &CredentialRequest,
@@ -283,6 +315,14 @@ impl Prover {
     );
   }
 
+  /// Updates the revocation state associated witha credential.
+  ///
+  /// # Arguments
+  /// * `revocation_state` - Current revocation state (that is to be updated)
+  /// * `rev_reg_def` - Revocation registry definition the credential that is associated with this state belongs to
+  ///
+  /// # Returns
+  /// * `RevocationState` - The updated revocaiton state
   pub fn update_revocation_state_for_credential(
     revocation_state: RevocationState,
     rev_reg_def: RevocationRegistryDefinition
