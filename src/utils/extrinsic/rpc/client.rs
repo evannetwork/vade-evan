@@ -81,6 +81,7 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
             // subscriptions
             debug!("no id field found in response. must be subscription");
             debug!("method: {:?}", value["method"].as_str());
+            debug!("retstr: {:?}", retstr);
             match value["method"].as_str() {
                 Some("state_storage") => {
                     let changes = &value["params"]["result"]["changes"];
@@ -94,7 +95,9 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
                 }
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
-                        .map(|head| result.clone().try_send(head).unwrap())
+                        .map(|head| {
+                            let _ = result.clone().try_send(head);
+                        })
                         .unwrap_or_else(|_| error!("Could not parse header"));
                 }
                 _ => error!("unsupported method"),
@@ -210,13 +213,17 @@ pub fn on_subscription_msg(msg: &str, _out: &WebSocket, result: ThreadOut<String
                 Some("state_storage") => {
                     let changes = &value["params"]["result"]["changes"];
                     match changes[0][1].as_str() {
-                        Some(change_set) => result.clone().try_send(change_set.to_owned()).unwrap(),
+                        Some(change_set) => {
+                            let _ = result.clone().try_send(change_set.to_owned());
+                        },
                         None => println!("No events happened"),
                     };
                 }
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
-                        .map(|head| result.clone().try_send(head).unwrap())
+                        .map(|head| {
+                            let _ = result.clone().try_send(head);
+                        })
                         .unwrap_or_else(|_| error!("Could not parse header"));
                 }
                 _ => error!("unsupported method"),
