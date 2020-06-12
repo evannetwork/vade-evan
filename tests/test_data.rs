@@ -121,6 +121,31 @@ pub const SCHEMA_PROPERTIES: &'static str = r###"{
 }"###;
 
 #[allow(dead_code)]
+pub const SCHEMA_EXTENDED_PROPERTIES: &'static str = r###"{
+  "test_property_string": {
+    "type": "string"
+  },
+  "test_property_string2": {
+    "type": "string"
+  }
+}"###;
+
+#[allow(dead_code)]
+pub const SCHEMA_MORE_EXTENDED_PROPERTIES: &'static str = r###"{
+  "test_property_string": {
+    "type": "string"
+  },
+  "test_property_string2": {
+    "type": "string"
+  },
+  "test_property_string3": {
+    "type": "string"
+  }
+}"###;
+
+
+
+#[allow(dead_code)]
 pub const SCHEMA_REQUIRED_PROPERTIES: &'static str = r###"[
   "test_property_string"
 ]"###;
