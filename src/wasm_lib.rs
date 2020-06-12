@@ -42,51 +42,9 @@ use wasm_bindgen::prelude::*;
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
 
-#[allow(dead_code)]
-pub const SCHEMA_NAME: &'static str = "test_schema";
-
-#[allow(dead_code)]
-pub const SCHEMA_DESCRIPTION: &'static str = "Test description";
-
-#[allow(dead_code)]
-pub const SCHEMA_PROPERTIES: &'static str = r###"{
-  "test_property_string": {
-    "type": "string"
-  }
-}"###;
-
-#[allow(dead_code)]
-pub const SCHEMA_REQUIRED_PROPERTIES: &'static str = r###"[
-  "test_property_string"
-]"###;
-
-#[allow(dead_code)]
-pub const ISSUER_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
-#[allow(dead_code)]
-pub const ISSUER_PUBLIC_KEY_DID: &str =
-    "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1";
-
-#[allow(dead_code)]
-pub const ISSUER_PRIVATE_KEY: &str =
-    "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
-
-#[allow(dead_code)]
-pub const SIGNER_PRIVATE_KEY: &str =
-    "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
-
-#[allow(dead_code)]
-pub const SIGNER_IDENTITY: &str =
-    "9670f7974e7021e4940c56d47f6b31fdfdd37de8";
-
-#[allow(dead_code)]
-pub const SUBJECT_DID: &'static str =
-    "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
-
-
 fn get_vade() -> Vade {
   // vade to work with
   // let substrate_resolver = SubstrateDidResolverEvan::new();
-  let _ = console_log::init_with_level(log::Level::Trace);
   let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
   let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
     target: "13.69.59.185".to_string(),
@@ -378,6 +336,20 @@ pub async fn issue_credential(
   Ok(serde_json::to_string(&result).unwrap())
 }
 
+#[wasm_bindgen]
+pub fn set_panic_hook() {
+  console_error_panic_hook::set_once();
+}
+
+#[wasm_bindgen]
+pub fn set_log_level(log_level: String) {
+  let _ = match log_level.as_str() {
+    "debug" => console_log::init_with_level(log::Level::Debug),
+    "info" => console_log::init_with_level(log::Level::Info),
+    "error" => console_log::init_with_level(log::Level::Error),
+    _ =>  console_log::init_with_level(log::Level::Error),
+  };
+}
 
 
 #[wasm_bindgen]
@@ -388,7 +360,7 @@ pub async fn present_proof(
     witness: String
   ) -> Result<String, JsValue> {
     let mut vade = get_vade();
-    console_error_panic_hook::set_once();
+
     let proof_request_parsed: ProofRequest = serde_json::from_str(&proof_request).unwrap();
     let schema_did = &proof_request_parsed.sub_proof_requests[0].schema;
     let credential_parsed: Credential = serde_json::from_str(&credential).unwrap();

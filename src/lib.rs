@@ -703,7 +703,6 @@ impl VadeTnt {
         "identity": "{}"
       }}
     }}"###, did, payload.replace("\"", "\\\""), private_key, identity);
-    error!("{}", message_str);
     let result = self.vade.send_message(&message_str).await?;
 
     if result.len() == 0 {
