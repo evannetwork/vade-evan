@@ -60,6 +60,7 @@ simple-error = "0.2.1"
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 console_log = { version = "0.2", features = ["color"] }
 wasm-timer = "0.2.4"
+console_error_panic_hook = "0.1.6"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

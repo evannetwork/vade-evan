@@ -3,6 +3,7 @@ extern crate ursa;
 extern crate secp256k1;
 extern crate sha3;
 extern crate hex;
+extern crate console_error_panic_hook;
 
 use console_log;
 
@@ -85,7 +86,7 @@ pub const SUBJECT_DID: &'static str =
 fn get_vade() -> Vade {
   // vade to work with
   // let substrate_resolver = SubstrateDidResolverEvan::new();
-  let _ = console_log::init_with_level(log::Level::Error);
+  let _ = console_log::init_with_level(log::Level::Trace);
   let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
   let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
     target: "13.69.59.185".to_string(),
@@ -387,6 +388,7 @@ pub async fn present_proof(
     witness: String
   ) -> Result<String, JsValue> {
     let mut vade = get_vade();
+    console_error_panic_hook::set_once();
     let proof_request_parsed: ProofRequest = serde_json::from_str(&proof_request).unwrap();
     let schema_did = &proof_request_parsed.sub_proof_requests[0].schema;
     let credential_parsed: Credential = serde_json::from_str(&credential).unwrap();
@@ -427,28 +429,20 @@ pub async fn present_proof(
   #[wasm_bindgen]
   pub async fn verify_proof(
       presented_proof: String,
-      proof_request: String,
-      definition: String,
-      schema: String,
-      revocation_registry_definition: String
+      proof_request: String
   ) -> Result<String, JsValue>  {
     let mut vade = get_vade();
+    console_error_panic_hook::set_once();
       let message_str = format!(
           r###"{{
               "type": "verifyProof",
               "data": {{
                   "presentedProof": {},
-                  "proofRequest": {},
-                  "credentialDefinition": {},
-                  "credentialSchema": {},
-                  "revocationRegistryDefinition": {}
+                  "proofRequest": {}
               }}
           }}"###,
           presented_proof,
-          proof_request,
-          definition,
-          schema,
-          revocation_registry_definition,
+          proof_request
       );
       let results = vade.send_message(&message_str).await.unwrap();
 
