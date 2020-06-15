@@ -107,17 +107,19 @@ impl Prover {
     let mut sub_proof_request_builder;
     let mut credential_values_builder;
 
-    println!("In crypto");
     for sub_proof in &proof_request.sub_proof_requests {
 
       // Build Ursa credential schema & proof requests
       credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
       sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
-      for property in credential_schemas.get(&sub_proof.schema).unwrap().properties.keys() {
-        credential_schema_builder.add_attr(property).unwrap();
-        sub_proof_request_builder.add_revealed_attr(property).unwrap();
+      for property in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
+        credential_schema_builder.add_attr(&property.0).unwrap();
       }
 
+      for property in &sub_proof.revealed_attributes {
+        //credential_schema_builder.add_attr(&property).unwrap();
+        sub_proof_request_builder.add_revealed_attr(&property).unwrap();
+      }
       // Build ursa credential values
       credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
       for values in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {

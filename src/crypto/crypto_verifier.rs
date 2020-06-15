@@ -67,6 +67,7 @@ pub mod verifier {
         sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
         for property in &sub_proof_request.revealed_attributes {
           sub_proof_request_builder.add_revealed_attr(&property).unwrap();
+          credential_schema_builder.add_attr(property).unwrap();
         }
 
         let mut key: Option<RevocationKeyPublic> = None;
