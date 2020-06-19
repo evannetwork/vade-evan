@@ -88,7 +88,9 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
 
                     match changes[0][1].as_str() {
                         Some(change_set) => {
-                            let _ = result.clone().try_send(change_set.to_owned());
+                            result.clone().try_send(change_set.to_owned()).unwrap_or_else(|error| {
+                                _out.close(CloseCode::Normal).unwrap();
+                            });
                         },
                         None => println!("No events happened"),
                     };
@@ -96,7 +98,9 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
                         .map(|head| {
-                            let _ = result.clone().try_send(head);
+                            result.clone().try_send(head).unwrap_or_else(|error| {
+                                _out.close(CloseCode::Normal).unwrap();
+                            });
                         })
                         .unwrap_or_else(|_| error!("Could not parse header"));
                 }
