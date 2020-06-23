@@ -47,7 +47,6 @@ use crate::{
         RevocationState
     },
 };
-use simple_error::SimpleError;
 
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_PREFIX: &str = "did:evan:zkp:";
