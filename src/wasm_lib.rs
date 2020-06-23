@@ -76,20 +76,17 @@ pub async fn create_schema(issuer: String, schema_name: String, description: Str
   let mut vade = get_vade();
 
   let message_str = format!(r###"{{
-    "type": "createCredentialSchema",
-    "data": {{
-      "issuer": "{}",
-      "schemaName": "{}",
-      "description": "{}",
-      "properties": {},
-      "requiredProperties": {},
-      "allowAdditionalProperties": false,
-      "issuerPublicKeyDid": "{}",
-      "issuerProvingKey": "{}",
-      "privateKey": "{}",
-      "identity": "{}"
-    }}
-  }}"###,
+        "issuer": "{}",
+        "schemaName": "{}",
+        "description": "{}",
+        "properties": {},
+        "requiredProperties": {},
+        "allowAdditionalProperties": false,
+        "issuerPublicKeyDid": "{}",
+        "issuerProvingKey": "{}",
+        "privateKey": "{}",
+        "identity": "{}"
+    }}"###,
     issuer,
     schema_name,
     description,
