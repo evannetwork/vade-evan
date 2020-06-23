@@ -252,15 +252,13 @@ pub async fn issue_credential(
 ) -> Result<String, JsValue> {
     let mut vade = get_vade();
     debug!("get did {}", definition);
-    let credential_definition_doc = vade.get_did_document(&definition).await.unwrap();
+    let credential_definition_doc = &vade.did_resolve(&definition).await.unwrap()[0];
     debug!("parse doc");
     let definition_parsed: CredentialDefinition = serde_json::from_str(&credential_definition_doc).unwrap();
     let request_parsed: CredentialRequest = serde_json::from_str(&request).unwrap();
     let blinding_factors_parsed: CredentialSecretsBlindingFactors = serde_json::from_str(&blinding_factors).unwrap();
     let master_secret_parsed: MasterSecret = serde_json::from_str(&master_secret).unwrap();
-    let revocation_definition_doc = vade.get_did_document(
-      &revocation_definition
-    ).await.unwrap();
+    let revocation_definition_doc = &vade.did_resolve(&revocation_definition).await.unwrap()[0];
     let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition_doc).unwrap();
 
     let message_str = format!(

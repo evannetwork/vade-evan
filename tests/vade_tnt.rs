@@ -84,7 +84,7 @@ async fn vade_tnt_can_be_registered_as_plugin () -> Result<(), Box<dyn std::erro
     let results = vade.vc_zkp_create_credential_proposal(EVAN_METHOD, "", "").await;
 
     // check results
-    if let Ok(_) = results {
+    if results.is_ok() {
       // test is supposed to fail
       panic!("test should have failed")
     }

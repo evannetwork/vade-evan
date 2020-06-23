@@ -359,11 +359,9 @@ impl VadePlugin for VadeTnt {
         }
         let input: CreateRevocationRegistryDefinitionArguments = serde_json::from_str(&payload)?;
 
-        // Resolve credential definition
+        debug!("fetching credential definition with did: {}", &input.credential_definition);
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.get_did_document(
-            &input.credential_definition
-          ).await?
+          &self.vade.did_resolve(&input.credential_definition).await?[0]
         ).unwrap();
   
         let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
@@ -410,25 +408,25 @@ impl VadePlugin for VadeTnt {
         }
         let input: IssueCredentialArguments = serde_json::from_str(&payload)?;
 
-        // Resolve credential definition
+        debug!(
+          "fetching credential definition with did: {}",
+          &input.credential_request.credential_definition,
+        );
         let definition: CredentialDefinition = serde_json::from_str(
-           &self.vade.get_did_document(
-             &input.credential_request.credential_definition
-           ).await?
+           &self.vade.did_resolve(&input.credential_request.credential_definition).await?[0]
         ).unwrap();
 
-        // Resolve schema
+        debug!("fetching schema with did: {}", &definition.schema);
         let schema: CredentialSchema = serde_json::from_str(
-           &self.vade.get_did_document(
-             &definition.schema
-           ).await?
+           &self.vade.did_resolve(&definition.schema).await?[0]
         ).unwrap();
 
-        // Resolve revocation definition
+        debug!(
+          "fetching revocation definition with did: {}",
+          &input.credential_revocation_definition,
+        );
         let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-           &self.vade.get_did_document(
-             &input.credential_revocation_definition
-           ).await?
+           &self.vade.did_resolve(&input.credential_revocation_definition).await?[0]
         ).unwrap();
 
         let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
@@ -505,28 +503,23 @@ impl VadePlugin for VadeTnt {
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         let mut revocation_definitions: HashMap<String, RevocationRegistryDefinition> = HashMap::new();
         for req in &input.proof_request.sub_proof_requests {
-          // Resolve schema
           let schema_did = &req.schema;
+          debug!("fetching schema with did: {}", &schema_did);
           schemas.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.get_did_document(
-               &schema_did
-             ).await?
+             &self.vade.did_resolve(&schema_did).await?[0]
           ).unwrap());
 
-          // Resolve credential definition
           let definition_did = input.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
+          debug!("fetching credential definition with did: {}", &definition_did);
           definitions.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.get_did_document(
-               &definition_did
-           ).await?
+             &self.vade.did_resolve(&definition_did).await?[0]
           ).unwrap());
 
           // Resolve revocation definition
           let rev_definition_did = input.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
+          debug!("fetching revocation definition with did: {}", &rev_definition_did);
           revocation_definitions.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.get_did_document(
-               &rev_definition_did
-             ).await?
+             &self.vade.did_resolve(&rev_definition_did).await?[0]
           ).unwrap());
         }
 
@@ -587,11 +580,12 @@ impl VadePlugin for VadeTnt {
         }
         let input: RequestCredentialArguments = serde_json::from_str(&payload)?;
 
-        // Resolve credential definition
+        debug!(
+          "fetching credential definition with did: {}",
+          &input.credential_offering.credential_definition,
+        );
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.get_did_document(
-            &input.credential_offering.credential_definition
-          ).await?
+          &self.vade.did_resolve(&input.credential_offering.credential_definition).await?[0]
         ).unwrap();
 
         let result: (CredentialRequest, CredentialSecretsBlindingFactors) = Prover::request_credential(
@@ -648,11 +642,12 @@ impl VadePlugin for VadeTnt {
         }
         let input: RevokeCredentialArguments = serde_json::from_str(&payload)?;
 
-        // Resolve revocation definition
+        debug!(
+          "fetching revocation definition with did: {}",
+          &input.revocation_registry_definition,
+        );
         let rev_def: RevocationRegistryDefinition = serde_json::from_str(
-          &self.vade.get_did_document(
-            &input.revocation_registry_definition
-          ).await?
+          &self.vade.did_resolve(&input.revocation_registry_definition).await?[0]
         ).unwrap();
 
         let updated_registry = Issuer::revoke_credential(
@@ -693,29 +688,27 @@ impl VadePlugin for VadeTnt {
         let mut rev_definitions: HashMap<String, Option<RevocationRegistryDefinition>> = HashMap::new();
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         for req in &input.proof_request.sub_proof_requests {
-          // Resolve schema
           let schema_did = &req.schema;
+          debug!("fetching schema with did: {}", &schema_did);
           schemas.insert(schema_did.clone(), serde_json::from_str(
-            &self.vade.get_did_document(
-              &schema_did
-            ).await?
+              &self.vade.did_resolve(&schema_did).await?[0]
           ).unwrap());
         }
 
         for credential in &input.presented_proof.verifiable_credential {
-          // Resolve credential definition
           let definition_did = &credential.proof.credential_definition.clone();
+          debug!("fetching credential definition with did: {}", &definition_did);
           definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
-            &self.vade.get_did_document(
-              &definition_did
-            ).await?
+              &self.vade.did_resolve(&definition_did).await?[0]
           ).unwrap());
 
           let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
-          rev_definitions.insert(credential.credential_schema.id.clone(), Some(serde_json::from_str(
-            &self.vade.get_did_document(
+          debug!(
+              "fetching revocation definition with did: {}",
               &rev_definition_did
-            ).await?
+          );
+          rev_definitions.insert(credential.credential_schema.id.clone(), Some(serde_json::from_str(
+            &self.vade.did_resolve(&rev_definition_did).await?[0]
           ).unwrap()));
         }
 
