@@ -338,7 +338,8 @@ async fn vade_tnt_can_present_proofs_with_less_properties () -> Result<(), Box<d
 }
 
 // TODO: Currently impossible to fix
-// #[tokio::test]
+#[tokio::test]
+#[ignore]
 async fn vade_tnt_can_present_proofs_with_not_all_schema_fields_filled_and_less_properties () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
@@ -1024,7 +1025,7 @@ fn get_vade_tnt() -> VadeTnt {
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
       target: "13.69.59.185".to_string(),
       private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-      identity: identity.clone(),
+      identity,
     });
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
