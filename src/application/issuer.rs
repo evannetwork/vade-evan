@@ -32,7 +32,6 @@ use std::collections::{
   HashSet
 };
 use ursa::cl::RevocationTailsGenerator;
-use simple_error::SimpleError;
 #[cfg(target_arch = "wasm32")]
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 #[cfg(not(target_arch = "wasm32"))]
@@ -269,12 +268,11 @@ impl Issuer {
 
       // Get next unused revocation ID for credential, mark as used & increment counter
       if revocation_info.next_unused_id == revocation_registry_definition.maximum_credential_count {
-        return Err(Box::new(SimpleError::new("Maximum credential count reached for revocation definition")));
       }
       let rev_idx = revocation_info.next_unused_id;
       let mut used_ids: HashSet<u32> = revocation_info.used_ids.clone();
       if !used_ids.insert(rev_idx) {
-        return Err(Box::new(SimpleError::new("Could not use next revocation ID as it has already been used - Counter information seems to be corrupted")));
+        return Err(Box::from("Could not use next revocation ID as it has already been used - Counter information seems to be corrupted"));
       }
 
       let new_rev_info = RevocationIdInformation {
