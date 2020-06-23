@@ -781,7 +781,7 @@ async fn create_credential_offer(vade: &mut Vade, proposal: &CredentialProposal,
 
     // check results
     assert_eq!(results.len(), 1);
-    let result: CredentialOffer = serde_json::from_str(&results[0]).unwrap();
+    let result: CredentialOffer = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
     println!("{}", serde_json::to_string(&result).unwrap());
 
     Ok(result)
@@ -798,7 +798,7 @@ async fn create_credential_proposal (vade: &mut Vade, schema: &CredentialSchema)
 
     // check results
     assert_eq!(results.len(), 1);
-    let result: CredentialProposal = serde_json::from_str(&results[0]).unwrap();
+    let result: CredentialProposal = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Ok(result)
 }
@@ -824,7 +824,7 @@ async fn create_credential_request(
     // check results
     assert_eq!(results.len(), 1);
     println!("{}", serde_json::to_string(&results[0]).unwrap());
-    let (result, blinding_factors): (CredentialRequest, CredentialSecretsBlindingFactors) = serde_json::from_str(&results[0]).unwrap();
+    let (result, blinding_factors): (CredentialRequest, CredentialSecretsBlindingFactors) = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Ok((result, blinding_factors))
 }
@@ -851,7 +851,7 @@ async fn create_extended_credential_request(
   // check results
   assert_eq!(results.len(), 1);
   println!("{}", serde_json::to_string(&results[0]).unwrap());
-  let (result, blinding_factors): (CredentialRequest, CredentialSecretsBlindingFactors) = serde_json::from_str(&results[0]).unwrap();
+  let (result, blinding_factors): (CredentialRequest, CredentialSecretsBlindingFactors) = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
   Ok((result, blinding_factors))
 }
@@ -890,7 +890,7 @@ async fn issue_credential(
     // check results
     assert_eq!(results.len(), 1);
     println!("{}", serde_json::to_string(&results[0]).unwrap());
-    let result: IssueCredentialResult = serde_json::from_str(&results[0]).unwrap();
+    let result: IssueCredentialResult = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Ok((result.credential, result.revocation_state, result.revocation_info))
 }
@@ -915,7 +915,7 @@ async fn request_proof(vade: &mut Vade, schema: &CredentialSchema) -> Result<Pro
     // check results
     assert_eq!(results.len(), 1);
     println!("{}", serde_json::to_string(&results[0]).unwrap());
-    let result: ProofRequest = serde_json::from_str(&results[0]).unwrap();
+    let result: ProofRequest = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Ok(result)
 }
@@ -942,7 +942,7 @@ async fn revoke_credential(vade: &mut Vade, credential: &Credential, revocation_
     println!("{}", &message_str);
     let results = vade.vc_zkp_revoke_credential(EVAN_METHOD, "", &message_str).await?;
     assert_eq!(results.len(), 1);
-    let updated_registry: RevocationRegistryDefinition = serde_json::from_str(&results[0]).unwrap();
+    let updated_registry: RevocationRegistryDefinition = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Ok(updated_registry)
 }
@@ -981,7 +981,7 @@ async fn present_proof(
   // check results
   assert_eq!(results.len(), 1);
   println!("{}", serde_json::to_string(&results[0]).unwrap());
-  let result: ProofPresentation = serde_json::from_str(&results[0]).unwrap();
+  let result: ProofPresentation = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
   Ok(result)
 }
@@ -1005,7 +1005,7 @@ async fn verify_proof(
     // check results
     assert_eq!(results.len(), 1);
     println!("{}", serde_json::to_string(&results[0]).unwrap());
-    let result: ProofVerification = serde_json::from_str(&results[0]).unwrap();
+    let result: ProofVerification = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Ok(result)
 }
@@ -1047,7 +1047,7 @@ async fn create_credential_definition(vade: &mut Vade, schema: &CredentialSchema
 
     // check results
     assert_eq!(results.len(), 1);
-    let result: (CredentialDefinition, CredentialPrivateKey) = serde_json::from_str(&results[0]).unwrap();
+    let result: (CredentialDefinition, CredentialPrivateKey) = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
     Ok(result)
  }
 
@@ -1072,7 +1072,7 @@ async fn create_credential_schema(vade: &mut Vade) -> Result<CredentialSchema, B
   assert_eq!(results.len(), 1);
 
 
-  let result: CredentialSchema = serde_json::from_str(&results[0]).unwrap();
+  let result: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
   Ok(result)
 }
 
@@ -1096,7 +1096,7 @@ async fn create_extended_credential_schema(vade: &mut Vade) -> Result<Credential
   assert_eq!(results.len(), 1);
 
 
-  let result: CredentialSchema = serde_json::from_str(&results[0]).unwrap();
+  let result: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
   Ok(result)
 }
 
@@ -1120,7 +1120,7 @@ async fn create_more_extended_credential_schema(vade: &mut Vade) -> Result<Crede
   assert_eq!(results.len(), 1);
 
 
-  let result: CredentialSchema = serde_json::from_str(&results[0]).unwrap();
+  let result: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
   Ok(result)
 }
 
@@ -1139,7 +1139,7 @@ async fn create_revocation_registry_definition(vade: &mut Vade, credential_defin
     // check results
     assert_eq!(results.len(), 1);
 
-    let result: CreateRevocationRegistryDefinitionResult = serde_json::from_str(&results[0]).unwrap();
+    let result: CreateRevocationRegistryDefinitionResult = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
     Ok(result)
   }
 

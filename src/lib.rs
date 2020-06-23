@@ -232,7 +232,11 @@ impl VadeTnt {
                 "Could not generate DID as no listeners were registered for this method"));
         }
 
-        let generated_did = format!("{}{}", EVAN_METHOD_PREFIX, &result[0].to_owned());
+        let generated_did = format!(
+            "{}{}",
+            EVAN_METHOD_PREFIX,
+            &result[0].as_ref().unwrap().to_owned(),
+        );
 
         Ok(generated_did)
     }
@@ -269,7 +273,7 @@ impl VadePlugin for VadeTnt {
       method: &str,
       _options: &str,
       payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -279,7 +283,7 @@ impl VadePlugin for VadeTnt {
         if results.is_empty() {
           return Err(Box::from(format!("could not get schema \"{}\"", &input.schema_did)));
         }
-        let schema: CredentialSchema = serde_json::from_str(&results[0]).unwrap();
+        let schema: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
         let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
 
@@ -295,7 +299,7 @@ impl VadePlugin for VadeTnt {
         let serialized_definition = serde_json::to_string(&definition).unwrap();
         self.set_did_document(&generated_did, &serialized_definition, &input.private_key, &input.identity).await?;
 
-        Ok(VadePluginResultValue::Success(serialized))
+        Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
     /// Creates a new credential schema and stores it on-chain.
@@ -310,7 +314,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -333,7 +337,7 @@ impl VadePlugin for VadeTnt {
         let serialized = serde_json::to_string(&schema).unwrap();
         self.set_did_document(&generated_did, &serialized, &input.private_key, &input.identity).await?;
   
-        Ok(VadePluginResultValue::Success(serialized))
+        Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
     /// Creates a new revocation registry definition and stores it on-chain.
@@ -348,7 +352,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -356,7 +360,7 @@ impl VadePlugin for VadeTnt {
 
         debug!("fetching credential definition with did: {}", &input.credential_definition);
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&input.credential_definition).await?[0]
+          &self.vade.did_resolve(&input.credential_definition).await?[0].as_ref().unwrap(),
         ).unwrap();
   
         let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
@@ -381,7 +385,7 @@ impl VadePlugin for VadeTnt {
           }
         ).unwrap();
   
-        Ok(VadePluginResultValue::Success(serialised_result))
+        Ok(VadePluginResultValue::Success(Some(serialised_result)))
     }
 
     /// Issues a new credential.
@@ -397,7 +401,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -408,12 +412,12 @@ impl VadePlugin for VadeTnt {
           &input.credential_request.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
-           &self.vade.did_resolve(&input.credential_request.credential_definition).await?[0]
+           &self.vade.did_resolve(&input.credential_request.credential_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         debug!("fetching schema with did: {}", &definition.schema);
         let schema: CredentialSchema = serde_json::from_str(
-           &self.vade.did_resolve(&definition.schema).await?[0]
+           &self.vade.did_resolve(&definition.schema).await?[0].as_ref().unwrap()
         ).unwrap();
 
         debug!(
@@ -421,7 +425,7 @@ impl VadePlugin for VadeTnt {
           &input.credential_revocation_definition,
         );
         let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-           &self.vade.did_resolve(&input.credential_revocation_definition).await?[0]
+           &self.vade.did_resolve(&input.credential_revocation_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
@@ -438,14 +442,16 @@ impl VadePlugin for VadeTnt {
 
         Ok(
             VadePluginResultValue::Success(
-            serde_json::to_string(
-              &IssueCredentialResult {
-                credential,
-                revocation_state,
-                revocation_info
-              }
-            ).unwrap()
-          )
+                Some(
+                    serde_json::to_string(
+                        &IssueCredentialResult {
+                            credential,
+                            revocation_state,
+                            revocation_info
+                        }
+                    ).unwrap()
+                )
+            )
         )
     }
     
@@ -461,7 +467,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -472,7 +478,7 @@ impl VadePlugin for VadeTnt {
             &input.schema,
             &input.credential_definition,
         );
-        Ok(VadePluginResultValue::Success(serde_json::to_string(&result).unwrap()))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
     /// Creates a `CredentialProof` message.
@@ -487,7 +493,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -501,20 +507,20 @@ impl VadePlugin for VadeTnt {
           let schema_did = &req.schema;
           debug!("fetching schema with did: {}", &schema_did);
           schemas.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.did_resolve(&schema_did).await?[0]
+             &self.vade.did_resolve(&schema_did).await?[0].as_ref().unwrap(),
           ).unwrap());
 
           let definition_did = input.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
           debug!("fetching credential definition with did: {}", &definition_did);
           definitions.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.did_resolve(&definition_did).await?[0]
+             &self.vade.did_resolve(&definition_did).await?[0].as_ref().unwrap(),
           ).unwrap());
 
           // Resolve revocation definition
           let rev_definition_did = input.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
           debug!("fetching revocation definition with did: {}", &rev_definition_did);
           revocation_definitions.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.did_resolve(&rev_definition_did).await?[0]
+             &self.vade.did_resolve(&rev_definition_did).await?[0].as_ref().unwrap(),
           ).unwrap());
         }
 
@@ -528,7 +534,7 @@ impl VadePlugin for VadeTnt {
             &input.master_secret,
         );
 
-        Ok(VadePluginResultValue::Success(serde_json::to_string(&result).unwrap()))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
     /// Creates a `CredentialProposal` message.
@@ -543,7 +549,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -554,7 +560,7 @@ impl VadePlugin for VadeTnt {
             &input.schema,
         );
 
-        Ok(VadePluginResultValue::Success(serde_json::to_string(&result).unwrap()))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
     /// Creates a `CredentialRequest` message.
@@ -569,7 +575,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -580,7 +586,7 @@ impl VadePlugin for VadeTnt {
           &input.credential_offering.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&input.credential_offering.credential_definition).await?[0]
+          &self.vade.did_resolve(&input.credential_offering.credential_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         let result: (CredentialRequest, CredentialSecretsBlindingFactors) = Prover::request_credential(
@@ -590,7 +596,7 @@ impl VadePlugin for VadeTnt {
             input.credential_values,
         );
 
-        Ok(VadePluginResultValue::Success(serde_json::to_string(&result).unwrap()))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
     /// Creates a `ProofRequest` message.
@@ -605,7 +611,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -616,7 +622,7 @@ impl VadePlugin for VadeTnt {
             input.sub_proof_requests,
         );
 
-        Ok(VadePluginResultValue::Success(serde_json::to_string(&result).unwrap()))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
     /// Revokes a credential and updates the revocation registry definition.
@@ -631,7 +637,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -642,7 +648,7 @@ impl VadePlugin for VadeTnt {
           &input.revocation_registry_definition,
         );
         let rev_def: RevocationRegistryDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&input.revocation_registry_definition).await?[0]
+          &self.vade.did_resolve(&input.revocation_registry_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         let updated_registry = Issuer::revoke_credential(
@@ -657,7 +663,7 @@ impl VadePlugin for VadeTnt {
 
         self.set_did_document(&rev_def.id, &serialized, &input.private_key, &input.identity).await?;
 
-        Ok(VadePluginResultValue::Success(serialized))
+        Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
     /// Verifies a given `ProofPresentation` in accordance to the specified `ProofRequest`
@@ -672,7 +678,7 @@ impl VadePlugin for VadeTnt {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -686,7 +692,7 @@ impl VadePlugin for VadeTnt {
           let schema_did = &req.schema;
           debug!("fetching schema with did: {}", &schema_did);
           schemas.insert(schema_did.clone(), serde_json::from_str(
-              &self.vade.did_resolve(&schema_did).await?[0]
+              &self.vade.did_resolve(&schema_did).await?[0].as_ref().unwrap()
           ).unwrap());
         }
 
@@ -694,7 +700,7 @@ impl VadePlugin for VadeTnt {
           let definition_did = &credential.proof.credential_definition.clone();
           debug!("fetching credential definition with did: {}", &definition_did);
           definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
-              &self.vade.did_resolve(&definition_did).await?[0]
+              &self.vade.did_resolve(&definition_did).await?[0].as_ref().unwrap()
           ).unwrap());
 
           let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
@@ -703,7 +709,7 @@ impl VadePlugin for VadeTnt {
               &rev_definition_did
           );
           rev_definitions.insert(credential.credential_schema.id.clone(), Some(serde_json::from_str(
-            &self.vade.did_resolve(&rev_definition_did).await?[0]
+            &self.vade.did_resolve(&rev_definition_did).await?[0].as_ref().unwrap()
           ).unwrap()));
         }
 
@@ -715,6 +721,6 @@ impl VadePlugin for VadeTnt {
             rev_definitions
         );
 
-        Ok(VadePluginResultValue::Success(serde_json::to_string(&result).unwrap()))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 }

@@ -102,7 +102,7 @@ pub async fn create_schema(issuer: String, schema_name: String, description: Str
   // check results
   assert_eq!(results.len(), 1);
 
-  Ok(results[0].to_string())
+  Ok(results[0].as_ref().unwrap().to_string())
 
 }
 
@@ -122,7 +122,7 @@ pub async fn create_credential_definition(schema_id: String, issuer_did: String,
 
     // check results
     assert_eq!(results.len(), 1);
-    Ok(results[0].to_string())
+    Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
@@ -148,7 +148,7 @@ pub async fn request_proof(schema_id: String, subject_did: String, issuer_did: S
     // check results
     assert_eq!(results.len(), 1);
 
-    Ok(results[0].to_string())
+    Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
@@ -172,7 +172,7 @@ pub async fn create_credential_proposal (schema_id: String, subject_did: String,
       // check results
       assert_eq!(results.len(), 1);
 
-      Ok(results[0].to_string())
+      Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
@@ -188,7 +188,7 @@ pub async fn create_credential_offer(proposal: String, credential_definition_id:
     // check results
     assert_eq!(results.len(), 1);
 
-    Ok(results[0].to_string())
+    Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
@@ -213,7 +213,7 @@ pub async fn create_credential_request(
     // check results
     assert_eq!(results.len(), 1);
 
-    Ok(results[0].to_string())
+    Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
@@ -231,7 +231,7 @@ pub async fn create_revocation_registry_definition(credential_definition_id: Str
 
     // check results
     assert_eq!(results.len(), 1);
-    Ok(results[0].to_string())
+    Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
@@ -249,13 +249,15 @@ pub async fn issue_credential(
 ) -> Result<String, JsValue> {
     let mut vade = get_vade();
     debug!("get did {}", definition);
-    let credential_definition_doc = &vade.did_resolve(&definition).await.unwrap()[0];
+    let results = &vade.did_resolve(&definition).await.unwrap();
+    let credential_definition_doc = results[0].as_ref().unwrap();
     debug!("parse doc");
     let definition_parsed: CredentialDefinition = serde_json::from_str(&credential_definition_doc).unwrap();
     let request_parsed: CredentialRequest = serde_json::from_str(&request).unwrap();
     let blinding_factors_parsed: CredentialSecretsBlindingFactors = serde_json::from_str(&blinding_factors).unwrap();
     let master_secret_parsed: MasterSecret = serde_json::from_str(&master_secret).unwrap();
-    let revocation_definition_doc = &vade.did_resolve(&revocation_definition).await.unwrap()[0];
+    let results = &vade.did_resolve(&revocation_definition).await.unwrap();
+    let revocation_definition_doc = results[0].as_ref().unwrap();
     let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition_doc).unwrap();
 
     let message_str = format!(
@@ -282,7 +284,7 @@ pub async fn issue_credential(
     // check results
     assert_eq!(results.len(), 1);
 
-    let mut result: IssueCredentialResult = serde_json::from_str(&results[0]).unwrap();
+    let mut result: IssueCredentialResult = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
     Prover::post_process_credential_signature(
       &mut result.credential,
@@ -353,7 +355,7 @@ pub async fn present_proof(
     // check results
     assert_eq!(results.len(), 1);
 
-    Ok(results[0].to_string())
+    Ok(results[0].as_ref().unwrap().to_string())
   }
 
   #[wasm_bindgen]
@@ -376,7 +378,7 @@ pub async fn present_proof(
       // check results
       assert_eq!(results.len(), 1);
 
-      Ok(results[0].to_string())
+      Ok(results[0].as_ref().unwrap().to_string())
   }
 
   #[wasm_bindgen]
