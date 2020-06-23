@@ -96,7 +96,7 @@ impl SubstrateDidResolverEvan {
 #[async_trait(?Send)]
 impl VadePlugin for SubstrateDidResolverEvan {
     async fn did_create(&mut self, did_method: &str, options: &str, _payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if did_method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -106,21 +106,24 @@ impl VadePlugin for SubstrateDidResolverEvan {
             input.private_key.clone(),
             hex::decode(input.identity).unwrap(),
         ).await.unwrap();
-        Ok(VadePluginResultValue::Success(inner_result))
+        Ok(VadePluginResultValue::Success(Some(inner_result)))
     }
 
     async fn did_update(&mut self, did: &str, options: &str, payload: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if !did.starts_with(EVAN_METHOD_PREFIX) {
             return Ok(VadePluginResultValue::Ignored);
         }
         let input: DidUpdateArguments = serde_json::from_str(&options)?;
         match input.operation.as_str() {
-            "whitelistIdentity" => Ok(VadePluginResultValue::Success(whitelist_identity(
-                self.config.target.clone(),
-                input.private_key.clone(),
-                hex::decode(input.identity).unwrap(),
-            ).await.unwrap())),
+            "whitelistIdentity" => {
+                whitelist_identity(
+                    self.config.target.clone(),
+                    input.private_key.clone(),
+                    hex::decode(input.identity).unwrap(),
+                ).await.unwrap();
+                Ok(VadePluginResultValue::Success(None))
+            },
             "setDidDocument" => {
                 self.set_did_document(
                     &did.replace(EVAN_METHOD_PREFIX, ""),
@@ -128,7 +131,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     &input.identity,
                     payload,
                 ).await.unwrap();
-                Ok(VadePluginResultValue::Success("".to_string()))
+                Ok(VadePluginResultValue::Success(None))
             },
             _ => Err(Box::from(format!("invalid did update operation \"{}\"", input.operation))),
         }
@@ -140,11 +143,14 @@ impl VadePlugin for SubstrateDidResolverEvan {
     ///
     /// * `did_id` - did id to fetch
     async fn did_resolve(&mut self, did_id: &str,
-    ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if !did_id.starts_with(EVAN_METHOD_PREFIX) {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let did_result = get_did(self.config.target.clone(), did_id.replace(EVAN_METHOD_PREFIX, "")).await;
-        Ok(VadePluginResultValue::Success(did_result.unwrap()))
+        let did_result = get_did(
+            self.config.target.clone(),
+            did_id.replace(EVAN_METHOD_PREFIX, ""),
+        ).await.unwrap();
+        Ok(VadePluginResultValue::Success(Some(did_result)))
     }
 }
