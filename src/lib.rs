@@ -20,11 +20,7 @@ pub mod wasm_lib;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use vade::{
-    Vade,
-    traits::VadePlugin,
-    traits::VadePluginResultValue,
-};
+use vade::{Vade, VadePlugin, VadePluginResultValue};
 use ursa::cl::Witness;
 use crate::{
     application::issuer::Issuer,
