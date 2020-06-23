@@ -112,7 +112,6 @@ impl VadePlugin for SubstrateDidResolverEvan {
     async fn did_update(&mut self, did: &str, options: &str, payload: &str,
     ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
         if !did.starts_with(EVAN_METHOD_PREFIX) {
-            panic!(format!("{}", &did));
             return Ok(VadePluginResultValue::Ignored);
         }
         let input: DidUpdateArguments = serde_json::from_str(&options)?;
@@ -142,6 +141,9 @@ impl VadePlugin for SubstrateDidResolverEvan {
     /// * `did_id` - did id to fetch
     async fn did_resolve(&mut self, did_id: &str,
     ) -> Result<VadePluginResultValue<String>, Box<dyn std::error::Error>> {
+        if !did_id.starts_with(EVAN_METHOD_PREFIX) {
+            return Ok(VadePluginResultValue::Ignored);
+        }
         let did_result = get_did(self.config.target.clone(), did_id.replace(EVAN_METHOD_PREFIX, "")).await;
         Ok(VadePluginResultValue::Success(did_result.unwrap()))
     }
