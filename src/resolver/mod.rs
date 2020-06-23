@@ -16,7 +16,7 @@
 
 extern crate vade;
 use async_trait::async_trait;
-use vade::traits::{ VadePlugin, VadePluginResultValue };
+use vade::{VadePlugin, VadePluginResultValue};
 use crate::utils::substrate::{
     get_did,
     create_did,
