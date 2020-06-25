@@ -41,84 +41,49 @@ use serde_json::Value;
 
 const EVAN_METHOD: &str = "did:evan";
 
-fn get_vade() -> Vade {
-  let tnt = get_vade_tnt();
-  let mut vade = Vade::new();
-
-  let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
-  let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
-      target: "13.69.59.185".to_string(),
-      private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-      identity: identity.clone(),
-  });
-  vade.register_plugin(Box::from(substrate_resolver));
-  vade.register_plugin(Box::from(tnt));
-
-  vade
-}
-
-fn get_vade_tnt() -> VadeTnt {
-    // vade tnt to work with
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
-    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
-        target: "13.69.59.185".to_string(),
-        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-        identity: identity.clone(),
-    });
-    let mut internal_vade = Vade::new();
-    internal_vade.register_plugin(Box::from(substrate_resolver));
-
-    VadeTnt::new(internal_vade)
-}
-
 #[wasm_bindgen]
 pub async fn create_schema(issuer: String, schema_name: String, description: String, properties: String, required_properties: String, issuer_public_key_did: String, issuer_proving_key: String, private_key: String, identity: String) -> Result<String, JsValue>{
-  let mut vade = get_vade();
+    let mut vade = get_vade();
 
-  let message_str = format!(r###"{{
-        "issuer": "{}",
-        "schemaName": "{}",
-        "description": "{}",
-        "properties": {},
-        "requiredProperties": {},
-        "allowAdditionalProperties": false,
-        "issuerPublicKeyDid": "{}",
-        "issuerProvingKey": "{}",
-        "privateKey": "{}",
-        "identity": "{}"
-    }}"###,
-    issuer,
-    schema_name,
-    description,
-    properties,
-    required_properties,
-    issuer_public_key_did,
-    issuer_proving_key,
-    private_key,
-    identity
-  );
-  let results = vade.vc_zkp_create_credential_schema(EVAN_METHOD, "", &message_str).await.unwrap();
+    let options = get_options(private_key, identity);
+    let payload = format!(r###"{{
+            "issuer": "{}",
+            "schemaName": "{}",
+            "description": "{}",
+            "properties": {},
+            "requiredProperties": {},
+            "allowAdditionalProperties": false,
+            "issuerPublicKeyDid": "{}",
+            "issuerProvingKey": "{}"
+        }}"###,
+        issuer,
+        schema_name,
+        description,
+        properties,
+        required_properties,
+        issuer_public_key_did,
+        issuer_proving_key,
+    );
+    let results = vade.vc_zkp_create_credential_schema(EVAN_METHOD, &options, &payload).await.unwrap();
 
-  // check results
-  assert_eq!(results.len(), 1);
+    // check results
+    assert_eq!(results.len(), 1);
 
-  Ok(results[0].as_ref().unwrap().to_string())
-
+    Ok(results[0].as_ref().unwrap().to_string())
 }
 
 #[wasm_bindgen]
 pub async fn create_credential_definition(schema_id: String, issuer_did: String, issuer_public_key_did_id: String, issuer_private_key: String, private_key: String, identity: String) -> Result<String, JsValue> {
     let mut vade = get_vade();
 
+    let options = get_options(private_key, identity);
     let payload = format!(r###"{{
         "schemaDid": "{}",
         "issuerDid": "{}",
         "issuerPublicKeyDid": "{}",
-        "issuerProvingKey": "{}",
-        "privateKey": "{}",
-        "identity": "{}"
-    }}"###, schema_id, issuer_did, issuer_public_key_did_id, issuer_private_key, private_key, identity);
-    let results = vade.vc_zkp_create_credential_definition(EVAN_METHOD, "", &payload).await.unwrap();
+        "issuerProvingKey": "{}"
+    }}"###, schema_id, issuer_did, issuer_public_key_did_id, issuer_private_key);
+    let results = vade.vc_zkp_create_credential_definition(EVAN_METHOD, &options, &payload).await.unwrap();
 
     // check results
     assert_eq!(results.len(), 1);
@@ -156,18 +121,17 @@ pub fn create_master_secret() -> String {
     serde_json::to_string(&ursa::cl::prover::Prover::new_master_secret().unwrap()).unwrap()
 }
 
-
 #[wasm_bindgen]
 pub async fn create_credential_proposal (schema_id: String, subject_did: String, issuer_did: String) -> Result<String, JsValue> {
     let mut vade = get_vade();
 
-    let message_str = format!(
+    let payload = format!(
       r###"{{
           "issuer": "{}",
           "subject": "{}",
           "schema": "{}"
       }}"###, issuer_did, subject_did, schema_id);
-      let results = vade.vc_zkp_create_credential_proposal(EVAN_METHOD, "", &message_str).await.unwrap();
+      let results = vade.vc_zkp_create_credential_proposal(EVAN_METHOD, "", &payload).await.unwrap();
 
       // check results
       assert_eq!(results.len(), 1);
@@ -198,7 +162,7 @@ pub async fn create_credential_request(
     credential_values: String,
 ) -> Result<String, JsValue> {
     let mut vade = get_vade();
-    let message_str = format!(
+    let payload = format!(
         r###"{{
             "credentialOffering": {},
             "masterSecret": {},
@@ -208,7 +172,7 @@ pub async fn create_credential_request(
         master_secret,
         credential_values,
     );
-    let results = vade.vc_zkp_request_credential(EVAN_METHOD, "", &message_str).await.unwrap();
+    let results = vade.vc_zkp_request_credential(EVAN_METHOD, "", &payload).await.unwrap();
 
     // check results
     assert_eq!(results.len(), 1);
@@ -219,15 +183,15 @@ pub async fn create_credential_request(
 #[wasm_bindgen]
 pub async fn create_revocation_registry_definition(credential_definition_id: String, max_credential_count: u32, issuer_public_key_did: String, issuer_private_key: String, private_key: String, identity: String) -> Result<String, JsValue> {
     let mut vade = get_vade();
-    let message_str = format!(r###"{{
+
+    let options = get_options(private_key, identity);
+    let payload = format!(r###"{{
         "credentialDefinition": "{}",
         "issuerPublicKeyDid": "{}",
         "issuerProvingKey": "{}",
-        "maximumCredentialCount": {},
-        "privateKey": "{}",
-        "identity": "{}"
-    }}"###, credential_definition_id, issuer_public_key_did, issuer_private_key, max_credential_count, private_key, identity);
-    let results = vade.vc_zkp_create_revocation_registry_definition(EVAN_METHOD, "", &message_str).await.unwrap();
+        "maximumCredentialCount": {}
+    }}"###, credential_definition_id, issuer_public_key_did, issuer_private_key, max_credential_count);
+    let results = vade.vc_zkp_create_revocation_registry_definition(EVAN_METHOD, &options, &payload).await.unwrap();
 
     // check results
     assert_eq!(results.len(), 1);
@@ -260,7 +224,7 @@ pub async fn issue_credential(
     let revocation_definition_doc = results[0].as_ref().unwrap();
     let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition_doc).unwrap();
 
-    let message_str = format!(
+    let payload = format!(
         r###"{{
             "issuer": "{}",
             "subject": "{}",
@@ -279,7 +243,7 @@ pub async fn issue_credential(
         revocation_info,
     );
 
-    let results = vade.vc_zkp_issue_credential(EVAN_METHOD, "", &message_str).await.unwrap();
+    let results = vade.vc_zkp_issue_credential(EVAN_METHOD, "", &payload).await.unwrap();
 
     // check results
     assert_eq!(results.len(), 1);
@@ -301,19 +265,18 @@ pub async fn issue_credential(
 
 #[wasm_bindgen]
 pub fn set_panic_hook() {
-  console_error_panic_hook::set_once();
+    console_error_panic_hook::set_once();
 }
 
 #[wasm_bindgen]
 pub fn set_log_level(log_level: String) {
-  let _ = match log_level.as_str() {
-    "debug" => console_log::init_with_level(log::Level::Debug),
-    "info" => console_log::init_with_level(log::Level::Info),
-    "error" => console_log::init_with_level(log::Level::Error),
-    _ =>  console_log::init_with_level(log::Level::Error),
-  };
+    let _ = match log_level.as_str() {
+        "debug" => console_log::init_with_level(log::Level::Debug),
+        "info" => console_log::init_with_level(log::Level::Info),
+        "error" => console_log::init_with_level(log::Level::Error),
+        _ =>  console_log::init_with_level(log::Level::Error),
+    };
 }
-
 
 #[wasm_bindgen]
 pub async fn present_proof(
@@ -337,7 +300,7 @@ pub async fn present_proof(
     let mut witnesses: HashMap<String, Witness> = HashMap::new();
     witnesses.insert(credential_parsed.id.clone(), witness_parsed.clone());
 
-    let message_str = format!(
+    let payload = format!(
         r###"{{
             "proofRequest": {},
             "credentials": {},
@@ -349,8 +312,8 @@ pub async fn present_proof(
         serde_json::to_string(&witnesses).unwrap(),
         &master_secret,
     );
-    debug!("{}", &message_str);
-    let results = vade.vc_zkp_present_proof(EVAN_METHOD, "", &message_str).await.unwrap();
+    debug!("{}", &payload);
+    let results = vade.vc_zkp_present_proof(EVAN_METHOD, "", &payload).await.unwrap();
 
     // check results
     assert_eq!(results.len(), 1);
@@ -365,7 +328,7 @@ pub async fn present_proof(
   ) -> Result<String, JsValue>  {
       let mut vade = get_vade();
       console_error_panic_hook::set_once();
-      let message_str = format!(
+      let payload = format!(
           r###"{{
               "presentedProof": {},
               "proofRequest": {}
@@ -373,7 +336,7 @@ pub async fn present_proof(
           presented_proof,
           proof_request
       );
-      let results = vade.vc_zkp_verify_proof(EVAN_METHOD, "", &message_str).await.unwrap();
+      let results = vade.vc_zkp_verify_proof(EVAN_METHOD, "", &payload).await.unwrap();
 
       // check results
       assert_eq!(results.len(), 1);
@@ -381,20 +344,61 @@ pub async fn present_proof(
       Ok(results[0].as_ref().unwrap().to_string())
   }
 
-  #[wasm_bindgen]
-  pub async fn whitelist_identity(private_key: String, identity: String) -> Result<String, JsValue> {
-      let mut vade = get_vade();
-      let message_str = format!(
-          r###"{{
+#[wasm_bindgen]
+pub async fn whitelist_identity(private_key: String, identity: String) -> Result<String, JsValue> {
+    let mut vade = get_vade();
+    let payload = format!(
+        r###"{{
             "privateKey": "{}",
             "identity": "{}",
             "operation": "whitelistIdentity"
-          }}"###,
-          private_key,
-          identity,
-      );
+        }}"###,
+        private_key,
+        identity,
+    );
 
-      let result = vade.did_update(&identity, &message_str, &"".to_string()).await.unwrap();
+    let result = vade.did_update(&identity, &payload, &"".to_string()).await.unwrap();
 
-      Ok("".to_string())
-  }
+    Ok("".to_string())
+}
+
+fn get_options(private_key: String, identity: String) -> String {
+    format!(
+        r###"{{
+            "privateKey": "{}",
+            "identity": "{}"
+        }}"###,
+        private_key,
+        identity,
+    )
+}
+
+fn get_vade() -> Vade {
+  let tnt = get_vade_tnt();
+  let mut vade = Vade::new();
+
+  let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+  let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
+      target: "13.69.59.185".to_string(),
+      private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
+      identity: identity.clone(),
+  });
+  vade.register_plugin(Box::from(substrate_resolver));
+  vade.register_plugin(Box::from(tnt));
+
+  vade
+}
+
+fn get_vade_tnt() -> VadeTnt {
+    // vade tnt to work with
+    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
+        target: "13.69.59.185".to_string(),
+        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
+        identity: identity.clone(),
+    });
+    let mut internal_vade = Vade::new();
+    internal_vade.register_plugin(Box::from(substrate_resolver));
+
+    VadeTnt::new(internal_vade)
+}
