@@ -117,7 +117,7 @@ pub struct CredentialOffer {
   pub nonce: Nonce
 }
 
-/// Messsage following a `CredentialOffer`, sent by a potential credential prover.
+/// Message following a `CredentialOffer`, sent by a potential credential prover.
 /// Provides the values that need to be signed by the issuer in both encoded/cleartext, and blinded format.
 /// Incorporates the nonce value sent in `CredentialOffer`.
 #[derive(Serialize, Deserialize)]

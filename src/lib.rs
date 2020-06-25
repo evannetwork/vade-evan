@@ -53,7 +53,23 @@ const EVAN_METHOD_PREFIX: &str = "did:evan:zkp:";
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct CreateCredentialSchemaArguments {
+pub struct AuthenticationOptions {
+  pub private_key: String,
+  pub identity: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateCredentialDefinitionPayload {
+  pub issuer_did: String,
+  pub schema_did: String,
+  pub issuer_public_key_did: String,
+  pub issuer_proving_key: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateCredentialSchemaPayload {
     pub issuer: String,
     pub schema_name: String,
     pub description: String,
@@ -62,25 +78,48 @@ struct CreateCredentialSchemaArguments {
     pub allow_additional_properties: bool,
     pub issuer_public_key_did: String,
     pub issuer_proving_key: String,
-    pub private_key: String,
-    pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct IssueCredentialArguments {
+pub struct CreateRevocationRegistryDefinitionPayload {
+  pub credential_definition: String,
+  pub issuer_public_key_did: String,
+  pub issuer_proving_key: String,
+  pub maximum_credential_count: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateRevocationRegistryDefinitionResult {
+  pub private_key: RevocationKeyPrivate,
+  pub revocation_info: RevocationIdInformation,
+  pub revocation_registry_definition: RevocationRegistryDefinition,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IssueCredentialPayload {
     pub issuer: String,
     pub subject: String,
     pub credential_request: CredentialRequest,
     pub credential_revocation_definition: String,
     pub credential_private_key: CredentialPrivateKey,
     pub revocation_private_key: RevocationKeyPrivate,
-    pub revocation_information: RevocationIdInformation
+    pub revocation_information: RevocationIdInformation,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct OfferCredentialArguments {
+pub struct IssueCredentialResult {
+  pub credential: Credential,
+  pub revocation_info: RevocationIdInformation,
+  pub revocation_state: RevocationState,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OfferCredentialPayload {
     pub issuer: String,
     pub subject: String,
     pub schema: String,
@@ -89,16 +128,16 @@ struct OfferCredentialArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct PresentProofArguments {
+pub struct PresentProofPayload {
     pub proof_request: ProofRequest,
     pub credentials: HashMap<String, Credential>,
     pub witnesses: HashMap<String, Witness>,
-    pub master_secret: MasterSecret
+    pub master_secret: MasterSecret,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct CreateCredentialProposalArguments {
+pub struct CreateCredentialProposalPayload {
     pub issuer: String,
     pub subject: String,
     pub schema: String,
@@ -106,7 +145,7 @@ struct CreateCredentialProposalArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RequestCredentialArguments {
+pub struct RequestCredentialPayload {
     pub credential_offering: CredentialOffer,
     pub master_secret: MasterSecret,
     pub credential_values: HashMap<String, String>,
@@ -114,7 +153,7 @@ struct RequestCredentialArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct RequestProofArguments {
+pub struct RequestProofPayload {
     pub verifier_did: String,
     pub prover_did: String,
     pub sub_proof_requests: Vec<SubProofRequest>,
@@ -122,66 +161,19 @@ struct RequestProofArguments {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ValidateProofArguments {
+pub struct RevokeCredentialPayload {
+    pub issuer: String,
+    pub revocation_registry_definition: String,
+    pub credential_revocation_id: u32,
+    pub issuer_public_key_did: String,
+    pub issuer_proving_key: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidateProofPayload {
     pub presented_proof: ProofPresentation,
-    pub proof_request: ProofRequest
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WhitelistIdentityArguments {
-  pub private_key: String,
-  pub identity: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CreateCredentialDefinitionArguments {
-  pub issuer_did: String,
-  pub schema_did: String,
-  pub issuer_public_key_did: String,
-  pub issuer_proving_key: String,
-  pub private_key: String,
-  pub identity: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CreateRevocationRegistryDefinitionArguments {
-  pub credential_definition: String,
-  pub issuer_public_key_did: String,
-  pub issuer_proving_key: String,
-  pub maximum_credential_count: u32,
-  pub private_key: String,
-  pub identity: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RevokeCredentialArguments {
-  issuer: String,
-  revocation_registry_definition: String,
-  credential_revocation_id: u32,
-  issuer_public_key_did: String,
-  issuer_proving_key: String,
-  pub private_key: String,
-  pub identity: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateRevocationRegistryDefinitionResult {
-  pub private_key: RevocationKeyPrivate,
-  pub revocation_info: RevocationIdInformation,
-  pub revocation_registry_definition: RevocationRegistryDefinition
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct IssueCredentialResult {
-  pub credential: Credential,
-  pub revocation_info: RevocationIdInformation,
-  pub revocation_state: RevocationState
+    pub proof_request: ProofRequest,
 }
 
 pub struct VadeTnt {
@@ -202,7 +194,7 @@ impl VadeTnt {
 
 impl VadeTnt {
     pub async fn whitelist_identity(&mut self, data: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let input: WhitelistIdentityArguments = serde_json::from_str(&data)?;
+        let input: AuthenticationOptions = serde_json::from_str(&data)?;
         let options = format!(r###"{{
             "privateKey": "{}",
             "identity": "{}",
@@ -266,41 +258,42 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a credential definition for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)`
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`CreateCredentialDefinitionPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateCredentialDefinitionPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The created definition as a JSON object
     async fn vc_zkp_create_credential_definition(
       &mut self,
       method: &str,
-      _options: &str,
+      options: &str,
       payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: CreateCredentialDefinitionArguments = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)?;
+        let payload: CreateCredentialDefinitionPayload = serde_json::from_str(&payload)?;
         
-        let results = &self.vade.did_resolve(&input.schema_did).await?;
+        let results = &self.vade.did_resolve(&payload.schema_did).await?;
         if results.is_empty() {
-          return Err(Box::from(format!("could not get schema \"{}\"", &input.schema_did)));
+          return Err(Box::from(format!("could not get schema \"{}\"", &payload.schema_did)));
         }
         let schema: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
-        let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
+        let generated_did = self.generate_did(&options.private_key, &options.identity).await?;
 
         let (definition, pk) = Issuer::create_credential_definition(
             &generated_did,
-            &input.issuer_did,
+            &payload.issuer_did,
             &schema,
-            &input.issuer_public_key_did,
-            &input.issuer_proving_key
+            &payload.issuer_public_key_did,
+            &payload.issuer_proving_key
         );
 
         let serialized = serde_json::to_string(&(&definition, &pk)).unwrap();
         let serialized_definition = serde_json::to_string(&definition).unwrap();
-        self.set_did_document(&generated_did, &serialized_definition, &input.private_key, &input.identity).await?;
+        self.set_did_document(&generated_did, &serialized_definition, &options.private_key, &options.identity).await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -310,38 +303,39 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a credential schema for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`CreateCredentialSchemaPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateCredentialSchemaPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The created schema as a JSON object
     async fn vc_zkp_create_credential_schema(
         &mut self,
         method: &str,
-        _options: &str,
+        options: &str,
         payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: CreateCredentialSchemaArguments = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)?;
+        let payload: CreateCredentialSchemaPayload = serde_json::from_str(&payload)?;
 
-        let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
+        let generated_did = self.generate_did(&options.private_key, &options.identity).await?;
   
         let schema = Issuer::create_credential_schema(
           &generated_did,
-          &input.issuer,
-          &input.schema_name,
-          &input.description,
-          input.properties,
-          input.required_properties,
-          input.allow_additional_properties,
-          &input.issuer_public_key_did,
-          &input.issuer_proving_key
+          &payload.issuer,
+          &payload.schema_name,
+          &payload.description,
+          payload.properties,
+          payload.required_properties,
+          payload.allow_additional_properties,
+          &payload.issuer_public_key_did,
+          &payload.issuer_proving_key
         );
   
         let serialized = serde_json::to_string(&schema).unwrap();
-        self.set_did_document(&generated_did, &serialized, &input.private_key, &input.identity).await?;
+        self.set_did_document(&generated_did, &serialized, &options.private_key, &options.identity).await?;
   
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -351,42 +345,43 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a revocation registry definition for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`CreateRevocationRegistryDefinitionPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateRevocationRegistryDefinitionPayload.html)
     ///
     /// # Returns
-    /// * `Option<String>` - The created revocation registry definition as a JSON object
+    /// * created revocation registry definition as a JSON object as serialized [`CreateRevocationRegistryDefinitionResult`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateRevocationRegistryDefinitionResult.html)
     async fn vc_zkp_create_revocation_registry_definition(
         &mut self,
         method: &str,
-        _options: &str,
+        options: &str,
         payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: CreateRevocationRegistryDefinitionArguments = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)?;
+        let payload: CreateRevocationRegistryDefinitionPayload = serde_json::from_str(&payload)?;
 
-        debug!("fetching credential definition with did: {}", &input.credential_definition);
+        debug!("fetching credential definition with did: {}", &payload.credential_definition);
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&input.credential_definition).await?[0].as_ref().unwrap(),
+          &self.vade.did_resolve(&payload.credential_definition).await?[0].as_ref().unwrap(),
         ).unwrap();
   
-        let generated_did = self.generate_did(&input.private_key, &input.identity).await?;
+        let generated_did = self.generate_did(&options.private_key, &options.identity).await?;
   
         let (definition, private_key, revocation_info) = Issuer::create_revocation_registry_definition(
           &generated_did,
           &definition,
-          &input.issuer_public_key_did,
-          &input.issuer_proving_key,
-          input.maximum_credential_count
+          &payload.issuer_public_key_did,
+          &payload.issuer_proving_key,
+          payload.maximum_credential_count
         );
   
-        let serialised_def = serde_json::to_string(&definition).unwrap();
+        let serialized_def = serde_json::to_string(&definition).unwrap();
   
-        self.set_did_document(&generated_did, &serialised_def, &input.private_key, &input.identity).await?;
+        self.set_did_document(&generated_did, &serialized_def, &options.private_key, &options.identity).await?;
   
-        let serialised_result = serde_json::to_string(
+        let serialized_result = serde_json::to_string(
           &CreateRevocationRegistryDefinitionResult {
             private_key,
             revocation_info,
@@ -394,7 +389,7 @@ impl VadePlugin for VadeTnt {
           }
         ).unwrap();
   
-        Ok(VadePluginResultValue::Success(Some(serialised_result)))
+        Ok(VadePluginResultValue::Success(Some(serialized_result)))
     }
 
     /// Issues a credential for a zero-knowledge proof.
@@ -402,11 +397,11 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to issue a credential for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`IssueCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.IssueCredentialPayload.html)
     ///
     /// # Returns
-    /// * `Option<String>` - A JSON object consisting of the credential, this credential's initial revocation state and
+    /// * serialized [`IssueCredentialResult`](https://docs.rs/vade_tnt/*/vade_tnt/struct.IssueCredentialResult.html) consisting of the credential, this credential's initial revocation state and
     /// the updated revocation info, only interesting for the issuer (needs to be stored privately)
     async fn vc_zkp_issue_credential(
         &mut self,
@@ -417,14 +412,14 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: IssueCredentialArguments = serde_json::from_str(&payload)?;
+        let payload: IssueCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
           "fetching credential definition with did: {}",
-          &input.credential_request.credential_definition,
+          &payload.credential_request.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
-           &self.vade.did_resolve(&input.credential_request.credential_definition).await?[0].as_ref().unwrap()
+           &self.vade.did_resolve(&payload.credential_request.credential_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         debug!("fetching schema with did: {}", &definition.schema);
@@ -434,22 +429,22 @@ impl VadePlugin for VadeTnt {
 
         debug!(
           "fetching revocation definition with did: {}",
-          &input.credential_revocation_definition,
+          &payload.credential_revocation_definition,
         );
         let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-           &self.vade.did_resolve(&input.credential_revocation_definition).await?[0].as_ref().unwrap()
+           &self.vade.did_resolve(&payload.credential_revocation_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
-            &input.issuer,
-            &input.subject,
-            input.credential_request,
+            &payload.issuer,
+            &payload.subject,
+            payload.credential_request,
             definition,
-            input.credential_private_key,
+            payload.credential_private_key,
             schema,
             &mut revocation_definition,
-            input.revocation_private_key,
-            &input.revocation_information
+            payload.revocation_private_key,
+            &payload.revocation_information
         ).unwrap();
 
         Ok(
@@ -472,8 +467,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a credential offer for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`OfferCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.OfferCredentialPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The offer as a JSON object
@@ -486,12 +481,12 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: OfferCredentialArguments = serde_json::from_str(&payload)?;
+        let payload: OfferCredentialPayload = serde_json::from_str(&payload)?;
         let result: CredentialOffer = Issuer::offer_credential(
-            &input.issuer,
-            &input.subject,
-            &input.schema,
-            &input.credential_definition,
+            &payload.issuer,
+            &payload.subject,
+            &payload.schema,
+            &payload.credential_definition,
         );
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
@@ -501,8 +496,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to presents a proof for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`PresentProofPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.PresentProofPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The offer as a JSON object
@@ -515,27 +510,27 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: PresentProofArguments = serde_json::from_str(&payload)?;
+        let payload: PresentProofPayload = serde_json::from_str(&payload)?;
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         let mut revocation_definitions: HashMap<String, RevocationRegistryDefinition> = HashMap::new();
-        for req in &input.proof_request.sub_proof_requests {
+        for req in &payload.proof_request.sub_proof_requests {
           let schema_did = &req.schema;
           debug!("fetching schema with did: {}", &schema_did);
           schemas.insert(schema_did.clone(), serde_json::from_str(
              &self.vade.did_resolve(&schema_did).await?[0].as_ref().unwrap(),
           ).unwrap());
 
-          let definition_did = input.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
+          let definition_did = payload.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
           debug!("fetching credential definition with did: {}", &definition_did);
           definitions.insert(schema_did.clone(), serde_json::from_str(
              &self.vade.did_resolve(&definition_did).await?[0].as_ref().unwrap(),
           ).unwrap());
 
           // Resolve revocation definition
-          let rev_definition_did = input.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
+          let rev_definition_did = payload.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
           debug!("fetching revocation definition with did: {}", &rev_definition_did);
           revocation_definitions.insert(schema_did.clone(), serde_json::from_str(
              &self.vade.did_resolve(&rev_definition_did).await?[0].as_ref().unwrap(),
@@ -543,13 +538,13 @@ impl VadePlugin for VadeTnt {
         }
 
         let result: ProofPresentation = Prover::present_proof(
-            input.proof_request,
-            input.credentials,
+            payload.proof_request,
+            payload.credentials,
             definitions,
             schemas,
             revocation_definitions,
-            input.witnesses,
-            &input.master_secret,
+            payload.witnesses,
+            &payload.master_secret,
         );
 
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
@@ -560,8 +555,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a credential proposal for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`CreateCredentialProposalPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateCredentialProposalPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The proposal as a JSON object
@@ -574,11 +569,11 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: CreateCredentialProposalArguments = serde_json::from_str(&payload)?;
+        let payload: CreateCredentialProposalPayload = serde_json::from_str(&payload)?;
         let result: CredentialProposal = Prover::propose_credential(
-            &input.issuer,
-            &input.subject,
-            &input.schema,
+            &payload.issuer,
+            &payload.subject,
+            &payload.schema,
         );
 
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
@@ -589,11 +584,11 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to request a credential for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`RequestCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.RequestCredentialPayload.html)
     ///
     /// # Returns
-    /// * `Option<String>` - A JSON object consisting of the `CredentialRequest` and `CredentialSecretsBlindingFactors` (to be stored at the prover's site in a private manner)
+    /// * `Option<String>` - A JSON object consisting of the `CredentialRequest` and `CredentialSecretsBlindingFactors` (to be stored at the proofer's site in a private manner)
     async fn vc_zkp_request_credential(
         &mut self,
         method: &str,
@@ -603,21 +598,21 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: RequestCredentialArguments = serde_json::from_str(&payload)?;
+        let payload: RequestCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
           "fetching credential definition with did: {}",
-          &input.credential_offering.credential_definition,
+          &payload.credential_offering.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&input.credential_offering.credential_definition).await?[0].as_ref().unwrap()
+          &self.vade.did_resolve(&payload.credential_offering.credential_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         let result: (CredentialRequest, CredentialSecretsBlindingFactors) = Prover::request_credential(
-            input.credential_offering,
+            payload.credential_offering,
             definition,
-            input.master_secret,
-            input.credential_values,
+            payload.master_secret,
+            payload.credential_values,
         );
 
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
@@ -628,8 +623,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to request a proof for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`RequestProofPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.RequestProofPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - A `ProofRequest` as JSON
@@ -642,11 +637,11 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: RequestProofArguments = serde_json::from_str(&payload)?;
+        let payload: RequestProofPayload = serde_json::from_str(&payload)?;
         let result: ProofRequest = Verifier::request_proof(
-            &input.verifier_did,
-            &input.prover_did,
-            input.sub_proof_requests,
+            &payload.verifier_did,
+            &payload.prover_did,
+            payload.sub_proof_requests,
         );
 
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
@@ -657,41 +652,42 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to revoke a credential for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`RevokeCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.RevokeCredentialPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The updated revocation registry definition as a JSON object
     async fn vc_zkp_revoke_credential(
         &mut self,
         method: &str,
-        _options: &str,
+        options: &str,
         payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: RevokeCredentialArguments = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)?;
+        let payload: RevokeCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
           "fetching revocation definition with did: {}",
-          &input.revocation_registry_definition,
+          &payload.revocation_registry_definition,
         );
         let rev_def: RevocationRegistryDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&input.revocation_registry_definition).await?[0].as_ref().unwrap()
+          &self.vade.did_resolve(&payload.revocation_registry_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
         let updated_registry = Issuer::revoke_credential(
-          &input.issuer,
+          &payload.issuer,
           &rev_def,
-          input.credential_revocation_id,
-          &input.issuer_public_key_did,
-          &input.issuer_proving_key
+          payload.credential_revocation_id,
+          &payload.issuer_public_key_did,
+          &payload.issuer_proving_key
         );
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
 
-        self.set_did_document(&rev_def.id, &serialized, &input.private_key, &input.identity).await?;
+        self.set_did_document(&rev_def.id, &serialized, &options.private_key, &options.identity).await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -701,8 +697,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to verify a proof for (e.g. "did:example")
-    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
-    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
+    /// * `_options` - no authenticated request required, so can be left empty
+    /// * `payload` - serialized [`ValidateProofPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.ValidateProofPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object representing a `ProofVerification` type, specifying whether verification was successful
@@ -715,13 +711,13 @@ impl VadePlugin for VadeTnt {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: ValidateProofArguments = serde_json::from_str(&payload)?;
+        let payload: ValidateProofPayload = serde_json::from_str(&payload)?;
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
         let mut rev_definitions: HashMap<String, Option<RevocationRegistryDefinition>> = HashMap::new();
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
-        for req in &input.proof_request.sub_proof_requests {
+        for req in &payload.proof_request.sub_proof_requests {
           let schema_did = &req.schema;
           debug!("fetching schema with did: {}", &schema_did);
           schemas.insert(schema_did.clone(), serde_json::from_str(
@@ -729,7 +725,7 @@ impl VadePlugin for VadeTnt {
           ).unwrap());
         }
 
-        for credential in &input.presented_proof.verifiable_credential {
+        for credential in &payload.presented_proof.verifiable_credential {
           let definition_did = &credential.proof.credential_definition.clone();
           debug!("fetching credential definition with did: {}", &definition_did);
           definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
@@ -747,8 +743,8 @@ impl VadePlugin for VadeTnt {
         }
 
         let result: ProofVerification = Verifier::verify_proof(
-            input.presented_proof,
-            input.proof_request,
+            payload.presented_proof,
+            payload.proof_request,
             definitions,
             schemas,
             rev_definitions
