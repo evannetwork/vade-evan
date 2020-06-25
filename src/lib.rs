@@ -261,10 +261,13 @@ impl VadeTnt {
 
 #[async_trait(?Send)]
 impl VadePlugin for VadeTnt {
-    /// Creates a new credential definition and stores it on-chain.
+    /// Creates a new zero-knowledge proof credential definition.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `CreateCredentialDefinitionArguments`
+    ///
+    /// * `method` - method to create a credential definition for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)`
     ///
     /// # Returns
     /// * `Option<String>` - The created definition as a JSON object
@@ -302,10 +305,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
-    /// Creates a new credential schema and stores it on-chain.
+    /// Creates a new zero-knowledge proof credential schema.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `CreateCredentialSchemaArguments`
+    ///
+    /// * `method` - method to create a credential schema for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - The created schema as a JSON object
@@ -340,10 +346,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
-    /// Creates a new revocation registry definition and stores it on-chain.
+    /// Creates a new definition for a zero-knowledge proof revocation registry.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `CreateRevocationRegistryDefinitionArguments`
+    ///
+    /// * `method` - method to create a revocation registry definition for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - The created revocation registry definition as a JSON object
@@ -388,10 +397,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serialised_result)))
     }
 
-    /// Issues a new credential.
+    /// Issues a credential for a zero-knowledge proof.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `CreateRevocationRegistryDefinitionArguments`
+    ///
+    /// * `method` - method to issue a credential for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object consisting of the credential, this credential's initial revocation state and
@@ -455,10 +467,13 @@ impl VadePlugin for VadeTnt {
         )
     }
     
-    /// Creates a `CredentialOffer` message.
+    /// Creates a new zero-knowledge proof credential offer.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `OfferCredentialArguments` type
+    ///
+    /// * `method` - method to create a credential offer for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - The offer as a JSON object
@@ -481,10 +496,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
-    /// Creates a `CredentialProof` message.
+    /// Presents a proof for a zero-knowledge proof credential.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `PresentProofArguments` type
+    ///
+    /// * `method` - method to presents a proof for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - The offer as a JSON object
@@ -537,10 +555,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
-    /// Creates a `CredentialProposal` message.
+    /// Creates a new zero-knowledge proof credential proposal.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `CreateCredentialProposalArguments` type
+    ///
+    /// * `method` - method to create a credential proposal for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - The proposal as a JSON object
@@ -563,10 +584,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
-    /// Creates a `CredentialRequest` message.
+    /// Requests a credential for a zero-knowledge proof.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `RequestCredentialArguments` type
+    ///
+    /// * `method` - method to request a credential for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object consisting of the `CredentialRequest` and `CredentialSecretsBlindingFactors` (to be stored at the prover's site in a private manner)
@@ -599,10 +623,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
-    /// Creates a `ProofRequest` message.
+    /// Requests a proof for a zero-knowledge proof.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `RequestProofArguments` type
+    ///
+    /// * `method` - method to request a proof for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - A `ProofRequest` as JSON
@@ -625,10 +652,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
 
-    /// Revokes a credential and updates the revocation registry definition.
+    /// Revokes a credential for a zero-knowledge proof.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `RevokeCredentialArguments` type
+    ///
+    /// * `method` - method to revoke a credential for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - The updated revocation registry definition as a JSON object
@@ -666,10 +696,13 @@ impl VadePlugin for VadeTnt {
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
-    /// Verifies a given `ProofPresentation` in accordance to the specified `ProofRequest`
+    /// Verifies a proof for a zero-knowledge proof.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `ValidateProofArguments` type
+    ///
+    /// * `method` - method to verify a proof for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the request (e.g. authentication data)
+    /// * `payload` - JSON string with information for the request (e.g. actual data to write)
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object representing a `ProofVerification` type, specifying whether verification was successful
