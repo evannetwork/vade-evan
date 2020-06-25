@@ -14,9 +14,6 @@
   limitations under the License.
 */
 
-extern crate vade;
-extern crate vade_tnt;
-
 mod test_data;
 
 use std::collections::HashMap;

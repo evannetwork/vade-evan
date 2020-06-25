@@ -405,7 +405,7 @@ pub async fn update_payload_in_did(url: String, index: u32, payload: String, did
     Ok(())
 }
 
-/// Whilelists an identity to send transactions to the substrate chain.
+/// Whitelists an identity to send transactions to the substrate chain.
 ///
 /// # Arguments
 /// * `url` - Substrate URL
