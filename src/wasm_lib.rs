@@ -142,8 +142,7 @@ pub async fn create_credential_proposal (schema_id: String, subject_did: String,
 #[wasm_bindgen]
 pub async fn create_credential_offer(proposal: String, credential_definition_id: String) -> Result<String, JsValue> {
     let mut vade = get_vade();
-    let payload = serde_json::to_string(&proposal).unwrap();
-    let mut message_value: Value = serde_json::from_str(&payload).unwrap();
+    let mut message_value: Value = serde_json::from_str(&proposal).unwrap();
     message_value["credentialDefinition"] = Value::from(credential_definition_id);
     let payload = serde_json::to_string(&message_value).unwrap();
 
