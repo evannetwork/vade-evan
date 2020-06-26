@@ -78,8 +78,6 @@ pub mod verifier {
           registry = Some(serde_json::from_str(&serde_json::to_string(&reg_def.as_ref().unwrap().registry).unwrap()).unwrap());
         }
 
-        println!("{}", serde_json::to_string(reg_def.as_ref().unwrap()).unwrap());
-
         pub_key = &credential_definitions.get(&sub_proof_request.schema).unwrap().public_key;
         proof_verifier.add_sub_proof_request(
           &sub_proof_request_builder.finalize().unwrap(),

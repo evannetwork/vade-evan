@@ -37,6 +37,7 @@ use simple_error::SimpleError;
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::application::prover::Prover;
 
 /// Holds the logic needed to issue and revoke credentials.
 pub struct Issuer {
@@ -69,11 +70,9 @@ impl Issuer {
     ) -> (CredentialDefinition, CredentialPrivateKey) {
 
       let created_at = get_now_as_iso_string();
-      println!("Starte crypto issuer creddef");
       let (credential_private_key, crypto_credential_def) = CryptoIssuer::create_credential_definition(
         &schema
       );
-      println!("Done crypto issuer creddef");
       let mut definition = CredentialDefinition {
         id: assigned_did.to_owned(),
         r#type: "EvanZKPCredentialDefinition".to_string(),
@@ -253,10 +252,20 @@ impl Issuer {
     ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn std::error::Error>> {
 
       let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
-      for entry in &credential_request.credential_values {
-        data.insert(entry.0.to_owned(), entry.1.clone());
-      }
 
+      //
+      // Optional value handling
+      //
+      let mut processed_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
+      for field in &credential_schema.properties {
+        if (credential_request.credential_values.get(field.0).is_none()) {
+          // No value provided for given schema property
+          let error = format!("Missing schema property: {}. If you want to omit this property, please set it as 'null'", field.0);
+          return Err(Box::new(SimpleError::new(error)));
+        }
+        let val = credential_request.credential_values.get(field.0).unwrap().clone();
+        data.insert(field.0.to_owned(), val);
+      }
       let credential_subject = CredentialSubject {
         id: subject_did.to_owned(),
         data
@@ -289,7 +298,7 @@ impl Issuer {
         issuance_nonce,
         witness
       ) = CryptoIssuer::sign_credential_with_revocation(
-        &credential_request,
+        &processed_credential_request,
         &credential_private_key,
         &credential_definition.public_key,
         revocation_registry_definition,
