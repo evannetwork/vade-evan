@@ -252,20 +252,31 @@ impl Issuer {
     ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn std::error::Error>> {
 
       let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
-
       //
       // Optional value handling
       //
       let mut processed_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
+      let mut null_values: HashMap<String, String> = HashMap::new();
       for field in &credential_schema.properties {
         if (credential_request.credential_values.get(field.0).is_none()) {
-          // No value provided for given schema property
-          let error = format!("Missing schema property: {}. If you want to omit this property, please set it as 'null'", field.0);
-          return Err(Box::new(SimpleError::new(error)));
+
+          for required in &credential_schema.required {
+            if (required.eq(field.0)) {
+              // No value provided for required schema property
+              let error = format!("Missing required schema property: {}", field.0);
+              return Err(Box::new(SimpleError::new(error)));
+            }
+          }
+          null_values.insert(field.0.clone(), "null".to_owned()); // ommitted property is optional, encode it with 'null'
+        } else {
+          // Add value to credentialSubject part of VC
+          let val = credential_request.credential_values.get(field.0).unwrap().clone();
+          data.insert(field.0.to_owned(), val);
         }
-        let val = credential_request.credential_values.get(field.0).unwrap().clone();
-        data.insert(field.0.to_owned(), val);
       }
+
+      processed_credential_request.credential_values.extend(Prover::encode_values(null_values));
+
       let credential_subject = CredentialSubject {
         id: subject_did.to_owned(),
         data
@@ -337,7 +348,6 @@ impl Issuer {
         credential_schema: schema_reference,
         signature: cred_signature
       };
-
       Ok((credential, revocation_state, new_rev_info))
     }
 

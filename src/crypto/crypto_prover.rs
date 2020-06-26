@@ -33,6 +33,7 @@ use crate::application::datatypes::{
   RevocationState,
   DeltaHistory
 };
+use crate::application::prover::Prover as ApplicationProver;
 
 // Mediator class to broker between the high-level vade-tnt application prover and the Ursa prover class
 pub struct Prover {
@@ -112,8 +113,17 @@ impl Prover {
       // Build Ursa credential schema & proof requests
       credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
       sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
-      for property in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
+      credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+      for property in &credential_schemas.get(&sub_proof.schema).expect("Credentials missing for schema").properties {
         credential_schema_builder.add_attr(&property.0).unwrap();
+
+        if (credentials.get(&sub_proof.schema).unwrap().credential_subject.data.get(property.0).is_none()) {
+          // Property is not specified in credential, need to encode it with null
+          let mut to_encode: HashMap<String, String> = HashMap::new();
+          to_encode.insert(property.0.clone(), "null".to_owned());
+          let val = ApplicationProver::encode_values(to_encode).get(property.0).unwrap().clone();
+          credential_values_builder.add_dec_known(property.0, &val.encoded);
+        }
       }
 
       for property in &sub_proof.revealed_attributes {
@@ -121,10 +131,10 @@ impl Prover {
         sub_proof_request_builder.add_revealed_attr(&property).unwrap();
       }
       // Build ursa credential values
-      credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
       for values in &credentials.get(&sub_proof.schema).expect("Credentials missing for schema").credential_subject.data {
         credential_values_builder.add_dec_known(&values.0, &values.1.encoded).unwrap();
       }
+
       credential_values_builder.add_value_hidden("master_secret", &master_secret.value().unwrap()).unwrap();
 
       let witness = witnesses.get(&credentials.get(&sub_proof.schema).unwrap().id).unwrap();

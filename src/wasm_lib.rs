@@ -284,6 +284,7 @@ pub async fn issue_credential(
     let credential_definition_doc = vade.get_did_document(
       &definition
     ).await.unwrap();
+
     debug!("parse doc");
     let definition_parsed: CredentialDefinition = serde_json::from_str(&credential_definition_doc).unwrap();
     let request_parsed: CredentialRequest = serde_json::from_str(&request).unwrap();
@@ -323,8 +324,15 @@ pub async fn issue_credential(
 
   let mut result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
 
+  debug!("get did {}", result.credential.credential_schema.id);
+    let schema_doc = vade.get_did_document(
+      &result.credential.credential_schema.id
+    ).await.unwrap();
+
+  let schema: CredentialSchema = serde_json::from_str(&schema_doc).unwrap();
   Prover::post_process_credential_signature(
     &mut result.credential,
+    &schema,
     &request_parsed,
     &definition_parsed,
     blinding_factors_parsed,

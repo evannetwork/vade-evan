@@ -265,6 +265,7 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -317,6 +318,7 @@ async fn vade_tnt_can_present_proofs_with_less_properties () -> Result<(), Box<d
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -369,6 +371,7 @@ async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omit
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -451,6 +454,7 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -514,6 +518,7 @@ async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Err
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -588,6 +593,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -613,6 +619,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
 
     Prover::post_process_credential_signature(
       &mut other_credential,
+      &schema,
       &other_request,
       &definition,
       other_blinding_factors,
@@ -688,6 +695,7 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
 
     Prover::post_process_credential_signature(
       &mut credential,
+      &schema,
       &request,
       &definition,
       blinding_factors,
@@ -720,6 +728,7 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
 
     Prover::post_process_credential_signature(
       &mut other_credential,
+      &schema,
       &other_request,
       &definition,
       other_blinding_factors,
@@ -745,6 +754,7 @@ async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result
 
     Prover::post_process_credential_signature(
       &mut third_credential,
+      &schema,
       &third_request,
       &definition,
       third_blinding_factors,
