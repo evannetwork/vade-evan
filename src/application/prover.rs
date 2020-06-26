@@ -84,33 +84,19 @@ impl Prover {
     credential_values: HashMap<String, String>
   ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
 
+    for required in &credential_schema.required {
+      if (credential_values.get(required).is_none()) {
+        let error = format!("Missing required schema property: {}", required);
+        return Err(Box::new(SimpleError::new(error)));
+      }
+    }
+
     let crypto_cred_def = CryptoCredentialDefinition {
       public_key: credential_definition.public_key,
       credential_key_correctness_proof: credential_definition.public_key_correctness_proof
     };
 
-    //
-    // Optional value handling
-    //
-    let mut final_credential_values = credential_values.clone();
-    for field in &credential_schema.properties {
-      if (credential_values.get(field.0).is_none()) {
-        // No value provided for given schema property
-
-        // Property is required, cannot proceed
-        for required in &credential_schema.required {
-          if (required.eq(field.0)) {
-            let error = format!("Missing required schema property: {}", field.0);
-            return Err(Box::new(SimpleError::new(error)));
-          } else {
-            final_credential_values.insert(field.0.clone(), "null".to_owned());
-          }
-        }
-      }
-    }
-    final_credential_values.extend(credential_values);
-
-    let encoded_credential_values = Prover::encode_values(final_credential_values);
+    let encoded_credential_values = Prover::encode_values(credential_values);
 
     let (crypto_cred_request, blinding_factors) = CryptoProver::request_credential(
       &credential_offering.subject,
@@ -315,6 +301,7 @@ impl Prover {
   /// * `witnesses` - All witnesses needed to prove non-revocation, indexed by their according **`Credential`'s ID**
   pub fn post_process_credential_signature(
     credential: &mut Credential,
+    credential_schema: &CredentialSchema,
     credential_request: &CredentialRequest,
     credential_definition: &CredentialDefinition,
     blinding_factors: CredentialSecretsBlindingFactors,
@@ -326,9 +313,18 @@ impl Prover {
       &serde_json::to_string(revocation_registry_definition).unwrap()
     ).unwrap();
 
+    let mut extended_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
+    let mut null_values: HashMap<String, String> = HashMap::new();
+    for property in &credential_schema.properties {
+      if (credential_request.credential_values.get(property.0).is_none()) {
+        null_values.insert(property.0.clone(), "null".to_owned());
+      }
+    }
+    extended_credential_request.credential_values.extend(Prover::encode_values(null_values)); // Add encoded null values
+
     CryptoProver::process_credential(
       &mut credential.signature,
-      credential_request,
+      &extended_credential_request,
       &credential_definition.public_key,
       &blinding_factors,
       master_secret,
