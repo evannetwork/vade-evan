@@ -36,6 +36,7 @@ use std::convert::TryInto;
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
+use simple_error::SimpleError;
 
 /// Holds the logic needed to request credentials and create proofs.
 pub struct Prover {
@@ -78,9 +79,17 @@ impl Prover {
   pub fn request_credential(
     credential_offering: CredentialOffer,
     credential_definition: CredentialDefinition,
+    credential_schema: CredentialSchema,
     master_secret: MasterSecret,
     credential_values: HashMap<String, String>
-  ) -> (CredentialRequest, CredentialSecretsBlindingFactors) {
+  ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
+
+    for required in &credential_schema.required {
+      if (credential_values.get(required).is_none()) {
+        let error = format!("Missing required schema property: {}", required);
+        return Err(Box::new(SimpleError::new(error)));
+      }
+    }
 
     let crypto_cred_def = CryptoCredentialDefinition {
       public_key: credential_definition.public_key,
@@ -97,7 +106,7 @@ impl Prover {
       credential_offering.nonce
     );
 
-    return (CredentialRequest {
+    return Ok((CredentialRequest {
       blinded_credential_secrets: crypto_cred_request.blinded_credential_secrets,
       blinded_credential_secrets_correctness_proof: crypto_cred_request.blinded_credential_secrets_correctness_proof,
       credential_definition: credential_definition.id,
@@ -106,7 +115,7 @@ impl Prover {
       subject: credential_offering.subject,
       r#type: "EvanZKPCredentialRequest".to_string(),
       credential_values: encoded_credential_values
-    }, blinding_factors);
+    }, blinding_factors));
   }
 
   /// Create a `ProofPresentation` to send to a verifier based on a received `ProofRequest`
@@ -160,7 +169,6 @@ impl Prover {
     witnesses: HashMap<String, Witness>,
     master_secret: &MasterSecret
   ) -> (Vec<ProofCredential>, AggregatedProof)  {
-    println!("Creating proof credentials");
     let crypto_proof = CryptoProver::create_proof_with_revoc(
       &proof_request,
       &credentials,
@@ -293,6 +301,7 @@ impl Prover {
   /// * `witnesses` - All witnesses needed to prove non-revocation, indexed by their according **`Credential`'s ID**
   pub fn post_process_credential_signature(
     credential: &mut Credential,
+    credential_schema: &CredentialSchema,
     credential_request: &CredentialRequest,
     credential_definition: &CredentialDefinition,
     blinding_factors: CredentialSecretsBlindingFactors,
@@ -304,9 +313,18 @@ impl Prover {
       &serde_json::to_string(revocation_registry_definition).unwrap()
     ).unwrap();
 
+    let mut extended_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
+    let mut null_values: HashMap<String, String> = HashMap::new();
+    for property in &credential_schema.properties {
+      if (credential_request.credential_values.get(property.0).is_none()) {
+        null_values.insert(property.0.clone(), "null".to_owned());
+      }
+    }
+    extended_credential_request.credential_values.extend(Prover::encode_values(null_values)); // Add encoded null values
+
     CryptoProver::process_credential(
       &mut credential.signature,
-      credential_request,
+      &extended_credential_request,
       &credential_definition.public_key,
       &blinding_factors,
       master_secret,
