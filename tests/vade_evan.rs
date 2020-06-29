@@ -17,7 +17,7 @@
 mod test_data;
 
 use std::collections::HashMap;
-use vade_tnt::resolver::SubstrateDidResolverEvan;
+use vade_evan::resolver::SubstrateDidResolverEvan;
 use serde_json::Value;
 use test_data::{
   ISSUER_DID,
@@ -39,8 +39,8 @@ use ursa::cl::{
   CredentialSecretsBlindingFactors,
   Witness
 };
-use vade_tnt::{
-    VadeTnt,
+use vade_evan::{
+    VadeEvan,
     IssueCredentialResult,
     CreateRevocationRegistryDefinitionResult,
     application::prover::Prover,
@@ -72,7 +72,7 @@ const EVAN_METHOD: &str = "did:evan";
 // TODO: Test proving after revoking another credential of the same registry
 
 #[tokio::test]
-async fn vade_tnt_can_be_registered_as_plugin () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_be_registered_as_plugin () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     // run test
@@ -88,17 +88,17 @@ async fn vade_tnt_can_be_registered_as_plugin () -> Result<(), Box<dyn std::erro
 }
 
 #[tokio::test]
-async fn vade_tnt_can_whitelist_identity () -> Result<(), Box<dyn std::error::Error>>{
-    let mut vade_tnt = get_vade_tnt();
+async fn vade_evan_can_whitelist_identity () -> Result<(), Box<dyn std::error::Error>>{
+    let mut vade_evan = get_vade_evan();
 
     // run test
-    whitelist_identity(&mut vade_tnt).await?;
+    whitelist_identity(&mut vade_evan).await?;
 
     Ok(())
 }
 
 #[tokio::test]
-async fn vade_tnt_can_create_schema () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_create_schema () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     // run test
@@ -108,7 +108,7 @@ async fn vade_tnt_can_create_schema () -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[tokio::test]
-async fn vade_tnt_can_propose_credentials () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_propose_credentials () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
 
@@ -124,7 +124,7 @@ async fn vade_tnt_can_propose_credentials () -> Result<(), Box<dyn std::error::E
 }
 
 #[tokio::test]
-async fn vade_tnt_can_offer_credentials () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_offer_credentials () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -146,7 +146,7 @@ async fn vade_tnt_can_offer_credentials () -> Result<(), Box<dyn std::error::Err
 }
 
 #[tokio::test]
-async fn vade_tnt_can_request_credentials () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_request_credentials () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -169,7 +169,7 @@ async fn vade_tnt_can_request_credentials () -> Result<(), Box<dyn std::error::E
 }
 
 #[tokio::test]
-async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_issue_credentials () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -205,7 +205,7 @@ async fn vade_tnt_can_issue_credentials () -> Result<(), Box<dyn std::error::Err
 }
 
 #[tokio::test]
-async fn vade_tnt_can_request_proof () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_request_proof () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -226,7 +226,7 @@ async fn vade_tnt_can_request_proof () -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[tokio::test]
-async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_present_proofs () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -279,7 +279,7 @@ async fn vade_tnt_can_present_proofs () -> Result<(), Box<dyn std::error::Error>
 }
 
 #[tokio::test]
-async fn vade_tnt_can_present_proofs_with_less_properties () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_present_proofs_with_less_properties () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_extended_credential_schema(&mut vade).await?;
@@ -334,7 +334,7 @@ async fn vade_tnt_can_present_proofs_with_less_properties () -> Result<(), Box<d
 // TODO: Currently impossible to fix
 #[tokio::test]
 #[ignore]
-async fn vade_tnt_can_present_proofs_with_not_all_schema_fields_filled_and_less_properties () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_present_proofs_with_not_all_schema_fields_filled_and_less_properties () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_more_extended_credential_schema(&mut vade).await?;
@@ -397,7 +397,7 @@ async fn vade_tnt_can_present_proofs_with_not_all_schema_fields_filled_and_less_
 }
 
 #[tokio::test]
-async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -455,7 +455,7 @@ async fn vade_tnt_can_verify_proof () -> Result<(), Box<dyn std::error::Error>>{
 }
 
 #[tokio::test]
-async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_revoke_credential () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     // Issue credential
@@ -530,7 +530,7 @@ async fn vade_tnt_can_revoke_credential () -> Result<(), Box<dyn std::error::Err
 }
 
 #[tokio::test]
-async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_verify_proof_after_revocation_update () -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     // Issue main credential
@@ -631,7 +631,7 @@ async fn vade_tnt_can_verify_proof_after_revocation_update () -> Result<(), Box<
 }
 
 #[tokio::test]
-async fn vade_tnt_can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<dyn std::error::Error>>{
+async fn vade_evan_can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<dyn std::error::Error>>{
     let mut vade = get_vade();
 
     // Issue main credential
@@ -960,14 +960,14 @@ fn get_options() -> String {
 }
 
 fn get_vade() -> Vade {
-    let tnt = get_vade_tnt();
+    let evan = get_vade_evan();
     let mut vade = Vade::new();
-    vade.register_plugin(Box::from(tnt));
+    vade.register_plugin(Box::from(evan));
 
     vade
 }
 
-fn get_vade_tnt() -> VadeTnt {
+fn get_vade_evan() -> VadeEvan {
     // vade to work with
     // let substrate_resolver = SubstrateDidResolverEvan::new();
     let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
@@ -979,7 +979,7 @@ fn get_vade_tnt() -> VadeTnt {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeTnt::new(internal_vade)
+    VadeEvan::new(internal_vade)
 }
 
 async fn issue_credential(
@@ -1132,8 +1132,8 @@ async fn verify_proof(
     Ok(result)
 }
 
-async fn whitelist_identity(vade_tnt: &mut VadeTnt) -> Result<(), Box<dyn std::error::Error>> {
-    let results = vade_tnt.whitelist_identity(&get_options()).await;
+async fn whitelist_identity(vade_evan: &mut VadeEvan) -> Result<(), Box<dyn std::error::Error>> {
+    let results = vade_evan.whitelist_identity(&get_options()).await;
 
     // check results
     if results.is_err() {

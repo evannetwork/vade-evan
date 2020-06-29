@@ -14,16 +14,16 @@
   limitations under the License.
 */
 
-extern crate vade_tnt;
+extern crate vade_evan;
 
-use vade_tnt::crypto::crypto_utils::{
+use vade_evan::crypto::crypto_utils::{
   create_assertion_proof,
   recover_address_and_data,
   JwsData,
   sign_message
 };
 use serde::{Serialize, Deserialize};
-use vade_tnt::application::datatypes::{
+use vade_evan::application::datatypes::{
   CredentialSchema,
   SchemaProperty
 };

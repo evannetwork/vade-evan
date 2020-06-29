@@ -14,15 +14,15 @@
   limitations under the License.
 */
 
-//extern crate vade_tnt;
+//extern crate vade_evan;
 
-use vade_tnt::utils::substrate;
+use vade_evan::utils::substrate;
 
-use vade_tnt::compose_extrinsic;
-use vade_tnt::utils::extrinsic::xt_primitives::{
+use vade_evan::compose_extrinsic;
+use vade_evan::utils::extrinsic::xt_primitives::{
     UncheckedExtrinsicV4
 };
-use vade_tnt::utils::extrinsic::rpc_messages::XtStatus;
+use vade_evan::utils::extrinsic::rpc_messages::XtStatus;
 /*#[tokio::test]
 async fn can_call_storage_values() {
     let did = substrate::get_storage_key("Sudo", "Key").await.unwrap();

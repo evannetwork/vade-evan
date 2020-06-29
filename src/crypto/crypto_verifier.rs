@@ -34,7 +34,7 @@ pub mod verifier {
   };
   use std::collections::HashMap;
 
-  // Mediator class to broker between the high-level vade-tnt application verifier and the Ursa verifier class
+  // Mediator class to broker between the high-level vade-evan application verifier and the Ursa verifier class
   pub struct CredVerifier {
 
   }

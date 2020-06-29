@@ -31,7 +31,7 @@ use vade::{
 };
 
 use crate::{
-    VadeTnt,
+    VadeEvan,
     application::prover::Prover,
     application::datatypes::{
         Credential,
@@ -388,7 +388,7 @@ fn get_options(private_key: String, identity: String) -> String {
 }
 
 fn get_vade() -> Vade {
-  let tnt = get_vade_tnt();
+  let evan = get_vade_evan();
   let mut vade = Vade::new();
 
   let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
@@ -398,13 +398,13 @@ fn get_vade() -> Vade {
       identity: identity.clone(),
   });
   vade.register_plugin(Box::from(substrate_resolver));
-  vade.register_plugin(Box::from(tnt));
+  vade.register_plugin(Box::from(evan));
 
   vade
 }
 
-fn get_vade_tnt() -> VadeTnt {
-    // vade tnt to work with
+fn get_vade_evan() -> VadeEvan {
+    // vade evan to work with
     let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig{
         target: "13.69.59.185".to_string(),
@@ -414,5 +414,5 @@ fn get_vade_tnt() -> VadeTnt {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeTnt::new(internal_vade)
+    VadeEvan::new(internal_vade)
 }
