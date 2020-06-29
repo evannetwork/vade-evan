@@ -274,13 +274,16 @@ impl MessageConsumer for VadeTnt {
 }
 
 impl VadeTnt {
-    /// Creates a new credential definition and stores it on-chain.
+
+  /// Creates a new credential definition and stores the public part on-chain. The private part (key) needs
+    /// to be stored in a safe way and must not be shared. A credential definition holds cryptographic material
+    /// needed to verify proofs. Every definition is bound to one credential schema.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `CreateCredentialDefinitionArguments`
     ///
     /// # Returns
-    /// * `Option<String>` - The created definition as a JSON object
+    /// * `Option<String>` - A JSON object containing the public credential definition and the private key.
     async fn create_credential_definition(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
       let input: CreateCredentialDefinitionArguments = serde_json::from_str(&data)?;
       let schema: CredentialSchema = serde_json::from_str(
@@ -306,7 +309,8 @@ impl VadeTnt {
       Ok(Some(serialized))
     }
 
-    /// Creates a new credential schema and stores it on-chain.
+    /// Creates a new credential schema and stores it on-chain. The schema specifies properties a credential
+    /// includes, both optional and mandatory. Every credential needs to specify a schema.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `CreateCredentialSchemaArguments`
@@ -336,7 +340,9 @@ impl VadeTnt {
       Ok(Some(serialized))
     }
 
-    /// Creates a new revocation registry definition and stores it on-chain.
+    /// Creates a new revocation registry definition and stores it on-chain. The definition consists of a public
+    /// and a private part. The public part holds the cryptographic material needed to create non-revocation proofs.
+    /// The private part needs to reside with the registry owner and is used to revoke credentials.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `CreateRevocationRegistryDefinitionArguments`
@@ -378,10 +384,11 @@ impl VadeTnt {
       Ok(Some(serialised_result))
     }
 
-    /// Issues a new credential.
+    /// Issues a new credential. This requires an issued schema, credential definition, an active revocation
+    /// registry and a credential request message.
     ///
     /// # Arguments
-    /// * `data` - Expects a JSON object representing a `CreateRevocationRegistryDefinitionArguments`
+    /// * `data` - Expects a JSON object representing `CreateRevocationRegistryDefinitionArguments`
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object consisting of the credential, this credential's initial revocation state and
@@ -437,7 +444,9 @@ impl VadeTnt {
         )
     }
 
-    /// Creates a `CredentialOffer` message.
+    /// Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response
+    /// to a `CredentialProposal`. The `CredentialOffer` specifies which schema and definition the issuer
+    /// is capable and willing to use for credential issuance.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `OfferCredentialArguments` type
@@ -455,7 +464,9 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    /// Creates a `CredentialOffer` message.
+    /// Presents a proof for one or more credentials. A proof presentation is the response to a
+    /// proof request. The proof needs to incorporate all required fields from all required schemas
+    /// requested in the proof request.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `PresentProofArguments` type
@@ -508,7 +519,8 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    /// Creates a `CredentialProposal` message.
+    /// Creates a new zero-knowledge proof credential proposal. This message is the first in the
+    /// credential issuance flow and is sent by the potential credential holder to the credential issuer.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `CreateCredentialProposalArguments` type
@@ -526,7 +538,10 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    /// Creates a `CredentialRequest` message.
+    /// Requests a credential. This message is the response to a credential offering and is sent by the potential
+    /// credential holder. It incorporates the target schema, credential definition offered by the issuer, and
+    /// the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be
+    /// kept private.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `RequestCredentialArguments` type
@@ -553,7 +568,9 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    /// Creates a `ProofRequest` message.
+    /// Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and
+    /// is sent by a verifier to a prover.
+    /// The proof request consists of the fields the verifier wants to be revealed per schema.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `RequestProofArguments` type
@@ -571,13 +588,16 @@ impl VadeTnt {
         Ok(Some(serde_json::to_string(&result).unwrap()))
     }
 
-    /// Revokes a credential and updates the revocation registry definition.
-    ///
+    /// Revokes a credential. After revocation the published revocation registry needs to be updated with information
+    /// returned by this function. To revoke a credential, tbe revoker must be in posession of the private key associated
+    /// with the credential's revocation registry. After revocation, the published revocation registry must be updated.
+    /// Only then is the credential truly revoked.
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `RevokeCredentialArguments` type
     ///
     /// # Returns
-    /// * `Option<String>` - The updated revocation registry definition as a JSON object
+    /// * `Option<String>` - The updated revocation registry definition as a JSON object. Contains information
+    /// needed to update the respective revocation registry.
     async fn revoke_credential(&mut self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
         let input: RevokeCredentialArguments = serde_json::from_str(&data)?;
 
@@ -603,7 +623,7 @@ impl VadeTnt {
         Ok(Some(serialized))
     }
 
-    /// Verifies a given `ProofPresentation` in accordance to the specified `ProofRequest`
+    /// Verifies a one or multiple proofs sent in a proof presentation.
     ///
     /// # Arguments
     /// * `data` - Expects a JSON object representing a `ValidateProofArguments` type
