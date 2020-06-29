@@ -127,8 +127,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
     ///
     /// # Arguments
     ///
-    /// * `did` - did to update data for
-    /// * `options` - serialized [`DidUpdateArguments`](https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.DidUpdateArguments.html
+    /// * `did` - DID to update data for
+    /// * `options` - serialized [`DidUpdateArguments`](https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.DidUpdateArguments.html)
     /// * `payload` - DID document to set or empty
     ///
     async fn did_update(&mut self, did: &str, options: &str, payload: &str,
