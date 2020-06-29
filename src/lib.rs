@@ -138,6 +138,7 @@ struct CreateCredentialProposalArguments {
 #[serde(rename_all = "camelCase")]
 struct RequestCredentialArguments {
     pub credential_offering: CredentialOffer,
+    pub credential_schema: CredentialSchema,
     pub master_secret: MasterSecret,
     pub credential_values: HashMap<String, String>,
 }
@@ -422,8 +423,6 @@ impl VadeTnt {
             &input.revocation_information
         ).unwrap();
 
-
-
         Ok(
           Some(
             serde_json::to_string(
@@ -543,14 +542,16 @@ impl VadeTnt {
           ).await?
         ).unwrap();
 
-        let result: (CredentialRequest, CredentialSecretsBlindingFactors) = Prover::request_credential(
+        match Prover::request_credential(
             input.credential_offering,
             definition,
+            input.credential_schema,
             input.master_secret,
             input.credential_values,
-        );
-
-        Ok(Some(serde_json::to_string(&result).unwrap()))
+        ) {
+          Ok(result) => return Ok(Some(serde_json::to_string(&result).unwrap())),
+          Err(err) => return Err(err)
+        };
     }
 
     /// Creates a `ProofRequest` message.
