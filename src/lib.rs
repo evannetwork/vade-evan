@@ -49,7 +49,8 @@ use crate::{
 };
 
 const EVAN_METHOD: &str = "did:evan";
-const EVAN_METHOD_PREFIX: &str = "did:evan:zkp:";
+const EVAN_METHOD_PREFIX: &str = "did:evan:";
+const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -226,7 +227,7 @@ impl VadeTnt {
 
         let generated_did = format!(
             "{}{}",
-            EVAN_METHOD_PREFIX,
+            EVAN_METHOD_ZKP_PREFIX,
             &result[0].as_ref().unwrap().to_owned(),
         );
 

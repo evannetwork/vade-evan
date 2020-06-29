@@ -1137,7 +1137,7 @@ async fn whitelist_identity(vade_tnt: &mut VadeTnt) -> Result<(), Box<dyn std::e
 
     // check results
     if results.is_err() {
-        // test is supposed to fail
+        // test is not supposed to fail
         panic!("could not whitelist identity")
     }
 
