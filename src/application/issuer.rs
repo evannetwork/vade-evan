@@ -1,3 +1,19 @@
+/*
+  Copyright (c) 2018-present evan GmbH.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 use crate::application::datatypes::{
   CredentialDefinition,
   CredentialSchema,
@@ -32,7 +48,6 @@ use std::collections::{
   HashSet
 };
 use ursa::cl::RevocationTailsGenerator;
-use simple_error::SimpleError;
 #[cfg(target_arch = "wasm32")]
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 #[cfg(not(target_arch = "wasm32"))]
@@ -269,12 +284,11 @@ impl Issuer {
 
       // Get next unused revocation ID for credential, mark as used & increment counter
       if revocation_info.next_unused_id == revocation_registry_definition.maximum_credential_count {
-        return Err(Box::new(SimpleError::new("Maximum credential count reached for revocation definition")));
       }
       let rev_idx = revocation_info.next_unused_id;
       let mut used_ids: HashSet<u32> = revocation_info.used_ids.clone();
       if !used_ids.insert(rev_idx) {
-        return Err(Box::new(SimpleError::new("Could not use next revocation ID as it has already been used - Counter information seems to be corrupted")));
+        return Err(Box::from("Could not use next revocation ID as it has already been used - Counter information seems to be corrupted"));
       }
 
       let new_rev_info = RevocationIdInformation {

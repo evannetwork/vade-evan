@@ -16,30 +16,32 @@
 
 extern crate vade;
 use async_trait::async_trait;
-use vade::traits::{ DidResolver, MessageConsumer };
+use vade::{VadePlugin, VadePluginResultValue};
 use crate::utils::substrate::{
-    get_did,
-    create_did,
     add_payload_to_did,
+    create_did,
+    get_did,
     get_payload_count_for_did,
     update_payload_in_did,
-    whitelist_identity
+    whitelist_identity,
 };
 use serde::{Serialize, Deserialize};
 
+const EVAN_METHOD: &str = "did:evan";
+const EVAN_METHOD_PREFIX: &str = "did:evan:";
+const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct SetDidDocumentArguments {
-  pub did: String,
-  pub payload: String,
+pub struct DidUpdateArguments {
   pub private_key: String,
   pub identity: String,
+  pub operation: String,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct IdentityArguments {
+pub struct IdentityArguments {
   pub private_key: String,
   pub identity: String,
 }
@@ -58,89 +60,122 @@ pub struct SubstrateDidResolverEvan {
 impl SubstrateDidResolverEvan {
     /// Creates new instance of `SubstrateDidResolverEvan`.
     pub fn new(config: ResolverConfig) -> SubstrateDidResolverEvan {
+        match env_logger::try_init() {
+            Ok(_) | Err(_) => (),
+        };
         SubstrateDidResolverEvan {
           config
         }
     }
-
-    async fn generate_did(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let input: IdentityArguments = serde_json::from_str(&data)?;
-        Ok(Some(create_did(self.config.target.clone(), input.private_key.clone(), hex::decode(input.identity).unwrap()).await.unwrap()))
-    }
-
-    async fn whitelist_identity(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let input: IdentityArguments = serde_json::from_str(&data)?;
-        Ok(Some(whitelist_identity(self.config.target.clone(), input.private_key.clone(), hex::decode(input.identity).unwrap()).await.unwrap()))
-    }
-
-    async fn set_did_document_message(&self, data: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let input: SetDidDocumentArguments = serde_json::from_str(&data)?;
-        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone(), input.did.to_string()).await.unwrap();
+    
+    async fn set_did_document(&self, did: &str, private_key: &str, identity: &str, payload: &str,
+    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        debug!("setting DID document for did: {}, iden: {}", &did, &identity);
+        let payload_count: u32 = get_payload_count_for_did(self.config.target.clone(), did.to_string()).await.unwrap();
         if payload_count > 0 {
-            update_payload_in_did(self.config.target.clone(), 0 as u32, input.payload.to_string(), input.did.to_string(), input.private_key.to_string(), hex::decode(input.identity).unwrap()).await.unwrap();
+            update_payload_in_did(
+                self.config.target.clone(),
+                0 as u32,
+                payload.to_string(),
+                did.to_string(),
+                private_key.to_string(),
+                hex::decode(identity).unwrap(),
+            ).await.unwrap();
         } else {
-            add_payload_to_did(self.config.target.clone(), input.payload.to_string(), input.did.to_string(), input.private_key.to_string(), hex::decode(input.identity).unwrap()).await.unwrap();
+            add_payload_to_did(
+                self.config.target.clone(),
+                payload.to_string(),
+                did.to_string(),
+                private_key.to_string(),
+                hex::decode(identity).unwrap(),
+            ).await.unwrap();
         }
         Ok(Some("".to_string()))
     }
 }
 
 #[async_trait(?Send)]
-impl DidResolver for SubstrateDidResolverEvan {
-    /// Checks given DID document.
-    /// A DID document is considered as valid if returning ().
-    /// Resolver may throw to indicate
-    /// - that it is not responsible for this DID
-    /// - that it considers this DID as invalid
-    ///
-    /// Currently the test `did_name` `"test"` is accepted as valid.
+impl VadePlugin for SubstrateDidResolverEvan {
+    /// Creates a new DID on substrate.
     ///
     /// # Arguments
     ///
-    /// * `did_name` - did_name to check document for
-    /// * `value` - value to check
-    async fn check_did(&self, _did_name: &str, _value: &str) -> Result<(), Box<dyn std::error::Error>> {
-        unimplemented!();
-    }
-
-    /// Gets document for given did name.
+    /// * `did_method` - did method to cater to, usually "did:evan"
+    /// * `options` - serialized [`IdentityArguments`](https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.IdentityArguments.html)
+    /// * `payload` - no payload required, so can be left empty
     ///
-    /// # Arguments
-    ///
-    /// * `did_id` - did id to fetch
-    async fn get_did_document(&self, did_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let didresult = get_did(self.config.target.clone(), did_id.to_string()).await;
-        Ok(didresult.unwrap())
-    }
-
-    /// Sets document for given did name.
-    ///
-    /// # Arguments
-    ///
-    /// * `did_name` - did_name to set value for
-    /// * `value` - value to set
-    async fn set_did_document(&mut self, _did_id: &str, _value: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        unimplemented!();
-    }
-}
-
-#[async_trait(?Send)]
-impl MessageConsumer for SubstrateDidResolverEvan {
-    /// Reacts to `Vade` messages.
-    ///
-    /// # Arguments
-    ///
-    /// * `message_data` - arbitrary data for plugin, e.g. a JSON
-    async fn handle_message(
-        &mut self,
-        message_type: &str,
-        message_data: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        match message_type {
-            "generateDid" => self.generate_did(message_data).await,
-            "whitelistIdentity" => self.whitelist_identity(message_data).await,
-            "setDidDocument" => self.set_did_document_message(message_data).await,
-            _ => Err(Box::from(format!("message type '{}' not implemented", message_type)))
+    async fn did_create(&mut self, did_method: &str, options: &str, _payload: &str,
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+        if did_method != EVAN_METHOD {
+            return Ok(VadePluginResultValue::Ignored);
         }
+        let options: IdentityArguments = serde_json::from_str(&options)?;
+        let inner_result = create_did(
+            self.config.target.clone(),
+            options.private_key.clone(),
+            hex::decode(options.identity).unwrap(),
+        ).await.unwrap();
+        Ok(VadePluginResultValue::Success(Some(inner_result)))
+    }
+
+    /// Updates data related to a DID. Two updates are supported depending on the value of
+    /// `options.operation`.
+    ///
+    /// - whitelistIdentity: whitelists identity `did` on substrate, this is required to be able to
+    ///   perform transactions this this identity
+    /// - setDidDocument: sets the DID document for `did`
+    ///
+    /// # Arguments
+    ///
+    /// * `did` - did to update data for
+    /// * `options` - serialized [`DidUpdateArguments`](https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.DidUpdateArguments.html
+    /// * `payload` - DID document to set or empty
+    ///
+    async fn did_update(&mut self, did: &str, options: &str, payload: &str,
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+        if !did.starts_with(EVAN_METHOD_PREFIX) {
+            return Ok(VadePluginResultValue::Ignored);
+        }
+        let input: DidUpdateArguments = serde_json::from_str(&options)?;
+        match input.operation.as_str() {
+            "whitelistIdentity" => {      
+                whitelist_identity(
+                    self.config.target.clone(),
+                    input.private_key.clone(),
+                    hex::decode(&did.replace(EVAN_METHOD_PREFIX, "")).unwrap(),
+                ).await.unwrap();
+                Ok(VadePluginResultValue::Success(None))
+            },
+            "setDidDocument" => {
+                if !did.starts_with(EVAN_METHOD_ZKP_PREFIX) {
+                    return Ok(VadePluginResultValue::Ignored);
+                }        
+                self.set_did_document(
+                    &did.replace(EVAN_METHOD_ZKP_PREFIX, ""),
+                    &input.private_key,
+                    &input.identity,
+                    payload,
+                ).await.unwrap();
+                Ok(VadePluginResultValue::Success(None))
+            },
+            _ => Err(Box::from(format!("invalid did update operation \"{}\"", input.operation))),
+        }
+    }
+
+    /// Fetch data about a DID, which returns this DID's DID document.
+    ///
+    /// # Arguments
+    ///
+    /// * `did` - did to fetch data for
+    async fn did_resolve(&mut self, did_id: &str,
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+        if !did_id.starts_with(EVAN_METHOD_ZKP_PREFIX) {
+            return Ok(VadePluginResultValue::Ignored);
+        }
+        let did_result = get_did(
+            self.config.target.clone(),
+            did_id.replace(EVAN_METHOD_ZKP_PREFIX, ""),
+        ).await.unwrap();
+        Ok(VadePluginResultValue::Success(Some(did_result)))
     }
 }
