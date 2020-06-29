@@ -14,15 +14,15 @@
   limitations under the License.
 */
 
-extern crate vade_tnt;
+extern crate vade_evan;
 
 mod test_data;
 
-use vade_tnt::crypto::crypto_issuer::Issuer as CryptoIssuer;
-use vade_tnt::application::datatypes::{
+use vade_evan::crypto::crypto_issuer::Issuer as CryptoIssuer;
+use vade_evan::application::datatypes::{
   CredentialSchema
 };
-use vade_tnt::crypto::crypto_datatypes::CryptoCredentialDefinition;
+use vade_evan::crypto::crypto_datatypes::CryptoCredentialDefinition;
 use std::collections::HashMap;
 use test_data::EXAMPLE_CREDENTIAL_SCHEMA;
 

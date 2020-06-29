@@ -101,7 +101,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
     /// # Arguments
     ///
     /// * `did_method` - did method to cater to, usually "did:evan"
-    /// * `options` - serialized [`IdentityArguments`](https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.IdentityArguments.html)
+    /// * `options` - serialized [`IdentityArguments`](https://docs.rs/vade_evan/*/vade_evan/resolver/struct.IdentityArguments.html)
     /// * `payload` - no payload required, so can be left empty
     ///
     async fn did_create(&mut self, did_method: &str, options: &str, _payload: &str,
@@ -128,7 +128,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
     /// # Arguments
     ///
     /// * `did` - DID to update data for
-    /// * `options` - serialized [`DidUpdateArguments`](https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.DidUpdateArguments.html)
+    /// * `options` - serialized [`DidUpdateArguments`](https://docs.rs/vade_evan/*/vade_evan/resolver/struct.DidUpdateArguments.html)
     /// * `payload` - DID document to set or empty
     ///
     async fn did_update(&mut self, did: &str, options: &str, payload: &str,

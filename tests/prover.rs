@@ -14,9 +14,9 @@
   limitations under the License.
 */
 
-extern crate vade_tnt;
+extern crate vade_evan;
 
-use vade_tnt::application::prover::Prover;
+use vade_evan::application::prover::Prover;
 use std::collections::HashMap;
 
 #[test]

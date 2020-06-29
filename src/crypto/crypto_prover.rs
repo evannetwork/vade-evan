@@ -50,7 +50,7 @@ use crate::application::datatypes::{
   DeltaHistory
 };
 
-// Mediator class to broker between the high-level vade-tnt application prover and the Ursa prover class
+// Mediator class to broker between the high-level vade-evan application prover and the Ursa prover class
 pub struct Prover {
 }
 

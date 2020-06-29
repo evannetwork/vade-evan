@@ -15,9 +15,9 @@
 */
 
 //! This crate allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace.
-//! For this purpose two [`VadePlugin`] implementations are exported: [`VadeTnt`] and [`SubstrateDidResolverEvan`].
+//! For this purpose two [`VadePlugin`] implementations are exported: [`VadeEvan`] and [`SubstrateDidResolverEvan`].
 //! 
-//! ## VadeTnt
+//! ## VadeEvan
 //! 
 //! Responsible for working with zero knowledge proof VCs on Trust and Trace.
 //! 
@@ -44,25 +44,25 @@
 //! - [`did_resolve`]
 //! - [`did_update`]
 //!
-//! [`did_create`]: https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.SubstrateDidResolverEvan.html#method.did_create
-//! [`did_resolve`]: https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.SubstrateDidResolverEvan.html#method.did_resolve
-//! [`did_update`]: https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.SubstrateDidResolverEvan.html#method.did_update
-//! [`SubstrateDidResolverEvan`]: https://docs.rs/vade_tnt/*/vade_tnt/resolver/struct.SubstrateDidResolverEvan.html
-//! [`Vade`]: https://docs.rs/vade_tnt/*/vade/struct.Vade.html
-//! [`VadePlugin`]: https://docs.rs/vade_tnt/*/vade/trait.VadePlugin.html
-//! [`VadeTnt`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html
-//! [`vc_zkp_create_credential_definition`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_create_credential_definition
-//! [`vc_zkp_create_credential_offer`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_create_credential_offer
-//! [`vc_zkp_create_credential_proposal`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_create_credential_proposal
-//! [`vc_zkp_create_credential_schema`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_create_credential_schema
-//! [`vc_zkp_create_revocation_registry_definition`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_create_revocation_registry_definition
-//! [`vc_zkp_issue_credential`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_issue_credential
-//! [`vc_zkp_present_proof`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_present_proof
-//! [`vc_zkp_request_credential`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_request_credential
-//! [`vc_zkp_request_proof`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_request_proof
-//! [`vc_zkp_revoke_credential`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_revoke_credential
-//! [`vc_zkp_update_revocation_registry`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_update_revocation_registry
-//! [`vc_zkp_verify_proof`]: https://docs.rs/vade_tnt/*/vade_tnt/struct.VadeTnt.html#method.vc_zkp_verify_proof
+//! [`did_create`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_create
+//! [`did_resolve`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_resolve
+//! [`did_update`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_update
+//! [`SubstrateDidResolverEvan`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html
+//! [`Vade`]: https://docs.rs/vade_evan/*/vade/struct.Vade.html
+//! [`VadePlugin`]: https://docs.rs/vade_evan/*/vade/trait.VadePlugin.html
+//! [`VadeEvan`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html
+//! [`vc_zkp_create_credential_definition`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_definition
+//! [`vc_zkp_create_credential_offer`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_offer
+//! [`vc_zkp_create_credential_proposal`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_proposal
+//! [`vc_zkp_create_credential_schema`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_schema
+//! [`vc_zkp_create_revocation_registry_definition`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_revocation_registry_definition
+//! [`vc_zkp_issue_credential`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_issue_credential
+//! [`vc_zkp_present_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_present_proof
+//! [`vc_zkp_request_credential`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_request_credential
+//! [`vc_zkp_request_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_request_proof
+//! [`vc_zkp_revoke_credential`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_revoke_credential
+//! [`vc_zkp_update_revocation_registry`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_update_revocation_registry
+//! [`vc_zkp_verify_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_verify_proof
 
 extern crate ursa;
 extern crate secp256k1;
@@ -243,28 +243,28 @@ pub struct ValidateProofPayload {
     pub proof_request: ProofRequest,
 }
 
-pub struct VadeTnt {
+pub struct VadeEvan {
   vade: Vade
 }
 
-impl VadeTnt {
-    /// Creates new instance of `VadeTnt`.
-    pub fn new(vade: Vade) -> VadeTnt {
+impl VadeEvan {
+    /// Creates new instance of `VadeEvan`.
+    pub fn new(vade: Vade) -> VadeEvan {
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
-        VadeTnt {
+        VadeEvan {
           vade
         }
     }
 }
 
-impl VadeTnt {
+impl VadeEvan {
     /// Whitelists an identity on substrate, which is required to perform transactions.
     ///
     /// # Arguments
     ///
-    /// * `data` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
+    /// * `data` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
     pub async fn whitelist_identity(&mut self, data: &str) -> Result<(), Box<dyn std::error::Error>> {
         let input: AuthenticationOptions = serde_json::from_str(&data)?;
         let options = format!(r###"{{
@@ -324,7 +324,7 @@ impl VadeTnt {
 }
 
 #[async_trait(?Send)]
-impl VadePlugin for VadeTnt {
+impl VadePlugin for VadeEvan {
     /// Creates a new credential definition and stores the public part on-chain. The private part (key) needs
     /// to be stored in a safe way and must not be shared. A credential definition holds cryptographic material
     /// needed to verify proofs. Every definition is bound to one credential schema.
@@ -334,8 +334,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a credential definition for (e.g. "did:example")
-    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
-    /// * `payload` - serialized [`CreateCredentialDefinitionPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateCredentialDefinitionPayload.html)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`CreateCredentialDefinitionPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateCredentialDefinitionPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The created definition as a JSON object
@@ -381,8 +381,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a credential schema for (e.g. "did:example")
-    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
-    /// * `payload` - serialized [`CreateCredentialSchemaPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateCredentialSchemaPayload.html)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`CreateCredentialSchemaPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateCredentialSchemaPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The created schema as a JSON object
@@ -427,11 +427,11 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to create a revocation registry definition for (e.g. "did:example")
-    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
-    /// * `payload` - serialized [`CreateRevocationRegistryDefinitionPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateRevocationRegistryDefinitionPayload.html)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`CreateRevocationRegistryDefinitionPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateRevocationRegistryDefinitionPayload.html)
     ///
     /// # Returns
-    /// * created revocation registry definition as a JSON object as serialized [`CreateRevocationRegistryDefinitionResult`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateRevocationRegistryDefinitionResult.html)
+    /// * created revocation registry definition as a JSON object as serialized [`CreateRevocationRegistryDefinitionResult`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateRevocationRegistryDefinitionResult.html)
     async fn vc_zkp_create_revocation_registry_definition(
         &mut self,
         method: &str,
@@ -481,10 +481,10 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to issue a credential for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`IssueCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.IssueCredentialPayload.html)
+    /// * `payload` - serialized [`IssueCredentialPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.IssueCredentialPayload.html)
     ///
     /// # Returns
-    /// * serialized [`IssueCredentialResult`](https://docs.rs/vade_tnt/*/vade_tnt/struct.IssueCredentialResult.html) consisting of the credential, this credential's initial revocation state and
+    /// * serialized [`IssueCredentialResult`](https://docs.rs/vade_evan/*/vade_evan/struct.IssueCredentialResult.html) consisting of the credential, this credential's initial revocation state and
     /// the updated revocation info, only interesting for the issuer (needs to be stored privately)
     async fn vc_zkp_issue_credential(
         &mut self,
@@ -553,7 +553,7 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to create a credential offer for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`OfferCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.OfferCredentialPayload.html)
+    /// * `payload` - serialized [`OfferCredentialPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.OfferCredentialPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The offer as a JSON object
@@ -584,7 +584,7 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to presents a proof for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`PresentProofPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.PresentProofPayload.html)
+    /// * `payload` - serialized [`PresentProofPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.PresentProofPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The offer as a JSON object
@@ -644,7 +644,7 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to create a credential proposal for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`CreateCredentialProposalPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.CreateCredentialProposalPayload.html)
+    /// * `payload` - serialized [`CreateCredentialProposalPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateCredentialProposalPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The proposal as a JSON object
@@ -676,7 +676,7 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to request a credential for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`RequestCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.RequestCredentialPayload.html)
+    /// * `payload` - serialized [`RequestCredentialPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.RequestCredentialPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object consisting of the `CredentialRequest` and `CredentialSecretsBlindingFactors` (to be stored at the proofer's site in a private manner)
@@ -717,7 +717,7 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to request a proof for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`RequestProofPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.RequestProofPayload.html)
+    /// * `payload` - serialized [`RequestProofPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.RequestProofPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - A `ProofRequest` as JSON
@@ -750,8 +750,8 @@ impl VadePlugin for VadeTnt {
     /// # Arguments
     ///
     /// * `method` - method to revoke a credential for (e.g. "did:example")
-    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_tnt/*/vade_tnt/struct.AuthenticationOptions.html)
-    /// * `payload` - serialized [`RevokeCredentialPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.RevokeCredentialPayload.html)
+    /// * `options` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
+    /// * `payload` - serialized [`RevokeCredentialPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.RevokeCredentialPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - The updated revocation registry definition as a JSON object. Contains information
@@ -797,7 +797,7 @@ impl VadePlugin for VadeTnt {
     ///
     /// * `method` - method to verify a proof for (e.g. "did:example")
     /// * `_options` - no authenticated request required, so can be left empty
-    /// * `payload` - serialized [`ValidateProofPayload`](https://docs.rs/vade_tnt/*/vade_tnt/struct.ValidateProofPayload.html)
+    /// * `payload` - serialized [`ValidateProofPayload`](https://docs.rs/vade_evan/*/vade_evan/struct.ValidateProofPayload.html)
     ///
     /// # Returns
     /// * `Option<String>` - A JSON object representing a `ProofVerification` type, specifying whether verification was successful
