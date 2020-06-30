@@ -36,6 +36,7 @@ use crate::{
     application::datatypes::{
         Credential,
         CredentialDefinition,
+        CredentialOffer,
         CredentialRequest,
         CredentialSchema,
         CredentialSecretsBlindingFactors,
@@ -177,13 +178,18 @@ pub async fn create_credential_request(
     credential_values: String,
 ) -> Result<String, JsValue> {
     let mut vade = get_vade();
+    let offer_object: CredentialOffer = serde_json::from_str(&offer).unwrap();
+    let results = vade.did_resolve(&offer_object.schema).await.unwrap();
+    let schema = results[0].as_ref().unwrap();
     let payload = format!(
         r###"{{
             "credentialOffering": {},
+            "credentialSchema": {},
             "masterSecret": {},
             "credentialValues": {}
         }}"###,
         offer,
+        schema,
         master_secret,
         credential_values,
     );
@@ -379,7 +385,7 @@ pub async fn whitelist_identity(private_key: String, identity: String) -> Result
         identity,
     );
 
-    let result = vade.did_update(&identity, &payload, &"".to_string()).await.unwrap();
+    vade.did_update(&identity, &payload, &"".to_string()).await.unwrap();
 
     Ok("".to_string())
 }
