@@ -1,4 +1,4 @@
-//import * as wasm from "vade-tnt";
+//import * as wasm from "vade-evan";
 const fetch = require('node-fetch')
 const ws = require('ws')
 global.Headers = fetch.Headers
@@ -7,7 +7,7 @@ global.Response = fetch.Response
 global.Window = Object // lol
 global.fetch = fetch
 global.WebSocket = ws
-const wasm = require('./vade_tnt.js');
+const wasm = require('./vade_evan.js');
 
 /**
  * whitelists a specific evan did on substrate that this private key can create DIDs

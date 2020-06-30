@@ -1,12 +1,28 @@
-extern crate vade_tnt;
+/*
+  Copyright (c) 2018-present evan GmbH.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+extern crate vade_evan;
 extern crate env_logger;
 extern crate log;
 
 mod test_data;
 
-use vade_tnt::application::issuer::Issuer;
-use vade_tnt::application::datatypes::{ CredentialSchema, SchemaProperty };
-use vade_tnt::crypto::crypto_utils::check_assertion_proof;
+use vade_evan::application::issuer::Issuer;
+use vade_evan::application::datatypes::{ CredentialSchema, SchemaProperty };
+use vade_evan::crypto::crypto_utils::check_assertion_proof;
 use std::collections::HashMap;
 use test_data::EXAMPLE_GENERATED_DID;
 

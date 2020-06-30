@@ -88,7 +88,7 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
 
                     match changes[0][1].as_str() {
                         Some(change_set) => {
-                            result.clone().try_send(change_set.to_owned()).unwrap_or_else(|error| {
+                            result.clone().try_send(change_set.to_owned()).unwrap_or_else(|_| {
                                 _out.close(CloseCode::Normal).unwrap();
                             });
                         },
@@ -98,7 +98,7 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
                         .map(|head| {
-                            result.clone().try_send(head).unwrap_or_else(|error| {
+                            result.clone().try_send(head).unwrap_or_else(|_| {
                                 _out.close(CloseCode::Normal).unwrap();
                             });
                         })
