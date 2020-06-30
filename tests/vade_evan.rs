@@ -393,8 +393,8 @@ async fn vade_tnt_cannot_request_credential_with_missing_required_properties () 
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_three_property_credential_request(&mut vade).await?;
-    let (definition, credential_private_key) = create_credential_definition(&mut vade, &schema).await?;
-    let proof_request: ProofRequest = request_proof(&mut vade, &schema).await?;
+    let (definition, _) = create_credential_definition(&mut vade, &schema).await?;
+    request_proof(&mut vade, &schema).await?;
     let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
@@ -586,7 +586,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update () -> Result<(), Box
 
     // Issue different credential & revoke it
     let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
-    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &other_proposal, &definition).await?;
     let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &schema, &other_offer, &master_secret).await?;
 
     let (mut other_credential, other_revocation_state, _): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
@@ -695,7 +695,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates() -> Resul
 
     // Issue another credential & revoke it
     let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
-    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+    let other_offer: CredentialOffer = create_credential_offer(&mut vade, &other_proposal, &definition).await?;
     let (other_request, other_blinding_factors) = create_credential_request(&mut vade, &schema, &other_offer, &master_secret).await?;
 
     let (mut other_credential, other_revocation_state, revocation_info): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
@@ -721,8 +721,8 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates() -> Resul
 
     // Issue third credential & revoke it
     let third_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
-    let third_offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
-    let (third_request, third_blinding_factors) = create_credential_request(&mut vade, &schema, &other_offer, &master_secret).await?;
+    let third_offer: CredentialOffer = create_credential_offer(&mut vade, &third_proposal, &definition).await?;
+    let (third_request, third_blinding_factors) = create_credential_request(&mut vade, &schema, &third_offer, &master_secret).await?;
 
     let (mut third_credential, third_revocation_state, _): (Credential, RevocationState, RevocationIdInformation) = issue_credential(
       &mut vade,
@@ -898,31 +898,6 @@ async fn create_credential_request_with_missing_required_property(
   Ok((result, blinding_factors))
 }
 
-async fn create_extended_credential_request(
-    vade: &mut Vade,
-    definition: &CredentialDefinition,
-    offer: &CredentialOffer,
-    master_secret: &MasterSecret,
-) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
-    let payload = format!(
-        r###"{{
-            "credentialOffering": {},
-            "credentialDefinition": {},
-            "masterSecret": {},
-            "credentialValues": {{
-                "test_property_string": "test_property_string_value",
-                "test_property_string2": "test_property_string_value2"
-            }}
-        }}"###, serde_json::to_string(&offer).unwrap(), serde_json::to_string(&definition).unwrap(), serde_json::to_string(&master_secret).unwrap());
-    let results = vade.vc_zkp_request_credential(EVAN_METHOD, "", &payload).await?;
-  
-    // check results
-    assert_eq!(results.len(), 1);
-    let (result, blinding_factors): (CredentialRequest, CredentialSecretsBlindingFactors) = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
-  
-    Ok((result, blinding_factors))
-}
-
 async fn create_extended_credential_schema(vade: &mut Vade) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
     let payload = format!(r###"{{
         "issuer": "{}",
@@ -943,30 +918,6 @@ async fn create_extended_credential_schema(vade: &mut Vade) -> Result<Credential
     let result: CredentialSchema = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
     Ok(result)
   }
-
-
-async fn create_more_extended_credential_schema(vade: &mut Vade) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
-    let payload = format!(
-        r###"{{
-            "issuer": "{}",
-            "schemaName": "{}",
-            "description": "{}",
-            "properties": {},
-            "requiredProperties": {},
-            "allowAdditionalProperties": false,
-            "issuerPublicKeyDid": "{}",
-            "issuerProvingKey": "{}"
-        }}"###, ISSUER_DID, SCHEMA_NAME, SCHEMA_DESCRIPTION, SCHEMA_MORE_EXTENDED_PROPERTIES, SCHEMA_REQUIRED_PROPERTIES, ISSUER_PUBLIC_KEY_DID, ISSUER_PRIVATE_KEY);
-    let results = vade.vc_zkp_create_credential_schema(EVAN_METHOD, &get_options(), &payload).await?;
-
-    // check results
-    assert_eq!(results.len(), 1);
-
-
-    let result: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
-    Ok(result)
-}
-
 
 async fn create_revocation_registry_definition(vade: &mut Vade, credential_definition: &CredentialDefinition, max_credential_count: u32) -> Result<CreateRevocationRegistryDefinitionResult, Box<dyn std::error::Error>> {
     let payload = format!(r###"{{
