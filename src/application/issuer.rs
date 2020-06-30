@@ -273,10 +273,10 @@ impl Issuer {
       let mut processed_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
       let mut null_values: HashMap<String, String> = HashMap::new();
       for field in &credential_schema.properties {
-        if (credential_request.credential_values.get(field.0).is_none()) {
+        if credential_request.credential_values.get(field.0).is_none() {
 
           for required in &credential_schema.required {
-            if (required.eq(field.0)) {
+            if required.eq(field.0) {
               // No value provided for required schema property
               let error = format!("Missing required schema property: {}", field.0);
               return Err(Box::from(error));

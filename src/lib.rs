@@ -100,7 +100,6 @@ use crate::{
         CredentialProposal,
         CredentialRequest,
         CredentialSchema,
-        CredentialSecretsBlindingFactors,
         MasterSecret,
         ProofPresentation,
         ProofRequest,
