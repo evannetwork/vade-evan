@@ -1,13 +1,29 @@
-extern crate vade_tnt;
+/*
+  Copyright (c) 2018-present evan GmbH.
 
-use vade_tnt::crypto::crypto_utils::{
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+extern crate vade_evan;
+
+use vade_evan::crypto::crypto_utils::{
   create_assertion_proof,
   recover_address_and_data,
   JwsData,
   sign_message
 };
 use serde::{Serialize, Deserialize};
-use vade_tnt::application::datatypes::{
+use vade_evan::application::datatypes::{
   CredentialSchema,
   SchemaProperty
 };

@@ -1,5 +1,21 @@
+/*
+  Copyright (c) 2018-present evan GmbH.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 #[allow(dead_code)]
-pub const CREDENTIAL_DEFINITION_DID: &'static str =
+pub const CREDENTIAL_DEFINITION_DID: &str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD4";
 
 #[allow(dead_code)]
@@ -53,7 +69,7 @@ pub const EXAMPLE_REVOCATION_REGISTRY_DEFINITION_DID: &str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
 
 #[allow(dead_code)]
-pub const ISSUER_DID: &'static str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
+pub const ISSUER_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
 
 #[allow(dead_code)]
 pub const ISSUER_DID_DOCUMENT_STR: &str = r###"{
@@ -101,27 +117,27 @@ pub const ISSUER_PUBLIC_KEY_DID: &str =
     "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1";
 
 #[allow(dead_code)]
-pub const SCHEMA_DID: &'static str = "0x562451532eaa2128dc150b36cc60ae08d988c543c7b56227ee9c965c95b53f82";
+pub const SCHEMA_DID: &str = "0x562451532eaa2128dc150b36cc60ae08d988c543c7b56227ee9c965c95b53f82";
 
 #[allow(dead_code)]
-pub const SUBJECT_DID: &'static str =
+pub const SUBJECT_DID: &str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
 
 #[allow(dead_code)]
-pub const SCHEMA_NAME: &'static str = "test_schema";
+pub const SCHEMA_NAME: &str = "test_schema";
 
 #[allow(dead_code)]
-pub const SCHEMA_DESCRIPTION: &'static str = "Test description";
+pub const SCHEMA_DESCRIPTION: &str = "Test description";
 
 #[allow(dead_code)]
-pub const SCHEMA_PROPERTIES: &'static str = r###"{
+pub const SCHEMA_PROPERTIES: &str = r###"{
   "test_property_string": {
     "type": "string"
   }
 }"###;
 
 #[allow(dead_code)]
-pub const SCHEMA_EXTENDED_PROPERTIES: &'static str = r###"{
+pub const SCHEMA_EXTENDED_PROPERTIES: &str = r###"{
   "test_property_string": {
     "type": "string"
   },
@@ -131,7 +147,7 @@ pub const SCHEMA_EXTENDED_PROPERTIES: &'static str = r###"{
 }"###;
 
 #[allow(dead_code)]
-pub const SCHEMA_MORE_EXTENDED_PROPERTIES: &'static str = r###"{
+pub const SCHEMA_MORE_EXTENDED_PROPERTIES: &str = r###"{
   "test_property_string": {
     "type": "string"
   },
@@ -146,6 +162,6 @@ pub const SCHEMA_MORE_EXTENDED_PROPERTIES: &'static str = r###"{
 
 
 #[allow(dead_code)]
-pub const SCHEMA_REQUIRED_PROPERTIES: &'static str = r###"[
+pub const SCHEMA_REQUIRED_PROPERTIES: &str = r###"[
   "test_property_string"
 ]"###;

@@ -1,3 +1,19 @@
+/*
+  Copyright (c) 2018-present evan GmbH.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 use crate::application::datatypes::{
   CredentialProposal,
   CredentialRequest,
@@ -36,7 +52,6 @@ use std::convert::TryInto;
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
-use simple_error::SimpleError;
 
 /// Holds the logic needed to request credentials and create proofs.
 pub struct Prover {
@@ -85,9 +100,9 @@ impl Prover {
   ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
 
     for required in &credential_schema.required {
-      if (credential_values.get(required).is_none()) {
+      if credential_values.get(required).is_none() {
         let error = format!("Missing required schema property: {}", required);
-        return Err(Box::new(SimpleError::new(error)));
+        return Err(Box::from(error));
       }
     }
 
@@ -242,7 +257,7 @@ impl Prover {
   /// # Example
   /// ```
   /// # use std::collections::HashMap;
-  /// # use vade_tnt::application::prover::Prover;
+  /// # use vade_evan::application::prover::Prover;
   /// let mut values: HashMap<String, String> = HashMap::new();
   /// values.insert("string".to_owned(), "101 Wilson Lane".to_owned());
   /// let encoded = Prover::encode_values(values);
@@ -316,7 +331,7 @@ impl Prover {
     let mut extended_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
     let mut null_values: HashMap<String, String> = HashMap::new();
     for property in &credential_schema.properties {
-      if (credential_request.credential_values.get(property.0).is_none()) {
+      if credential_request.credential_values.get(property.0).is_none() {
         null_values.insert(property.0.clone(), "null".to_owned());
       }
     }
