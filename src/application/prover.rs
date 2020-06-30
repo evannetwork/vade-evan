@@ -100,7 +100,7 @@ impl Prover {
   ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
 
     for required in &credential_schema.required {
-      if (credential_values.get(required).is_none()) {
+      if credential_values.get(required).is_none() {
         let error = format!("Missing required schema property: {}", required);
         return Err(Box::from(error));
       }
@@ -331,7 +331,7 @@ impl Prover {
     let mut extended_credential_request: CredentialRequest = serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
     let mut null_values: HashMap<String, String> = HashMap::new();
     for property in &credential_schema.properties {
-      if (credential_request.credential_values.get(property.0).is_none()) {
+      if credential_request.credential_values.get(property.0).is_none() {
         null_values.insert(property.0.clone(), "null".to_owned());
       }
     }

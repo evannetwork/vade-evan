@@ -27,9 +27,7 @@ use ursa::cl::{
   RevocationKeyPublic,
   RevocationRegistry,
   Witness,
-  SimpleTailsAccessor,
-  verifier::Verifier as CryptoVerifier,
-  RevocationTailsGenerator
+  verifier::Verifier as CryptoVerifier
 };
 use ursa::errors::UrsaCryptoResult;
 use std::collections::HashMap;
@@ -45,9 +43,7 @@ use crate::application::datatypes::{
   CredentialDefinition,
   ProofRequest,
   EncodedCredentialValue,
-  CredentialRequest,
-  RevocationState,
-  DeltaHistory
+  CredentialRequest
 };
 use crate::application::prover::Prover as ApplicationProver;
 
@@ -133,12 +129,12 @@ impl Prover {
       for property in &credential_schemas.get(&sub_proof.schema).expect("Credentials missing for schema").properties {
         credential_schema_builder.add_attr(&property.0).unwrap();
 
-        if (credentials.get(&sub_proof.schema).unwrap().credential_subject.data.get(property.0).is_none()) {
+        if credentials.get(&sub_proof.schema).unwrap().credential_subject.data.get(property.0).is_none() {
           // Property is not specified in credential, need to encode it with null
           let mut to_encode: HashMap<String, String> = HashMap::new();
           to_encode.insert(property.0.clone(), "null".to_owned());
           let val = ApplicationProver::encode_values(to_encode).get(property.0).unwrap().clone();
-          credential_values_builder.add_dec_known(property.0, &val.encoded);
+          credential_values_builder.add_dec_known(property.0, &val.encoded).unwrap();
         }
       }
 
