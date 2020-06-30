@@ -105,12 +105,11 @@ pub const ISSUER_PRIVATE_KEY: &str =
     "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
 
 #[allow(dead_code)]
-pub const SIGNER_PRIVATE_KEY: &str = 
+pub const SIGNER_PRIVATE_KEY: &str =
     "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
-    
+
 #[allow(dead_code)]
-pub const SIGNER_IDENTITY: &str =
-    "9670f7974e7021e4940c56d47f6b31fdfdd37de8";
+pub const SIGNER_IDENTITY: &str = "9670f7974e7021e4940c56d47f6b31fdfdd37de8";
 
 #[allow(dead_code)]
 pub const ISSUER_PUBLIC_KEY_DID: &str =
@@ -120,8 +119,7 @@ pub const ISSUER_PUBLIC_KEY_DID: &str =
 pub const SCHEMA_DID: &str = "0x562451532eaa2128dc150b36cc60ae08d988c543c7b56227ee9c965c95b53f82";
 
 #[allow(dead_code)]
-pub const SUBJECT_DID: &str =
-    "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
+pub const SUBJECT_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
 
 #[allow(dead_code)]
 pub const SCHEMA_NAME: &str = "test_schema";
@@ -158,8 +156,6 @@ pub const SCHEMA_MORE_EXTENDED_PROPERTIES: &str = r###"{
     "type": "string"
   }
 }"###;
-
-
 
 #[allow(dead_code)]
 pub const SCHEMA_REQUIRED_PROPERTIES: &str = r###"[

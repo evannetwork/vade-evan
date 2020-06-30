@@ -16,12 +16,12 @@
 */
 
 pub extern crate parity_scale_codec;
-pub mod xt_primitives;
-pub mod node_metadata;
+pub mod events;
 pub mod frame_metadata;
+pub mod node_metadata;
 pub mod rpc;
 pub mod rpc_messages;
-pub mod events;
+pub mod xt_primitives;
 
 /// Generates an Unchecked extrinsic for a given module and call passed as a &str.
 /// # Arguments

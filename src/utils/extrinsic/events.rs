@@ -20,8 +20,8 @@ use std::{
     marker::Send,
 };
 
-use parity_scale_codec::{Codec, Compact, Decode, Encode, Error as CodecError, Input, Output};
 use crate::utils::extrinsic::node_metadata::{EventArg, Metadata, MetadataError};
+use parity_scale_codec::{Codec, Compact, Decode, Encode, Error as CodecError, Input, Output};
 pub use sp_core::H256 as Hash;
 
 /// Event for the System module.
@@ -39,7 +39,6 @@ pub enum RuntimeEvent {
     System(SystemEvent),
     Raw(RawEvent),
 }
-
 
 /// Raw bytes for an Event
 #[derive(Debug)]
@@ -65,22 +64,22 @@ pub enum Phase {
 /// Reason why a dispatch call failed.
 #[derive(Encode, Decode, Debug, Clone)]
 pub enum DispatchError {
-	/// Some error occurred.
-	Other(#[codec(skip)] &'static str),
-	/// Failed to lookup some data.
-	CannotLookup,
-	/// A bad origin.
-	BadOrigin,
-	/// A custom error in a module.
-	Module {
-		/// Module index, matching the metadata module index.
-		index: u8,
-		/// Module specific error value.
-		error: u8,
-		/// Optional error message.
-		#[codec(skip)]
-		message: Option<&'static str>,
-	},
+    /// Some error occurred.
+    Other(#[codec(skip)] &'static str),
+    /// Failed to lookup some data.
+    CannotLookup,
+    /// A bad origin.
+    BadOrigin,
+    /// A custom error in a module.
+    Module {
+        /// Module index, matching the metadata module index.
+        index: u8,
+        /// Module specific error value.
+        error: u8,
+        /// Optional error message.
+        #[codec(skip)]
+        message: Option<&'static str>,
+    },
 }
 
 /// Numeric range of a transaction weight.
@@ -89,43 +88,43 @@ pub type Weight = u64;
 /// A bundle of static information collected from the `#[weight = $x]` attributes.
 #[derive(Encode, Decode, Debug, Clone)]
 pub struct DispatchInfo {
-	/// Weight of this transaction.
-	pub weight: Weight,
-	/// Class of this transaction.
-	pub class: DispatchClass,
-	/// Does this transaction pay fees.
-	pub pays_fee: Pays,
+    /// Weight of this transaction.
+    pub weight: Weight,
+    /// Class of this transaction.
+    pub class: DispatchClass,
+    /// Does this transaction pay fees.
+    pub pays_fee: Pays,
 }
 
 /// A generalized group of dispatch types.
 #[derive(Encode, Decode, Debug, Clone)]
 pub enum DispatchClass {
-	/// A normal dispatch.
-	Normal,
-	/// An operational dispatch.
-	Operational,
-	/// A mandatory dispatch. These kinds of dispatch are always included regardless of their
-	/// weight, therefore it is critical that they are separately validated to ensure that a
-	/// malicious validator cannot craft a valid but impossibly heavy block. Usually this just means
-	/// ensuring that the extrinsic can only be included once and that it is always very light.
-	///
-	/// Do *NOT* use it for extrinsics that can be heavy.
-	///
-	/// The only real use case for this is inherent extrinsics that are required to execute in a
-	/// block for the block to be valid, and it solves the issue in the case that the block
-	/// initialization is sufficiently heavy to mean that those inherents do not fit into the
-	/// block. Essentially, we assume that in these exceptional circumstances, it is better to
-	/// allow an overweight block to be created than to not allow any block at all to be created.
-	Mandatory,
+    /// A normal dispatch.
+    Normal,
+    /// An operational dispatch.
+    Operational,
+    /// A mandatory dispatch. These kinds of dispatch are always included regardless of their
+    /// weight, therefore it is critical that they are separately validated to ensure that a
+    /// malicious validator cannot craft a valid but impossibly heavy block. Usually this just means
+    /// ensuring that the extrinsic can only be included once and that it is always very light.
+    ///
+    /// Do *NOT* use it for extrinsics that can be heavy.
+    ///
+    /// The only real use case for this is inherent extrinsics that are required to execute in a
+    /// block for the block to be valid, and it solves the issue in the case that the block
+    /// initialization is sufficiently heavy to mean that those inherents do not fit into the
+    /// block. Essentially, we assume that in these exceptional circumstances, it is better to
+    /// allow an overweight block to be created than to not allow any block at all to be created.
+    Mandatory,
 }
 
 /// Explicit enum to denote if a transaction pays fee or not.
 #[derive(Encode, Decode, Debug, Clone)]
 pub enum Pays {
-	/// Transactor will pay related fees.
-	Yes,
-	/// Transactor will NOT pay related fees.
-	No,
+    /// Transactor will pay related fees.
+    Yes,
+    /// Transactor will NOT pay related fees.
+    No,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -245,7 +244,7 @@ impl EventsDecoder {
                 EventArg::Tuple(args) => {
                     debug!("EventArg Tuple");
                     self.decode_raw_bytes(args, input, output)?
-                },
+                }
                 EventArg::Primitive(name) => {
                     debug!("EventArg Primitive");
                     if name.contains("PhantomData") {
@@ -265,7 +264,6 @@ impl EventsDecoder {
         }
         Ok(())
     }
-    
 
     pub fn decode_events(
         &self,
@@ -314,7 +312,7 @@ impl EventsDecoder {
                     data: event_data,
                 })
             };
-            
+
             // topics come after the event data in EventRecord
             debug!("Phase {:?}, Event: {:?}", phase, event);
 

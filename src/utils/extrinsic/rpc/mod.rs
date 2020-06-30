@@ -20,11 +20,11 @@ use futures::channel::mpsc::Sender as ThreadOut;
 use std::thread;
 
 #[cfg(target_arch = "wasm32")]
-use web_sys::{MessageEvent, WebSocket,ErrorEvent};
-#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
+#[cfg(target_arch = "wasm32")]
+use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 
 #[cfg(not(target_arch = "wasm32"))]
 use ws::connect;
@@ -92,26 +92,26 @@ pub fn start_rpc_client_thread(
         .unwrap();
 }
 
-
 #[cfg(target_arch = "wasm32")]
 pub fn start_rpc_client_thread(
     url: String,
     jsonreq: String,
     result_in: ThreadOut<String>,
     on_message_fn: OnMessageFn,
-  ) {
+) {
     let ws = WebSocket::new(&url).unwrap();
     let ws_c = ws.clone();
     debug!("open websocket");
     let on_message = {
-      Closure::wrap(Box::new(move |evt: MessageEvent| {
-          let msgg = evt.data()
-                      .as_string()
-          .expect("Can't convert received data to a string");
-          let _res_e = (on_message_fn)(&msgg, &ws_c, result_in.clone());
-      }) as Box<dyn FnMut(MessageEvent)>)
+        Closure::wrap(Box::new(move |evt: MessageEvent| {
+            let msgg = evt
+                .data()
+                .as_string()
+                .expect("Can't convert received data to a string");
+            let _res_e = (on_message_fn)(&msgg, &ws_c, result_in.clone());
+        }) as Box<dyn FnMut(MessageEvent)>)
     };
-    
+
     ws.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
     on_message.forget();
     let onerror_callback = Closure::wrap(Box::new(move |e: ErrorEvent| {
@@ -129,5 +129,4 @@ pub fn start_rpc_client_thread(
     }) as Box<dyn FnMut(JsValue)>);
     ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
     onopen_callback.forget();
-  
-  }
+}

@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-pub mod utils;
 pub mod substrate;
+pub mod utils;
 
 #[macro_use]
 pub mod extrinsic;

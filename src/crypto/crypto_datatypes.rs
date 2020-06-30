@@ -14,66 +14,65 @@
   limitations under the License.
 */
 
-use ursa::cl::{
-  BlindedCredentialSecrets,
-  BlindedCredentialSecretsCorrectnessProof,
-  CredentialPublicKey,
-  CredentialKeyCorrectnessProof,
-  RevocationKeyPublic,
-  RevocationRegistry,
-  RevocationRegistryDelta,
-  RevocationTailsGenerator,
-  SubProofRequest,
-  CredentialSchema as CryptoCredentialSchema
-};
+use serde::{Deserialize, Serialize};
 use ursa::bn::BigNumber;
-use serde::{Serialize, Deserialize};
+use ursa::cl::{
+    BlindedCredentialSecrets,
+    BlindedCredentialSecretsCorrectnessProof,
+    CredentialKeyCorrectnessProof,
+    CredentialPublicKey,
+    CredentialSchema as CryptoCredentialSchema,
+    RevocationKeyPublic,
+    RevocationRegistry,
+    RevocationRegistryDelta,
+    RevocationTailsGenerator,
+    SubProofRequest,
+};
 
 pub struct CryptoCredentialRequest {
-  pub subject: String,
-  pub blinded_credential_secrets: BlindedCredentialSecrets,
-  pub blinded_credential_secrets_correctness_proof: BlindedCredentialSecretsCorrectnessProof,
-  pub credential_nonce: BigNumber
+    pub subject: String,
+    pub blinded_credential_secrets: BlindedCredentialSecrets,
+    pub blinded_credential_secrets_correctness_proof: BlindedCredentialSecretsCorrectnessProof,
+    pub credential_nonce: BigNumber,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CryptoCredentialDefinition {
-  pub public_key: CredentialPublicKey,
-  pub credential_key_correctness_proof: CredentialKeyCorrectnessProof,
+    pub public_key: CredentialPublicKey,
+    pub credential_key_correctness_proof: CredentialKeyCorrectnessProof,
 }
 
 // TODO: More supported fields?
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SchemaProperty {
-  pub r#type: String,
-  pub format: Option<String>,
-  pub items: Option<Vec<String>>
+    pub r#type: String,
+    pub format: Option<String>,
+    pub items: Option<Vec<String>>,
 }
 
 pub struct CryptoProofRequest {
-  pub credential_schema: CryptoCredentialSchema,
-  pub crypto_proof_request: SubProofRequest,
+    pub credential_schema: CryptoCredentialSchema,
+    pub crypto_proof_request: SubProofRequest,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssertionProof {
-  pub r#type: String,
-  pub created: String,
-  pub proof_purpose: String,
-  pub verification_method: String,
-  pub jws: String
+    pub r#type: String,
+    pub created: String,
+    pub proof_purpose: String,
+    pub verification_method: String,
+    pub jws: String,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CryptoRevocationRegistryDefinition {
-  pub registry: RevocationRegistry,
-  pub registry_delta: RevocationRegistryDelta, // No delta before a credential has been revoked
-  pub tails: RevocationTailsGenerator,
-  pub revocation_public_key: RevocationKeyPublic,
-  pub maximum_credential_count: u32,
+    pub registry: RevocationRegistry,
+    pub registry_delta: RevocationRegistryDelta, // No delta before a credential has been revoked
+    pub tails: RevocationTailsGenerator,
+    pub revocation_public_key: RevocationKeyPublic,
+    pub maximum_credential_count: u32,
 }
-

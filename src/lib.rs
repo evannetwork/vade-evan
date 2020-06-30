@@ -16,13 +16,13 @@
 
 //! This crate allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace.
 //! For this purpose two [`VadePlugin`] implementations are exported: [`VadeEvan`] and [`SubstrateDidResolverEvan`].
-//! 
+//!
 //! ## VadeEvan
-//! 
+//!
 //! Responsible for working with zero knowledge proof VCs on Trust and Trace.
-//! 
+//!
 //! Implements the following [`VadePlugin`] functions:
-//! 
+//!
 //! - [`vc_zkp_create_credential_schema`]
 //! - [`vc_zkp_create_credential_definition`]
 //! - [`vc_zkp_create_credential_proposal`]
@@ -64,15 +64,15 @@
 //! [`vc_zkp_update_revocation_registry`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_update_revocation_registry
 //! [`vc_zkp_verify_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_verify_proof
 
-extern crate ursa;
+extern crate hex;
 extern crate secp256k1;
 extern crate sha3;
-extern crate hex;
+extern crate ursa;
 #[macro_use]
 pub extern crate log;
 
-extern crate vade;
 extern crate uuid;
+extern crate vade;
 
 pub mod application;
 pub mod crypto;
@@ -83,15 +83,7 @@ pub mod resolver;
 
 pub mod wasm_lib;
 
-use async_trait::async_trait;
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use vade::{Vade, VadePlugin, VadePluginResultValue};
-use ursa::cl::Witness;
 use crate::{
-    application::issuer::Issuer,
-    application::prover::Prover,
-    application::verifier::Verifier,
     application::datatypes::{
         Credential,
         CredentialDefinition,
@@ -104,14 +96,22 @@ use crate::{
         ProofPresentation,
         ProofRequest,
         ProofVerification,
+        RevocationIdInformation,
         RevocationKeyPrivate,
         RevocationRegistryDefinition,
+        RevocationState,
         SchemaProperty,
         SubProofRequest,
-        RevocationIdInformation,
-        RevocationState
     },
+    application::issuer::Issuer,
+    application::prover::Prover,
+    application::verifier::Verifier,
 };
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use ursa::cl::Witness;
+use vade::{Vade, VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_PREFIX: &str = "did:evan:";
@@ -120,17 +120,17 @@ const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationOptions {
-  pub private_key: String,
-  pub identity: String,
+    pub private_key: String,
+    pub identity: String,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateCredentialDefinitionPayload {
-  pub issuer_did: String,
-  pub schema_did: String,
-  pub issuer_public_key_did: String,
-  pub issuer_proving_key: String,
+    pub issuer_did: String,
+    pub schema_did: String,
+    pub issuer_public_key_did: String,
+    pub issuer_proving_key: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -149,18 +149,18 @@ pub struct CreateCredentialSchemaPayload {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateRevocationRegistryDefinitionPayload {
-  pub credential_definition: String,
-  pub issuer_public_key_did: String,
-  pub issuer_proving_key: String,
-  pub maximum_credential_count: u32,
+    pub credential_definition: String,
+    pub issuer_public_key_did: String,
+    pub issuer_proving_key: String,
+    pub maximum_credential_count: u32,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateRevocationRegistryDefinitionResult {
-  pub private_key: RevocationKeyPrivate,
-  pub revocation_info: RevocationIdInformation,
-  pub revocation_registry_definition: RevocationRegistryDefinition,
+    pub private_key: RevocationKeyPrivate,
+    pub revocation_info: RevocationIdInformation,
+    pub revocation_registry_definition: RevocationRegistryDefinition,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -178,9 +178,9 @@ pub struct IssueCredentialPayload {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IssueCredentialResult {
-  pub credential: Credential,
-  pub revocation_info: RevocationIdInformation,
-  pub revocation_state: RevocationState,
+    pub credential: Credential,
+    pub revocation_info: RevocationIdInformation,
+    pub revocation_state: RevocationState,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -244,7 +244,7 @@ pub struct ValidateProofPayload {
 }
 
 pub struct VadeEvan {
-  vade: Vade
+    vade: Vade,
 }
 
 impl VadeEvan {
@@ -253,9 +253,7 @@ impl VadeEvan {
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
-        VadeEvan {
-          vade
-        }
+        VadeEvan { vade }
     }
 }
 
@@ -265,35 +263,55 @@ impl VadeEvan {
     /// # Arguments
     ///
     /// * `data` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
-    pub async fn whitelist_identity(&mut self, data: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn whitelist_identity(
+        &mut self,
+        data: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let input: AuthenticationOptions = serde_json::from_str(&data)?;
-        let options = format!(r###"{{
+        let options = format!(
+            r###"{{
             "privateKey": "{}",
             "identity": "{}",
             "operation": "whitelistIdentity"
-        }}"###, input.private_key, input.identity);
+        }}"###,
+            input.private_key, input.identity
+        );
         let identity_did = format!("{}{}", EVAN_METHOD_PREFIX, &input.identity);
 
-        let result = self.vade.did_update(&identity_did, &options, &"".to_string()).await?;
+        let result = self
+            .vade
+            .did_update(&identity_did, &options, &"".to_string())
+            .await?;
 
         if result.is_empty() {
             return Err(Box::from(
-                "Could not generate DID as no listeners were registered for this method"));
+                "Could not generate DID as no listeners were registered for this method",
+            ));
         }
 
         Ok(())
     }
 
-    async fn generate_did(&mut self, private_key: &str, identity: &str,
+    async fn generate_did(
+        &mut self,
+        private_key: &str,
+        identity: &str,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let options = format!(r###"{{
+        let options = format!(
+            r###"{{
             "privateKey": "{}",
             "identity": "{}"
-        }}"###, private_key, identity);
-        let result = self.vade.did_create(EVAN_METHOD, &options, &"".to_string()).await?;
+        }}"###,
+            private_key, identity
+        );
+        let result = self
+            .vade
+            .did_create(EVAN_METHOD, &options, &"".to_string())
+            .await?;
         if result.is_empty() {
             return Err(Box::from(
-                "Could not generate DID as no listeners were registered for this method"));
+                "Could not generate DID as no listeners were registered for this method",
+            ));
         }
 
         let generated_did = format!(
@@ -305,18 +323,27 @@ impl VadeEvan {
         Ok(generated_did)
     }
 
-    async fn set_did_document(&mut self, did: &str, payload: &str, private_key: &str, identity: &str,
+    async fn set_did_document(
+        &mut self,
+        did: &str,
+        payload: &str,
+        private_key: &str,
+        identity: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let options = format!(r###"{{
+        let options = format!(
+            r###"{{
             "privateKey": "{}",
             "identity": "{}",
             "operation": "setDidDocument"
-        }}"###, &private_key, &identity);
+        }}"###,
+            &private_key, &identity
+        );
         let result = self.vade.did_update(&did, &options, &payload).await?;
 
         if result.is_empty() {
             return Err(Box::from(
-                "Could not set did document as no listeners were registered for this method"));
+                "Could not set did document as no listeners were registered for this method",
+            ));
         }
 
         Ok(Some("".to_string()))
@@ -328,7 +355,7 @@ impl VadePlugin for VadeEvan {
     /// Creates a new credential definition and stores the public part on-chain. The private part (key) needs
     /// to be stored in a safe way and must not be shared. A credential definition holds cryptographic material
     /// needed to verify proofs. Every definition is bound to one credential schema.
-    /// 
+    ///
     /// Note that `options.identity` needs to be whitelisted for this function.
     ///
     /// # Arguments
@@ -340,10 +367,10 @@ impl VadePlugin for VadeEvan {
     /// # Returns
     /// * `Option<String>` - The created definition as a JSON object
     async fn vc_zkp_create_credential_definition(
-      &mut self,
-      method: &str,
-      options: &str,
-      payload: &str,
+        &mut self,
+        method: &str,
+        options: &str,
+        payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
@@ -353,29 +380,40 @@ impl VadePlugin for VadeEvan {
 
         let results = &self.vade.did_resolve(&payload.schema_did).await?;
         if results.is_empty() {
-          return Err(Box::from(format!("could not get schema \"{}\"", &payload.schema_did)));
+            return Err(Box::from(format!(
+                "could not get schema \"{}\"",
+                &payload.schema_did
+            )));
         }
         let schema: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
 
-        let generated_did = self.generate_did(&options.private_key, &options.identity).await?;
+        let generated_did = self
+            .generate_did(&options.private_key, &options.identity)
+            .await?;
 
         let (definition, pk) = Issuer::create_credential_definition(
             &generated_did,
             &payload.issuer_did,
             &schema,
             &payload.issuer_public_key_did,
-            &payload.issuer_proving_key
+            &payload.issuer_proving_key,
         );
 
         let serialized = serde_json::to_string(&(&definition, &pk)).unwrap();
         let serialized_definition = serde_json::to_string(&definition).unwrap();
-        self.set_did_document(&generated_did, &serialized_definition, &options.private_key, &options.identity).await?;
+        self.set_did_document(
+            &generated_did,
+            &serialized_definition,
+            &options.private_key,
+            &options.identity,
+        )
+        .await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
     /// Creates a new zero-knowledge proof credential schema.
-    /// 
+    ///
     /// Note that `options.identity` needs to be whitelisted for this function.
     ///
     /// # Arguments
@@ -398,22 +436,30 @@ impl VadePlugin for VadeEvan {
         let options: AuthenticationOptions = serde_json::from_str(&options)?;
         let payload: CreateCredentialSchemaPayload = serde_json::from_str(&payload)?;
 
-        let generated_did = self.generate_did(&options.private_key, &options.identity).await?;
+        let generated_did = self
+            .generate_did(&options.private_key, &options.identity)
+            .await?;
 
         let schema = Issuer::create_credential_schema(
-          &generated_did,
-          &payload.issuer,
-          &payload.schema_name,
-          &payload.description,
-          payload.properties,
-          payload.required_properties,
-          payload.allow_additional_properties,
-          &payload.issuer_public_key_did,
-          &payload.issuer_proving_key
+            &generated_did,
+            &payload.issuer,
+            &payload.schema_name,
+            &payload.description,
+            payload.properties,
+            payload.required_properties,
+            payload.allow_additional_properties,
+            &payload.issuer_public_key_did,
+            &payload.issuer_proving_key,
         );
 
         let serialized = serde_json::to_string(&schema).unwrap();
-        self.set_did_document(&generated_did, &serialized, &options.private_key, &options.identity).await?;
+        self.set_did_document(
+            &generated_did,
+            &serialized,
+            &options.private_key,
+            &options.identity,
+        )
+        .await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -421,7 +467,7 @@ impl VadePlugin for VadeEvan {
     /// Creates a new revocation registry definition and stores it on-chain. The definition consists of a public
     /// and a private part. The public part holds the cryptographic material needed to create non-revocation proofs.
     /// The private part needs to reside with the registry owner and is used to revoke credentials.
-    /// 
+    ///
     /// Note that `options.identity` needs to be whitelisted for this function.
     ///
     /// # Arguments
@@ -444,32 +490,49 @@ impl VadePlugin for VadeEvan {
         let options: AuthenticationOptions = serde_json::from_str(&options)?;
         let payload: CreateRevocationRegistryDefinitionPayload = serde_json::from_str(&payload)?;
 
-        debug!("fetching credential definition with did: {}", &payload.credential_definition);
-        let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&payload.credential_definition).await?[0].as_ref().unwrap(),
-        ).unwrap();
-
-        let generated_did = self.generate_did(&options.private_key, &options.identity).await?;
-
-        let (definition, private_key, revocation_info) = Issuer::create_revocation_registry_definition(
-          &generated_did,
-          &definition,
-          &payload.issuer_public_key_did,
-          &payload.issuer_proving_key,
-          payload.maximum_credential_count
+        debug!(
+            "fetching credential definition with did: {}",
+            &payload.credential_definition
         );
+        let definition: CredentialDefinition = serde_json::from_str(
+            &self
+                .vade
+                .did_resolve(&payload.credential_definition)
+                .await?[0]
+                .as_ref()
+                .unwrap(),
+        )
+        .unwrap();
+
+        let generated_did = self
+            .generate_did(&options.private_key, &options.identity)
+            .await?;
+
+        let (definition, private_key, revocation_info) =
+            Issuer::create_revocation_registry_definition(
+                &generated_did,
+                &definition,
+                &payload.issuer_public_key_did,
+                &payload.issuer_proving_key,
+                payload.maximum_credential_count,
+            );
 
         let serialized_def = serde_json::to_string(&definition).unwrap();
 
-        self.set_did_document(&generated_did, &serialized_def, &options.private_key, &options.identity).await?;
+        self.set_did_document(
+            &generated_did,
+            &serialized_def,
+            &options.private_key,
+            &options.identity,
+        )
+        .await?;
 
-        let serialized_result = serde_json::to_string(
-          &CreateRevocationRegistryDefinitionResult {
+        let serialized_result = serde_json::to_string(&CreateRevocationRegistryDefinitionResult {
             private_key,
             revocation_info,
-            revocation_registry_definition: definition
-          }
-        ).unwrap();
+            revocation_registry_definition: definition,
+        })
+        .unwrap();
 
         Ok(VadePluginResultValue::Success(Some(serialized_result)))
     }
@@ -498,25 +561,40 @@ impl VadePlugin for VadeEvan {
         let payload: IssueCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
-          "fetching credential definition with did: {}",
-          &payload.credential_request.credential_definition,
+            "fetching credential definition with did: {}",
+            &payload.credential_request.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
-           &self.vade.did_resolve(&payload.credential_request.credential_definition).await?[0].as_ref().unwrap()
-        ).unwrap();
+            &self
+                .vade
+                .did_resolve(&payload.credential_request.credential_definition)
+                .await?[0]
+                .as_ref()
+                .unwrap(),
+        )
+        .unwrap();
 
         debug!("fetching schema with did: {}", &definition.schema);
         let schema: CredentialSchema = serde_json::from_str(
-           &self.vade.did_resolve(&definition.schema).await?[0].as_ref().unwrap()
-        ).unwrap();
+            &self.vade.did_resolve(&definition.schema).await?[0]
+                .as_ref()
+                .unwrap(),
+        )
+        .unwrap();
 
         debug!(
-          "fetching revocation definition with did: {}",
-          &payload.credential_revocation_definition,
+            "fetching revocation definition with did: {}",
+            &payload.credential_revocation_definition,
         );
         let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-           &self.vade.did_resolve(&payload.credential_revocation_definition).await?[0].as_ref().unwrap()
-        ).unwrap();
+            &self
+                .vade
+                .did_resolve(&payload.credential_revocation_definition)
+                .await?[0]
+                .as_ref()
+                .unwrap(),
+        )
+        .unwrap();
 
         let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
             &payload.issuer,
@@ -527,22 +605,18 @@ impl VadePlugin for VadeEvan {
             schema,
             &mut revocation_definition,
             payload.revocation_private_key,
-            &payload.revocation_information
-        ).unwrap();
-
-        Ok(
-            VadePluginResultValue::Success(
-                Some(
-                    serde_json::to_string(
-                        &IssueCredentialResult {
-                            credential,
-                            revocation_state,
-                            revocation_info
-                        }
-                    ).unwrap()
-                )
-            )
+            &payload.revocation_information,
         )
+        .unwrap();
+
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&IssueCredentialResult {
+                credential,
+                revocation_state,
+                revocation_info,
+            })
+            .unwrap(),
+        )))
     }
 
     /// Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response
@@ -573,7 +647,9 @@ impl VadePlugin for VadeEvan {
             &payload.schema,
             &payload.credential_definition,
         );
-        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&result).unwrap(),
+        )))
     }
 
     /// Presents a proof for one or more credentials. A proof presentation is the response to a
@@ -602,26 +678,63 @@ impl VadePlugin for VadeEvan {
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
-        let mut revocation_definitions: HashMap<String, RevocationRegistryDefinition> = HashMap::new();
+        let mut revocation_definitions: HashMap<String, RevocationRegistryDefinition> =
+            HashMap::new();
         for req in &payload.proof_request.sub_proof_requests {
-          let schema_did = &req.schema;
-          debug!("fetching schema with did: {}", &schema_did);
-          schemas.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.did_resolve(&schema_did).await?[0].as_ref().unwrap(),
-          ).unwrap());
+            let schema_did = &req.schema;
+            debug!("fetching schema with did: {}", &schema_did);
+            schemas.insert(
+                schema_did.clone(),
+                serde_json::from_str(
+                    &self.vade.did_resolve(&schema_did).await?[0]
+                        .as_ref()
+                        .unwrap(),
+                )
+                .unwrap(),
+            );
 
-          let definition_did = payload.credentials.get(schema_did).unwrap().signature.credential_definition.clone();
-          debug!("fetching credential definition with did: {}", &definition_did);
-          definitions.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.did_resolve(&definition_did).await?[0].as_ref().unwrap(),
-          ).unwrap());
+            let definition_did = payload
+                .credentials
+                .get(schema_did)
+                .unwrap()
+                .signature
+                .credential_definition
+                .clone();
+            debug!(
+                "fetching credential definition with did: {}",
+                &definition_did
+            );
+            definitions.insert(
+                schema_did.clone(),
+                serde_json::from_str(
+                    &self.vade.did_resolve(&definition_did).await?[0]
+                        .as_ref()
+                        .unwrap(),
+                )
+                .unwrap(),
+            );
 
-          // Resolve revocation definition
-          let rev_definition_did = payload.credentials.get(schema_did).unwrap().signature.revocation_registry_definition.clone();
-          debug!("fetching revocation definition with did: {}", &rev_definition_did);
-          revocation_definitions.insert(schema_did.clone(), serde_json::from_str(
-             &self.vade.did_resolve(&rev_definition_did).await?[0].as_ref().unwrap(),
-          ).unwrap());
+            // Resolve revocation definition
+            let rev_definition_did = payload
+                .credentials
+                .get(schema_did)
+                .unwrap()
+                .signature
+                .revocation_registry_definition
+                .clone();
+            debug!(
+                "fetching revocation definition with did: {}",
+                &rev_definition_did
+            );
+            revocation_definitions.insert(
+                schema_did.clone(),
+                serde_json::from_str(
+                    &self.vade.did_resolve(&rev_definition_did).await?[0]
+                        .as_ref()
+                        .unwrap(),
+                )
+                .unwrap(),
+            );
         }
 
         let result: ProofPresentation = Prover::present_proof(
@@ -634,7 +747,9 @@ impl VadePlugin for VadeEvan {
             &payload.master_secret,
         );
 
-        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&result).unwrap(),
+        )))
     }
 
     /// Creates a new zero-knowledge proof credential proposal. This message is the first in the
@@ -658,13 +773,12 @@ impl VadePlugin for VadeEvan {
             return Ok(VadePluginResultValue::Ignored);
         }
         let payload: CreateCredentialProposalPayload = serde_json::from_str(&payload)?;
-        let result: CredentialProposal = Prover::propose_credential(
-            &payload.issuer,
-            &payload.subject,
-            &payload.schema,
-        );
+        let result: CredentialProposal =
+            Prover::propose_credential(&payload.issuer, &payload.subject, &payload.schema);
 
-        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&result).unwrap(),
+        )))
     }
 
     /// Requests a credential. This message is the response to a credential offering and is sent by the potential
@@ -692,12 +806,18 @@ impl VadePlugin for VadeEvan {
         let payload: RequestCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
-          "fetching credential definition with did: {}",
-          &payload.credential_offering.credential_definition,
+            "fetching credential definition with did: {}",
+            &payload.credential_offering.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&payload.credential_offering.credential_definition).await?[0].as_ref().unwrap()
-        ).unwrap();
+            &self
+                .vade
+                .did_resolve(&payload.credential_offering.credential_definition)
+                .await?[0]
+                .as_ref()
+                .unwrap(),
+        )
+        .unwrap();
 
         let result = Prover::request_credential(
             payload.credential_offering,
@@ -707,7 +827,9 @@ impl VadePlugin for VadeEvan {
             payload.credential_values,
         )?;
 
-        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&result).unwrap(),
+        )))
     }
 
     /// Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and
@@ -738,14 +860,16 @@ impl VadePlugin for VadeEvan {
             payload.sub_proof_requests,
         );
 
-        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&result).unwrap(),
+        )))
     }
 
     /// Revokes a credential. After revocation the published revocation registry needs to be updated with information
     /// returned by this function. To revoke a credential, tbe revoker must be in posession of the private key associated
     /// with the credential's revocation registry. After revocation, the published revocation registry must be updated.
     /// Only then is the credential truly revoked.
-    /// 
+    ///
     /// Note that `options.identity` needs to be whitelisted for this function.
     ///
     /// # Arguments
@@ -770,24 +894,36 @@ impl VadePlugin for VadeEvan {
         let payload: RevokeCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
-          "fetching revocation definition with did: {}",
-          &payload.revocation_registry_definition,
+            "fetching revocation definition with did: {}",
+            &payload.revocation_registry_definition,
         );
         let rev_def: RevocationRegistryDefinition = serde_json::from_str(
-          &self.vade.did_resolve(&payload.revocation_registry_definition).await?[0].as_ref().unwrap()
-        ).unwrap();
+            &self
+                .vade
+                .did_resolve(&payload.revocation_registry_definition)
+                .await?[0]
+                .as_ref()
+                .unwrap(),
+        )
+        .unwrap();
 
         let updated_registry = Issuer::revoke_credential(
-          &payload.issuer,
-          &rev_def,
-          payload.credential_revocation_id,
-          &payload.issuer_public_key_did,
-          &payload.issuer_proving_key
+            &payload.issuer,
+            &rev_def,
+            payload.credential_revocation_id,
+            &payload.issuer_public_key_did,
+            &payload.issuer_proving_key,
         );
 
         let serialized = serde_json::to_string(&updated_registry).unwrap();
 
-        self.set_did_document(&rev_def.id, &serialized, &options.private_key, &options.identity).await?;
+        self.set_did_document(
+            &rev_def.id,
+            &serialized,
+            &options.private_key,
+            &options.identity,
+        )
+        .await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -815,31 +951,55 @@ impl VadePlugin for VadeEvan {
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
-        let mut rev_definitions: HashMap<String, Option<RevocationRegistryDefinition>> = HashMap::new();
+        let mut rev_definitions: HashMap<String, Option<RevocationRegistryDefinition>> =
+            HashMap::new();
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         for req in &payload.proof_request.sub_proof_requests {
-          let schema_did = &req.schema;
-          debug!("fetching schema with did: {}", &schema_did);
-          schemas.insert(schema_did.clone(), serde_json::from_str(
-              &self.vade.did_resolve(&schema_did).await?[0].as_ref().unwrap()
-          ).unwrap());
+            let schema_did = &req.schema;
+            debug!("fetching schema with did: {}", &schema_did);
+            schemas.insert(
+                schema_did.clone(),
+                serde_json::from_str(
+                    &self.vade.did_resolve(&schema_did).await?[0]
+                        .as_ref()
+                        .unwrap(),
+                )
+                .unwrap(),
+            );
         }
 
         for credential in &payload.presented_proof.verifiable_credential {
-          let definition_did = &credential.proof.credential_definition.clone();
-          debug!("fetching credential definition with did: {}", &definition_did);
-          definitions.insert(credential.credential_schema.id.clone(), serde_json::from_str(
-              &self.vade.did_resolve(&definition_did).await?[0].as_ref().unwrap()
-          ).unwrap());
+            let definition_did = &credential.proof.credential_definition.clone();
+            debug!(
+                "fetching credential definition with did: {}",
+                &definition_did
+            );
+            definitions.insert(
+                credential.credential_schema.id.clone(),
+                serde_json::from_str(
+                    &self.vade.did_resolve(&definition_did).await?[0]
+                        .as_ref()
+                        .unwrap(),
+                )
+                .unwrap(),
+            );
 
-          let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
-          debug!(
-              "fetching revocation definition with did: {}",
-              &rev_definition_did
-          );
-          rev_definitions.insert(credential.credential_schema.id.clone(), Some(serde_json::from_str(
-            &self.vade.did_resolve(&rev_definition_did).await?[0].as_ref().unwrap()
-          ).unwrap()));
+            let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
+            debug!(
+                "fetching revocation definition with did: {}",
+                &rev_definition_did
+            );
+            rev_definitions.insert(
+                credential.credential_schema.id.clone(),
+                Some(
+                    serde_json::from_str(
+                        &self.vade.did_resolve(&rev_definition_did).await?[0]
+                            .as_ref()
+                            .unwrap(),
+                    )
+                    .unwrap(),
+                ),
+            );
         }
 
         let result: ProofVerification = Verifier::verify_proof(
@@ -847,9 +1007,11 @@ impl VadePlugin for VadeEvan {
             payload.proof_request,
             definitions,
             schemas,
-            rev_definitions
+            rev_definitions,
         );
 
-        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
+        Ok(VadePluginResultValue::Success(Some(
+            serde_json::to_string(&result).unwrap(),
+        )))
     }
 }

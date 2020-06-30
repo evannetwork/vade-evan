@@ -15,11 +15,11 @@
 
 */
 
-pub enum ResultE{
+pub enum ResultE {
     None,
     Close,
     S(String),
-    SClose(String) //send and close
+    SClose(String), //send and close
 }
 
 #[derive(Debug, PartialEq)]
@@ -54,9 +54,7 @@ pub fn on_get_request_msg(msg: &str) -> ResultE {
 pub fn on_subscription_msg(msg: &str) -> ResultE {
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
     match value["id"].as_str() {
-        Some(_idstr) => {
-            ResultE::None
-        }
+        Some(_idstr) => ResultE::None,
         _ => {
             // subscriptions
             debug!("no id field found in response. must be subscription");
@@ -67,15 +65,16 @@ pub fn on_subscription_msg(msg: &str) -> ResultE {
                     let _res_str = _changes[0][1].as_str().unwrap().to_string();
                     ResultE::S(_res_str)
                 }
-                _ => {error!("unsupported method");ResultE::None},
+                _ => {
+                    error!("unsupported method");
+                    ResultE::None
+                }
             }
         }
     }
 }
 
-pub fn on_extrinsic_msg_until_finalized(
-    msg: &str
-) -> ResultE {
+pub fn on_extrinsic_msg_until_finalized(msg: &str) -> ResultE {
     debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(val),
@@ -88,9 +87,7 @@ pub fn on_extrinsic_msg_until_finalized(
     }
 }
 
-pub fn on_extrinsic_msg_until_in_block(
-    msg: &str
-) -> ResultE {
+pub fn on_extrinsic_msg_until_in_block(msg: &str) -> ResultE {
     debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(val),
@@ -101,9 +98,7 @@ pub fn on_extrinsic_msg_until_in_block(
     }
 }
 
-pub fn on_extrinsic_msg_until_broadcast(
-    msg: &str
-) -> ResultE {
+pub fn on_extrinsic_msg_until_broadcast(msg: &str) -> ResultE {
     debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(val),
@@ -114,9 +109,7 @@ pub fn on_extrinsic_msg_until_broadcast(
     }
 }
 
-pub fn on_extrinsic_msg_until_ready(
-    msg: &str
-) -> ResultE {
+pub fn on_extrinsic_msg_until_ready(msg: &str) -> ResultE {
     debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(val),
@@ -170,4 +163,3 @@ fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
         },
     }
 }
-

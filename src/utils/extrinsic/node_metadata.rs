@@ -20,10 +20,16 @@ use parity_scale_codec::{Decode, Encode};
 
 //use log::*;
 use super::frame_metadata::{
-    DecodeDifferent, StorageEntryType,RuntimeMetadata, RuntimeMetadataPrefixed,  META_RESERVED, StorageHasher, StorageEntryModifier,
+    DecodeDifferent,
+    RuntimeMetadata,
+    RuntimeMetadataPrefixed,
+    StorageEntryModifier,
+    StorageEntryType,
+    StorageHasher,
+    META_RESERVED,
 };
-use sp_storage::StorageKey;
 use crate::utils::substrate;
+use sp_storage::StorageKey;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MetadataError {
@@ -158,8 +164,11 @@ impl Metadata {
                 let module_prefix = convert(storage.prefix)?;
                 for entry in convert(storage.entries)?.into_iter() {
                     let storage_prefix = convert(entry.name.clone())?;
-                    let entry =
-                        convert_entry(module_prefix.clone().to_string(), storage_prefix.clone().to_string(), entry)?;
+                    let entry = convert_entry(
+                        module_prefix.clone().to_string(),
+                        storage_prefix.clone().to_string(),
+                        entry,
+                    )?;
                     storage_map.insert(storage_prefix.to_string(), entry);
                 }
             }
@@ -514,8 +523,6 @@ pub enum ConversionError {
     InvalidEventArg(String, &'static str),
 }
 
-
-
 fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, ConversionError> {
     match dd {
         DecodeDifferent::Decoded(value) => Ok(value),
@@ -523,14 +530,19 @@ fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, Conve
     }
 }
 
-fn convert_event(event: super::frame_metadata::EventMetadata) -> Result<ModuleEventMetadata, ConversionError> {
+fn convert_event(
+    event: super::frame_metadata::EventMetadata,
+) -> Result<ModuleEventMetadata, ConversionError> {
     let name = convert(event.name)?;
     let mut arguments = Vec::new();
     for arg in convert(event.arguments)? {
         let arg = arg.parse::<EventArg>()?;
         arguments.push(arg);
     }
-    Ok(ModuleEventMetadata { name: name.to_string(), arguments })
+    Ok(ModuleEventMetadata {
+        name: name.to_string(),
+        arguments,
+    })
 }
 
 fn convert_entry(

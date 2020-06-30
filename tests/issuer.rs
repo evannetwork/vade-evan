@@ -14,17 +14,17 @@
   limitations under the License.
 */
 
-extern crate vade_evan;
 extern crate env_logger;
 extern crate log;
+extern crate vade_evan;
 
 mod test_data;
 
-use vade_evan::application::issuer::Issuer;
-use vade_evan::application::datatypes::{ CredentialSchema, SchemaProperty };
-use vade_evan::crypto::crypto_utils::check_assertion_proof;
 use std::collections::HashMap;
 use test_data::EXAMPLE_GENERATED_DID;
+use vade_evan::application::datatypes::{CredentialSchema, SchemaProperty};
+use vade_evan::application::issuer::Issuer;
+use vade_evan::crypto::crypto_utils::check_assertion_proof;
 
 const EXAMPLE_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
 const EXAMPLE_DID_DOCUMENT_STR: &str = r###"
@@ -56,7 +56,8 @@ const EXAMPLE_DID_DOCUMENT_STR: &str = r###"
   "status": "success"
 }
 "###;
-const EXAMPLE_PRIVATE_KEY: &str = "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
+const EXAMPLE_PRIVATE_KEY: &str =
+    "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
 const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"
 {
   "id": "did:evan:zkp:0x123451234512345123451234512345",
@@ -86,85 +87,85 @@ const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"
 
 #[test]
 fn can_create_schema() {
+    match env_logger::try_init() {
+        Ok(_) | Err(_) => (),
+    };
 
-  match env_logger::try_init() {
-      Ok(_) | Err(_) => (),
-  };
+    let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR).unwrap();
+    let mut required_properties: Vec<String> = Vec::new();
+    let mut test_properties: HashMap<String, SchemaProperty> = HashMap::new();
+    test_properties.insert(
+        "test_property_string".to_owned(),
+        SchemaProperty {
+            r#type: "string".to_owned(),
+            format: None,
+            items: None,
+        },
+    );
+    required_properties.push("test_property_string".to_owned());
 
-  let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR).unwrap();
-  let mut required_properties: Vec<String> = Vec::new();
-  let mut test_properties: HashMap<String, SchemaProperty> = HashMap::new();
-  test_properties.insert(
-    "test_property_string".to_owned(),
-    SchemaProperty {
-      r#type: "string".to_owned(),
-      format: None,
-      items: None
-    }
-  );
-  required_properties.push("test_property_string".to_owned());
+    let schema: CredentialSchema = Issuer::create_credential_schema(
+        EXAMPLE_GENERATED_DID,
+        EXAMPLE_DID,
+        "test_schema",
+        "Test description",
+        test_properties,
+        required_properties,
+        false,
+        &did_document["publicKey"][0]["id"].to_string(),
+        &EXAMPLE_PRIVATE_KEY,
+    );
 
-  let schema: CredentialSchema = Issuer::create_credential_schema(
-    EXAMPLE_GENERATED_DID,
-    EXAMPLE_DID,
-    "test_schema",
-    "Test description",
-    test_properties,
-    required_properties,
-    false,
-    &did_document["publicKey"][0]["id"].to_string(),
-    &EXAMPLE_PRIVATE_KEY
-  );
+    assert_eq!(&schema.author, &EXAMPLE_DID);
+    assert_eq!(schema.additional_properties, false);
+    let result_property: &SchemaProperty = &schema.properties.get("test_property_string").unwrap();
+    let expected: SchemaProperty = SchemaProperty {
+        r#type: "string".to_owned(),
+        format: None,
+        items: None,
+    };
+    assert_eq!(
+        serde_json::to_string(&result_property).unwrap(),
+        serde_json::to_string(&expected).unwrap(),
+    );
 
-  assert_eq!(&schema.author, &EXAMPLE_DID);
-  assert_eq!(schema.additional_properties, false);
-  let result_property: &SchemaProperty = &schema.properties.get("test_property_string").unwrap();
-  let expected: SchemaProperty = SchemaProperty {
-    r#type: "string".to_owned(),
-    format: None,
-    items: None
-  };
-  assert_eq!(
-    serde_json::to_string(&result_property).unwrap(),
-    serde_json::to_string(&expected).unwrap(),
-  );
-
-  let serialized = serde_json::to_string(&schema).unwrap();
-  assert!(match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
-    Ok(()) => true,
-    Err(e) => panic!("assertion check failed with: {}", e),
-  });
+    let serialized = serde_json::to_string(&schema).unwrap();
+    assert!(
+        match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
+            Ok(()) => true,
+            Err(e) => panic!("assertion check failed with: {}", e),
+        }
+    );
 }
 
 #[test]
 fn can_create_credential_definition() {
-  let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
-  let (definition, _) = Issuer::create_credential_definition(
-    test_data::EXAMPLE_GENERATED_DID,
-    &EXAMPLE_DID,
-    &schema,
-    "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
-    &EXAMPLE_PRIVATE_KEY
-  );
+    let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+    let (definition, _) = Issuer::create_credential_definition(
+        test_data::EXAMPLE_GENERATED_DID,
+        &EXAMPLE_DID,
+        &schema,
+        "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
+        &EXAMPLE_PRIVATE_KEY,
+    );
 
-  assert_eq!(
-    serde_json::to_string(&definition.issuer).unwrap(),
-    serde_json::to_string(&EXAMPLE_DID).unwrap(),
-  );
+    assert_eq!(
+        serde_json::to_string(&definition.issuer).unwrap(),
+        serde_json::to_string(&EXAMPLE_DID).unwrap(),
+    );
 
-  assert_eq!(
-    serde_json::to_string(&definition.schema).unwrap(),
-    serde_json::to_string(&schema.id).unwrap()
-  );
+    assert_eq!(
+        serde_json::to_string(&definition.schema).unwrap(),
+        serde_json::to_string(&schema.id).unwrap()
+    );
 
-  assert_eq!(
-    &definition.id,
-    EXAMPLE_GENERATED_DID
-  );
+    assert_eq!(&definition.id, EXAMPLE_GENERATED_DID);
 
-  let serialized = serde_json::to_string(&definition).unwrap();
-  assert!(match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
-    Ok(()) => true,
-    Err(e) => panic!("assertion check failed with: {}", e),
-  });
+    let serialized = serde_json::to_string(&definition).unwrap();
+    assert!(
+        match check_assertion_proof(&serialized, "0x775018c020ae1b3fd4e8a707f8ecfeafc9055e9d") {
+            Ok(()) => true,
+            Err(e) => panic!("assertion check failed with: {}", e),
+        }
+    );
 }
