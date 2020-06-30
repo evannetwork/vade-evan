@@ -37,6 +37,7 @@ use crate::{
         Credential,
         CredentialDefinition,
         CredentialRequest,
+        CredentialSchema,
         CredentialSecretsBlindingFactors,
         MasterSecret,
         ProofRequest,
@@ -229,6 +230,7 @@ pub async fn issue_credential(
     debug!("get did {}", definition);
     let results = &vade.did_resolve(&definition).await.unwrap();
     let credential_definition_doc = results[0].as_ref().unwrap();
+
     debug!("parse doc");
     let definition_parsed: CredentialDefinition = serde_json::from_str(&credential_definition_doc).unwrap();
     let request_parsed: CredentialRequest = serde_json::from_str(&request).unwrap();
@@ -239,22 +241,22 @@ pub async fn issue_credential(
     let revocation_definition_parsed: RevocationRegistryDefinition = serde_json::from_str(&revocation_definition_doc).unwrap();
 
     let payload = format!(
-        r###"{{
-            "issuer": "{}",
-            "subject": "{}",
-            "credentialRequest": {},
-            "credentialPrivateKey": {},
-            "credentialRevocationDefinition": "{}",
-            "revocationPrivateKey": {},
-            "revocationInformation": {}
-        }}"###,
-        issuer_did,
-        subject_did,
-        request,
-        credential_private_key,
-        revocation_definition_parsed.id,
-        revocation_key_private,
-        revocation_info,
+      r###"{{
+          "issuer": "{}",
+          "subject": "{}",
+          "credentialRequest": {},
+          "credentialPrivateKey": {},
+          "credentialRevocationDefinition": "{}",
+          "revocationPrivateKey": {},
+          "revocationInformation": {}
+      }}"###,
+      issuer_did,
+      subject_did,
+      request,
+      credential_private_key,
+      revocation_definition_parsed.id,
+      revocation_key_private,
+      revocation_info,
     );
 
     let results = vade.vc_zkp_issue_credential(EVAN_METHOD, "", &payload).await.unwrap();
@@ -262,10 +264,16 @@ pub async fn issue_credential(
     // check results
     assert_eq!(results.len(), 1);
 
-    let mut result: IssueCredentialResult = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
+    let mut result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
 
+    debug!("get did {}", result.credential.credential_schema.id);
+    let results = vade.did_resolve(&result.credential.credential_schema.id).await.unwrap();
+    let schema_doc = results[0].as_ref().unwrap();
+
+    let schema: CredentialSchema = serde_json::from_str(&schema_doc).unwrap();
     Prover::post_process_credential_signature(
       &mut result.credential,
+      &schema,
       &request_parsed,
       &definition_parsed,
       blinding_factors_parsed,
