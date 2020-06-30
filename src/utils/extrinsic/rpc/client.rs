@@ -15,13 +15,13 @@
 
 */
 
-use log::{debug, error, info, warn};
 use futures::channel::mpsc::Sender as ThreadOut;
+use log::{debug, error, info, warn};
 #[cfg(not(target_arch = "wasm32"))]
 use ws::{CloseCode, Handler, Handshake, Message, Result, Sender};
 
 #[cfg(target_arch = "wasm32")]
-use web_sys::{WebSocket};
+use web_sys::WebSocket;
 
 #[derive(Debug, PartialEq)]
 pub enum XtStatus {
@@ -37,9 +37,12 @@ pub enum XtStatus {
 #[cfg(not(target_arch = "wasm32"))]
 pub type OnMessageFn = fn(msg: Message, out: Sender, result: ThreadOut<String>) -> Result<()>;
 
-
 #[cfg(target_arch = "wasm32")]
-pub type OnMessageFn = fn(msg: &str, out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn std::error::Error>>;
+pub type OnMessageFn = fn(
+    msg: &str,
+    out: &WebSocket,
+    result: ThreadOut<String>,
+) -> Result<(), Box<dyn std::error::Error>>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub struct RpcClient {
@@ -66,7 +69,10 @@ pub fn on_get_request_msg(msg: Message, out: Sender, result: ThreadOut<String>) 
     let retstr = msg.as_text().unwrap();
     let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
 
-    result.clone().try_send(value["result"].to_string()).unwrap();
+    result
+        .clone()
+        .try_send(value["result"].to_string())
+        .unwrap();
     out.close(CloseCode::Normal).unwrap();
     Ok(())
 }
@@ -88,10 +94,13 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
 
                     match changes[0][1].as_str() {
                         Some(change_set) => {
-                            result.clone().try_send(change_set.to_owned()).unwrap_or_else(|_| {
-                                _out.close(CloseCode::Normal).unwrap();
-                            });
-                        },
+                            result
+                                .clone()
+                                .try_send(change_set.to_owned())
+                                .unwrap_or_else(|_| {
+                                    _out.close(CloseCode::Normal).unwrap();
+                                });
+                        }
                         None => println!("No events happened"),
                     };
                 }
@@ -189,22 +198,31 @@ fn end_process(out: Sender, result: ThreadOut<String>, value: Option<String>) {
     out.close(CloseCode::Normal).unwrap();
 }
 
-
-
 // WASM implementation
 
 #[cfg(target_arch = "wasm32")]
-pub fn on_get_request_msg(msg: &str, out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn on_get_request_msg(
+    msg: &str,
+    out: &WebSocket,
+    result: ThreadOut<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     info!("Got get_request_msg {}", msg);
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
 
-    result.clone().try_send(value["result"].to_string()).unwrap();
+    result
+        .clone()
+        .try_send(value["result"].to_string())
+        .unwrap();
     out.close_with_code(1000).unwrap();
     Ok(())
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn on_subscription_msg(msg: &str, _out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn on_subscription_msg(
+    msg: &str,
+    _out: &WebSocket,
+    result: ThreadOut<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     info!("got on_subscription_msg {}", msg);
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
     match value["id"].as_str() {
@@ -219,7 +237,7 @@ pub fn on_subscription_msg(msg: &str, _out: &WebSocket, result: ThreadOut<String
                     match changes[0][1].as_str() {
                         Some(change_set) => {
                             let _ = result.clone().try_send(change_set.to_owned());
-                        },
+                        }
                         None => println!("No events happened"),
                     };
                 }
@@ -315,8 +333,6 @@ fn end_process(out: &WebSocket, result: ThreadOut<String>, value: Option<String>
     result.clone().try_send(val).unwrap();
     out.close_with_code(1000).unwrap();
 }
-
-
 
 fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
