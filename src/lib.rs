@@ -214,6 +214,7 @@ pub struct CreateCredentialProposalPayload {
 #[serde(rename_all = "camelCase")]
 pub struct RequestCredentialPayload {
     pub credential_offering: CredentialOffer,
+    pub credential_schema: CredentialSchema,
     pub master_secret: MasterSecret,
     pub credential_values: HashMap<String, String>,
 }
@@ -699,12 +700,13 @@ impl VadePlugin for VadeEvan {
           &self.vade.did_resolve(&payload.credential_offering.credential_definition).await?[0].as_ref().unwrap()
         ).unwrap();
 
-        let result: (CredentialRequest, CredentialSecretsBlindingFactors) = Prover::request_credential(
+        let result = Prover::request_credential(
             payload.credential_offering,
             definition,
+            payload.credential_schema,
             payload.master_secret,
             payload.credential_values,
-        );
+        )?;
 
         Ok(VadePluginResultValue::Success(Some(serde_json::to_string(&result).unwrap())))
     }
