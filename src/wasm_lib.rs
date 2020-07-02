@@ -441,6 +441,13 @@ pub async fn verify_proof(
     Ok(results[0].as_ref().unwrap().to_string())
 }
 
+/// Whitelists a specific evan did on substrate that this private key can create DIDs.
+///
+/// # Arguments
+///
+/// * `did` - Substrate identity to whitelist (e.g. did:evan:0x12345)
+/// * `private_key` - private key (without '0x' prefix)
+/// * `identity` - identity without prefix (e.g. 12345)
 #[wasm_bindgen]
 pub async fn whitelist_identity(
     did: String,
