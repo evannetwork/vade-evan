@@ -441,7 +441,11 @@ pub async fn verify_proof(
 }
 
 #[wasm_bindgen]
-pub async fn whitelist_identity(private_key: String, identity: String) -> Result<String, JsValue> {
+pub async fn whitelist_identity(
+    did: String,
+    private_key: String,
+    identity: String,
+ ) -> Result<String, JsValue> {
     let mut vade = get_vade();
     let payload = format!(
         r###"{{
@@ -452,7 +456,7 @@ pub async fn whitelist_identity(private_key: String, identity: String) -> Result
         private_key, identity,
     );
 
-    vade.did_update(&identity, &payload, &"".to_string())
+    vade.did_update(&did, &payload, &"".to_string())
         .await
         .unwrap();
 

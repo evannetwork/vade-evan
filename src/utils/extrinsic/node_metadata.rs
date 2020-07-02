@@ -560,7 +560,7 @@ fn convert_entry(
     })
 }
 
-/// genertes the key's hash depending on the StorageHasher selected
+/// generates the key's hash depending on the StorageHasher selected
 fn key_hash<K: Encode>(key: &K, hasher: &StorageHasher) -> Vec<u8> {
     info!("key before");
     let encoded_key = key.encode();
