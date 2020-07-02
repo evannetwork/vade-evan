@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use vade::{VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
-const EVAN_METHOD_PREFIX: &str = "did:evan:";
+const EVAN_METHOD_PREFIX: &str = "did:evan:testcore:0x";
 const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 
 #[derive(Serialize, Deserialize)]

@@ -11,8 +11,8 @@ const wasm = require('./vade_evan.js');
 
 /**
  * whitelists a specific evan did on substrate that this private key can create DIDs
- * @param {string} privateKey
- * @param {string} identity
+ * @param {string} privateKey  private key (without '0x' prefix)
+ * @param {string} identity    Substrate identity to whitelist (e.g. did:evan:0x12345)
  */
 async function whitelistIdentity(privateKey, identity) {
   if(!identity.startsWith('did')) {
@@ -22,7 +22,7 @@ async function whitelistIdentity(privateKey, identity) {
   const splittedDid = identity.split(':');
   const plainDidId = splittedDid[splittedDid.length - 1];
 
-  await wasm.whitelist_identity(privateKey, plainDidId);
+  await wasm.whitelist_identity(identity, privateKey, plainDidId);
 }
 
 /**
