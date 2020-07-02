@@ -114,7 +114,6 @@ use ursa::cl::Witness;
 use vade::{Vade, VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
-const EVAN_METHOD_PREFIX: &str = "did:evan:";
 const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 
 #[derive(Serialize, Deserialize)]
@@ -258,40 +257,6 @@ impl VadeEvan {
 }
 
 impl VadeEvan {
-    /// Whitelists an identity on substrate, which is required to perform transactions.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - serialized [`AuthenticationOptions`](https://docs.rs/vade_evan/*/vade_evan/struct.AuthenticationOptions.html)
-    pub async fn whitelist_identity(
-        &mut self,
-        data: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let input: AuthenticationOptions = serde_json::from_str(&data)?;
-        let options = format!(
-            r###"{{
-            "privateKey": "{}",
-            "identity": "{}",
-            "operation": "whitelistIdentity"
-        }}"###,
-            input.private_key, input.identity
-        );
-        let identity_did = format!("{}0x{}", EVAN_METHOD_PREFIX, &input.identity);
-
-        let result = self
-            .vade
-            .did_update(&identity_did, &options, &"".to_string())
-            .await?;
-
-        if result.is_empty() {
-            return Err(Box::from(
-                "Could not generate DID as no listeners were registered for this method",
-            ));
-        }
-
-        Ok(())
-    }
-
     async fn generate_did(
         &mut self,
         private_key: &str,

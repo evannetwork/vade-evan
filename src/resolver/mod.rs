@@ -14,6 +14,7 @@
   limitations under the License.
 */
 
+extern crate regex;
 extern crate vade;
 use crate::utils::substrate::{
     add_payload_to_did,
@@ -24,12 +25,15 @@ use crate::utils::substrate::{
     whitelist_identity,
 };
 use async_trait::async_trait;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use vade::{VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_PREFIX: &str = "did:evan:testcore:0x";
 const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
+
+const METHOD_REGEX: &'static str = r#"^(.*):0x(.*)$"#;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -165,7 +169,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 whitelist_identity(
                     self.config.target.clone(),
                     input.private_key.clone(),
-                    hex::decode(&did.replace(EVAN_METHOD_PREFIX, "")).unwrap(),
+                    hex::decode(convert_did_to_substrate_identity(&did).unwrap()).unwrap(),
                 )
                 .await
                 .unwrap();
@@ -176,7 +180,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     return Ok(VadePluginResultValue::Ignored);
                 }
                 self.set_did_document(
-                    &did.replace(EVAN_METHOD_ZKP_PREFIX, ""),
+                    &convert_did_to_substrate_identity(&did).unwrap(),
                     &input.private_key,
                     &input.identity,
                     payload,
@@ -206,10 +210,45 @@ impl VadePlugin for SubstrateDidResolverEvan {
         }
         let did_result = get_did(
             self.config.target.clone(),
-            did_id.replace(EVAN_METHOD_ZKP_PREFIX, ""),
+            convert_did_to_substrate_identity(&did_id)?,
         )
         .await
         .unwrap();
         Ok(VadePluginResultValue::Success(Some(did_result)))
+    }
+}
+
+/// Converts a DID to a substrate compatible method prefixed DID hex string.
+///
+/// # Arguments
+///
+/// `did` - a DID string, e.g. `did:evan:testcore:0x1234`
+///
+/// # Returns
+///
+/// substrate DID hex string, e.g. `02001234`
+fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::error::Error>> {
+    println!("newregex");
+    let re = Regex::new(METHOD_REGEX).unwrap();
+    println!("captures");
+    let result = re.captures(&did);
+    println!("check is none");
+    if result.is_none() {
+        return Err(Box::from(format!("could not parse DID: {}", did)));
+    }
+    println!("unwrap result");
+    let caps = result.unwrap();
+
+    println!("match result");
+    match &caps[1] {
+        "did:evan" =>
+            // Ok(format!("0101{}", &caps[2])),
+            Ok(format!("{}", &caps[2])),
+        "did:evan:testcore" =>
+            // Ok(format!("0201{}", &caps[2])),
+            Ok(format!("{}", &caps[2])),
+        "did:evan:zkp" =>
+            Ok(caps[2].to_string()),
+        _ => Err(Box::from(format!("unknown DID format: {}", did)))
     }
 }
