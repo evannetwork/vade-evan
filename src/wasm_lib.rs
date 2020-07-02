@@ -362,6 +362,7 @@ pub fn set_panic_hook() {
 #[wasm_bindgen]
 pub fn set_log_level(log_level: String) {
     let _ = match log_level.as_str() {
+        "trace" => console_log::init_with_level(log::Level::Trace),
         "debug" => console_log::init_with_level(log::Level::Debug),
         "info" => console_log::init_with_level(log::Level::Info),
         "error" => console_log::init_with_level(log::Level::Error),
@@ -474,17 +475,17 @@ fn get_options(private_key: String, identity: String) -> String {
 }
 
 fn get_vade() -> Vade {
-    let evan = get_vade_evan();
+    let tnt = get_vade_evan();
     let mut vade = Vade::new();
 
     let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-        target: "13.69.59.185".to_string(),
+        target: "127.0.0.1".to_string(),
         private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
         identity: identity.clone(),
     });
     vade.register_plugin(Box::from(substrate_resolver));
-    vade.register_plugin(Box::from(evan));
+    vade.register_plugin(Box::from(tnt));
 
     vade
 }
@@ -493,7 +494,7 @@ fn get_vade_evan() -> VadeEvan {
     // vade evan to work with
     let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-        target: "13.69.59.185".to_string(),
+        target: "127.0.0.1".to_string(),
         private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
         identity: identity.clone(),
     });

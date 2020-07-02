@@ -132,8 +132,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
             options.private_key.clone(),
             hex::decode(options.identity).unwrap(),
         )
-        .await
-        .unwrap();
+        .await?;
         Ok(VadePluginResultValue::Success(Some(inner_result)))
     }
 
@@ -167,8 +166,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     input.private_key.clone(),
                     hex::decode(&did.replace(EVAN_METHOD_PREFIX, "")).unwrap(),
                 )
-                .await
-                .unwrap();
+                .await?;
                 Ok(VadePluginResultValue::Success(None))
             }
             "setDidDocument" => {

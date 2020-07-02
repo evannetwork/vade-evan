@@ -54,7 +54,6 @@ pub struct RpcClient {
 #[cfg(not(target_arch = "wasm32"))]
 impl Handler for RpcClient {
     fn on_open(&mut self, _: Handshake) -> Result<()> {
-        info!("sending request: {}", self.request);
         self.out.send(self.request.clone()).unwrap();
         Ok(())
     }
@@ -65,7 +64,6 @@ impl Handler for RpcClient {
 }
 #[cfg(not(target_arch = "wasm32"))]
 pub fn on_get_request_msg(msg: Message, out: Sender, result: ThreadOut<String>) -> Result<()> {
-    info!("Got get_request_msg {}", msg);
     let retstr = msg.as_text().unwrap();
     let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
 
@@ -78,7 +76,6 @@ pub fn on_get_request_msg(msg: Message, out: Sender, result: ThreadOut<String>) 
 }
 #[cfg(not(target_arch = "wasm32"))]
 pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>) -> Result<()> {
-    info!("got on_subscription_msg {}", msg);
     let retstr = msg.as_text().unwrap();
     let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
     match value["id"].as_str() {
@@ -86,23 +83,15 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
         _ => {
             // subscriptions
             debug!("no id field found in response. must be subscription");
-            debug!("method: {:?}", value["method"].as_str());
-            debug!("retstr: {:?}", retstr);
             match value["method"].as_str() {
                 Some("state_storage") => {
-                    let changes = &value["params"]["result"]["changes"];
-
-                    match changes[0][1].as_str() {
-                        Some(change_set) => {
-                            result
-                                .clone()
-                                .try_send(change_set.to_owned())
-                                .unwrap_or_else(|_| {
-                                    _out.close(CloseCode::Normal).unwrap();
-                                });
-                        }
-                        None => println!("No events happened"),
-                    };
+                    serde_json::to_string(&value["params"]["result"])
+                        .map(|head| {
+                            result.clone().try_send(head).unwrap_or_else(|error| {
+                                _out.close(CloseCode::Normal).unwrap();
+                            });
+                        })
+                        .unwrap_or_else(|_| error!("Could not parse header"));
                 }
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
@@ -126,7 +115,6 @@ pub fn on_extrinsic_msg_until_finalized(
     result: ThreadOut<String>,
 ) -> Result<()> {
     let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
     match parse_status(retstr) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Error, e) => end_process(out, result, e),
@@ -145,7 +133,6 @@ pub fn on_extrinsic_msg_until_in_block(
     result: ThreadOut<String>,
 ) -> Result<()> {
     let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
     match parse_status(retstr) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::InBlock, val) => end_process(out, result, val),
@@ -162,7 +149,6 @@ pub fn on_extrinsic_msg_until_broadcast(
     result: ThreadOut<String>,
 ) -> Result<()> {
     let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
     match parse_status(retstr) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Broadcast, _) => end_process(out, result, None),
@@ -179,7 +165,6 @@ pub fn on_extrinsic_msg_until_ready(
     result: ThreadOut<String>,
 ) -> Result<()> {
     let retstr = msg.as_text().unwrap();
-    debug!("got msg {}", retstr);
     match parse_status(retstr) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Ready, _) => end_process(out, result, None),
@@ -192,7 +177,6 @@ pub fn on_extrinsic_msg_until_ready(
 #[cfg(not(target_arch = "wasm32"))]
 fn end_process(out: Sender, result: ThreadOut<String>, value: Option<String>) {
     // return result to calling thread
-    debug!("Thread end result :{:?} value:{:?}", result, value);
     let val = value.unwrap_or_else(|| "".to_string());
     result.clone().try_send(val).unwrap();
     out.close(CloseCode::Normal).unwrap();
@@ -206,7 +190,6 @@ pub fn on_get_request_msg(
     out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    info!("Got get_request_msg {}", msg);
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
 
     result
@@ -223,7 +206,6 @@ pub fn on_subscription_msg(
     _out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    info!("got on_subscription_msg {}", msg);
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
     match value["id"].as_str() {
         Some(_idstr) => {}
@@ -261,7 +243,6 @@ pub fn on_extrinsic_msg_until_finalized(
     out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Error, e) => end_process(out, result, e),
@@ -280,7 +261,6 @@ pub fn on_extrinsic_msg_until_in_block(
     out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::InBlock, val) => end_process(out, result, val),
@@ -297,7 +277,6 @@ pub fn on_extrinsic_msg_until_broadcast(
     out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Broadcast, _) => end_process(out, result, None),
@@ -314,7 +293,6 @@ pub fn on_extrinsic_msg_until_ready(
     out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("got msg {}", msg);
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Ready, _) => end_process(out, result, None),
@@ -328,7 +306,6 @@ pub fn on_extrinsic_msg_until_ready(
 #[cfg(target_arch = "wasm32")]
 fn end_process(out: &WebSocket, result: ThreadOut<String>, value: Option<String>) {
     // return result to calling thread
-    debug!("Thread end result :{:?} value:{:?}", result, value);
     let val = value.unwrap_or_else(|| "".to_string());
     result.clone().try_send(val).unwrap();
     out.close_with_code(1000).unwrap();
@@ -349,13 +326,16 @@ fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
         None => match value["params"]["result"].as_object() {
             Some(obj) => {
                 if let Some(hash) = obj.get("finalized") {
-                    info!("finalized: {:?}", hash);
-                    (XtStatus::Finalized, Some(hash.to_string()))
+                    debug!("finalized: {:?}", hash);
+                    (
+                        XtStatus::Finalized,
+                        Some(hash.as_str().unwrap().to_string()),
+                    )
                 } else if let Some(hash) = obj.get("inBlock") {
-                    info!("inBlock: {:?}", hash);
-                    (XtStatus::InBlock, Some(hash.to_string()))
+                    debug!("inBlock: {:?}", hash);
+                    (XtStatus::InBlock, Some(hash.as_str().unwrap().to_string()))
                 } else if let Some(array) = obj.get("broadcast") {
-                    info!("broadcast: {:?}", array);
+                    debug!("broadcast: {:?}", array);
                     (XtStatus::Broadcast, Some(array.to_string()))
                 } else {
                     (XtStatus::Unknown, None)
