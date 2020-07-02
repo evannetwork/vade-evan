@@ -467,7 +467,7 @@ pub async fn add_payload_to_did(
     fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = Decode::decode(&mut &raw.data[..]).unwrap();
-            if &format!("0x{}", hex::encode(decoded_event.hash)) == did {
+            if &hex::encode(decoded_event.hash) == did {
                 return true;
             }
             false
@@ -539,7 +539,7 @@ pub async fn update_payload_in_did(
     fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = Decode::decode(&mut &raw.data[..]).unwrap();
-            if &format!("0x{}", hex::encode(decoded_event.hash)) == did {
+            if &hex::encode(decoded_event.hash) == did {
                 return true;
             }
             false

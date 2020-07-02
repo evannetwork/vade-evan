@@ -88,10 +88,10 @@ async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn std::erro
 
 #[tokio::test]
 async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Error>> {
-    let mut vade_evan = get_vade_evan();
+    let mut vade = get_vade();
 
     // run test
-    whitelist_identity(&mut vade_evan).await?;
+    whitelist_identity(&mut vade).await?;
 
     Ok(())
 }
@@ -1060,23 +1060,26 @@ fn get_options() -> String {
     )
 }
 
+fn get_resolver() -> SubstrateDidResolverEvan {
+    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+    SubstrateDidResolverEvan::new(ResolverConfig {
+        target: "13.69.59.185".to_string(),
+        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
+        identity,
+    })
+}
+
 fn get_vade() -> Vade {
-    let evan = get_vade_evan();
     let mut vade = Vade::new();
-    vade.register_plugin(Box::from(evan));
+    vade.register_plugin(Box::from(get_vade_evan()));
+    vade.register_plugin(Box::from(get_resolver()));
 
     vade
 }
 
 fn get_vade_evan() -> VadeEvan {
     // vade to work with
-    // let substrate_resolver = SubstrateDidResolverEvan::new();
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
-    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-        target: "13.69.59.185".to_string(),
-        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-        identity,
-    });
+    let substrate_resolver = get_resolver();
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
@@ -1242,15 +1245,19 @@ async fn verify_proof(
     Ok(result)
 }
 
-async fn whitelist_identity(vade_evan: &mut VadeEvan) -> Result<(), Box<dyn std::error::Error>> {
-    let options = r###"{
-        "privateKey": "36e0132e2592f565682bbf14ca71565c6077d03c46d70e9e528d915c07fe57b8",
-        "identity": "5bCa0826c31051489bd58c067c3889617e8b4B52"
-    }"###;
-    
-    let results = vade_evan.whitelist_identity(&options).await;
+async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
+    let auth_string = get_options();
+    let mut json_editable: Value =  serde_json::from_str(&auth_string)?;
+    json_editable["operation"] = Value::from("whitelistIdentity");
+    let options = serde_json::to_string(&json_editable).unwrap();
 
-    if results.is_err() {
+    let identity_did = format!("did:evan:testcore:0x{}", &SIGNER_IDENTITY);
+
+    let results = vade
+        .did_update(&identity_did, &options, &"".to_string())
+        .await;
+
+    if results.is_err() || results?.is_empty() {
         // test is not supposed to fail
         panic!("could not whitelist identity")
     }
