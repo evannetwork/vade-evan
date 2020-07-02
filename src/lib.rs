@@ -276,7 +276,7 @@ impl VadeEvan {
         }}"###,
             input.private_key, input.identity
         );
-        let identity_did = format!("{}{}", EVAN_METHOD_PREFIX, &input.identity);
+        let identity_did = format!("{}0x{}", EVAN_METHOD_PREFIX, &input.identity);
 
         let result = self
             .vade
