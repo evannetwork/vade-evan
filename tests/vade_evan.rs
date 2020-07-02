@@ -1243,7 +1243,12 @@ async fn verify_proof(
 }
 
 async fn whitelist_identity(vade_evan: &mut VadeEvan) -> Result<(), Box<dyn std::error::Error>> {
-    let results = vade_evan.whitelist_identity(&get_options()).await;
+    let options = r###"{
+        "privateKey": "36e0132e2592f565682bbf14ca71565c6077d03c46d70e9e528d915c07fe57b8",
+        "identity": "5bCa0826c31051489bd58c067c3889617e8b4B52"
+    }"###;
+    
+    let results = vade_evan.whitelist_identity(&options).await;
 
     if results.is_err() {
         // test is not supposed to fail
