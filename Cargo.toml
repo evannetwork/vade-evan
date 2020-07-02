@@ -55,7 +55,7 @@ web-sys = { version = "0.3.39", features = [
 ] }
 js-sys = { version = "0.3" }
 async-trait = "0.1.31"
-vade = { path = "../vade", version = "0.0.6" }
+vade = { path = "../vade", version = "0.0.7" }
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 console_log = { version = "0.2", features = ["color"] }
 wasm-timer = "0.2.4"
