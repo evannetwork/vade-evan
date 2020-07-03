@@ -16,7 +16,7 @@
 */
 
 use futures::channel::mpsc::Sender as ThreadOut;
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 #[cfg(not(target_arch = "wasm32"))]
 use ws::{CloseCode, Handler, Handshake, Message, Result, Sender};
 
@@ -87,7 +87,7 @@ pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>
                 Some("state_storage") => {
                     serde_json::to_string(&value["params"]["result"])
                         .map(|head| {
-                            result.clone().try_send(head).unwrap_or_else(|error| {
+                            result.clone().try_send(head).unwrap_or_else(|_| {
                                 _out.close(CloseCode::Normal).unwrap();
                             });
                         })
@@ -220,7 +220,7 @@ pub fn on_subscription_msg(
                         Some(change_set) => {
                             let _ = result.clone().try_send(change_set.to_owned());
                         }
-                        None => println!("No events happened"),
+                        None => debug!("No events happened"),
                     };
                 }
                 Some("chain_finalizedHead") => {
