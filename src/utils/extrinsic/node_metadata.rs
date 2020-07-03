@@ -161,7 +161,7 @@ impl Metadata {
                 }
             }
         }
-        println!("{}", string);
+        debug!("{}", string);
     }
 
     pub fn print_modules_with_calls(&self) {
@@ -249,20 +249,18 @@ impl Metadata {
                 );
             }
 
-            if let errors = module.errors {
-                let mut error_map = HashMap::new();
-                for (index, event) in convert(errors)?.into_iter().enumerate() {
-                    error_map.insert(index as u8, convert_error(event)?);
-                }
-                modules_with_errors.insert(
-                    module_name.clone().to_string(),
-                    ModuleWithEvents {
-                        index: modules_with_errors.len() as u8,
-                        name: module_name.clone().to_string(),
-                        events: error_map,
-                    },
-                );
+            let mut error_map = HashMap::new();
+            for (index, event) in convert(module.errors)?.into_iter().enumerate() {
+                error_map.insert(index as u8, convert_error(event)?);
             }
+            modules_with_errors.insert(
+                module_name.clone().to_string(),
+                ModuleWithEvents {
+                    index: modules_with_errors.len() as u8,
+                    name: module_name.clone().to_string(),
+                    events: error_map,
+                },
+            );
         }
         Ok(Metadata {
             modules,
@@ -298,14 +296,13 @@ pub struct ModuleWithCalls {
 
 impl ModuleWithCalls {
     pub fn print(&self) {
-        println!(
+        debug!(
             "----------------- Calls for Module: '{}' -----------------\n",
             self.name
         );
         for (name, index) in &self.calls {
-            println!("Name: {}, index {}", name, index);
+            debug!("Name: {}, index {}", name, index);
         }
-        println!()
     }
 }
 
@@ -332,15 +329,14 @@ impl ModuleWithEvents {
     }
 
     pub fn print(&self) {
-        println!(
+        debug!(
             "----------------- Events for Module: {} -----------------\n",
             self.name()
         );
 
         for e in self.events() {
-            println!("Name: {:?}, Args: {:?}", e.name, e.arguments);
+            debug!("Name: {:?}, Args: {:?}", e.name, e.arguments);
         }
-        println!()
     }
 }
 
@@ -600,7 +596,7 @@ fn convert_error(
     event: super::frame_metadata::ErrorMetadata,
 ) -> Result<ModuleEventMetadata, ConversionError> {
     let name = convert(event.name)?;
-    let mut arguments = Vec::new();
+    let arguments = Vec::new();
     Ok(ModuleEventMetadata {
         name: name.to_string(),
         arguments,

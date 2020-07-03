@@ -37,7 +37,6 @@ use crate::crypto::crypto_utils::sign_message;
 use crate::compose_extrinsic;
 use crate::utils::extrinsic::events::{
     DispatchError,
-    DispatchInfo,
     EventsDecoder,
     Phase,
     RawEvent,
@@ -211,18 +210,17 @@ pub async fn send_extrinsic(
                     SystemEvent::ExtrinsicFailed(DispatchError::Module {
                         index,
                         error,
-                        message,
+                        message: _,
                     }) => {
                         let clear_error = metadata.module_with_errors(index).unwrap();
                         return Err(Box::from(
                             clear_error.event(error).unwrap().name.to_string(),
                         ));
-                    }
+                    },
                     SystemEvent::ExtrinsicFailed(_) => return Err(Box::from("other error")),
                     SystemEvent::ExtrinsicSuccess(_info) => {
                         return Ok(Some(data));
-                    }
-                    _ => return Err(Box::from("other error")),
+                    },
                 }
             }
             Err(Box::from("other error"))
@@ -303,7 +301,7 @@ pub async fn wait_for_raw_event(
             let event_str = match changes[0][1].as_str() {
                 Some(change_set) => Some(change_set),
                 None => {
-                    println!("No events happened");
+                    debug!("No events happened");
                     None
                 }
             };
@@ -313,7 +311,7 @@ pub async fn wait_for_raw_event(
             let _events = event_decoder.decode_events(&mut _er_enc);
             match _events {
                 Ok(raw_events) => {
-                    for (phase, event) in raw_events.into_iter() {
+                    for (_phase, event) in raw_events.into_iter() {
                         match event {
                             RuntimeEvent::Raw(raw)
                                 if raw.module == module && raw.variant == variant =>
@@ -351,7 +349,7 @@ pub async fn wait_for_extrinsic_status(
             let event_str = match changes[0][1].as_str() {
                 Some(change_set) => Some(change_set),
                 None => {
-                    println!("No events happened");
+                    debug!("No events happened");
                     None
                 }
             };
@@ -482,27 +480,6 @@ pub async fn get_did(url: String, did: String) -> Result<String, JsValue> {
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x")).unwrap()[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await.unwrap();
-    let owner = get_storage_map::<sp_core::H256, Vec<u8>>(
-        url.as_str(),
-        metadata.clone(),
-        "DidModule",
-        "Dids",
-        bytes_did.clone(),
-    )
-    .await
-    .unwrap();
-    //if owner.chars().count() > 0 {
-    let detail_count = get_storage_map::<sp_core::H256, u32>(
-        url.as_str(),
-        metadata.clone(),
-        "DidModule",
-        "DidsDetailsCount",
-        bytes_did.clone(),
-    )
-    .await
-    .unwrap();
-    //}
-    //if detail_count.unwrap() > 0 {
     let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
         url.as_str(),
         metadata.clone(),
@@ -525,7 +502,6 @@ pub async fn get_did(url: String, did: String) -> Result<String, JsValue> {
     .text()
     .await
     .unwrap();
-    //}
     Ok(body)
 }
 

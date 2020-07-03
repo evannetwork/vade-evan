@@ -226,18 +226,13 @@ impl VadePlugin for SubstrateDidResolverEvan {
 ///
 /// substrate DID hex string, e.g. `02001234`
 fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::error::Error>> {
-    println!("newregex");
     let re = Regex::new(METHOD_REGEX).unwrap();
-    println!("captures");
     let result = re.captures(&did);
-    println!("check is none");
     if result.is_none() {
         return Err(Box::from(format!("could not parse DID: {}", did)));
     }
-    println!("unwrap result");
     let caps = result.unwrap();
 
-    println!("match result");
     match &caps[1] {
         "did:evan" =>
             // Ok(format!("0101{}", &caps[2])),
