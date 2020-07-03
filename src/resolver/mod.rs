@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 use vade::{VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
-const EVAN_METHOD_PREFIX: &str = "did:evan:testcore:0x";
+const EVAN_METHOD_PREFIX: &str = "did:evan:";
 const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 
 const METHOD_REGEX: &'static str = r#"^(.*):0x(.*)$"#;
@@ -134,7 +134,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
-            hex::decode(options.identity).unwrap(),
+            hex::decode(&convert_did_to_substrate_identity(&options.identity).unwrap()).unwrap(),
         )
         .await?;
         Ok(VadePluginResultValue::Success(Some(inner_result)))
@@ -180,7 +180,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 self.set_did_document(
                     &convert_did_to_substrate_identity(&did).unwrap(),
                     &input.private_key,
-                    &input.identity,
+                    &convert_did_to_substrate_identity(&input.identity).unwrap(),
                     payload,
                 )
                 .await
@@ -235,11 +235,9 @@ fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::e
 
     match &caps[1] {
         "did:evan" =>
-            // Ok(format!("0101{}", &caps[2])),
-            Ok(format!("{}", &caps[2])),
+            Ok(format!("0100{}", &caps[2])),
         "did:evan:testcore" =>
-            // Ok(format!("0201{}", &caps[2])),
-            Ok(format!("{}", &caps[2])),
+            Ok(format!("0200{}", &caps[2])),
         "did:evan:zkp" =>
             Ok(caps[2].to_string()),
         _ => Err(Box::from(format!("unknown DID format: {}", did)))
