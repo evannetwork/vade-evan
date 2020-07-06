@@ -406,6 +406,7 @@ struct UpdatedDid {
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
 /// * `identity` - Identity requesting the DID
+/// * `payload` - optional payload to set as DID document
 ///
 /// # Returns
 /// * `String` - The anchored DID
@@ -413,6 +414,7 @@ pub async fn create_did(
     url: String,
     private_key: String,
     identity: Vec<u8>,
+    payload: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await.unwrap();
     #[cfg(target_arch = "wasm32")]
@@ -423,16 +425,31 @@ pub async fn create_did(
         sign_message(&now_timestamp.to_string(), &private_key.to_string());
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
-    let xt: xt_primitives::UncheckedExtrinsicV4<_> = compose_extrinsic!(
-        metadata.clone(),
-        "DidModule",
-        "create_did",
-        signature.to_vec(),
-        signed_message.to_vec(),
-        identity.to_vec(),
-        now_timestamp
-    );
-    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock)
+    let xt: String = match payload {
+        Some(payload) => {
+            let payload_hex = hex::decode(hex::encode(payload)).unwrap();
+            compose_extrinsic!(
+                metadata.clone(),
+                "DidModule",
+                "create_did_with_detail",
+                payload_hex,
+                signature.to_vec(),
+                signed_message.to_vec(),
+                identity.to_vec(),
+                now_timestamp
+            ).hex_encode()
+        },
+        None => compose_extrinsic!(
+            metadata.clone(),
+            "DidModule",
+            "create_did",
+            signature.to_vec(),
+            signed_message.to_vec(),
+            identity.to_vec(),
+            now_timestamp
+        ).hex_encode(),
+    };
+    let ext_error = send_extrinsic(url.as_str(), xt, XtStatus::InBlock)
         .await
         .map_err(|_e| {
             format!(

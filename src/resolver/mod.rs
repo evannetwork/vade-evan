@@ -125,7 +125,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         &mut self,
         did_method: &str,
         options: &str,
-        _payload: &str,
+        payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if did_method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
@@ -135,6 +135,10 @@ impl VadePlugin for SubstrateDidResolverEvan {
             self.config.target.clone(),
             options.private_key.clone(),
             hex::decode(&convert_did_to_substrate_identity(&options.identity).unwrap()).unwrap(),
+            match payload {
+                "" => None,
+                _ => Some(payload),
+            },
         )
         .await?;
         Ok(VadePluginResultValue::Success(Some(inner_result)))
