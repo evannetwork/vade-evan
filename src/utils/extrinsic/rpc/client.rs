@@ -203,7 +203,7 @@ pub fn on_get_request_msg(
 #[cfg(target_arch = "wasm32")]
 pub fn on_subscription_msg(
     msg: &str,
-    _out: &WebSocket,
+    out: &WebSocket,
     result: ThreadOut<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let value: serde_json::Value = serde_json::from_str(msg).unwrap();
@@ -215,13 +215,13 @@ pub fn on_subscription_msg(
             debug!("method: {:?}", value["method"].as_str());
             match value["method"].as_str() {
                 Some("state_storage") => {
-                    let changes = &value["params"]["result"]["changes"];
-                    match changes[0][1].as_str() {
-                        Some(change_set) => {
-                            let _ = result.clone().try_send(change_set.to_owned());
-                        }
-                        None => debug!("No events happened"),
-                    };
+                    serde_json::to_string(&value["params"]["result"])
+                        .map(|head| {
+                            result.clone().try_send(head).unwrap_or_else(|_| {
+                                out.close_with_code(1000).unwrap();
+                            });
+                        })
+                        .unwrap_or_else(|_| error!("Could not parse header"));
                 }
                 Some("chain_finalizedHead") => {
                     serde_json::to_string(&value["params"]["result"])
