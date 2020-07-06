@@ -88,11 +88,9 @@ pub async fn create_schema(
     let results = vade
         .vc_zkp_create_credential_schema(EVAN_METHOD, &options, &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
-
     Ok(results[0].as_ref().unwrap().to_string())
 }
 
@@ -120,9 +118,8 @@ pub async fn create_credential_definition(
     let results = vade
         .vc_zkp_create_credential_definition(EVAN_METHOD, &options, &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
     Ok(results[0].as_ref().unwrap().to_string())
 }
@@ -150,11 +147,9 @@ pub async fn request_proof(
     let results = vade
         .vc_zkp_request_proof(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
-
     Ok(results[0].as_ref().unwrap().to_string())
 }
 
@@ -182,11 +177,9 @@ pub async fn create_credential_proposal(
     let results = vade
         .vc_zkp_create_credential_proposal(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
-
     Ok(results[0].as_ref().unwrap().to_string())
 }
 
@@ -203,11 +196,9 @@ pub async fn create_credential_offer(
     let results = vade
         .vc_zkp_create_credential_offer(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
-
     Ok(results[0].as_ref().unwrap().to_string())
 }
 
@@ -233,11 +224,9 @@ pub async fn create_credential_request(
     let results = vade
         .vc_zkp_request_credential(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
-
     Ok(results[0].as_ref().unwrap().to_string())
 }
 
@@ -265,9 +254,8 @@ pub async fn create_revocation_registry_definition(
     let results = vade
         .vc_zkp_create_revocation_registry_definition(EVAN_METHOD, &options, &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
     Ok(results[0].as_ref().unwrap().to_string())
 }
@@ -287,7 +275,7 @@ pub async fn issue_credential(
 ) -> Result<String, JsValue> {
     let mut vade = get_vade();
     debug!("get did {}", definition);
-    let results = &vade.did_resolve(&definition).await.unwrap();
+    let results = &vade.did_resolve(&definition).await.map_err(jsify)?;
     let credential_definition_doc = results[0].as_ref().unwrap();
 
     debug!("parse doc");
@@ -297,7 +285,7 @@ pub async fn issue_credential(
     let blinding_factors_parsed: CredentialSecretsBlindingFactors =
         serde_json::from_str(&blinding_factors).unwrap();
     let master_secret_parsed: MasterSecret = serde_json::from_str(&master_secret).unwrap();
-    let results = &vade.did_resolve(&revocation_definition).await.unwrap();
+    let results = &vade.did_resolve(&revocation_definition).await.map_err(jsify)?;
     let revocation_definition_doc = results[0].as_ref().unwrap();
     let revocation_definition_parsed: RevocationRegistryDefinition =
         serde_json::from_str(&revocation_definition_doc).unwrap();
@@ -324,19 +312,15 @@ pub async fn issue_credential(
     let results = vade
         .vc_zkp_issue_credential(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    // check results
     assert_eq!(results.len(), 1);
-
-    let mut result: IssueCredentialResult =
-        serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
-
+    let mut result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
     debug!("get did {}", result.credential.credential_schema.id);
     let results = vade
         .did_resolve(&result.credential.credential_schema.id)
         .await
-        .unwrap();
+        .map_err(jsify)?;
     let schema_doc = results[0].as_ref().unwrap();
 
     let schema: CredentialSchema = serde_json::from_str(&schema_doc).unwrap();
@@ -408,7 +392,7 @@ pub async fn present_proof(
     let results = vade
         .vc_zkp_present_proof(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
     // check results
     assert_eq!(results.len(), 1);
@@ -433,7 +417,7 @@ pub async fn verify_proof(
     let results = vade
         .vc_zkp_verify_proof(EVAN_METHOD, "", &payload)
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
     // check results
     assert_eq!(results.len(), 1);
@@ -453,7 +437,7 @@ pub async fn whitelist_identity(
     did: String,
     private_key: String,
     identity: String,
- ) -> Result<String, JsValue> {
+ ) -> Result<(), JsValue> {
     let mut vade = get_vade();
     let payload = format!(
         r###"{{
@@ -466,9 +450,9 @@ pub async fn whitelist_identity(
 
     vade.did_update(&did, &payload, &"".to_string())
         .await
-        .unwrap();
+        .map_err(jsify)?;
 
-    Ok("".to_string())
+    Ok(())
 }
 
 fn get_options(private_key: String, identity: String) -> String {
@@ -509,4 +493,9 @@ fn get_vade_evan() -> VadeEvan {
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
     VadeEvan::new(internal_vade)
+}
+
+
+fn jsify(err: Box<dyn std::error::Error>) -> JsValue {
+    JsValue::from(format!("{}", err))
 }
