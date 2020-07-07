@@ -508,7 +508,7 @@ pub async fn get_did(url: String, did: String) -> Result<String, JsValue> {
     .unwrap();
     let body = reqwest::get(
         &format!(
-            "http://{}:8080/ipfs/{}",
+            "http://{}:8081/ipfs/{}",
             url,
             std::str::from_utf8(&detail_hash.unwrap()).unwrap()
         )
