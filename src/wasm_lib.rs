@@ -63,7 +63,7 @@ pub async fn create_schema(
     private_key: String,
     identity: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
 
     let options = get_options(private_key, identity);
     let payload = format!(
@@ -91,7 +91,7 @@ pub async fn create_schema(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create schema")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -103,7 +103,7 @@ pub async fn create_credential_definition(
     private_key: String,
     identity: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
 
     let options = get_options(private_key, identity);
     let payload = format!(
@@ -121,7 +121,7 @@ pub async fn create_credential_definition(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create credential definition")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -131,7 +131,7 @@ pub async fn request_proof(
     issuer_did: String,
     revealed_attributes: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
 
     let payload = format!(
         r###"{{
@@ -150,12 +150,13 @@ pub async fn request_proof(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create proof request")?.to_string())
 }
 
 #[wasm_bindgen]
-pub fn create_master_secret() -> String {
-    serde_json::to_string(&ursa::cl::prover::Prover::new_master_secret().unwrap()).unwrap()
+pub fn create_master_secret() -> Result<String, JsValue> {
+    serde_json::to_string(&ursa::cl::prover::Prover::new_master_secret()?)
+        .map_err(|e| JsValue::from(format!("{}", e)))
 }
 
 #[wasm_bindgen]
@@ -164,7 +165,7 @@ pub async fn create_credential_proposal(
     subject_did: String,
     issuer_did: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
 
     let payload = format!(
         r###"{{
@@ -180,7 +181,7 @@ pub async fn create_credential_proposal(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create credential proposal")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -188,10 +189,10 @@ pub async fn create_credential_offer(
     proposal: String,
     credential_definition_id: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
-    let mut message_value: Value = serde_json::from_str(&proposal).unwrap();
+    let mut vade = get_vade().map_err(jsify)?;
+    let mut message_value: Value = serde_json::from_str(&proposal).map_err(jsify_serde)?;
     message_value["credentialDefinition"] = Value::from(credential_definition_id);
-    let payload = serde_json::to_string(&message_value).unwrap();
+    let payload = serde_json::to_string(&message_value).map_err(jsify_serde)?;
 
     let results = vade
         .vc_zkp_create_credential_offer(EVAN_METHOD, "", &payload)
@@ -199,7 +200,7 @@ pub async fn create_credential_offer(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not credential offer")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -208,10 +209,10 @@ pub async fn create_credential_request(
     master_secret: String,
     credential_values: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
-    let offer_object: CredentialOffer = serde_json::from_str(&offer).unwrap();
-    let results = vade.did_resolve(&offer_object.schema).await.unwrap();
-    let schema = results[0].as_ref().unwrap();
+    let mut vade = get_vade().map_err(jsify)?;
+    let offer_object: CredentialOffer = serde_json::from_str(&offer).map_err(jsify_serde)?;
+    let results = vade.did_resolve(&offer_object.schema).await.map_err(jsify)?;
+    let schema = results[0].as_ref().ok_or("could not get did document")?;
     let payload = format!(
         r###"{{
             "credentialOffering": {},
@@ -227,7 +228,7 @@ pub async fn create_credential_request(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create credential request")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -239,7 +240,7 @@ pub async fn create_revocation_registry_definition(
     private_key: String,
     identity: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
 
     let options = get_options(private_key, identity);
     let payload = format!(
@@ -257,7 +258,7 @@ pub async fn create_revocation_registry_definition(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create revocation registry definition")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -273,22 +274,26 @@ pub async fn issue_credential(
     issuer_did: String,
     subject_did: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
     debug!("get did {}", definition);
     let results = &vade.did_resolve(&definition).await.map_err(jsify)?;
-    let credential_definition_doc = results[0].as_ref().unwrap();
+    let credential_definition_doc = results[0].as_ref().ok_or("could not get did document")?;
 
     debug!("parse doc");
     let definition_parsed: CredentialDefinition =
-        serde_json::from_str(&credential_definition_doc).unwrap();
-    let request_parsed: CredentialRequest = serde_json::from_str(&request).unwrap();
+        serde_json::from_str(&credential_definition_doc)
+        .map_err(jsify_serde)?;
+    let request_parsed: CredentialRequest = serde_json::from_str(&request).map_err(jsify_serde)?;
     let blinding_factors_parsed: CredentialSecretsBlindingFactors =
-        serde_json::from_str(&blinding_factors).unwrap();
-    let master_secret_parsed: MasterSecret = serde_json::from_str(&master_secret).unwrap();
+        serde_json::from_str(&blinding_factors)
+        .map_err(jsify_serde)?;
+    let master_secret_parsed: MasterSecret =
+        serde_json::from_str(&master_secret).map_err(jsify_serde)?;
     let results = &vade.did_resolve(&revocation_definition).await.map_err(jsify)?;
-    let revocation_definition_doc = results[0].as_ref().unwrap();
+    let revocation_definition_doc = results[0].as_ref().ok_or("could not get did document")?;
     let revocation_definition_parsed: RevocationRegistryDefinition =
-        serde_json::from_str(&revocation_definition_doc).unwrap();
+        serde_json::from_str(&revocation_definition_doc)
+        .map_err(jsify_serde)?;
 
     let payload = format!(
         r###"{{
@@ -315,15 +320,17 @@ pub async fn issue_credential(
         .map_err(jsify)?;
 
     assert_eq!(results.len(), 1);
-    let mut result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+    let mut result: IssueCredentialResult = serde_json::from_str(
+        results[0].as_ref().ok_or("could not issue credential")?
+    ).map_err(jsify_serde)?;
     debug!("get did {}", result.credential.credential_schema.id);
     let results = vade
         .did_resolve(&result.credential.credential_schema.id)
         .await
         .map_err(jsify)?;
-    let schema_doc = results[0].as_ref().unwrap();
+    let schema_doc = results[0].as_ref().ok_or("could not get did document")?;
 
-    let schema: CredentialSchema = serde_json::from_str(&schema_doc).unwrap();
+    let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
     Prover::post_process_credential_signature(
         &mut result.credential,
         &schema,
@@ -333,9 +340,9 @@ pub async fn issue_credential(
         &master_secret_parsed,
         &revocation_definition_parsed,
         &result.revocation_state.witness,
-    );
+    ).map_err(jsify)?;
 
-    Ok(serde_json::to_string(&result).unwrap())
+    Ok(serde_json::to_string(&result).map_err(jsify_serde)?)
 }
 
 #[wasm_bindgen]
@@ -361,16 +368,17 @@ pub async fn present_proof(
     master_secret: String,
     witness: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
 
-    let proof_request_parsed: ProofRequest = serde_json::from_str(&proof_request).unwrap();
+    let proof_request_parsed: ProofRequest = serde_json::from_str(&proof_request)
+        .map_err(jsify_serde)?;
     let schema_did = &proof_request_parsed.sub_proof_requests[0].schema;
-    let credential_parsed: Credential = serde_json::from_str(&credential).unwrap();
-    let witness_parsed: Witness = serde_json::from_str(&witness).unwrap();
+    let credential_parsed: Credential = serde_json::from_str(&credential).map_err(jsify_serde)?;
+    let witness_parsed: Witness = serde_json::from_str(&witness).map_err(jsify_serde)?;
     let mut credentials: HashMap<String, Credential> = HashMap::new();
     credentials.insert(
         schema_did.clone(),
-        serde_json::from_str(&credential).unwrap(),
+        serde_json::from_str(&credential).map_err(jsify_serde)?,
     );
 
     let mut witnesses: HashMap<String, Witness> = HashMap::new();
@@ -384,8 +392,8 @@ pub async fn present_proof(
             "masterSecret": {}
         }}"###,
         &proof_request,
-        serde_json::to_string(&credentials).unwrap(),
-        serde_json::to_string(&witnesses).unwrap(),
+        serde_json::to_string(&credentials).map_err(jsify_serde)?,
+        serde_json::to_string(&witnesses).map_err(jsify_serde)?,
         &master_secret,
     );
     debug!("{}", &payload);
@@ -397,7 +405,7 @@ pub async fn present_proof(
     // check results
     assert_eq!(results.len(), 1);
 
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not create proof presentation")?.to_string())
 }
 
 #[wasm_bindgen]
@@ -405,7 +413,7 @@ pub async fn verify_proof(
     presented_proof: String,
     proof_request: String,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
     console_error_panic_hook::set_once();
     let payload = format!(
         r###"{{
@@ -422,7 +430,7 @@ pub async fn verify_proof(
     // check results
     assert_eq!(results.len(), 1);
 
-    Ok(results[0].as_ref().unwrap().to_string())
+    Ok(results[0].as_ref().ok_or("could not verify proof")?.to_string())
 }
 
 /// Whitelists a specific evan did on substrate that this private key can create DIDs.
@@ -438,7 +446,7 @@ pub async fn whitelist_identity(
     private_key: String,
     identity: String,
  ) -> Result<(), JsValue> {
-    let mut vade = get_vade();
+    let mut vade = get_vade().map_err(jsify)?;
     let payload = format!(
         r###"{{
             "privateKey": "{}",
@@ -465,11 +473,11 @@ fn get_options(private_key: String, identity: String) -> String {
     )
 }
 
-fn get_vade() -> Vade {
-    let tnt = get_vade_evan();
+fn get_vade() -> Result<Vade,  Box<dyn std::error::Error>> {
+    let tnt = get_vade_evan()?;
     let mut vade = Vade::new();
 
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8")?;
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
         target: "127.0.0.1".to_string(),
         private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
@@ -478,12 +486,12 @@ fn get_vade() -> Vade {
     vade.register_plugin(Box::from(substrate_resolver));
     vade.register_plugin(Box::from(tnt));
 
-    vade
+    Ok(vade)
 }
 
-fn get_vade_evan() -> VadeEvan {
+fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
     // vade evan to work with
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
+    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8")?;
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
         target: "127.0.0.1".to_string(),
         private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
@@ -492,10 +500,13 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeEvan::new(internal_vade)
+    Ok(VadeEvan::new(internal_vade))
 }
 
-
 fn jsify(err: Box<dyn std::error::Error>) -> JsValue {
+    JsValue::from(format!("{}", err))
+}
+
+fn jsify_serde(err: serde_json::error::Error) -> JsValue {
     JsValue::from(format!("{}", err))
 }

@@ -58,19 +58,30 @@ impl Prover {
         master_secret: MasterSecret,
         credential_definition: CryptoCredentialDefinition,
         credential_nonce: Nonce,
-    ) -> (CryptoCredentialRequest, CredentialSecretsBlindingFactors) {
+    ) -> Result<
+        (CryptoCredentialRequest, CredentialSecretsBlindingFactors),
+        Box<dyn std::error::Error>
+    > {
         // Master secret will be used to prove that each proof was really issued to the holder/subject/prover
         // Needs to stay secret
-        let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+        let mut credential_values_builder = CryptoIssuer::new_credential_values_builder()
+            .map_err(|e| format!("could not create credential values builder: {}", &e))?;
         for value in encoded_credential_values {
             credential_values_builder
                 .add_dec_known(value.0, &value.1.encoded)
-                .unwrap();
+                .map_err(|e| format!("could not add credential value: {}", &e))?;
         }
         credential_values_builder
-            .add_value_hidden("master_secret", &master_secret.value().unwrap())
-            .unwrap();
-        let credential_values = credential_values_builder.finalize().unwrap();
+            .add_value_hidden(
+                "master_secret",
+                &master_secret
+                    .value()
+                    .map_err(|e| format!("could not get value of master secret: {}", &e))?,
+            )
+            .map_err(|e| format!("could not add master secret as hidden value: {}", &e))?;
+        let credential_values = credential_values_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize credential values: {}", &e))?;
 
         let (
             blinded_credential_secrets,
@@ -81,8 +92,7 @@ impl Prover {
             &credential_definition.credential_key_correctness_proof,
             &credential_values,
             &credential_nonce,
-        )
-        .unwrap();
+        ).map_err(|e| format!("could not blind credential secrets: {}", &e))?;
 
         let req = CryptoCredentialRequest {
             subject: requester_did.to_owned(),
@@ -91,7 +101,7 @@ impl Prover {
             credential_nonce,
         };
 
-        return (req, blinding_factors);
+        Ok((req, blinding_factors))
     }
 
     pub fn create_master_secret() -> UrsaCryptoResult<MasterSecret> {
@@ -106,16 +116,22 @@ impl Prover {
         revocation_registries: &HashMap<String, RevocationRegistryDefinition>,
         master_secret: &MasterSecret,
         witnesses: &HashMap<String, Witness>,
-    ) -> Proof {
+    ) -> Result<Proof, Box<dyn std::error::Error>> {
         let mut non_credential_schema_builder =
-            CryptoIssuer::new_non_credential_schema_builder().unwrap();
+            CryptoIssuer::new_non_credential_schema_builder()
+                .map_err(|e| format!("could not create non credential schema builder: {}", &e))?;
         non_credential_schema_builder
             .add_attr("master_secret")
-            .unwrap();
-        let non_credential_schema = non_credential_schema_builder.finalize().unwrap();
+            .map_err(|e| format!("could not add master secret to non credential schema: {}", &e))?;
+        let non_credential_schema = non_credential_schema_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize credential schema: {}", &e))?;
 
-        let mut proof_builder = CryptoProver::new_proof_builder().unwrap();
-        proof_builder.add_common_attribute("master_secret").unwrap();
+        let mut proof_builder = CryptoProver::new_proof_builder()
+            .map_err(|e| format!("could not create crypto proofer: {}", &e))?;
+        proof_builder
+            .add_common_attribute("master_secret")
+            .map_err(|e| format!("could not add master secret to proof: {}", &e))?;
 
         let mut credential_schema_builder;
         let mut sub_proof_request_builder;
@@ -123,19 +139,24 @@ impl Prover {
 
         for sub_proof in &proof_request.sub_proof_requests {
             // Build Ursa credential schema & proof requests
-            credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
-            sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder().unwrap();
-            credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+            credential_schema_builder = CryptoIssuer::new_credential_schema_builder()
+                .map_err(|e| format!("could not create credential schema builder: {}", &e))?;
+            sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder()
+                .map_err(|e| format!("could not create sub proof request builder: {}", &e))?;
+            credential_values_builder = CryptoIssuer::new_credential_values_builder()
+                .map_err(|e| format!("could not create credential values builder: {}", &e))?;
             for property in &credential_schemas
                 .get(&sub_proof.schema)
                 .expect("Credentials missing for schema")
                 .properties
             {
-                credential_schema_builder.add_attr(&property.0).unwrap();
+                credential_schema_builder
+                    .add_attr(&property.0)
+                    .map_err(|e| format!("could not add schema to credentials: {}", &e))?;
 
                 if credentials
                     .get(&sub_proof.schema)
-                    .unwrap()
+                    .ok_or("could not get sub proof schema from credential")?
                     .credential_subject
                     .data
                     .get(property.0)
@@ -144,21 +165,20 @@ impl Prover {
                     // Property is not specified in credential, need to encode it with null
                     let mut to_encode: HashMap<String, String> = HashMap::new();
                     to_encode.insert(property.0.clone(), "null".to_owned());
-                    let val = ApplicationProver::encode_values(to_encode)
+                    let val = ApplicationProver::encode_values(to_encode)?
                         .get(property.0)
-                        .unwrap()
+                        .ok_or("could not get encoded credential")?
                         .clone();
                     credential_values_builder
                         .add_dec_known(property.0, &val.encoded)
-                        .unwrap();
+                        .map_err(|e| format!("could not add credential: {}", &e))?;
                 }
             }
 
             for property in &sub_proof.revealed_attributes {
-                //credential_schema_builder.add_attr(&property).unwrap();
                 sub_proof_request_builder
                     .add_revealed_attr(&property)
-                    .unwrap();
+                    .map_err(|e| format!("could not add revealed attribute: {}", &e))?;
             }
             // Build ursa credential values
             for values in &credentials
@@ -169,47 +189,59 @@ impl Prover {
             {
                 credential_values_builder
                     .add_dec_known(&values.0, &values.1.encoded)
-                    .unwrap();
+                    .map_err(|e| format!("could not add credential: {}", &e))?;
             }
 
             credential_values_builder
-                .add_value_hidden("master_secret", &master_secret.value().unwrap())
-                .unwrap();
+                .add_value_hidden(
+                    "master_secret",
+                    &master_secret
+                        .value()
+                        .map_err(|e| format!("could not get master secret value: {}", &e))?,
+                )
+                .map_err(|e| format!("could not add master secret to credentials: {}", &e))?;
 
             let witness = witnesses
-                .get(&credentials.get(&sub_proof.schema).unwrap().id)
-                .unwrap();
+                .get(&credentials
+                    .get(&sub_proof.schema)
+                    .ok_or("could not get sub proof schema from credentials")?.id,
+                )
+                .ok_or("could not get witness by sub proof schema")?;
 
             // Build proof for requested schema & attributes
             proof_builder
                 .add_sub_proof_request(
-                    &sub_proof_request_builder.finalize().unwrap(),
-                    &credential_schema_builder.finalize().unwrap(),
+                    &sub_proof_request_builder.finalize()
+                        .map_err(|e| format!("could not finalize sub proof request: {}", &e))?,
+                    &credential_schema_builder.finalize()
+                        .map_err(|e| format!("could not finalize credential schema: {}", &e))?,
                     &non_credential_schema,
                     &credentials
                         .get(&sub_proof.schema)
-                        .unwrap()
+                        .ok_or("could not get sub proof schema from credentials")?
                         .signature
                         .signature,
-                    &credential_values_builder.finalize().unwrap(),
+                    &credential_values_builder.finalize()
+                        .map_err(|e| format!("could not finalize credential values: {}", &e))?,
                     &credential_definitions
                         .get(&sub_proof.schema)
-                        .unwrap()
+                        .ok_or("could not get sub proof schema from credential definitions")?
                         .public_key,
                     Some(
                         &revocation_registries
                             .get(&sub_proof.schema)
-                            .unwrap()
+                            .ok_or("could not get sub proof schema from revocation registries")?
                             .registry,
                     ),
                     Some(&witness),
-                )
-                .unwrap();
+                ).map_err(|e| format!("could not add sub proof request: {}", &e))?;
         }
 
-        let proof = proof_builder.finalize(&proof_request.nonce).unwrap();
+        let proof = proof_builder
+            .finalize(&proof_request.nonce)
+            .map_err(|e| format!("could not finalize proof: {}", &e))?;
 
-        return proof;
+        Ok(proof)
     }
 
     pub fn process_credential(
@@ -220,25 +252,33 @@ impl Prover {
         master_secret: &MasterSecret,
         revocation_registry_definition: Option<RevocationRegistryDefinition>,
         witness: &Witness,
-    ) {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let mut revocation_key_public: Option<RevocationKeyPublic> = None;
         let mut revocation_registry: Option<RevocationRegistry> = None;
-        if revocation_registry_definition.is_some() {
-            let rev_def = revocation_registry_definition.unwrap();
+        if let Some(rrd_value) = revocation_registry_definition {
+            let rev_def = rrd_value;
             revocation_key_public = Some(rev_def.revocation_public_key);
             revocation_registry = Some(rev_def.registry);
         }
 
-        let mut credential_values_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+        let mut credential_values_builder = CryptoIssuer::new_credential_values_builder()
+            .map_err(|e| format!("could not create credential values builder: {}", &e))?;
         for value in &credential_request.credential_values {
             credential_values_builder
                 .add_dec_known(value.0, &value.1.encoded)
-                .unwrap();
+                .map_err(|e| format!("could not add credential value: {}", &e))?;
         }
         credential_values_builder
-            .add_value_hidden("master_secret", &master_secret.value().unwrap())
-            .unwrap();
-        let values = credential_values_builder.finalize().unwrap();
+            .add_value_hidden(
+                "master_secret",
+                &master_secret
+                    .value()
+                    .map_err(|e| format!("could not get master secret value: {}", &e))?,
+            )
+            .map_err(|e| format!("could not add master secret to credential values: {}", &e))?;
+        let values = credential_values_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize credential values: {}", &e))?;
 
         CryptoProver::process_credential_signature(
             &mut credential.signature,
@@ -250,7 +290,8 @@ impl Prover {
             revocation_key_public.as_ref(),
             revocation_registry.as_ref(),
             Some(witness),
-        )
-        .unwrap();
+        ).map_err(|e| format!("could not process credential signature: {}", &e))?;
+
+        Ok(())
     }
 }

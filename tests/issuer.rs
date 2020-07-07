@@ -86,12 +86,12 @@ const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"
 "###;
 
 #[test]
-fn can_create_schema() {
+fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     match env_logger::try_init() {
         Ok(_) | Err(_) => (),
     };
 
-    let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR).unwrap();
+    let did_document = serde_json::to_value(&EXAMPLE_DID_DOCUMENT_STR)?;
     let mut required_properties: Vec<String> = Vec::new();
     let mut test_properties: HashMap<String, SchemaProperty> = HashMap::new();
     test_properties.insert(
@@ -114,7 +114,7 @@ fn can_create_schema() {
         false,
         &did_document["publicKey"][0]["id"].to_string(),
         &EXAMPLE_PRIVATE_KEY,
-    );
+    )?;
 
     assert_eq!(&schema.author, &EXAMPLE_DID);
     assert_eq!(schema.additional_properties, false);
@@ -136,10 +136,12 @@ fn can_create_schema() {
             Err(e) => panic!("assertion check failed with: {}", e),
         }
     );
+
+    Ok(())
 }
 
 #[test]
-fn can_create_credential_definition() {
+fn can_create_credential_definition() -> Result<(), Box<dyn std::error::Error>> {
     let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
     let (definition, _) = Issuer::create_credential_definition(
         test_data::EXAMPLE_GENERATED_DID,
@@ -147,7 +149,7 @@ fn can_create_credential_definition() {
         &schema,
         "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
         &EXAMPLE_PRIVATE_KEY,
-    );
+    )?;
 
     assert_eq!(
         serde_json::to_string(&definition.issuer).unwrap(),
@@ -168,4 +170,6 @@ fn can_create_credential_definition() {
             Err(e) => panic!("assertion check failed with: {}", e),
         }
     );
+
+    Ok(())
 }

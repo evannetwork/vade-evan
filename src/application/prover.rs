@@ -112,7 +112,7 @@ impl Prover {
             credential_key_correctness_proof: credential_definition.public_key_correctness_proof,
         };
 
-        let encoded_credential_values = Prover::encode_values(credential_values);
+        let encoded_credential_values = Prover::encode_values(credential_values)?;
 
         let (crypto_cred_request, blinding_factors) = CryptoProver::request_credential(
             &credential_offering.subject,
@@ -120,9 +120,9 @@ impl Prover {
             master_secret,
             crypto_cred_def,
             credential_offering.nonce,
-        );
+        )?;
 
-        return Ok((
+        Ok((
             CredentialRequest {
                 blinded_credential_secrets: crypto_cred_request.blinded_credential_secrets,
                 blinded_credential_secrets_correctness_proof: crypto_cred_request
@@ -135,7 +135,7 @@ impl Prover {
                 credential_values: encoded_credential_values,
             },
             blinding_factors,
-        ));
+        ))
     }
 
     /// Create a `ProofPresentation` to send to a verifier based on a received `ProofRequest`
@@ -159,7 +159,7 @@ impl Prover {
         revocation_registries: HashMap<String, RevocationRegistryDefinition>,
         witnesses: HashMap<String, Witness>,
         master_secret: &MasterSecret,
-    ) -> ProofPresentation {
+    ) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
         let (vcs, aggregated_proof) = Prover::create_proof_credentials(
             proof_request,
             credentials,
@@ -168,15 +168,15 @@ impl Prover {
             revocation_registries,
             witnesses,
             &master_secret,
-        );
+        )?;
 
-        return ProofPresentation {
+        Ok(ProofPresentation {
             context: vec!["https://www.w3.org/2018/credentials/v1".to_owned()],
             id: generate_uuid(),
             r#type: vec!["VerifiablePresentation".to_owned()],
             verifiable_credential: vcs,
             proof: aggregated_proof,
-        };
+        })
     }
 
     fn create_proof_credentials(
@@ -187,7 +187,7 @@ impl Prover {
         revocation_registries: HashMap<String, RevocationRegistryDefinition>,
         witnesses: HashMap<String, Witness>,
         master_secret: &MasterSecret,
-    ) -> (Vec<ProofCredential>, AggregatedProof) {
+    ) -> Result<(Vec<ProofCredential>, AggregatedProof), Box<dyn std::error::Error>> {
         let crypto_proof = CryptoProver::create_proof_with_revoc(
             &proof_request,
             &credentials,
@@ -196,7 +196,7 @@ impl Prover {
             &revocation_registries,
             &master_secret,
             &witnesses,
-        );
+        )?;
 
         let mut proof_creds: Vec<ProofCredential> = Vec::new();
         let mut i = 0;
@@ -229,7 +229,7 @@ impl Prover {
                     .signature
                     .revocation_registry_definition
                     .to_owned(),
-                proof: serde_json::to_string(&crypto_proof.proofs[i]).unwrap(),
+                proof: serde_json::to_string(&crypto_proof.proofs[i])?,
             };
 
             let proof_cred = ProofCredential {
@@ -249,11 +249,11 @@ impl Prover {
 
         let aggregated = AggregatedProof {
             nonce: proof_request.nonce,
-            aggregated_proof: serde_json::to_value(&crypto_proof).unwrap()["aggregated_proof"]
+            aggregated_proof: serde_json::to_value(&crypto_proof)?["aggregated_proof"]
                 .to_string(),
         };
 
-        return (proof_creds, aggregated);
+        Ok((proof_creds, aggregated))
     }
 
     /// Encodes values into a format compatible with Ursa's CL algorithm.
@@ -275,7 +275,7 @@ impl Prover {
     /// ```
     pub fn encode_values(
         credential_values: HashMap<String, String>,
-    ) -> HashMap<String, EncodedCredentialValue> {
+    ) -> Result<HashMap<String, EncodedCredentialValue>, Box<dyn std::error::Error>> {
         let mut encoded_values: HashMap<String, EncodedCredentialValue> = HashMap::new();
 
         let mut encoded: String;
@@ -293,8 +293,11 @@ impl Prover {
                     hasher.input(&entry.1.to_owned());
                     let hash = hasher.result();
                     let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
-                    let as_number = BigNumber::from_bytes(&hash_arr).unwrap();
-                    encoded = as_number.to_dec().unwrap();
+                    let as_number = BigNumber::from_bytes(&hash_arr)
+                        .map_err(|e| format!("could not convert hash to big number: {}", &e))?;
+                    encoded = as_number
+                        .to_dec()
+                        .map_err(|e| format!("could not convert big number to decimal: {}", &e))?;
                 }
             }
 
@@ -307,7 +310,7 @@ impl Prover {
             );
         }
 
-        return encoded_values;
+        Ok(encoded_values)
     }
 
     /// Create a new master secret to be stored privately on the prover's site.
@@ -337,13 +340,12 @@ impl Prover {
         master_secret: &MasterSecret,
         revocation_registry_definition: &RevocationRegistryDefinition,
         witness: &Witness,
-    ) {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let rev_reg_def: RevocationRegistryDefinition =
-            serde_json::from_str(&serde_json::to_string(revocation_registry_definition).unwrap())
-                .unwrap();
+            serde_json::from_str(&serde_json::to_string(revocation_registry_definition)?)?;
 
         let mut extended_credential_request: CredentialRequest =
-            serde_json::from_str(&serde_json::to_string(&credential_request).unwrap()).unwrap();
+            serde_json::from_str(&serde_json::to_string(&credential_request)?)?;
         let mut null_values: HashMap<String, String> = HashMap::new();
         for property in &credential_schema.properties {
             if credential_request
@@ -356,7 +358,7 @@ impl Prover {
         }
         extended_credential_request
             .credential_values
-            .extend(Prover::encode_values(null_values)); // Add encoded null values
+            .extend(Prover::encode_values(null_values)?); // Add encoded null values
 
         CryptoProver::process_credential(
             &mut credential.signature,
@@ -366,21 +368,23 @@ impl Prover {
             master_secret,
             Some(rev_reg_def),
             witness,
-        );
+        )?;
+
+        Ok(())
     }
 
-    /// Updates the revocation state associated witha credential.
+    /// Updates the revocation state associated with a credential.
     ///
     /// # Arguments
     /// * `revocation_state` - Current revocation state (that is to be updated)
     /// * `rev_reg_def` - Revocation registry definition the credential that is associated with this state belongs to
     ///
     /// # Returns
-    /// * `RevocationState` - The updated revocaiton state
+    /// * `RevocationState` - The updated revocation state
     pub fn update_revocation_state_for_credential(
         revocation_state: RevocationState,
         rev_reg_def: RevocationRegistryDefinition,
-    ) -> RevocationState {
+    ) -> Result<RevocationState, Box<dyn std::error::Error>> {
         let mut witness: Witness = revocation_state.witness.clone();
 
         let mut deltas: Vec<DeltaHistory> = rev_reg_def
@@ -394,7 +398,9 @@ impl Prover {
         let mut generator: RevocationTailsGenerator = rev_reg_def.tails.clone();
         let mut big_delta = revocation_state.delta.clone();
         for delta in deltas {
-            big_delta.merge(&delta.delta).unwrap();
+            big_delta
+                .merge(&delta.delta)
+                .map_err(|e| format!("could not merge revocation state delta: {}", &e))?;
         }
 
         witness
@@ -402,11 +408,12 @@ impl Prover {
                 revocation_state.revocation_id,
                 max_cred,
                 &big_delta,
-                &SimpleTailsAccessor::new(&mut generator).unwrap(),
+                &SimpleTailsAccessor::new(&mut generator)
+                    .map_err(|e| format!("could not create new SimpleTailsAccessor: {}", &e))?,
             )
-            .unwrap();
+            .map_err(|e| format!("could not update witness: {}", &e))?;
 
-        return RevocationState {
+        Ok(RevocationState {
             credential_id: revocation_state.credential_id.clone(),
             revocation_id: revocation_state.revocation_id,
             witness: witness.clone(),
@@ -415,6 +422,6 @@ impl Prover {
                 .duration_since(UNIX_EPOCH)
                 .expect("Error generating unix timestamp for delta history")
                 .as_secs(),
-        };
+        })
     }
 }

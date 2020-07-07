@@ -63,9 +63,9 @@ macro_rules! compose_extrinsic {
 macro_rules! compose_call {
 ($node_metadata: expr, $module: expr, $call_name: expr $(, $args: expr) *) => {
         {
-            let module = $node_metadata.module_with_calls($module).unwrap().to_owned();
+            let module = $node_metadata.module_with_calls($module)?.to_owned();
 
-            let call_index = module.calls.get($call_name).unwrap();
+            let call_index = module.calls.get($call_name).ok_or("could not get call")?;
 
             ([module.index, *call_index as u8] $(, ($args)) *)
         }

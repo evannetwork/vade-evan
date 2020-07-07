@@ -83,8 +83,7 @@ impl SubstrateDidResolverEvan {
         );
         let payload_count: u32 =
             get_payload_count_for_did(self.config.target.clone(), did.to_string())
-                .await
-                .unwrap();
+                .await?;
         if payload_count > 0 {
             update_payload_in_did(
                 self.config.target.clone(),
@@ -92,20 +91,18 @@ impl SubstrateDidResolverEvan {
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
-                hex::decode(identity).unwrap(),
+                hex::decode(identity)?,
             )
-            .await
-            .unwrap();
+            .await?;
         } else {
             add_payload_to_did(
                 self.config.target.clone(),
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
-                hex::decode(identity).unwrap(),
+                hex::decode(identity)?,
             )
-            .await
-            .unwrap();
+            .await?;
         }
         Ok(Some("".to_string()))
     }
@@ -134,7 +131,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
-            hex::decode(&convert_did_to_substrate_identity(&options.identity).unwrap()).unwrap(),
+            hex::decode(&convert_did_to_substrate_identity(&options.identity)?)?,
             match payload {
                 "" => None,
                 _ => Some(payload),
@@ -172,7 +169,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 whitelist_identity(
                     self.config.target.clone(),
                     input.private_key.clone(),
-                    hex::decode(convert_did_to_substrate_identity(&did).unwrap()).unwrap(),
+                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
                 )
                 .await?;
                 Ok(VadePluginResultValue::Success(None))
@@ -182,13 +179,13 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     return Ok(VadePluginResultValue::Ignored);
                 }
                 self.set_did_document(
-                    &convert_did_to_substrate_identity(&did).unwrap(),
+                    &convert_did_to_substrate_identity(&did)?,
                     &input.private_key,
-                    &convert_did_to_substrate_identity(&input.identity).unwrap(),
+                    &convert_did_to_substrate_identity(&input.identity)?,
                     payload,
                 )
                 .await
-                .unwrap();
+                ?;
                 Ok(VadePluginResultValue::Success(None))
             }
             _ => Err(Box::from(format!(
@@ -213,9 +210,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let did_result = get_did(
             self.config.target.clone(),
             convert_did_to_substrate_identity(&did_id)?,
-        )
-        .await
-        .unwrap();
+        ).await?;
         Ok(VadePluginResultValue::Success(Some(did_result)))
     }
 }
@@ -230,20 +225,19 @@ impl VadePlugin for SubstrateDidResolverEvan {
 ///
 /// substrate DID hex string, e.g. `02001234`
 fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let re = Regex::new(METHOD_REGEX).unwrap();
+    let re = Regex::new(METHOD_REGEX)?;
     let result = re.captures(&did);
-    if result.is_none() {
-        return Err(Box::from(format!("could not parse DID: {}", did)));
-    }
-    let caps = result.unwrap();
-
-    match &caps[1] {
-        "did:evan" =>
-            Ok(format!("0100{}", &caps[2])),
-        "did:evan:testcore" =>
-            Ok(format!("0200{}", &caps[2])),
-        "did:evan:zkp" =>
-            Ok(caps[2].to_string()),
-        _ => Err(Box::from(format!("unknown DID format: {}", did)))
+    if let Some(caps) = result {
+        match &caps[1] {
+            "did:evan" =>
+                Ok(format!("0100{}", &caps[2])),
+            "did:evan:testcore" =>
+                Ok(format!("0200{}", &caps[2])),
+            "did:evan:zkp" =>
+                Ok(caps[2].to_string()),
+            _ => Err(Box::from(format!("unknown DID format: {}", did)))
+        }
+    } else {
+        Err(Box::from(format!("could not parse DID: {}", did)))
     }
 }

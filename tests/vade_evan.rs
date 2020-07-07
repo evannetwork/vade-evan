@@ -263,7 +263,7 @@ async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn std::error::Error>
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // run test
     let result: ProofPresentation = present_proof(
@@ -321,7 +321,7 @@ async fn vade_evan_can_present_proofs_with_less_properties(
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // run test
     let result: ProofPresentation = present_proof(
@@ -379,7 +379,7 @@ async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omit
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // run test
     let presented_proof: ProofPresentation = present_proof(
@@ -473,7 +473,7 @@ async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn std::error::Error>> 
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,
@@ -538,13 +538,13 @@ async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn std::error::Err
         &master_secret,
         &revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     let updated_registry =
         revoke_credential(&mut vade, &credential, &revocation_registry_definition).await?;
 
     let updated_revocation_state =
-        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry);
+        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry)?;
 
     // Verify proof for credential, using the updated revocation registry
     let presented_proof: ProofPresentation = present_proof(
@@ -614,7 +614,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
         &master_secret,
         &revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // Issue different credential & revoke it
     let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
@@ -647,7 +647,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
         &master_secret,
         &revocation_registry_definition,
         &other_revocation_state.witness,
-    );
+    )?;
 
     let updated_registry = revoke_credential(
         &mut vade,
@@ -657,7 +657,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
     .await?;
 
     let updated_revocation_state =
-        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry);
+        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry)?;
 
     // Verify proof for main credential, using the updated revocation registry
     let presented_proof: ProofPresentation = present_proof(
@@ -728,7 +728,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &master_secret,
         &revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     let updated_registry =
         revoke_credential(&mut vade, &credential, &revocation_registry_definition).await?;
@@ -764,7 +764,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &master_secret,
         &updated_registry,
         &other_revocation_state.witness,
-    );
+    )?;
 
     // Issue third credential & revoke it
     let third_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
@@ -797,7 +797,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &master_secret,
         &updated_registry,
         &third_revocation_state.witness,
-    );
+    )?;
 
     let updated_registry =
         revoke_credential(&mut vade, &third_credential, &updated_registry).await?;
@@ -806,7 +806,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
     let updated_second_revocation_state = Prover::update_revocation_state_for_credential(
         other_revocation_state.clone(),
         updated_registry,
-    );
+    )?;
 
     // Verify proof for main credential, using the updated revocation registry
     let presented_proof = present_proof(
