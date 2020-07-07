@@ -477,11 +477,8 @@ fn get_vade() -> Result<Vade,  Box<dyn std::error::Error>> {
     let tnt = get_vade_evan()?;
     let mut vade = Vade::new();
 
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8")?;
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-        target: "127.0.0.1".to_string(),
-        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-        identity: identity.clone(),
+        target: "13.69.59.185".to_string(),
     });
     vade.register_plugin(Box::from(substrate_resolver));
     vade.register_plugin(Box::from(tnt));
@@ -490,12 +487,8 @@ fn get_vade() -> Result<Vade,  Box<dyn std::error::Error>> {
 }
 
 fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
-    // vade evan to work with
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8")?;
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-        target: "127.0.0.1".to_string(),
-        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-        identity: identity.clone(),
+        target: "13.69.59.185".to_string(),
     });
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
