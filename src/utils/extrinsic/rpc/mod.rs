@@ -71,6 +71,7 @@ pub fn start_subcriber(url: String, json_req: String, result_in: ThreadOut<Strin
     start_rpc_client_thread(url, json_req, result_in, on_subscription_msg)
 }
 
+// TODO: update return value to Result<(), Box<dyn std::error::Error>> for proper error handling
 #[cfg(not(target_arch = "wasm32"))]
 pub fn start_rpc_client_thread(
     url: String,
@@ -78,20 +79,25 @@ pub fn start_rpc_client_thread(
     result_in: ThreadOut<String>,
     on_message_fn: OnMessageFn,
 ) {
-    let _client = thread::Builder::new()
+    match thread::Builder::new()
         .name("client".to_owned())
         .spawn(move || {
-            connect(url, |out| RpcClient {
+            match connect(url, |out| RpcClient {
                 out,
                 request: jsonreq.clone(),
                 result: result_in.clone(),
                 on_message_fn,
-            })
-            .unwrap()
-        })
-        .unwrap();
+            }) {
+                Ok(_) => (),
+                Err(err) => { error!("could not spawn rpc client: {}", &err); }
+            }
+        }) {
+        Ok(_) => (),
+        Err(err) => { error!("could not spawn rpc client: {}", &err); }
+    };
 }
 
+// TODO: update return value to Result<(), Box<dyn std::error::Error>> for proper error handling
 #[cfg(target_arch = "wasm32")]
 pub fn start_rpc_client_thread(
     url: String,
@@ -99,7 +105,10 @@ pub fn start_rpc_client_thread(
     result_in: ThreadOut<String>,
     on_message_fn: OnMessageFn,
 ) {
-    let ws = WebSocket::new(&url).unwrap();
+    let ws = match WebSocket::new(&url) {
+        Ok(_) => (),
+        Err(err) => { error!("create new websocket: {}", &err); return }
+    };
     let ws_c = ws.clone();
     debug!("open websocket");
     let on_message = {

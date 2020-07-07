@@ -49,14 +49,14 @@ impl Verifier {
         verifier_did: &str,
         prover_did: &str,
         sub_proof_requests: Vec<SubProofRequest>,
-    ) -> ProofRequest {
-        return ProofRequest {
+    ) -> Result<ProofRequest, Box<dyn std::error::Error>> {
+        Ok(ProofRequest {
             verifier: verifier_did.to_owned(),
             prover: prover_did.to_owned(),
             created_at: get_now_as_iso_string().to_owned(),
-            nonce: new_nonce().unwrap(),
+            nonce: new_nonce().map_err(|e| format!("could not get new nonce: {}", &e))?,
             sub_proof_requests,
-        };
+        })
     }
 
     /// Validates a proof presentation received from a prover.

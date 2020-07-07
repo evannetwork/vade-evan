@@ -282,7 +282,7 @@ impl VadeEvan {
         let generated_did = format!(
             "{}{}",
             EVAN_METHOD_ZKP_PREFIX,
-            &result[0].as_ref().unwrap().to_owned(),
+            &result[0].as_ref().ok_or("could not generate DID")?.to_owned(),
         );
 
         Ok(generated_did)
@@ -350,7 +350,9 @@ impl VadePlugin for VadeEvan {
                 &payload.schema_did
             )));
         }
-        let schema: CredentialSchema = serde_json::from_str(&results[0].as_ref().unwrap()).unwrap();
+        let schema: CredentialSchema = serde_json::from_str(
+            &results[0].as_ref().ok_or("could not get schema")?,
+        )?;
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -362,10 +364,10 @@ impl VadePlugin for VadeEvan {
             &schema,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        );
+        )?;
 
-        let serialized = serde_json::to_string(&(&definition, &pk)).unwrap();
-        let serialized_definition = serde_json::to_string(&definition).unwrap();
+        let serialized = serde_json::to_string(&(&definition, &pk))?;
+        let serialized_definition = serde_json::to_string(&definition)?;
         self.set_did_document(
             &generated_did,
             &serialized_definition,
@@ -415,9 +417,9 @@ impl VadePlugin for VadeEvan {
             payload.allow_additional_properties,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        );
+        )?;
 
-        let serialized = serde_json::to_string(&schema).unwrap();
+        let serialized = serde_json::to_string(&schema)?;
         self.set_did_document(
             &generated_did,
             &serialized,
@@ -465,9 +467,8 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_definition)
                 .await?[0]
                 .as_ref()
-                .unwrap(),
-        )
-        .unwrap();
+                .ok_or("could not get did document")?,
+        )?;
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -480,9 +481,9 @@ impl VadePlugin for VadeEvan {
                 &payload.issuer_public_key_did,
                 &payload.issuer_proving_key,
                 payload.maximum_credential_count,
-            );
+            )?;
 
-        let serialized_def = serde_json::to_string(&definition).unwrap();
+        let serialized_def = serde_json::to_string(&definition)?;
 
         self.set_did_document(
             &generated_did,
@@ -496,8 +497,7 @@ impl VadePlugin for VadeEvan {
             private_key,
             revocation_info,
             revocation_registry_definition: definition,
-        })
-        .unwrap();
+        })?;
 
         Ok(VadePluginResultValue::Success(Some(serialized_result)))
     }
@@ -535,17 +535,15 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_request.credential_definition)
                 .await?[0]
                 .as_ref()
-                .unwrap(),
-        )
-        .unwrap();
+                .ok_or("could not get did document")?,
+        )?;
 
         debug!("fetching schema with did: {}", &definition.schema);
         let schema: CredentialSchema = serde_json::from_str(
             &self.vade.did_resolve(&definition.schema).await?[0]
                 .as_ref()
-                .unwrap(),
-        )
-        .unwrap();
+                .ok_or("could not get did document")?,
+        )?;
 
         debug!(
             "fetching revocation definition with did: {}",
@@ -557,9 +555,8 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_revocation_definition)
                 .await?[0]
                 .as_ref()
-                .unwrap(),
-        )
-        .unwrap();
+                .ok_or("could not get did document")?,
+        )?;
 
         let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
             &payload.issuer,
@@ -571,16 +568,14 @@ impl VadePlugin for VadeEvan {
             &mut revocation_definition,
             payload.revocation_private_key,
             &payload.revocation_information,
-        )
-        .unwrap();
+        )?;
 
         Ok(VadePluginResultValue::Success(Some(
             serde_json::to_string(&IssueCredentialResult {
                 credential,
                 revocation_state,
                 revocation_info,
-            })
-            .unwrap(),
+            })?,
         )))
     }
 
@@ -611,9 +606,9 @@ impl VadePlugin for VadeEvan {
             &payload.subject,
             &payload.schema,
             &payload.credential_definition,
-        );
+        )?;
         Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result).unwrap(),
+            serde_json::to_string(&result)?,
         )))
     }
 
@@ -653,15 +648,14 @@ impl VadePlugin for VadeEvan {
                 serde_json::from_str(
                     &self.vade.did_resolve(&schema_did).await?[0]
                         .as_ref()
-                        .unwrap(),
-                )
-                .unwrap(),
+                        .ok_or("could not get did document")?,
+                )?,
             );
 
             let definition_did = payload
                 .credentials
                 .get(schema_did)
-                .unwrap()
+                .ok_or("invalid schema")?
                 .signature
                 .credential_definition
                 .clone();
@@ -674,16 +668,15 @@ impl VadePlugin for VadeEvan {
                 serde_json::from_str(
                     &self.vade.did_resolve(&definition_did).await?[0]
                         .as_ref()
-                        .unwrap(),
-                )
-                .unwrap(),
+                        .ok_or("could not get did document")?,
+                )?,
             );
 
             // Resolve revocation definition
             let rev_definition_did = payload
                 .credentials
                 .get(schema_did)
-                .unwrap()
+                .ok_or("invalid schema")?
                 .signature
                 .revocation_registry_definition
                 .clone();
@@ -696,9 +689,8 @@ impl VadePlugin for VadeEvan {
                 serde_json::from_str(
                     &self.vade.did_resolve(&rev_definition_did).await?[0]
                         .as_ref()
-                        .unwrap(),
-                )
-                .unwrap(),
+                        .ok_or("could not get did document")?,
+                )?,
             );
         }
 
@@ -710,10 +702,10 @@ impl VadePlugin for VadeEvan {
             revocation_definitions,
             payload.witnesses,
             &payload.master_secret,
-        );
+        )?;
 
         Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result).unwrap(),
+            serde_json::to_string(&result)?,
         )))
     }
 
@@ -742,7 +734,7 @@ impl VadePlugin for VadeEvan {
             Prover::propose_credential(&payload.issuer, &payload.subject, &payload.schema);
 
         Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result).unwrap(),
+            serde_json::to_string(&result)?,
         )))
     }
 
@@ -780,9 +772,8 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_offering.credential_definition)
                 .await?[0]
                 .as_ref()
-                .unwrap(),
-        )
-        .unwrap();
+                .ok_or("could not get did document")?,
+        )?;
 
         let result = Prover::request_credential(
             payload.credential_offering,
@@ -793,7 +784,7 @@ impl VadePlugin for VadeEvan {
         )?;
 
         Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result).unwrap(),
+            serde_json::to_string(&result)?,
         )))
     }
 
@@ -823,10 +814,10 @@ impl VadePlugin for VadeEvan {
             &payload.verifier_did,
             &payload.prover_did,
             payload.sub_proof_requests,
-        );
+        )?;
 
         Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result).unwrap(),
+            serde_json::to_string(&result)?,
         )))
     }
 
@@ -868,9 +859,8 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.revocation_registry_definition)
                 .await?[0]
                 .as_ref()
-                .unwrap(),
-        )
-        .unwrap();
+                .ok_or("could not get did document")?,
+        )?;
 
         let updated_registry = Issuer::revoke_credential(
             &payload.issuer,
@@ -878,17 +868,16 @@ impl VadePlugin for VadeEvan {
             payload.credential_revocation_id,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        );
+        )?;
 
-        let serialized = serde_json::to_string(&updated_registry).unwrap();
+        let serialized = serde_json::to_string(&updated_registry)?;
 
         self.set_did_document(
             &rev_def.id,
             &serialized,
             &options.private_key,
             &options.identity,
-        )
-        .await?;
+        ).await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -927,9 +916,8 @@ impl VadePlugin for VadeEvan {
                 serde_json::from_str(
                     &self.vade.did_resolve(&schema_did).await?[0]
                         .as_ref()
-                        .unwrap(),
-                )
-                .unwrap(),
+                        .ok_or("could not get did document")?,
+                )?,
             );
         }
 
@@ -944,9 +932,8 @@ impl VadePlugin for VadeEvan {
                 serde_json::from_str(
                     &self.vade.did_resolve(&definition_did).await?[0]
                         .as_ref()
-                        .unwrap(),
-                )
-                .unwrap(),
+                        .ok_or("could not get did document")?,
+                )?,
             );
 
             let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
@@ -960,9 +947,8 @@ impl VadePlugin for VadeEvan {
                     serde_json::from_str(
                         &self.vade.did_resolve(&rev_definition_did).await?[0]
                             .as_ref()
-                            .unwrap(),
-                    )
-                    .unwrap(),
+                            .ok_or("could not get did document")?, 
+                    )?,
                 ),
             );
         }
@@ -976,7 +962,7 @@ impl VadePlugin for VadeEvan {
         );
 
         Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result).unwrap(),
+            serde_json::to_string(&result)?,
         )))
     }
 }
