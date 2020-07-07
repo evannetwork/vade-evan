@@ -52,8 +52,6 @@ pub struct IdentityArguments {
 
 pub struct ResolverConfig {
     pub target: String,
-    pub private_key: String,
-    pub identity: Vec<u8>,
 }
 
 /// Resolver for DIDs on the Trust&Trace substrate chain
