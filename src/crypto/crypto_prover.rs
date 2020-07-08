@@ -134,7 +134,7 @@ impl Prover {
             .map_err(|e| format!("could not finalize credential schema: {}", &e))?;
 
         let mut proof_builder = CryptoProver::new_proof_builder()
-            .map_err(|e| format!("could not create crypto proofer: {}", &e))?;
+            .map_err(|e| format!("could not create proof builder: {}", &e))?;
         proof_builder
             .add_common_attribute("master_secret")
             .map_err(|e| format!("could not add master secret to proof: {}", &e))?;
