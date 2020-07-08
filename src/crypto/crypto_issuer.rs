@@ -119,7 +119,7 @@ impl Issuer {
             &credential_public_key,
             &credential_private_key,
         )
-        .map_err(|e| format!("could not XXX: {}", &e))?;
+        .map_err(|e| format!("could not sign credential: {}", &e))?;
 
         Ok((cred, proof, credential_issuance_nonce))
     }
