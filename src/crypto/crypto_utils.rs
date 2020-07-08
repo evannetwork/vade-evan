@@ -166,8 +166,8 @@ pub fn check_assertion_proof(
         let key_to_use = vc_proof["verificationMethod"]
             .as_str()
             .ok_or("could not get verificationMethod from proof")?;
-        debug!("recovered address: {}", &address);
-        debug!("key to use for verification: {}", &key_to_use);
+        debug!("recovered address; {}", &address);
+        debug!("key to use for verification; {}", &key_to_use);
         if address != signer_address {
             return Err(Box::from(
                 "recovered and signing given address do not match",
@@ -232,7 +232,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
         signature_array[i] = signature_decoded[i];
     }
     // slice signature and recovery for recovery
-    debug!("recovery id: {}", signature_decoded[64]);
+    debug!("recovery id; {}", signature_decoded[64]);
     let ctx_sig = Signature::parse(&signature_array);
     let recovery_id = RecoveryId::parse(signature_decoded[64])?;
 

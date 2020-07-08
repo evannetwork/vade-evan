@@ -54,7 +54,7 @@ impl Verifier {
             verifier: verifier_did.to_owned(),
             prover: prover_did.to_owned(),
             created_at: get_now_as_iso_string().to_owned(),
-            nonce: new_nonce().map_err(|e| format!("could not get new nonce: {}", &e))?,
+            nonce: new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?,
             sub_proof_requests,
         })
     }

@@ -90,13 +90,13 @@ pub fn start_rpc_client_thread(
             }) {
                 Ok(_) => (),
                 Err(err) => {
-                    error!("could not spawn rpc client: {}", &err);
+                    error!("could not spawn rpc client; {}", &err);
                 }
             }
         }) {
         Ok(_) => (),
         Err(err) => {
-            error!("could not spawn rpc client: {}", &err);
+            error!("could not spawn rpc client; {}", &err);
         }
     };
 }
@@ -113,7 +113,7 @@ pub fn start_rpc_client_thread(
         Ok(result) => result,
         Err(err) => {
             error!(
-                "create new websocket: {}",
+                "create new websocket; {}",
                 &err.as_string().unwrap_or("".to_string())
             );
             return;

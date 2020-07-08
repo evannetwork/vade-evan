@@ -102,7 +102,7 @@ impl Prover {
     {
         for required in &credential_schema.required {
             if credential_values.get(required).is_none() {
-                let error = format!("Missing required schema property: {}", required);
+                let error = format!("Missing required schema property; {}", required);
                 return Err(Box::from(error));
             }
         }
@@ -293,12 +293,12 @@ impl Prover {
                     let hash = hasher.result();
                     let hash_arr: [u8; 32] = hash
                         .try_into()
-                        .map_err(|e| format!("slice with incorrect length: {}", &e))?;
+                        .map_err(|e| format!("slice with incorrect length; {}", &e))?;
                     let as_number = BigNumber::from_bytes(&hash_arr)
-                        .map_err(|e| format!("could not convert hash to big number: {}", &e))?;
+                        .map_err(|e| format!("could not convert hash to big number; {}", &e))?;
                     encoded = as_number
                         .to_dec()
-                        .map_err(|e| format!("could not convert big number to decimal: {}", &e))?;
+                        .map_err(|e| format!("could not convert big number to decimal; {}", &e))?;
                 }
             }
 
@@ -401,7 +401,7 @@ impl Prover {
         for delta in deltas {
             big_delta
                 .merge(&delta.delta)
-                .map_err(|e| format!("could not merge revocation state delta: {}", &e))?;
+                .map_err(|e| format!("could not merge revocation state delta; {}", &e))?;
         }
 
         witness
@@ -410,9 +410,9 @@ impl Prover {
                 max_cred,
                 &big_delta,
                 &SimpleTailsAccessor::new(&mut generator)
-                    .map_err(|e| format!("could not create new SimpleTailsAccessor: {}", &e))?,
+                    .map_err(|e| format!("could not create new SimpleTailsAccessor; {}", &e))?,
             )
-            .map_err(|e| format!("could not update witness: {}", &e))?;
+            .map_err(|e| format!("could not update witness; {}", &e))?;
 
         Ok(RevocationState {
             credential_id: revocation_state.credential_id.clone(),

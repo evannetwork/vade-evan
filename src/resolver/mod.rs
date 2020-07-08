@@ -76,7 +76,7 @@ impl SubstrateDidResolverEvan {
         payload: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         debug!(
-            "setting DID document for did: {}, iden: {}",
+            "setting DID document for did: {}, iden; {}",
             &did, &identity
         );
         let payload_count: u32 =
@@ -229,9 +229,9 @@ fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::e
             "did:evan" => Ok(format!("0100{}", &caps[2])),
             "did:evan:testcore" => Ok(format!("0200{}", &caps[2])),
             "did:evan:zkp" => Ok(caps[2].to_string()),
-            _ => Err(Box::from(format!("unknown DID format: {}", did))),
+            _ => Err(Box::from(format!("unknown DID format; {}", did))),
         }
     } else {
-        Err(Box::from(format!("could not parse DID: {}", did)))
+        Err(Box::from(format!("could not parse DID; {}", did)))
     }
 }

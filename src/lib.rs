@@ -460,7 +460,7 @@ impl VadePlugin for VadeEvan {
         let payload: CreateRevocationRegistryDefinitionPayload = serde_json::from_str(&payload)?;
 
         debug!(
-            "fetching credential definition with did: {}",
+            "fetching credential definition with did; {}",
             &payload.credential_definition
         );
         let definition: CredentialDefinition = serde_json::from_str(
@@ -528,7 +528,7 @@ impl VadePlugin for VadeEvan {
         let payload: IssueCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
-            "fetching credential definition with did: {}",
+            "fetching credential definition with did; {}",
             &payload.credential_request.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
@@ -540,7 +540,7 @@ impl VadePlugin for VadeEvan {
                 .ok_or("could not get credential definition did document")?,
         )?;
 
-        debug!("fetching schema with did: {}", &definition.schema);
+        debug!("fetching schema with did; {}", &definition.schema);
         let schema: CredentialSchema = serde_json::from_str(
             &self.vade.did_resolve(&definition.schema).await?[0]
                 .as_ref()
@@ -548,7 +548,7 @@ impl VadePlugin for VadeEvan {
         )?;
 
         debug!(
-            "fetching revocation definition with did: {}",
+            "fetching revocation definition with did; {}",
             &payload.credential_revocation_definition,
         );
         let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
@@ -644,7 +644,7 @@ impl VadePlugin for VadeEvan {
             HashMap::new();
         for req in &payload.proof_request.sub_proof_requests {
             let schema_did = &req.schema;
-            debug!("fetching schema with did: {}", &schema_did);
+            debug!("fetching schema with did; {}", &schema_did);
             schemas.insert(
                 schema_did.clone(),
                 serde_json::from_str(
@@ -662,7 +662,7 @@ impl VadePlugin for VadeEvan {
                 .credential_definition
                 .clone();
             debug!(
-                "fetching credential definition with did: {}",
+                "fetching credential definition with did; {}",
                 &definition_did
             );
             definitions.insert(
@@ -683,7 +683,7 @@ impl VadePlugin for VadeEvan {
                 .revocation_registry_definition
                 .clone();
             debug!(
-                "fetching revocation definition with did: {}",
+                "fetching revocation definition with did; {}",
                 &rev_definition_did
             );
             revocation_definitions.insert(
@@ -765,7 +765,7 @@ impl VadePlugin for VadeEvan {
         let payload: RequestCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
-            "fetching credential definition with did: {}",
+            "fetching credential definition with did; {}",
             &payload.credential_offering.credential_definition,
         );
         let definition: CredentialDefinition = serde_json::from_str(
@@ -852,7 +852,7 @@ impl VadePlugin for VadeEvan {
         let payload: RevokeCredentialPayload = serde_json::from_str(&payload)?;
 
         debug!(
-            "fetching revocation definition with did: {}",
+            "fetching revocation definition with did; {}",
             &payload.revocation_registry_definition,
         );
         let rev_def: RevocationRegistryDefinition = serde_json::from_str(
@@ -913,7 +913,7 @@ impl VadePlugin for VadeEvan {
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         for req in &payload.proof_request.sub_proof_requests {
             let schema_did = &req.schema;
-            debug!("fetching schema with did: {}", &schema_did);
+            debug!("fetching schema with did; {}", &schema_did);
             schemas.insert(
                 schema_did.clone(),
                 serde_json::from_str(
@@ -927,7 +927,7 @@ impl VadePlugin for VadeEvan {
         for credential in &payload.presented_proof.verifiable_credential {
             let definition_did = &credential.proof.credential_definition.clone();
             debug!(
-                "fetching credential definition with did: {}",
+                "fetching credential definition with did; {}",
                 &definition_did
             );
             definitions.insert(
@@ -941,7 +941,7 @@ impl VadePlugin for VadeEvan {
 
             let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
             debug!(
-                "fetching revocation definition with did: {}",
+                "fetching revocation definition with did; {}",
                 &rev_definition_did
             );
             rev_definitions.insert(
