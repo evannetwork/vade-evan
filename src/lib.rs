@@ -81,6 +81,7 @@ pub mod crypto;
 pub mod utils;
 pub mod resolver;
 
+#[cfg(target_arch = "wasm32")]
 pub mod wasm_lib;
 
 use crate::{
