@@ -215,7 +215,7 @@ pub async fn create_credential_offer(
     assert_eq!(results.len(), 1);
     Ok(results[0]
         .as_ref()
-        .ok_or("could not credential offer")?
+        .ok_or("could not create credential offer")?
         .to_string())
 }
 
