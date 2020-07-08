@@ -861,7 +861,7 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.revocation_registry_definition)
                 .await?[0]
                 .as_ref()
-                .ok_or("could not get did document")?,
+                .ok_or("could not get revocation registry definition did document")?,
         )?;
 
         let updated_registry = Issuer::revoke_credential(
