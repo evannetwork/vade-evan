@@ -231,22 +231,16 @@ impl EventsDecoder {
         output: &mut W,
     ) -> Result<(), EventsError> {
         for arg in args {
-            debug!("EventArg {:?}", arg);
             match arg {
                 EventArg::Vec(arg) => {
-                    debug!("EventArg Vec");
                     let len = <Compact<u32>>::decode(input)?;
                     len.encode_to(output);
                     for _ in 0..len.0 {
                         self.decode_raw_bytes(&[*arg.clone()], input, output)?
                     }
                 }
-                EventArg::Tuple(args) => {
-                    debug!("EventArg Tuple");
-                    self.decode_raw_bytes(args, input, output)?
-                }
+                EventArg::Tuple(args) => self.decode_raw_bytes(args, input, output)?,
                 EventArg::Primitive(name) => {
-                    debug!("EventArg Primitive");
                     if name.contains("PhantomData") {
                         // PhantomData is size 0
                         return Ok(());
@@ -256,7 +250,6 @@ impl EventsDecoder {
                         input.read(&mut buf)?;
                         output.write(&buf);
                     } else {
-                        debug!("EventArg Primitive");
                         return Err(EventsError::TypeSizeUnavailable(name.to_owned()));
                     }
                 }
@@ -276,15 +269,11 @@ impl EventsDecoder {
         let mut r = Vec::new();
         for _ in 0..len {
             // decode EventRecord
-            debug!("Decoding phase: {:?}", input);
             let phase = Phase::decode(input)?;
             let module_variant = input.read_byte()?;
-            debug!("module_variant: {:?}", module_variant);
             let module = self.metadata.module_with_events(module_variant)?;
             let event = if module.name() == "System" {
-                debug!("Decoding system event, intput: {:?}", input);
                 let system_event = SystemEvent::decode(input)?;
-                debug!("Decoding successful, system_event: {:?}", system_event);
                 RuntimeEvent::System(system_event)
             } else {
                 let event_variant = input.read_byte()?;
@@ -300,7 +289,7 @@ impl EventsDecoder {
                 self.decode_raw_bytes(&event_metadata.arguments(), input, &mut event_data)?;
 
                 debug!(
-                    "received event '{}::{}', raw bytes: {}",
+                    "received event '{}::{}', raw bytes; {}",
                     module.name(),
                     event_metadata.name,
                     hex::encode(&event_data),

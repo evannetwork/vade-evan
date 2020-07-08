@@ -59,7 +59,7 @@ pub fn create_assertion_proof(
     let now = Utc::now().format("%Y-%m-%dT%H:%M:%S.000Z").to_string();
 
     // build data object and hash
-    let mut data_json: Value = serde_json::from_str("{}").unwrap();
+    let mut data_json: Value = serde_json::from_str("{}")?;
     let doc_clone: Value = document_to_sign.clone();
     data_json["iat"] = Value::from(now.clone());
     data_json["doc"] = doc_clone;
@@ -76,10 +76,10 @@ pub fn create_assertion_proof(
     debug!("header_and_data hash {:?}", hash);
 
     // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
     let message = Message::parse(&hash_arr);
     let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(&private_key, &mut private_key_arr).expect("private key invalid");
+    hex::decode_to_slice(&private_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
     let secret_key = SecretKey::parse(&private_key_arr)?;
     let (sig, rec): (Signature, _) = sign(&message, &secret_key);
     // sig to bytes (len 64), append recoveryid
@@ -91,7 +91,7 @@ pub fn create_assertion_proof(
     sig_and_rec[64] = rec.serialize();
     let padded = BASE64URL.encode(&sig_and_rec);
     let sig_base64url = padded.trim_end_matches('=');
-    debug!("signature base64 url encdoded: {:?}", &sig_base64url);
+    debug!("signature base64 url encoded: {:?}", &sig_base64url);
 
     // build proof property as serde object
     let jws: String = format!("{}.{}", &header_and_data, sig_base64url);
@@ -132,19 +132,28 @@ pub fn check_assertion_proof(
         debug!("checking vc document");
 
         // separate proof and vc document (vc document will be a Map after this)
-        let vc_without_proof = vc.as_object_mut().unwrap();
-        let vc_proof = vc_without_proof.remove("proof").unwrap();
+        let vc_without_proof = vc
+            .as_object_mut()
+            .ok_or("could not get vc object as mutable")?;
+        let vc_proof = vc_without_proof
+            .remove("proof")
+            .ok_or("could not remove proof from vc")?;
 
         // recover address and payload text (pure jwt format)
-        let (address, decoded_payload_text) =
-            recover_address_and_data(vc_proof["jws"].as_str().unwrap())?;
+        let (address, decoded_payload_text) = recover_address_and_data(
+            vc_proof["jws"]
+                .as_str()
+                .ok_or("could not get jws from vc proof")?,
+        )?;
 
         debug!("checking if document given and document from jws are equal");
         let jws: JwsData = serde_json::from_str(&decoded_payload_text)?;
         let doc = jws.doc.get();
         // parse recovered vc document into serde Map
         let parsed_caps1: Value = serde_json::from_str(&doc)?;
-        let parsed_caps1_map = parsed_caps1.as_object().unwrap();
+        let parsed_caps1_map = parsed_caps1
+            .as_object()
+            .ok_or("could not get jws doc as object")?;
         // compare documents
         if vc_without_proof != parsed_caps1_map {
             return Err(Box::from(
@@ -154,9 +163,11 @@ pub fn check_assertion_proof(
 
         debug!("checking proof of vc document");
         let address = format!("0x{}", address);
-        let key_to_use = vc_proof["verificationMethod"].as_str().unwrap();
-        debug!("recovered address: {}", &address);
-        debug!("key to use for verification: {}", &key_to_use);
+        let key_to_use = vc_proof["verificationMethod"]
+            .as_str()
+            .ok_or("could not get verificationMethod from proof")?;
+        debug!("recovered address; {}", &address);
+        debug!("key to use for verification; {}", &key_to_use);
         if address != signer_address {
             return Err(Box::from(
                 "recovered and signing given address do not match",
@@ -188,7 +199,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
             Ok(decoded) => decoded,
             Err(_) => match BASE64URL.decode(format!("{}==", data).as_bytes()) {
                 Ok(decoded) => decoded,
-                Err(_) => BASE64URL.decode(format!("{}===", data).as_bytes()).unwrap(),
+                Err(_) => BASE64URL.decode(format!("{}===", data).as_bytes())?,
             },
         },
     };
@@ -199,9 +210,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
         Ok(decoded) => decoded,
         Err(_) => match BASE64URL.decode(format!("{}=", signature).as_bytes()) {
             Ok(decoded) => decoded,
-            Err(_) => BASE64URL
-                .decode(format!("{}==", signature).as_bytes())
-                .unwrap(),
+            Err(_) => BASE64URL.decode(format!("{}==", signature).as_bytes())?,
         },
     };
     debug!("signature_decoded {:?}", &signature_decoded);
@@ -214,19 +223,21 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     debug!("header_and_data hash {:?}", hash);
 
     // prepare arguments for public key recovery
-    let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid");
+    let hash_arr: [u8; 32] = hash
+        .try_into()
+        .map_err(|_| "header_and_data hash invalid")?;
     let ctx_msg = Message::parse(&hash_arr);
     let mut signature_array = [0u8; 64];
     for i in 0..64 {
         signature_array[i] = signature_decoded[i];
     }
     // slice signature and recovery for recovery
-    debug!("recovery id: {}", signature_decoded[64]);
+    debug!("recovery id; {}", signature_decoded[64]);
     let ctx_sig = Signature::parse(&signature_array);
-    let recovery_id = RecoveryId::parse(signature_decoded[64]).unwrap();
+    let recovery_id = RecoveryId::parse(signature_decoded[64])?;
 
     // recover public key, build ethereum address from it
-    let recovered_key = recover(&ctx_msg, &ctx_sig, &recovery_id).unwrap();
+    let recovered_key = recover(&ctx_msg, &ctx_sig, &recovery_id)?;
     let mut hasher = Keccak256::new();
     hasher.input(&recovered_key.serialize()[1..65]);
     let hash = hasher.result();
@@ -246,18 +257,21 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
 /// # Returns
 /// `[u8; 65]` - Signature
 /// `[u8; 32]` - Hashed Message
-pub fn sign_message(message_to_sign: &str, signing_key: &str) -> ([u8; 65], [u8; 32]) {
+pub fn sign_message(
+    message_to_sign: &str,
+    signing_key: &str,
+) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
     // create hash of data (including header)
     let mut hasher = Keccak256::new();
     hasher.input(&message_to_sign);
     let hash = hasher.result();
 
     // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
     let message = Message::parse(&hash_arr);
     let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(signing_key, &mut private_key_arr).expect("private key invalid");
-    let secret_key = SecretKey::parse(&private_key_arr).unwrap();
+    hex::decode_to_slice(signing_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
+    let secret_key = SecretKey::parse(&private_key_arr)?;
     let (sig, rec): (Signature, _) = sign(&message, &secret_key);
 
     // sig to bytes (len 64), append recoveryid
@@ -268,5 +282,5 @@ pub fn sign_message(message_to_sign: &str, signing_key: &str) -> ([u8; 65], [u8;
     }
     sig_and_rec[64] = rec.serialize();
 
-    return (sig_and_rec, hash_arr);
+    Ok((sig_and_rec, hash_arr))
 }

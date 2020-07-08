@@ -49,45 +49,65 @@ impl Issuer {
 
     pub fn create_credential_definition(
         credential_schema: &CredentialSchema,
-    ) -> (CredentialPrivateKey, CryptoCredentialDefinition) {
+    ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn std::error::Error>>
+    {
         let mut non_credential_schema_builder =
-            CryptoIssuer::new_non_credential_schema_builder().unwrap();
+            CryptoIssuer::new_non_credential_schema_builder()
+                .map_err(|e| format!("could not get new non credential schema builder; {}", &e))?;
         non_credential_schema_builder
             .add_attr("master_secret")
-            .unwrap();
-        let non_credential_schema = non_credential_schema_builder.finalize().unwrap();
+            .map_err(|e| {
+                format!(
+                    "could not add master secret to non credential schema; {}",
+                    &e
+                )
+            })?;
+        let non_credential_schema = non_credential_schema_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize non credential schema; {}", &e))?;
 
         // Retrieve property names from schema
         // TODO: Object handling, how to handle nested object properties?
-        let mut credential_schema_builder = CryptoIssuer::new_credential_schema_builder().unwrap();
+        let mut credential_schema_builder = CryptoIssuer::new_credential_schema_builder()
+            .map_err(|e| format!("could not create credential schema builder; {}", &e))?;
         for property in &credential_schema.properties {
-            credential_schema_builder.add_attr(&property.0).unwrap();
+            credential_schema_builder
+                .add_attr(&property.0)
+                .map_err(|e| format!("could not add attribute to credential schema; {}", &e))?;
         }
-        let crypto_schema = credential_schema_builder.finalize().unwrap();
+        let crypto_schema = credential_schema_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize credential schema; {}", &e))?;
         let (public_key, credential_private_key, credential_key_correctness_proof) =
-            CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true).unwrap();
+            CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true)
+                .map_err(|e| format!("could not create credential definition; {}", &e))?;
         let definition = CryptoCredentialDefinition {
             public_key,
             credential_key_correctness_proof,
         };
 
-        return (credential_private_key, definition);
+        Ok((credential_private_key, definition))
     }
 
     pub fn sign_credential(
         credential_request: &CredentialRequest,
         credential_private_key: &CredentialPrivateKey,
         credential_public_key: &CredentialPublicKey,
-    ) -> (CredentialSignature, SignatureCorrectnessProof, Nonce) {
-        let credential_issuance_nonce = new_nonce().unwrap();
+    ) -> Result<(CredentialSignature, SignatureCorrectnessProof, Nonce), Box<dyn std::error::Error>>
+    {
+        let credential_issuance_nonce =
+            new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?;
 
-        let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+        let mut value_builder = CryptoIssuer::new_credential_values_builder()
+            .map_err(|e| format!("could not create credential values builder; {}", &e))?;
         for pair in &credential_request.credential_values {
             value_builder
                 .add_dec_known(&pair.0, &pair.1.encoded)
-                .unwrap();
+                .map_err(|e| format!("could not add credential value; {}", &e))?;
         }
-        let values = value_builder.finalize().unwrap();
+        let values = value_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize credential values; {}", &e))?;
 
         let (cred, proof) = CryptoIssuer::sign_credential(
             &credential_request.subject,
@@ -99,8 +119,9 @@ impl Issuer {
             &credential_public_key,
             &credential_private_key,
         )
-        .unwrap();
-        return (cred, proof, credential_issuance_nonce);
+        .map_err(|e| format!("could not sign credential; {}", &e))?;
+
+        Ok((cred, proof, credential_issuance_nonce))
     }
 
     pub fn sign_credential_with_revocation(
@@ -110,24 +131,31 @@ impl Issuer {
         credential_revocation_definition: &mut RevocationRegistryDefinition,
         credential_revocation_id: u32,
         revocation_private_key: &RevocationKeyPrivate,
-    ) -> (
-        CredentialSignature,
-        SignatureCorrectnessProof,
-        Nonce,
-        Witness,
-    ) {
-        let credential_issuance_nonce = new_nonce().unwrap();
+    ) -> Result<
+        (
+            CredentialSignature,
+            SignatureCorrectnessProof,
+            Nonce,
+            Witness,
+        ),
+        Box<dyn std::error::Error>,
+    > {
+        let credential_issuance_nonce =
+            new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?;
 
-        let tails_accessor =
-            SimpleTailsAccessor::new(&mut credential_revocation_definition.tails).unwrap();
+        let tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails)
+            .map_err(|e| format!("could not create SimpleTailsAccessor; {}", &e))?;
 
-        let mut value_builder = CryptoIssuer::new_credential_values_builder().unwrap();
+        let mut value_builder = CryptoIssuer::new_credential_values_builder()
+            .map_err(|e| format!("could not create credential values builder; {}", &e))?;
         for pair in &credential_request.credential_values {
             value_builder
                 .add_dec_known(&pair.0, &pair.1.encoded)
-                .unwrap();
+                .map_err(|e| format!("could not add credential value; {}", &e))?;
         }
-        let values = value_builder.finalize().unwrap();
+        let values = value_builder
+            .finalize()
+            .map_err(|e| format!("could not finalize credential values; {}", &e))?;
 
         // no delta because we assume issuance_by_default == true
         let (cred, proof, _) = CryptoIssuer::sign_credential_with_revoc(
@@ -146,7 +174,7 @@ impl Issuer {
             &revocation_private_key,
             &tails_accessor,
         )
-        .unwrap();
+        .map_err(|e| format!("could not sign credential with revoc; {}", &e))?;
 
         let witness = Witness::new(
             credential_revocation_id,
@@ -155,22 +183,25 @@ impl Issuer {
             &credential_revocation_definition.registry_delta,
             &tails_accessor,
         )
-        .unwrap();
+        .map_err(|e| format!("could not create witness; {}", &e))?;
 
-        return (cred, proof, credential_issuance_nonce, witness);
+        Ok((cred, proof, credential_issuance_nonce, witness))
     }
 
     pub fn create_revocation_registry(
         credential_public_key: &CredentialPublicKey,
         maximum_credential_count: u32,
-    ) -> (CryptoRevocationRegistryDefinition, RevocationKeyPrivate) {
+    ) -> Result<
+        (CryptoRevocationRegistryDefinition, RevocationKeyPrivate),
+        Box<dyn std::error::Error>,
+    > {
         let (rev_key_pub, rev_key_priv, rev_registry, rev_tails_gen) =
             CryptoIssuer::new_revocation_registry_def(
                 credential_public_key,
                 maximum_credential_count,
                 true,
             )
-            .unwrap();
+            .map_err(|e| format!("could not create revocation registry definition; {}", &e))?;
 
         let revoked = HashSet::new();
         let issued = HashSet::new();
@@ -185,7 +216,7 @@ impl Issuer {
             maximum_credential_count,
         };
 
-        return (rev_def, rev_key_priv);
+        Ok((rev_def, rev_key_priv))
     }
 
     pub fn revoke_credential(
@@ -195,7 +226,8 @@ impl Issuer {
         let mut registry = revocation_registry_definition.registry.clone();
         let mut tails_gen = revocation_registry_definition.tails.clone();
         let max_cred_num = revocation_registry_definition.maximum_credential_count;
-        let tails = SimpleTailsAccessor::new(&mut tails_gen).unwrap();
+        let tails = SimpleTailsAccessor::new(&mut tails_gen)
+            .map_err(|e| format!("could not create SimpleTailsAccessor; {}", &e))?;
         match CryptoIssuer::revoke_credential(&mut registry, max_cred_num, revocation_id, &tails) {
             Ok(delta) => Ok(delta),
             Err(_) => return Err(Box::from("Unable to revoke credential")),

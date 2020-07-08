@@ -18,6 +18,7 @@ mod test_data;
 
 use serde_json::Value;
 use std::collections::HashMap;
+use std::env;
 use test_data::{
     ISSUER_DID,
     ISSUER_PRIVATE_KEY,
@@ -88,10 +89,10 @@ async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn std::erro
 
 #[tokio::test]
 async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Error>> {
-    let mut vade_evan = get_vade_evan();
+    let mut vade = get_vade();
 
     // run test
-    whitelist_identity(&mut vade_evan).await?;
+    whitelist_identity(&mut vade).await?;
 
     Ok(())
 }
@@ -263,7 +264,7 @@ async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn std::error::Error>
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // run test
     let result: ProofPresentation = present_proof(
@@ -321,7 +322,7 @@ async fn vade_evan_can_present_proofs_with_less_properties(
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // run test
     let result: ProofPresentation = present_proof(
@@ -379,7 +380,7 @@ async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omit
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // run test
     let presented_proof: ProofPresentation = present_proof(
@@ -473,7 +474,7 @@ async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn std::error::Error>> 
         &master_secret,
         &rev_reg_def.revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     let presented_proof: ProofPresentation = present_proof(
         &mut vade,
@@ -538,13 +539,13 @@ async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn std::error::Err
         &master_secret,
         &revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     let updated_registry =
         revoke_credential(&mut vade, &credential, &revocation_registry_definition).await?;
 
     let updated_revocation_state =
-        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry);
+        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry)?;
 
     // Verify proof for credential, using the updated revocation registry
     let presented_proof: ProofPresentation = present_proof(
@@ -614,7 +615,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
         &master_secret,
         &revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     // Issue different credential & revoke it
     let other_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
@@ -647,7 +648,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
         &master_secret,
         &revocation_registry_definition,
         &other_revocation_state.witness,
-    );
+    )?;
 
     let updated_registry = revoke_credential(
         &mut vade,
@@ -657,7 +658,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
     .await?;
 
     let updated_revocation_state =
-        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry);
+        Prover::update_revocation_state_for_credential(revocation_state.clone(), updated_registry)?;
 
     // Verify proof for main credential, using the updated revocation registry
     let presented_proof: ProofPresentation = present_proof(
@@ -728,7 +729,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &master_secret,
         &revocation_registry_definition,
         &revocation_state.witness,
-    );
+    )?;
 
     let updated_registry =
         revoke_credential(&mut vade, &credential, &revocation_registry_definition).await?;
@@ -764,7 +765,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &master_secret,
         &updated_registry,
         &other_revocation_state.witness,
-    );
+    )?;
 
     // Issue third credential & revoke it
     let third_proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
@@ -797,7 +798,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &master_secret,
         &updated_registry,
         &third_revocation_state.witness,
-    );
+    )?;
 
     let updated_registry =
         revoke_credential(&mut vade, &third_credential, &updated_registry).await?;
@@ -806,7 +807,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
     let updated_second_revocation_state = Prover::update_revocation_state_for_credential(
         other_revocation_state.clone(),
         updated_registry,
-    );
+    )?;
 
     // Verify proof for main credential, using the updated revocation registry
     let presented_proof = present_proof(
@@ -1060,23 +1061,23 @@ fn get_options() -> String {
     )
 }
 
+fn get_resolver() -> SubstrateDidResolverEvan {
+    SubstrateDidResolverEvan::new(ResolverConfig {
+        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "127.0.0.1".to_string()),
+    })
+}
+
 fn get_vade() -> Vade {
-    let evan = get_vade_evan();
     let mut vade = Vade::new();
-    vade.register_plugin(Box::from(evan));
+    vade.register_plugin(Box::from(get_vade_evan()));
+    vade.register_plugin(Box::from(get_resolver()));
 
     vade
 }
 
 fn get_vade_evan() -> VadeEvan {
     // vade to work with
-    // let substrate_resolver = SubstrateDidResolverEvan::new();
-    let identity = hex::decode("9670f7974e7021e4940c56d47f6b31fdfdd37de8").unwrap();
-    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-        target: "13.69.59.185".to_string(),
-        private_key: "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab".to_string(),
-        identity,
-    });
+    let substrate_resolver = get_resolver();
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
@@ -1242,15 +1243,17 @@ async fn verify_proof(
     Ok(result)
 }
 
-async fn whitelist_identity(vade_evan: &mut VadeEvan) -> Result<(), Box<dyn std::error::Error>> {
-    let options = r###"{
-        "privateKey": "36e0132e2592f565682bbf14ca71565c6077d03c46d70e9e528d915c07fe57b8",
-        "identity": "5bCa0826c31051489bd58c067c3889617e8b4B52"
-    }"###;
-    
-    let results = vade_evan.whitelist_identity(&options).await;
+async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
+    let auth_string = get_options();
+    let mut json_editable: Value = serde_json::from_str(&auth_string)?;
+    json_editable["operation"] = Value::from("whitelistIdentity");
+    let options = serde_json::to_string(&json_editable).unwrap();
 
-    if results.is_err() {
+    let results = vade
+        .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
+        .await;
+
+    if results.is_err() || results?.is_empty() {
         // test is not supposed to fail
         panic!("could not whitelist identity")
     }

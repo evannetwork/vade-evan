@@ -14,6 +14,7 @@
   limitations under the License.
 */
 
+extern crate regex;
 extern crate vade;
 use crate::utils::substrate::{
     add_payload_to_did,
@@ -24,12 +25,15 @@ use crate::utils::substrate::{
     whitelist_identity,
 };
 use async_trait::async_trait;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use vade::{VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
-const EVAN_METHOD_PREFIX: &str = "did:evan:testcore:0x";
+const EVAN_METHOD_PREFIX: &str = "did:evan:";
 const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
+
+const METHOD_REGEX: &'static str = r#"^(.*):0x(.*)$"#;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -48,8 +52,6 @@ pub struct IdentityArguments {
 
 pub struct ResolverConfig {
     pub target: String,
-    pub private_key: String,
-    pub identity: Vec<u8>,
 }
 
 /// Resolver for DIDs on the Trust&Trace substrate chain
@@ -74,13 +76,11 @@ impl SubstrateDidResolverEvan {
         payload: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         debug!(
-            "setting DID document for did: {}, iden: {}",
+            "setting DID document for did: {}, iden; {}",
             &did, &identity
         );
         let payload_count: u32 =
-            get_payload_count_for_did(self.config.target.clone(), did.to_string())
-                .await
-                .unwrap();
+            get_payload_count_for_did(self.config.target.clone(), did.to_string()).await?;
         if payload_count > 0 {
             update_payload_in_did(
                 self.config.target.clone(),
@@ -88,20 +88,18 @@ impl SubstrateDidResolverEvan {
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
-                hex::decode(identity).unwrap(),
+                hex::decode(identity)?,
             )
-            .await
-            .unwrap();
+            .await?;
         } else {
             add_payload_to_did(
                 self.config.target.clone(),
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
-                hex::decode(identity).unwrap(),
+                hex::decode(identity)?,
             )
-            .await
-            .unwrap();
+            .await?;
         }
         Ok(Some("".to_string()))
     }
@@ -121,7 +119,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         &mut self,
         did_method: &str,
         options: &str,
-        _payload: &str,
+        payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
         if did_method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
@@ -130,10 +128,13 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
-            hex::decode(options.identity).unwrap(),
+            hex::decode(&convert_did_to_substrate_identity(&options.identity)?)?,
+            match payload {
+                "" => None,
+                _ => Some(payload),
+            },
         )
-        .await
-        .unwrap();
+        .await?;
         Ok(VadePluginResultValue::Success(Some(inner_result)))
     }
 
@@ -165,10 +166,9 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 whitelist_identity(
                     self.config.target.clone(),
                     input.private_key.clone(),
-                    hex::decode(&did.replace(EVAN_METHOD_PREFIX, "")).unwrap(),
+                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
                 )
-                .await
-                .unwrap();
+                .await?;
                 Ok(VadePluginResultValue::Success(None))
             }
             "setDidDocument" => {
@@ -176,13 +176,12 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     return Ok(VadePluginResultValue::Ignored);
                 }
                 self.set_did_document(
-                    &did.replace(EVAN_METHOD_ZKP_PREFIX, ""),
+                    &convert_did_to_substrate_identity(&did)?,
                     &input.private_key,
-                    &input.identity,
+                    &convert_did_to_substrate_identity(&input.identity)?,
                     payload,
                 )
-                .await
-                .unwrap();
+                .await?;
                 Ok(VadePluginResultValue::Success(None))
             }
             _ => Err(Box::from(format!(
@@ -206,10 +205,33 @@ impl VadePlugin for SubstrateDidResolverEvan {
         }
         let did_result = get_did(
             self.config.target.clone(),
-            did_id.replace(EVAN_METHOD_ZKP_PREFIX, ""),
+            convert_did_to_substrate_identity(&did_id)?,
         )
-        .await
-        .unwrap();
+        .await?;
         Ok(VadePluginResultValue::Success(Some(did_result)))
+    }
+}
+
+/// Converts a DID to a substrate compatible method prefixed DID hex string.
+///
+/// # Arguments
+///
+/// `did` - a DID string, e.g. `did:evan:testcore:0x1234`
+///
+/// # Returns
+///
+/// substrate DID hex string, e.g. `02001234`
+fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let re = Regex::new(METHOD_REGEX)?;
+    let result = re.captures(&did);
+    if let Some(caps) = result {
+        match &caps[1] {
+            "did:evan" => Ok(format!("0100{}", &caps[2])),
+            "did:evan:testcore" => Ok(format!("0200{}", &caps[2])),
+            "did:evan:zkp" => Ok(caps[2].to_string()),
+            _ => Err(Box::from(format!("unknown DID format; {}", did))),
+        }
+    } else {
+        Err(Box::from(format!("could not parse DID; {}", did)))
     }
 }

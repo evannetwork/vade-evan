@@ -20,7 +20,6 @@ pub mod events;
 pub mod frame_metadata;
 pub mod node_metadata;
 pub mod rpc;
-pub mod rpc_messages;
 pub mod xt_primitives;
 
 /// Generates an Unchecked extrinsic for a given module and call passed as a &str.
@@ -64,9 +63,9 @@ macro_rules! compose_extrinsic {
 macro_rules! compose_call {
 ($node_metadata: expr, $module: expr, $call_name: expr $(, $args: expr) *) => {
         {
-            let module = $node_metadata.module_with_calls($module).unwrap().to_owned();
+            let module = $node_metadata.module_with_calls($module)?.to_owned();
 
-            let call_index = module.calls.get($call_name).unwrap();
+            let call_index = module.calls.get($call_name).ok_or("could not get call")?;
 
             ([module.index, *call_index as u8] $(, ($args)) *)
         }

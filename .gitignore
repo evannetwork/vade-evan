@@ -1,3 +1,4 @@
 target/
 www/node_modules
 Cargo.lock
+.DS_Store
