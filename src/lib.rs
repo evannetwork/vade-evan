@@ -557,7 +557,7 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_revocation_definition)
                 .await?[0]
                 .as_ref()
-                .ok_or("could not get did document")?,
+                .ok_or("could not get revocation definition did document")?,
         )?;
 
         let (credential, revocation_state, revocation_info) = Issuer::issue_credential(
