@@ -537,7 +537,7 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_request.credential_definition)
                 .await?[0]
                 .as_ref()
-                .ok_or("could not get did document")?,
+                .ok_or("could not get credential definition did document")?,
         )?;
 
         debug!("fetching schema with did: {}", &definition.schema);
