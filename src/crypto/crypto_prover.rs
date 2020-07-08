@@ -147,7 +147,7 @@ impl Prover {
                 .map_err(|e| format!("could not create credential values builder: {}", &e))?;
             for property in &credential_schemas
                 .get(&sub_proof.schema)
-                .expect("Credentials missing for schema")
+                .ok_or("Credentials missing for schema")?
                 .properties
             {
                 credential_schema_builder
@@ -183,7 +183,7 @@ impl Prover {
             // Build ursa credential values
             for values in &credentials
                 .get(&sub_proof.schema)
-                .expect("Credentials missing for schema")
+                .ok_or("Credentials missing for schema")?
                 .credential_subject
                 .data
             {

@@ -203,7 +203,7 @@ impl Prover {
         for sub_request in proof_request.sub_proof_requests {
             let credential = credentials
                 .get(&sub_request.schema)
-                .expect("Requested credential not provided");
+                .ok_or("Requested credential not provided")?;
             let mut revealed_data: HashMap<String, EncodedCredentialValue> = HashMap::new();
 
             for attribute in sub_request.revealed_attributes {
@@ -213,7 +213,7 @@ impl Prover {
                         .credential_subject
                         .data
                         .get(&attribute)
-                        .expect("Requested attribute not found in credential")
+                        .ok_or("Requested attribute not found in credential")?
                         .clone(),
                 );
             }
@@ -292,7 +292,8 @@ impl Prover {
                     let mut hasher = Sha256::new();
                     hasher.input(&entry.1.to_owned());
                     let hash = hasher.result();
-                    let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+                    let hash_arr: [u8; 32] = hash.try_into()
+                        .map_err(|e| format!("slice with incorrect length: {}", &e))?;
                     let as_number = BigNumber::from_bytes(&hash_arr)
                         .map_err(|e| format!("could not convert hash to big number: {}", &e))?;
                     encoded = as_number
@@ -420,7 +421,7 @@ impl Prover {
             delta: big_delta.clone(),
             updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .expect("Error generating unix timestamp for delta history")
+                .map_err(|e| format!("Error generating unix timestamp for delta history: {}", &e))?
                 .as_secs(),
         })
     }

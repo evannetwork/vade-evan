@@ -18,7 +18,14 @@
 use futures::channel::mpsc::Sender as ThreadOut;
 use log::{debug, error, warn};
 #[cfg(not(target_arch = "wasm32"))]
-use ws::{CloseCode, Handler, Handshake, Message, Result, Sender};
+use ws::{
+    CloseCode,
+    Handler,
+    Handshake,
+    Message,
+    Result,
+    Sender,
+};
 
 #[cfg(target_arch = "wasm32")]
 use web_sys::WebSocket;
@@ -65,46 +72,49 @@ impl Handler for RpcClient {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn on_get_request_msg(msg: Message, out: Sender, result: ThreadOut<String>) -> Result<()> {
     let retstr = msg.as_text()?;
-    let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(retstr) {
+        result
+            .clone()
+            .try_send(value["result"].to_string())
+            .ok();  // ignore errors, will be closed afterwards
+    };
 
-    result
-        .clone()
-        .try_send(value["result"].to_string()).unwrap();
     out.close(CloseCode::Normal)?;
     Ok(())
 }
 #[cfg(not(target_arch = "wasm32"))]
 pub fn on_subscription_msg(msg: Message, _out: Sender, result: ThreadOut<String>) -> Result<()> {
     let retstr = msg.as_text()?;
-    let value: serde_json::Value = serde_json::from_str(retstr).unwrap();
-    match value["id"].as_str() {
-        Some(_idstr) => {}
-        _ => {
-            // subscriptions
-            debug!("no id field found in response. must be subscription");
-            match value["method"].as_str() {
-                Some("state_storage") => {
-                    serde_json::to_string(&value["params"]["result"])
-                        .map(|head| {
-                            result.clone().try_send(head).unwrap_or_else(|_| {
-                                _out.close(CloseCode::Normal).unwrap();
-                            });
-                        })
-                        .unwrap_or_else(|_| error!("Could not parse header"));
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(retstr) {
+        match value["id"].as_str() {
+            Some(_idstr) => {}
+            _ => {
+                // subscriptions
+                debug!("no id field found in response. must be subscription");
+                match value["method"].as_str() {
+                    Some("state_storage") => {
+                        serde_json::to_string(&value["params"]["result"])
+                            .map(|head| {
+                                result.clone().try_send(head).unwrap_or_else(|_| {
+                                    _out.close(CloseCode::Normal).ok();
+                                });
+                            })
+                            .unwrap_or_else(|_| error!("Could not parse header"));
+                    }
+                    Some("chain_finalizedHead") => {
+                        serde_json::to_string(&value["params"]["result"])
+                            .map(|head| {
+                                result.clone().try_send(head).unwrap_or_else(|_| {
+                                    _out.close(CloseCode::Normal).ok();
+                                });
+                            })
+                            .unwrap_or_else(|_| error!("Could not parse header"));
+                    }
+                    _ => error!("unsupported method"),
                 }
-                Some("chain_finalizedHead") => {
-                    serde_json::to_string(&value["params"]["result"])
-                        .map(|head| {
-                            result.clone().try_send(head).unwrap_or_else(|_| {
-                                _out.close(CloseCode::Normal).unwrap();
-                            });
-                        })
-                        .unwrap_or_else(|_| error!("Could not parse header"));
-                }
-                _ => error!("unsupported method"),
             }
-        }
-    };
+        };
+    }
     Ok(())
 }
 #[cfg(not(target_arch = "wasm32"))]
@@ -177,8 +187,8 @@ pub fn on_extrinsic_msg_until_ready(
 fn end_process(out: Sender, result: ThreadOut<String>, value: Option<String>) {
     // return result to calling thread
     let val = value.unwrap_or_else(|| "".to_string());
-    result.clone().try_send(val).unwrap();
-    out.close(CloseCode::Normal).unwrap();
+    result.clone().try_send(val).ok();
+    out.close(CloseCode::Normal).ok();
 }
 
 // WASM implementation
@@ -305,19 +315,34 @@ pub fn on_extrinsic_msg_until_ready(
 fn end_process(out: &WebSocket, result: ThreadOut<String>, value: Option<String>) {
     // return result to calling thread
     let val = value.unwrap_or_else(|| "".to_string());
-    result.clone().try_send(val).unwrap();
-    out.close_with_code(1000).unwrap();
+    result.clone().try_send(val).ok();
+    out.close_with_code(1000).ok();
 }
 
 fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
-    let value: serde_json::Value = serde_json::from_str(msg).unwrap();
+    let value: serde_json::Value = match serde_json::from_str(msg) {
+        Ok(result) => result,
+        Err(_) => { return (XtStatus::Error, None); }
+    };
     match value["error"].as_object() {
         Some(obj) => {
-            let error_message = obj.get("message").unwrap().as_str().unwrap().to_owned();
+            let error_message = match obj.get("message") {
+                Some(result) => match result.as_str() {
+                    Some(result) => result.to_owned(),
+                    None => { return (XtStatus::Error, None); },
+                },
+                None => { return (XtStatus::Error, None); },
+            };
             error!(
                 "extrinsic error code {}: {}",
-                obj.get("code").unwrap().as_u64().unwrap(),
-                error_message
+                match obj.get("code") {
+                    Some(result) => match result.as_u64() {
+                        Some(result) => result,
+                        None => { return (XtStatus::Error, None); },
+                    },
+                    None => { return (XtStatus::Error, None); },
+                },
+                error_message,
             );
             (XtStatus::Error, Some(error_message))
         }
@@ -327,11 +352,20 @@ fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
                     debug!("finalized: {:?}", hash);
                     (
                         XtStatus::Finalized,
-                        Some(hash.as_str().unwrap().to_string()),
+                        Some(match hash.as_str() {
+                            Some(result) => result.to_string(),
+                            None => { return (XtStatus::Error, None); },
+                        }),
                     )
                 } else if let Some(hash) = obj.get("inBlock") {
                     debug!("inBlock: {:?}", hash);
-                    (XtStatus::InBlock, Some(hash.as_str().unwrap().to_string()))
+                    (
+                        XtStatus::InBlock,
+                        Some(match hash.as_str() {
+                            Some(result) => result.to_string(),
+                            None => { return (XtStatus::Error, None); },
+                        }),
+                    )
                 } else if let Some(array) = obj.get("broadcast") {
                     debug!("broadcast: {:?}", array);
                     (XtStatus::Broadcast, Some(array.to_string()))

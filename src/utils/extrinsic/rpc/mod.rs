@@ -113,11 +113,16 @@ pub fn start_rpc_client_thread(
     debug!("open websocket");
     let on_message = {
         Closure::wrap(Box::new(move |evt: MessageEvent| {
-            let msgg = evt
+            let msg = match evt
                 .data()
-                .as_string()
-                .expect("Can't convert received data to a string");
-            let _res_e = (on_message_fn)(&msgg, &ws_c, result_in.clone());
+                .as_string() {
+                    Ok(value) => value,
+                    Err(err) => {
+                        error!("Can't convert received data to a string: {}", &err);
+                        return
+                    },
+                };
+            let _res_e = (on_message_fn)(&msg, &ws_c, result_in.clone());
         }) as Box<dyn FnMut(MessageEvent)>)
     };
 

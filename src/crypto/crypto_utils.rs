@@ -76,10 +76,10 @@ pub fn create_assertion_proof(
     debug!("header_and_data hash {:?}", hash);
 
     // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
     let message = Message::parse(&hash_arr);
     let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(&private_key, &mut private_key_arr).expect("private key invalid");
+    hex::decode_to_slice(&private_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
     let secret_key = SecretKey::parse(&private_key_arr)?;
     let (sig, rec): (Signature, _) = sign(&message, &secret_key);
     // sig to bytes (len 64), append recoveryid
@@ -91,7 +91,7 @@ pub fn create_assertion_proof(
     sig_and_rec[64] = rec.serialize();
     let padded = BASE64URL.encode(&sig_and_rec);
     let sig_base64url = padded.trim_end_matches('=');
-    debug!("signature base64 url encdoded: {:?}", &sig_base64url);
+    debug!("signature base64 url encoded: {:?}", &sig_base64url);
 
     // build proof property as serde object
     let jws: String = format!("{}.{}", &header_and_data, sig_base64url);
@@ -223,7 +223,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     debug!("header_and_data hash {:?}", hash);
 
     // prepare arguments for public key recovery
-    let hash_arr: [u8; 32] = hash.try_into().expect("header_and_data hash invalid");
+    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "header_and_data hash invalid")?;
     let ctx_msg = Message::parse(&hash_arr);
     let mut signature_array = [0u8; 64];
     for i in 0..64 {
@@ -263,10 +263,10 @@ pub fn sign_message(message_to_sign: &str, signing_key: &str
     let hash = hasher.result();
 
     // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().expect("slice with incorrect length");
+    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
     let message = Message::parse(&hash_arr);
     let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(signing_key, &mut private_key_arr).expect("private key invalid");
+    hex::decode_to_slice(signing_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
     let secret_key = SecretKey::parse(&private_key_arr)?;
     let (sig, rec): (Signature, _) = sign(&message, &secret_key);
 
