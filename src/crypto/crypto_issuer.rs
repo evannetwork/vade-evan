@@ -80,7 +80,7 @@ impl Issuer {
             .map_err(|e| format!("could not finalize credential schema: {}", &e))?;
         let (public_key, credential_private_key, credential_key_correctness_proof) =
             CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true)
-                .map_err(|e| format!("could not create credential defninition: {}", &e))?;
+                .map_err(|e| format!("could not create credential definition: {}", &e))?;
         let definition = CryptoCredentialDefinition {
             public_key,
             credential_key_correctness_proof,
