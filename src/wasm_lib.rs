@@ -231,7 +231,9 @@ pub async fn create_credential_request(
         .did_resolve(&offer_object.schema)
         .await
         .map_err(jsify)?;
-    let schema = results[0].as_ref().ok_or("could not get schema did document")?;
+    let schema = results[0]
+        .as_ref()
+        .ok_or("could not get schema did document")?;
     let payload = format!(
         r###"{{
             "credentialOffering": {},
@@ -302,7 +304,9 @@ pub async fn issue_credential(
     let mut vade = get_vade().map_err(jsify)?;
     debug!("get did {}", definition);
     let results = &vade.did_resolve(&definition).await.map_err(jsify)?;
-    let credential_definition_doc = results[0].as_ref().ok_or("could not get credential definition did document")?;
+    let credential_definition_doc = results[0]
+        .as_ref()
+        .ok_or("could not get credential definition did document")?;
 
     debug!("parse doc");
     let definition_parsed: CredentialDefinition =
@@ -316,7 +320,9 @@ pub async fn issue_credential(
         .did_resolve(&revocation_definition)
         .await
         .map_err(jsify)?;
-    let revocation_definition_doc = results[0].as_ref().ok_or("could not get revocation registry did document")?;
+    let revocation_definition_doc = results[0]
+        .as_ref()
+        .ok_or("could not get revocation registry did document")?;
     let revocation_definition_parsed: RevocationRegistryDefinition =
         serde_json::from_str(&revocation_definition_doc).map_err(jsify_serde)?;
 
@@ -353,7 +359,9 @@ pub async fn issue_credential(
         .did_resolve(&result.credential.credential_schema.id)
         .await
         .map_err(jsify)?;
-    let schema_doc = results[0].as_ref().ok_or("could not get schema did document")?;
+    let schema_doc = results[0]
+        .as_ref()
+        .ok_or("could not get schema did document")?;
 
     let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
     Prover::post_process_credential_signature(
