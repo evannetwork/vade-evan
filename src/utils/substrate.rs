@@ -219,8 +219,6 @@ pub async fn send_extrinsic(
                         info!("{}", &msg);
                         msg
                     })?;
-                println!("extrinsics");
-                println!("{:?}", &extrinsics);
 
                 let ext_status = wait_for_extrinsic_status(
                     metadata.clone(),
