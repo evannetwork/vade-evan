@@ -277,7 +277,7 @@ impl Issuer {
                 for required in &credential_schema.required {
                     if required.eq(field.0) {
                         // No value provided for required schema property
-                        let error = format!("Missing required schema property: {}", field.0);
+                        let error = format!("Missing required schema property; {}", field.0);
                         return Err(Box::from(error));
                     }
                 }
@@ -388,7 +388,7 @@ impl Issuer {
         schema_did: &str,
         credential_definition_did: &str,
     ) -> Result<CredentialOffer, Box<dyn std::error::Error>> {
-        let nonce = new_nonce().map_err(|e| format!("could not get nonce: {}", &e))?;
+        let nonce = new_nonce().map_err(|e| format!("could not get nonce; {}", &e))?;
 
         Ok(CredentialOffer {
             issuer: issuer_did.to_owned(),
@@ -426,7 +426,7 @@ impl Issuer {
             revocation_registry_definition.registry_delta.clone();
         full_delta
             .merge(&delta)
-            .map_err(|e| format!("could not create revocation registry delta: {}", &e))?;
+            .map_err(|e| format!("could not create revocation registry delta; {}", &e))?;
 
         let unix_timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)

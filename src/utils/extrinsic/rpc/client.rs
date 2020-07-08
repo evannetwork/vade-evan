@@ -328,7 +328,7 @@ fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
                 }
             };
             error!(
-                "extrinsic error code {}: {}",
+                "extrinsic error code {}; {}",
                 match obj.get("code") {
                     Some(result) => match result.as_u64() {
                         Some(result) => result,

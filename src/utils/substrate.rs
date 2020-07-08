@@ -318,7 +318,7 @@ pub async fn wait_for_raw_event(
         None => match EventsDecoder::try_from(metadata.clone()) {
             Ok(decoder) => decoder,
             Err(err) => {
-                error!("could not get decoder: {}", &err);
+                error!("could not get decoder; {}", &err);
                 return None;
             }
         },
@@ -328,7 +328,7 @@ pub async fn wait_for_raw_event(
             let value: Value = match serde_json::from_str(&data) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("could not parse received data: {}", &err);
+                    error!("could not parse received data; {}", &err);
                     return None;
                 }
             };
@@ -343,7 +343,7 @@ pub async fn wait_for_raw_event(
             let unhex = match hexstr_to_vec(event_str?.to_string()) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("could not parse hex string: {}", &err);
+                    error!("could not parse hex string; {}", &err);
                     return None;
                 }
             };
@@ -386,7 +386,7 @@ pub async fn wait_for_extrinsic_status(
         None => match EventsDecoder::try_from(metadata.clone()) {
             Ok(decoder) => decoder,
             Err(err) => {
-                error!("could not get decoder: {}", &err);
+                error!("could not get decoder; {}", &err);
                 return None;
             }
         },
@@ -396,7 +396,7 @@ pub async fn wait_for_extrinsic_status(
             let value: Value = match serde_json::from_str(&data) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("json parsing error: {}", &err);
+                    error!("json parsing error; {}", &err);
                     return None;
                 }
             };
@@ -411,7 +411,7 @@ pub async fn wait_for_extrinsic_status(
             let _unhex = match hexstr_to_vec(event_str?.to_string()) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("hexstr_to_vec error: {}", &err);
+                    error!("hexstr_to_vec error; {}", &err);
                     return None;
                 }
             };
@@ -516,7 +516,7 @@ pub async fn create_did(
         .await
         .map_err(|_e| {
             format!(
-                "Error creating DID with identity: {:?} and error: {}",
+                "Error creating DID with identity: {:?} and error; {}",
                 hex::encode(identity.clone()),
                 _e
             )
@@ -529,7 +529,7 @@ pub async fn create_did(
         let decoded_event: Created = match Decode::decode(&mut &raw.data[..]) {
             Ok(result) => result,
             Err(err) => {
-                error!("could not decode event data: {}", &err);
+                error!("could not decode event data; {}", &err);
                 return false;
             }
         };
@@ -631,7 +631,7 @@ pub async fn add_payload_to_did(
     );
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
         .await
-        .map_err(|_e| format!("Error adding payload to DID: {:?} with payload: {:?} and identity: {:?} and error: {}",did.clone(), payload.clone(), hex::encode(identity.clone()), _e));
+        .map_err(|_e| format!("Error adding payload to DID: {:?} with payload: {:?} and identity: {:?} and error; {}",did.clone(), payload.clone(), hex::encode(identity.clone()), _e));
     match ext_error {
         Err(e) => return Err(Box::from(e)),
         _ => (),
@@ -642,7 +642,7 @@ pub async fn add_payload_to_did(
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("could not event data: {}", &err);
+                    error!("could not event data; {}", &err);
                     return false;
                 }
             };
@@ -711,7 +711,7 @@ pub async fn update_payload_in_did(
     );
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
         .await
-        .map_err(|_e| format!("Error updating payload in DID: {:?} on index: {} with payload: {:?} and identity: {:?} and error: {}",did.clone(), index.clone(), payload.clone(), hex::encode(identity.clone()), _e));
+        .map_err(|_e| format!("Error updating payload in DID: {:?} on index: {} with payload: {:?} and identity: {:?} and error; {}",did.clone(), index.clone(), payload.clone(), hex::encode(identity.clone()), _e));
     match ext_error {
         Err(e) => return Err(Box::from(e)),
         _ => (),
@@ -722,7 +722,7 @@ pub async fn update_payload_in_did(
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("could not decode event data: {}", &err);
+                    error!("could not decode event data; {}", &err);
                     return false;
                 }
             };
@@ -781,7 +781,7 @@ pub async fn whitelist_identity(
         .await
         .map_err(|_e| {
             format!(
-                "Error whitelisting identity: {:?} with error: {}",
+                "Error whitelisting identity: {:?} with error; {}",
                 hex::encode(identity.clone()),
                 _e
             )
@@ -795,7 +795,7 @@ pub async fn whitelist_identity(
             let decoded_event: IdentityWhitelist = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
                 Err(err) => {
-                    error!("could not decode event data: {}", &err);
+                    error!("could not decode event data; {}", &err);
                     return false;
                 }
             };

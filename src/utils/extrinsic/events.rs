@@ -289,7 +289,7 @@ impl EventsDecoder {
                 self.decode_raw_bytes(&event_metadata.arguments(), input, &mut event_data)?;
 
                 debug!(
-                    "received event '{}::{}', raw bytes: {}",
+                    "received event '{}::{}', raw bytes; {}",
                     module.name(),
                     event_metadata.name,
                     hex::encode(&event_data),
