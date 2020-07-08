@@ -302,7 +302,7 @@ pub async fn issue_credential(
     let mut vade = get_vade().map_err(jsify)?;
     debug!("get did {}", definition);
     let results = &vade.did_resolve(&definition).await.map_err(jsify)?;
-    let credential_definition_doc = results[0].as_ref().ok_or("could not get did document")?;
+    let credential_definition_doc = results[0].as_ref().ok_or("could not get credential definition did document")?;
 
     debug!("parse doc");
     let definition_parsed: CredentialDefinition =
