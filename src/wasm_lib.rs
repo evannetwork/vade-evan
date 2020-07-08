@@ -316,7 +316,7 @@ pub async fn issue_credential(
         .did_resolve(&revocation_definition)
         .await
         .map_err(jsify)?;
-    let revocation_definition_doc = results[0].as_ref().ok_or("could not get did document")?;
+    let revocation_definition_doc = results[0].as_ref().ok_or("could not get revocation registry did document")?;
     let revocation_definition_parsed: RevocationRegistryDefinition =
         serde_json::from_str(&revocation_definition_doc).map_err(jsify_serde)?;
 
