@@ -529,7 +529,7 @@ pub async fn create_did(
         let decoded_event: Created = match Decode::decode(&mut &raw.data[..]) {
             Ok(result) => result,
             Err(err) => {
-                error!("could not decode event data data: {}", &err);
+                error!("could not decode event data: {}", &err);
                 return false;
             }
         };
