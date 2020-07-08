@@ -353,7 +353,7 @@ pub async fn issue_credential(
         .did_resolve(&result.credential.credential_schema.id)
         .await
         .map_err(jsify)?;
-    let schema_doc = results[0].as_ref().ok_or("could not get did document")?;
+    let schema_doc = results[0].as_ref().ok_or("could not get schema did document")?;
 
     let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
     Prover::post_process_credential_signature(
