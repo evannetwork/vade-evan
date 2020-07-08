@@ -21,6 +21,7 @@
 use crate::crypto::crypto_datatypes::AssertionProof;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::convert::TryInto;
 use ursa::cl::{
     issuer::Issuer as UrsaIssuer,
     BlindedCredentialSecrets,
@@ -79,13 +80,31 @@ pub struct CredentialSchema {
     pub proof: Option<AssertionProof>,
 }
 
-impl Into<UrsaCredentialSchema> for CredentialSchema {
-    fn into(self) -> UrsaCredentialSchema {
-        let mut credential_schema_builder = UrsaIssuer::new_credential_schema_builder().unwrap();
+impl TryInto<UrsaCredentialSchema> for CredentialSchema {
+    type Error = ();
+
+    fn try_into(self) -> Result<UrsaCredentialSchema, Self::Error> {
+        let mut credential_schema_builder = match UrsaIssuer::new_credential_schema_builder() {
+            Ok(result) => result,
+            Err(_) => {
+                return Err(());
+            }
+        };
         for property in &self.properties {
-            credential_schema_builder.add_attr(&property.0).unwrap();
+            match credential_schema_builder.add_attr(&property.0) {
+                Ok(result) => result,
+                Err(_) => {
+                    return Err(());
+                }
+            };
         }
-        return credential_schema_builder.finalize().unwrap();
+        let result = match credential_schema_builder.finalize() {
+            Ok(result) => result,
+            Err(_) => {
+                return Err(());
+            }
+        };
+        Ok(result)
     }
 }
 

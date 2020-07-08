@@ -56,6 +56,7 @@ pub struct Metadata {
     modules: HashMap<String, ModuleMetadata>,
     modules_with_calls: HashMap<String, ModuleWithCalls>,
     modules_with_events: HashMap<String, ModuleWithEvents>,
+    modules_with_errors: HashMap<String, ModuleWithEvents>,
 }
 
 impl Metadata {
@@ -104,6 +105,30 @@ impl Metadata {
             .ok_or(MetadataError::ModuleWithEventsNotFound(module_index))
     }
 
+    pub fn modules_with_errors(&self) -> impl Iterator<Item = &ModuleWithEvents> {
+        self.modules_with_errors.values()
+    }
+
+    pub fn modules_with_errors_by_name<S>(
+        &self,
+        name: S,
+    ) -> Result<&ModuleWithEvents, MetadataError>
+    where
+        S: ToString,
+    {
+        let name = name.to_string();
+        self.modules_with_errors
+            .get(&name)
+            .ok_or(MetadataError::ModuleNotFound(name))
+    }
+
+    pub fn module_with_errors(&self, module_index: u8) -> Result<&ModuleWithEvents, MetadataError> {
+        self.modules_with_errors
+            .values()
+            .find(|&module| module.index == module_index)
+            .ok_or(MetadataError::ModuleWithEventsNotFound(module_index))
+    }
+
     pub fn print_overview(&self) {
         let mut string = String::new();
         for (name, module) in &self.modules {
@@ -128,8 +153,15 @@ impl Metadata {
                     string.push('\n');
                 }
             }
+            if let Some(module) = self.modules_with_errors.get(name) {
+                for event in module.events.values() {
+                    string.push_str(" e  ");
+                    string.push_str(event.name.as_str());
+                    string.push('\n');
+                }
+            }
         }
-        println!("{}", string);
+        debug!("{}", string);
     }
 
     pub fn print_modules_with_calls(&self) {
@@ -140,6 +172,12 @@ impl Metadata {
 
     pub fn print_modules_with_events(&self) {
         for m in self.modules_with_events() {
+            m.print()
+        }
+    }
+
+    pub fn print_modules_with_errors(&self) {
+        for m in self.modules_with_errors() {
             m.print()
         }
     }
@@ -155,6 +193,7 @@ impl Metadata {
         let mut modules = HashMap::new();
         let mut modules_with_calls = HashMap::new();
         let mut modules_with_events = HashMap::new();
+        let mut modules_with_errors = HashMap::new();
         for module in convert(meta.modules)?.into_iter() {
             let module_name = convert(module.name.clone())?;
 
@@ -209,11 +248,25 @@ impl Metadata {
                     },
                 );
             }
+
+            let mut error_map = HashMap::new();
+            for (index, event) in convert(module.errors)?.into_iter().enumerate() {
+                error_map.insert(index as u8, convert_error(event)?);
+            }
+            modules_with_errors.insert(
+                module_name.clone().to_string(),
+                ModuleWithEvents {
+                    index: modules_with_errors.len() as u8,
+                    name: module_name.clone().to_string(),
+                    events: error_map,
+                },
+            );
         }
         Ok(Metadata {
             modules,
             modules_with_calls,
             modules_with_events,
+            modules_with_errors,
         })
     }
 }
@@ -243,14 +296,13 @@ pub struct ModuleWithCalls {
 
 impl ModuleWithCalls {
     pub fn print(&self) {
-        println!(
+        debug!(
             "----------------- Calls for Module: '{}' -----------------\n",
             self.name
         );
         for (name, index) in &self.calls {
-            println!("Name: {}, index {}", name, index);
+            debug!("Name: {}, index {}", name, index);
         }
-        println!()
     }
 }
 
@@ -277,15 +329,14 @@ impl ModuleWithEvents {
     }
 
     pub fn print(&self) {
-        println!(
+        debug!(
             "----------------- Events for Module: {} -----------------\n",
             self.name()
         );
 
         for e in self.events() {
-            println!("Name: {:?}, Args: {:?}", e.name, e.arguments);
+            debug!("Name: {:?}, Args: {:?}", e.name, e.arguments);
         }
-        println!()
     }
 }
 
@@ -316,7 +367,7 @@ impl StorageMetadata {
                 let default = Decode::decode(&mut &self.default[..])
                     .map_err(|_| MetadataError::MapValueTypeError)?;
 
-                info!(
+                debug!(
                     "map for '{}' '{}' has hasher1 {:?} hasher2 {:?}",
                     self.module_prefix, self.storage_prefix, hasher1, hasher2
                 );
@@ -342,7 +393,7 @@ impl StorageMetadata {
                 let default = Decode::decode(&mut &self.default[..])
                     .map_err(|_| MetadataError::MapValueTypeError)?;
 
-                info!(
+                debug!(
                     "map for '{}' '{}' has hasher {:?}",
                     self.module_prefix, self.storage_prefix, hasher
                 );
@@ -354,10 +405,7 @@ impl StorageMetadata {
                     default,
                 })
             }
-            _ => {
-                info!("err");
-                Err(MetadataError::StorageTypeError)
-            }
+            _ => Err(MetadataError::StorageTypeError),
         }
     }
     pub fn get_value(&self) -> Result<StorageValue, MetadataError> {
@@ -402,7 +450,6 @@ impl<K: Encode, V: Decode + Clone> StorageMap<K, V> {
     pub fn key(&self, key: K) -> StorageKey {
         let mut bytes = substrate::twox_128(&self.module_prefix).to_vec();
         bytes.extend(&substrate::twox_128(&self.storage_prefix)[..]);
-        info!("key");
         bytes.extend(key_hash(&key, &self.hasher));
         StorageKey(bytes)
     }
@@ -545,6 +592,17 @@ fn convert_event(
     })
 }
 
+fn convert_error(
+    event: super::frame_metadata::ErrorMetadata,
+) -> Result<ModuleEventMetadata, ConversionError> {
+    let name = convert(event.name)?;
+    let arguments = Vec::new();
+    Ok(ModuleEventMetadata {
+        name: name.to_string(),
+        arguments,
+    })
+}
+
 fn convert_entry(
     module_prefix: String,
     storage_prefix: String,
@@ -562,9 +620,7 @@ fn convert_entry(
 
 /// generates the key's hash depending on the StorageHasher selected
 fn key_hash<K: Encode>(key: &K, hasher: &StorageHasher) -> Vec<u8> {
-    info!("key before");
     let encoded_key = key.encode();
-    info!("key {:?}", encoded_key);
     match hasher {
         StorageHasher::Identity => encoded_key.to_vec(),
         StorageHasher::Blake2_128 => substrate::blake2_128(&encoded_key).to_vec(),

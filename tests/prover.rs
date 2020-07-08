@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use vade_evan::application::prover::Prover;
 
 #[test]
-fn encodes_values_correctly() {
+fn encodes_values_correctly() -> Result<(), Box<dyn std::error::Error>> {
     // Test values taken from https://gist.github.com/swcurran/78e5a9e8d11236f003f6a6263c6619a6
     let mut values: HashMap<String, String> = HashMap::new();
     values.insert("string".to_owned(), "101 Wilson Lane".to_owned());
@@ -33,7 +33,7 @@ fn encodes_values_correctly() {
     values.insert("true".to_owned(), "true".to_owned());
     values.insert("false".to_owned(), "false".to_owned());
 
-    let encoded = Prover::encode_values(values);
+    let encoded = Prover::encode_values(values)?;
     assert_eq!(
         encoded.get("string").unwrap().encoded,
         "68086943237164982734333428280784300550565381723532936263016368251445461241953".to_owned()
@@ -67,4 +67,6 @@ fn encodes_values_correctly() {
         encoded.get("false").unwrap().encoded,
         "114316671150208966788217069870207997298334791577910814811383388719888122312874".to_owned()
     );
+
+    Ok(())
 }
