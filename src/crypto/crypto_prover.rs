@@ -60,7 +60,7 @@ impl Prover {
         credential_nonce: Nonce,
     ) -> Result<
         (CryptoCredentialRequest, CredentialSecretsBlindingFactors),
-        Box<dyn std::error::Error>
+        Box<dyn std::error::Error>,
     > {
         // Master secret will be used to prove that each proof was really issued to the holder/subject/prover
         // Needs to stay secret
@@ -92,7 +92,8 @@ impl Prover {
             &credential_definition.credential_key_correctness_proof,
             &credential_values,
             &credential_nonce,
-        ).map_err(|e| format!("could not blind credential secrets: {}", &e))?;
+        )
+        .map_err(|e| format!("could not blind credential secrets: {}", &e))?;
 
         let req = CryptoCredentialRequest {
             subject: requester_did.to_owned(),
@@ -122,7 +123,12 @@ impl Prover {
                 .map_err(|e| format!("could not create non credential schema builder: {}", &e))?;
         non_credential_schema_builder
             .add_attr("master_secret")
-            .map_err(|e| format!("could not add master secret to non credential schema: {}", &e))?;
+            .map_err(|e| {
+                format!(
+                    "could not add master secret to non credential schema: {}",
+                    &e
+                )
+            })?;
         let non_credential_schema = non_credential_schema_builder
             .finalize()
             .map_err(|e| format!("could not finalize credential schema: {}", &e))?;
@@ -202,18 +208,22 @@ impl Prover {
                 .map_err(|e| format!("could not add master secret to credentials: {}", &e))?;
 
             let witness = witnesses
-                .get(&credentials
-                    .get(&sub_proof.schema)
-                    .ok_or("could not get sub proof schema from credentials")?.id,
+                .get(
+                    &credentials
+                        .get(&sub_proof.schema)
+                        .ok_or("could not get sub proof schema from credentials")?
+                        .id,
                 )
                 .ok_or("could not get witness by sub proof schema")?;
 
             // Build proof for requested schema & attributes
             proof_builder
                 .add_sub_proof_request(
-                    &sub_proof_request_builder.finalize()
+                    &sub_proof_request_builder
+                        .finalize()
                         .map_err(|e| format!("could not finalize sub proof request: {}", &e))?,
-                    &credential_schema_builder.finalize()
+                    &credential_schema_builder
+                        .finalize()
                         .map_err(|e| format!("could not finalize credential schema: {}", &e))?,
                     &non_credential_schema,
                     &credentials
@@ -221,7 +231,8 @@ impl Prover {
                         .ok_or("could not get sub proof schema from credentials")?
                         .signature
                         .signature,
-                    &credential_values_builder.finalize()
+                    &credential_values_builder
+                        .finalize()
                         .map_err(|e| format!("could not finalize credential values: {}", &e))?,
                     &credential_definitions
                         .get(&sub_proof.schema)
@@ -234,7 +245,8 @@ impl Prover {
                             .registry,
                     ),
                     Some(&witness),
-                ).map_err(|e| format!("could not add sub proof request: {}", &e))?;
+                )
+                .map_err(|e| format!("could not add sub proof request: {}", &e))?;
         }
 
         let proof = proof_builder
@@ -290,7 +302,8 @@ impl Prover {
             revocation_key_public.as_ref(),
             revocation_registry.as_ref(),
             Some(witness),
-        ).map_err(|e| format!("could not process credential signature: {}", &e))?;
+        )
+        .map_err(|e| format!("could not process credential signature: {}", &e))?;
 
         Ok(())
     }

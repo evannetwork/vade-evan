@@ -282,7 +282,10 @@ impl VadeEvan {
         let generated_did = format!(
             "{}{}",
             EVAN_METHOD_ZKP_PREFIX,
-            &result[0].as_ref().ok_or("could not generate DID")?.to_owned(),
+            &result[0]
+                .as_ref()
+                .ok_or("could not generate DID")?
+                .to_owned(),
         );
 
         Ok(generated_did)
@@ -350,9 +353,8 @@ impl VadePlugin for VadeEvan {
                 &payload.schema_did
             )));
         }
-        let schema: CredentialSchema = serde_json::from_str(
-            &results[0].as_ref().ok_or("could not get schema")?,
-        )?;
+        let schema: CredentialSchema =
+            serde_json::from_str(&results[0].as_ref().ok_or("could not get schema")?)?;
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -570,13 +572,13 @@ impl VadePlugin for VadeEvan {
             &payload.revocation_information,
         )?;
 
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&IssueCredentialResult {
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &IssueCredentialResult {
                 credential,
                 revocation_state,
                 revocation_info,
-            })?,
-        )))
+            },
+        )?)))
     }
 
     /// Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response
@@ -607,9 +609,9 @@ impl VadePlugin for VadeEvan {
             &payload.schema,
             &payload.credential_definition,
         )?;
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result)?,
-        )))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &result,
+        )?)))
     }
 
     /// Presents a proof for one or more credentials. A proof presentation is the response to a
@@ -704,9 +706,9 @@ impl VadePlugin for VadeEvan {
             &payload.master_secret,
         )?;
 
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result)?,
-        )))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &result,
+        )?)))
     }
 
     /// Creates a new zero-knowledge proof credential proposal. This message is the first in the
@@ -733,9 +735,9 @@ impl VadePlugin for VadeEvan {
         let result: CredentialProposal =
             Prover::propose_credential(&payload.issuer, &payload.subject, &payload.schema);
 
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result)?,
-        )))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &result,
+        )?)))
     }
 
     /// Requests a credential. This message is the response to a credential offering and is sent by the potential
@@ -783,9 +785,9 @@ impl VadePlugin for VadeEvan {
             payload.credential_values,
         )?;
 
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result)?,
-        )))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &result,
+        )?)))
     }
 
     /// Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and
@@ -816,9 +818,9 @@ impl VadePlugin for VadeEvan {
             payload.sub_proof_requests,
         )?;
 
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result)?,
-        )))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &result,
+        )?)))
     }
 
     /// Revokes a credential. After revocation the published revocation registry needs to be updated with information
@@ -877,7 +879,8 @@ impl VadePlugin for VadeEvan {
             &serialized,
             &options.private_key,
             &options.identity,
-        ).await?;
+        )
+        .await?;
 
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
@@ -943,13 +946,11 @@ impl VadePlugin for VadeEvan {
             );
             rev_definitions.insert(
                 credential.credential_schema.id.clone(),
-                Some(
-                    serde_json::from_str(
-                        &self.vade.did_resolve(&rev_definition_did).await?[0]
-                            .as_ref()
-                            .ok_or("could not get did document")?, 
-                    )?,
-                ),
+                Some(serde_json::from_str(
+                    &self.vade.did_resolve(&rev_definition_did).await?[0]
+                        .as_ref()
+                        .ok_or("could not get did document")?,
+                )?),
             );
         }
 
@@ -961,8 +962,8 @@ impl VadePlugin for VadeEvan {
             rev_definitions,
         );
 
-        Ok(VadePluginResultValue::Success(Some(
-            serde_json::to_string(&result)?,
-        )))
+        Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+            &result,
+        )?)))
     }
 }

@@ -89,11 +89,15 @@ pub fn start_rpc_client_thread(
                 on_message_fn,
             }) {
                 Ok(_) => (),
-                Err(err) => { error!("could not spawn rpc client: {}", &err); }
+                Err(err) => {
+                    error!("could not spawn rpc client: {}", &err);
+                }
             }
         }) {
         Ok(_) => (),
-        Err(err) => { error!("could not spawn rpc client: {}", &err); }
+        Err(err) => {
+            error!("could not spawn rpc client: {}", &err);
+        }
     };
 }
 
@@ -106,22 +110,26 @@ pub fn start_rpc_client_thread(
     on_message_fn: OnMessageFn,
 ) {
     let ws = match WebSocket::new(&url) {
-        Ok(_) => (),
-        Err(err) => { error!("create new websocket: {}", &err); return }
+        Ok(result) => result,
+        Err(err) => {
+            error!(
+                "create new websocket: {}",
+                &err.as_string().unwrap_or("".to_string())
+            );
+            return;
+        }
     };
     let ws_c = ws.clone();
     debug!("open websocket");
     let on_message = {
         Closure::wrap(Box::new(move |evt: MessageEvent| {
-            let msg = match evt
-                .data()
-                .as_string() {
-                    Ok(value) => value,
-                    Err(err) => {
-                        error!("Can't convert received data to a string: {}", &err);
-                        return
-                    },
-                };
+            let msg = match evt.data().as_string() {
+                Some(value) => value,
+                None => {
+                    error!("Can't convert received data to a string");
+                    return;
+                }
+            };
             let _res_e = (on_message_fn)(&msg, &ws_c, result_in.clone());
         }) as Box<dyn FnMut(MessageEvent)>)
     };

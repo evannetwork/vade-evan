@@ -18,14 +18,7 @@
 use futures::channel::mpsc::Sender as ThreadOut;
 use log::{debug, error, warn};
 #[cfg(not(target_arch = "wasm32"))]
-use ws::{
-    CloseCode,
-    Handler,
-    Handshake,
-    Message,
-    Result,
-    Sender,
-};
+use ws::{CloseCode, Handler, Handshake, Message, Result, Sender};
 
 #[cfg(target_arch = "wasm32")]
 use web_sys::WebSocket;
@@ -73,10 +66,7 @@ impl Handler for RpcClient {
 pub fn on_get_request_msg(msg: Message, out: Sender, result: ThreadOut<String>) -> Result<()> {
     let retstr = msg.as_text()?;
     if let Ok(value) = serde_json::from_str::<serde_json::Value>(retstr) {
-        result
-            .clone()
-            .try_send(value["result"].to_string())
-            .ok();  // ignore errors, will be closed afterwards
+        result.clone().try_send(value["result"].to_string()).ok(); // ignore errors, will be closed afterwards
     };
 
     out.close(CloseCode::Normal)?;
@@ -201,10 +191,8 @@ pub fn on_get_request_msg(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let value: serde_json::Value = serde_json::from_str(msg)?;
 
-    result
-        .clone()
-        .try_send(value["result"].to_string())?;
-    out.close_with_code(1000)?;
+    result.clone().try_send(value["result"].to_string())?;
+    out.close_with_code(1000).ok();
     Ok(())
 }
 
@@ -226,7 +214,7 @@ pub fn on_subscription_msg(
                     serde_json::to_string(&value["params"]["result"])
                         .map(|head| {
                             result.clone().try_send(head).unwrap_or_else(|_| {
-                                out.close_with_code(1000)?;
+                                out.close_with_code(1000).ok();
                             });
                         })
                         .unwrap_or_else(|_| error!("Could not parse header"));
@@ -322,25 +310,35 @@ fn end_process(out: &WebSocket, result: ThreadOut<String>, value: Option<String>
 fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
     let value: serde_json::Value = match serde_json::from_str(msg) {
         Ok(result) => result,
-        Err(_) => { return (XtStatus::Error, None); }
+        Err(_) => {
+            return (XtStatus::Error, None);
+        }
     };
     match value["error"].as_object() {
         Some(obj) => {
             let error_message = match obj.get("message") {
                 Some(result) => match result.as_str() {
                     Some(result) => result.to_owned(),
-                    None => { return (XtStatus::Error, None); },
+                    None => {
+                        return (XtStatus::Error, None);
+                    }
                 },
-                None => { return (XtStatus::Error, None); },
+                None => {
+                    return (XtStatus::Error, None);
+                }
             };
             error!(
                 "extrinsic error code {}: {}",
                 match obj.get("code") {
                     Some(result) => match result.as_u64() {
                         Some(result) => result,
-                        None => { return (XtStatus::Error, None); },
+                        None => {
+                            return (XtStatus::Error, None);
+                        }
                     },
-                    None => { return (XtStatus::Error, None); },
+                    None => {
+                        return (XtStatus::Error, None);
+                    }
                 },
                 error_message,
             );
@@ -354,7 +352,9 @@ fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
                         XtStatus::Finalized,
                         Some(match hash.as_str() {
                             Some(result) => result.to_string(),
-                            None => { return (XtStatus::Error, None); },
+                            None => {
+                                return (XtStatus::Error, None);
+                            }
                         }),
                     )
                 } else if let Some(hash) = obj.get("inBlock") {
@@ -363,7 +363,9 @@ fn parse_status(msg: &str) -> (XtStatus, Option<String>) {
                         XtStatus::InBlock,
                         Some(match hash.as_str() {
                             Some(result) => result.to_string(),
-                            None => { return (XtStatus::Error, None); },
+                            None => {
+                                return (XtStatus::Error, None);
+                            }
                         }),
                     )
                 } else if let Some(array) = obj.get("broadcast") {

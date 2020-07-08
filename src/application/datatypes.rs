@@ -86,17 +86,23 @@ impl TryInto<UrsaCredentialSchema> for CredentialSchema {
     fn try_into(self) -> Result<UrsaCredentialSchema, Self::Error> {
         let mut credential_schema_builder = match UrsaIssuer::new_credential_schema_builder() {
             Ok(result) => result,
-            Err(_) => { return Err(()); },
+            Err(_) => {
+                return Err(());
+            }
         };
         for property in &self.properties {
             match credential_schema_builder.add_attr(&property.0) {
                 Ok(result) => result,
-                Err(_) => { return Err(()); },
+                Err(_) => {
+                    return Err(());
+                }
             };
         }
         let result = match credential_schema_builder.finalize() {
             Ok(result) => result,
-            Err(_) => { return Err(()); },
+            Err(_) => {
+                return Err(());
+            }
         };
         Ok(result)
     }

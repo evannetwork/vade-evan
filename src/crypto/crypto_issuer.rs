@@ -49,13 +49,19 @@ impl Issuer {
 
     pub fn create_credential_definition(
         credential_schema: &CredentialSchema,
-    ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn std::error::Error>> {
+    ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn std::error::Error>>
+    {
         let mut non_credential_schema_builder =
             CryptoIssuer::new_non_credential_schema_builder()
                 .map_err(|e| format!("could not get new non credential schema builder: {}", &e))?;
         non_credential_schema_builder
             .add_attr("master_secret")
-            .map_err(|e| format!("could not add master secret to non credential schema: {}", &e))?;
+            .map_err(|e| {
+                format!(
+                    "could not add master secret to non credential schema: {}",
+                    &e
+                )
+            })?;
         let non_credential_schema = non_credential_schema_builder
             .finalize()
             .map_err(|e| format!("could not finalize non credential schema: {}", &e))?;
@@ -87,9 +93,10 @@ impl Issuer {
         credential_request: &CredentialRequest,
         credential_private_key: &CredentialPrivateKey,
         credential_public_key: &CredentialPublicKey,
-    ) -> Result<(CredentialSignature, SignatureCorrectnessProof, Nonce), Box<dyn std::error::Error>> {
-        let credential_issuance_nonce = new_nonce()
-            .map_err(|e| format!("could not get new nonce: {}", &e))?;
+    ) -> Result<(CredentialSignature, SignatureCorrectnessProof, Nonce), Box<dyn std::error::Error>>
+    {
+        let credential_issuance_nonce =
+            new_nonce().map_err(|e| format!("could not get new nonce: {}", &e))?;
 
         let mut value_builder = CryptoIssuer::new_credential_values_builder()
             .map_err(|e| format!("could not create credential values builder: {}", &e))?;
@@ -111,7 +118,8 @@ impl Issuer {
             &values,
             &credential_public_key,
             &credential_private_key,
-        ).map_err(|e| format!("could not XXX: {}", &e))?;
+        )
+        .map_err(|e| format!("could not XXX: {}", &e))?;
 
         Ok((cred, proof, credential_issuance_nonce))
     }
@@ -130,13 +138,12 @@ impl Issuer {
             Nonce,
             Witness,
         ),
-        Box<dyn std::error::Error>
-     > {
-        let credential_issuance_nonce = new_nonce()
-            .map_err(|e| format!("could not get new nonce: {}", &e))?;
+        Box<dyn std::error::Error>,
+    > {
+        let credential_issuance_nonce =
+            new_nonce().map_err(|e| format!("could not get new nonce: {}", &e))?;
 
-        let tails_accessor =
-            SimpleTailsAccessor::new(&mut credential_revocation_definition.tails)
+        let tails_accessor = SimpleTailsAccessor::new(&mut credential_revocation_definition.tails)
             .map_err(|e| format!("could not create SimpleTailsAccessor: {}", &e))?;
 
         let mut value_builder = CryptoIssuer::new_credential_values_builder()
@@ -166,7 +173,8 @@ impl Issuer {
             &mut credential_revocation_definition.registry,
             &revocation_private_key,
             &tails_accessor,
-        ).map_err(|e| format!("could not sign credential with revoc: {}", &e))?;
+        )
+        .map_err(|e| format!("could not sign credential with revoc: {}", &e))?;
 
         let witness = Witness::new(
             credential_revocation_id,
@@ -174,7 +182,8 @@ impl Issuer {
             true, // TODO: Global const
             &credential_revocation_definition.registry_delta,
             &tails_accessor,
-        ).map_err(|e| format!("could not create witness: {}", &e))?;
+        )
+        .map_err(|e| format!("could not create witness: {}", &e))?;
 
         Ok((cred, proof, credential_issuance_nonce, witness))
     }
@@ -183,15 +192,16 @@ impl Issuer {
         credential_public_key: &CredentialPublicKey,
         maximum_credential_count: u32,
     ) -> Result<
-            (CryptoRevocationRegistryDefinition, RevocationKeyPrivate),
-            Box<dyn std::error::Error>
+        (CryptoRevocationRegistryDefinition, RevocationKeyPrivate),
+        Box<dyn std::error::Error>,
     > {
         let (rev_key_pub, rev_key_priv, rev_registry, rev_tails_gen) =
             CryptoIssuer::new_revocation_registry_def(
                 credential_public_key,
                 maximum_credential_count,
                 true,
-            ).map_err(|e| format!("could not create revocation registry definition: {}", &e))?;
+            )
+            .map_err(|e| format!("could not create revocation registry definition: {}", &e))?;
 
         let revoked = HashSet::new();
         let issued = HashSet::new();

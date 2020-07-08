@@ -80,8 +80,7 @@ impl SubstrateDidResolverEvan {
             &did, &identity
         );
         let payload_count: u32 =
-            get_payload_count_for_did(self.config.target.clone(), did.to_string())
-                .await?;
+            get_payload_count_for_did(self.config.target.clone(), did.to_string()).await?;
         if payload_count > 0 {
             update_payload_in_did(
                 self.config.target.clone(),
@@ -182,8 +181,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     &convert_did_to_substrate_identity(&input.identity)?,
                     payload,
                 )
-                .await
-                ?;
+                .await?;
                 Ok(VadePluginResultValue::Success(None))
             }
             _ => Err(Box::from(format!(
@@ -208,7 +206,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let did_result = get_did(
             self.config.target.clone(),
             convert_did_to_substrate_identity(&did_id)?,
-        ).await?;
+        )
+        .await?;
         Ok(VadePluginResultValue::Success(Some(did_result)))
     }
 }
@@ -227,13 +226,10 @@ fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::e
     let result = re.captures(&did);
     if let Some(caps) = result {
         match &caps[1] {
-            "did:evan" =>
-                Ok(format!("0100{}", &caps[2])),
-            "did:evan:testcore" =>
-                Ok(format!("0200{}", &caps[2])),
-            "did:evan:zkp" =>
-                Ok(caps[2].to_string()),
-            _ => Err(Box::from(format!("unknown DID format: {}", did)))
+            "did:evan" => Ok(format!("0100{}", &caps[2])),
+            "did:evan:testcore" => Ok(format!("0200{}", &caps[2])),
+            "did:evan:zkp" => Ok(caps[2].to_string()),
+            _ => Err(Box::from(format!("unknown DID format: {}", did))),
         }
     } else {
         Err(Box::from(format!("could not parse DID: {}", did)))
