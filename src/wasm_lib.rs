@@ -231,7 +231,7 @@ pub async fn create_credential_request(
         .did_resolve(&offer_object.schema)
         .await
         .map_err(jsify)?;
-    let schema = results[0].as_ref().ok_or("could not get did document")?;
+    let schema = results[0].as_ref().ok_or("could not get schema did document")?;
     let payload = format!(
         r###"{{
             "credentialOffering": {},
