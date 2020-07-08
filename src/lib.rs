@@ -774,7 +774,7 @@ impl VadePlugin for VadeEvan {
                 .did_resolve(&payload.credential_offering.credential_definition)
                 .await?[0]
                 .as_ref()
-                .ok_or("could not get did document")?,
+                .ok_or("could not get credential definition did document")?,
         )?;
 
         let result = Prover::request_credential(
