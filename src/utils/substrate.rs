@@ -204,9 +204,6 @@ pub async fn send_extrinsic(
                     .text()
                     .await?;
 
-                println!("body");
-                println!("{:?}", &body);
-                println!("parsing");
                 let parsed: Value = serde_json::from_str(&body)?;
                 let extrinsics = &parsed["result"]["block"]["extrinsics"]
                     .as_array()
