@@ -544,7 +544,7 @@ impl VadePlugin for VadeEvan {
         let schema: CredentialSchema = serde_json::from_str(
             &self.vade.did_resolve(&definition.schema).await?[0]
                 .as_ref()
-                .ok_or("could not get did document")?,
+                .ok_or("could not get schema did document")?,
         )?;
 
         debug!(
