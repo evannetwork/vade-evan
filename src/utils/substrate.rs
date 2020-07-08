@@ -29,6 +29,7 @@ use blake2_rfc;
 use hex;
 use reqwest;
 use serde_json::{json, Value};
+use std::env;
 use std::hash::Hasher;
 use twox_hash;
 
@@ -46,6 +47,7 @@ use crate::utils::extrinsic::events::{
 use crate::utils::extrinsic::frame_metadata::RuntimeMetadataPrefixed;
 use crate::utils::extrinsic::node_metadata::Metadata;
 use crate::utils::extrinsic::rpc::client::XtStatus;
+#[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::stream::StreamExt;
@@ -73,7 +75,10 @@ pub async fn get_storage_value(
         .await?;
     let parsed: Value = serde_json::from_str(&body)?;
     print!("{}", &body);
-    Ok(parsed["result"].as_str().ok_or("could not get storage value")?.to_string())
+    Ok(parsed["result"]
+        .as_str()
+        .ok_or("could not get storage value")?
+        .to_string())
 }
 
 pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(
@@ -102,21 +107,22 @@ pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(
     let parsed: Value = serde_json::from_str(&body)?;
     let result = match parsed["result"].as_str() {
         None => None,
-        _ => {
-            Some(
-                hex::decode(&parsed["result"]
-                    .as_str()
-                    .ok_or("could not parse storage map result")?
-                    .trim_start_matches("0x")
-                )?
-            )
-        }
+        _ => Some(hex::decode(
+            &parsed["result"]
+                .as_str()
+                .ok_or("could not parse storage map result")?
+                .trim_start_matches("0x"),
+        )?),
     };
 
     if let Some(v) = result {
         match Decode::decode(&mut v.as_slice()) {
-            Ok(ok) => { return Ok(Some(ok)); },
-            Err(err) => { return Err(Box::from(err)); },
+            Ok(ok) => {
+                return Ok(Some(ok));
+            }
+            Err(err) => {
+                return Err(Box::from(err));
+            }
         }
     }
     Ok(None)
@@ -197,27 +203,25 @@ pub async fn send_extrinsic(
                     .await?
                     .text()
                     .await?;
-           
+
                 println!("body");
-                println!("{:?}", &body); 
+                println!("{:?}", &body);
                 println!("parsing");
                 let parsed: Value = serde_json::from_str(&body)?;
                 let extrinsics = &parsed["result"]["block"]["extrinsics"]
                     .as_array()
                     .ok_or("could not parse block result")?
                     .iter()
-                    .position(|ext|
-                        match ext.as_str() {
-                            Some(value) => value == xthex_prefixed,
-                            None => false
-                        }
-                    )
+                    .position(|ext| match ext.as_str() {
+                        Some(value) => value == xthex_prefixed,
+                        None => false,
+                    })
                     .ok_or_else(|| {
-                        let msg = format!("Failed to find Extrinsic with hash {:?}", xthex_prefixed);
+                        let msg =
+                            format!("Failed to find Extrinsic with hash {:?}", xthex_prefixed);
                         info!("{}", &msg);
                         msg
-                    })?
-                ;
+                    })?;
                 println!("extrinsics");
                 println!("{:?}", &extrinsics);
 
@@ -227,7 +231,9 @@ pub async fn send_extrinsic(
                     *extrinsics,
                     None,
                     receiver_status,
-                ).await.ok_or("could not get extrinsic status")?;
+                )
+                .await
+                .ok_or("could not get extrinsic status")?;
                 match ext_status {
                     SystemEvent::ExtrinsicFailed(DispatchError::Module {
                         index,
@@ -235,14 +241,12 @@ pub async fn send_extrinsic(
                         message: _,
                     }) => {
                         let clear_error = metadata.module_with_errors(index)?;
-                        return Err(Box::from(
-                            clear_error.event(error)?.name.to_string(),
-                        ));
-                    },
+                        return Err(Box::from(clear_error.event(error)?.name.to_string()));
+                    }
                     SystemEvent::ExtrinsicFailed(_) => return Err(Box::from("other error")),
                     SystemEvent::ExtrinsicSuccess(_info) => {
                         return Ok(Some(data));
-                    },
+                    }
                 }
             }
             Err(Box::from("other error"))
@@ -318,14 +322,20 @@ pub async fn wait_for_raw_event(
         Some(decoder) => decoder,
         None => match EventsDecoder::try_from(metadata.clone()) {
             Ok(decoder) => decoder,
-            Err(err) => { error!("could not get decoder: {}", &err); return None; }, 
+            Err(err) => {
+                error!("could not get decoder: {}", &err);
+                return None;
+            }
         },
     };
     loop {
         if let Some(data) = receiver.next().await {
             let value: Value = match serde_json::from_str(&data) {
                 Ok(result) => result,
-                Err(err) => { error!("could not parse received data: {}", &err); return None; },
+                Err(err) => {
+                    error!("could not parse received data: {}", &err);
+                    return None;
+                }
             };
             let changes = &value["changes"];
             let event_str = match changes[0][1].as_str() {
@@ -337,7 +347,10 @@ pub async fn wait_for_raw_event(
             };
             let unhex = match hexstr_to_vec(event_str?.to_string()) {
                 Ok(result) => result,
-                Err(err) => { error!("could not parse hex string: {}", &err); return None; },
+                Err(err) => {
+                    error!("could not parse hex string: {}", &err);
+                    return None;
+                }
             };
             let mut er_enc = unhex.as_slice();
 
@@ -377,14 +390,20 @@ pub async fn wait_for_extrinsic_status(
         Some(decoder) => decoder,
         None => match EventsDecoder::try_from(metadata.clone()) {
             Ok(decoder) => decoder,
-            Err(err) => { error!("could not get decoder: {}", &err); return None; }, 
+            Err(err) => {
+                error!("could not get decoder: {}", &err);
+                return None;
+            }
         },
     };
     loop {
         if let Some(data) = receiver.next().await {
             let value: Value = match serde_json::from_str(&data) {
                 Ok(result) => result,
-                Err(err) => { error!("json parsing error: {}", &err); return None; },
+                Err(err) => {
+                    error!("json parsing error: {}", &err);
+                    return None;
+                }
             };
             let changes = &value["changes"];
             let event_str = match changes[0][1].as_str() {
@@ -396,7 +415,10 @@ pub async fn wait_for_extrinsic_status(
             };
             let _unhex = match hexstr_to_vec(event_str?.to_string()) {
                 Ok(result) => result,
-                Err(err) => { error!("hexstr_to_vec error: {}", &err); return None; },
+                Err(err) => {
+                    error!("hexstr_to_vec error: {}", &err);
+                    return None;
+                }
             };
             let mut _er_enc = _unhex.as_slice();
             let _events = event_decoder.decode_events(&mut _er_enc);
@@ -481,8 +503,9 @@ pub async fn create_did(
                 signed_message.to_vec(),
                 identity.to_vec(),
                 now_timestamp
-            ).hex_encode()
-        },
+            )
+            .hex_encode()
+        }
         None => compose_extrinsic!(
             metadata.clone(),
             "DidModule",
@@ -491,7 +514,8 @@ pub async fn create_did(
             signed_message.to_vec(),
             identity.to_vec(),
             now_timestamp
-        ).hex_encode(),
+        )
+        .hex_encode(),
     };
     let ext_error = send_extrinsic(url.as_str(), xt, XtStatus::InBlock)
         .await
@@ -509,25 +533,26 @@ pub async fn create_did(
     let event_watch = move |raw: &RawEvent| -> bool {
         let decoded_event: Created = match Decode::decode(&mut &raw.data[..]) {
             Ok(result) => result,
-            Err(err) => { error!("could not decode event data data: {}", &err); return false; },
+            Err(err) => {
+                error!("could not decode event data data: {}", &err);
+                return false;
+            }
         };
         if now_timestamp == decoded_event.nonce {
             return true;
         }
         false
     };
-    let event_wait: Created =
-        wait_for_event(
-            metadata.clone(),
-            "DidModule",
-            "Created",
-            None,
-            receiver,
-            event_watch,
-        )
-        .await
-        .ok_or("could not create did")??
-    ;
+    let event_wait: Created = wait_for_event(
+        metadata.clone(),
+        "DidModule",
+        "Created",
+        None,
+        receiver,
+        event_watch,
+    )
+    .await
+    .ok_or("could not create did")??;
     Ok(format!("0x{}", hex::encode(event_wait.hash)))
 }
 
@@ -544,30 +569,27 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await?;
-    let detail_hash =
-        get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
-            url.as_str(),
-            metadata.clone(),
-            "DidModule",
-            "DidsDetails",
-            (bytes_did.clone(), 0),
+    let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
+        url.as_str(),
+        metadata.clone(),
+        "DidModule",
+        "DidsDetails",
+        (bytes_did.clone(), 0),
+    )
+    .await?
+    .ok_or("could not get storage map")?;
+    let body = reqwest::get(
+        &format!(
+            "http://{}:{}/ipfs/{}",
+            url,
+            env::var("VADE_EVAN_IPFS_PORT").unwrap_or_else(|_| "8081".to_string()),
+            std::str::from_utf8(&detail_hash)?
         )
-        .await?
-        .ok_or("could not get storage map")?
-    ;
-    let body =
-        reqwest::get(
-            &format!(
-                "http://{}:8081/ipfs/{}",
-                url,
-                std::str::from_utf8(&detail_hash)?
-            )
-            .to_string(),
-        )
-        .await?
-        .text()
-        .await?
-    ;
+        .to_string(),
+    )
+    .await?
+    .text()
+    .await?;
     Ok(body)
 }
 
@@ -624,7 +646,10 @@ pub async fn add_payload_to_did(
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
-                Err(err) => { error!("could not event data: {}", &err); return false; },
+                Err(err) => {
+                    error!("could not event data: {}", &err);
+                    return false;
+                }
             };
             if &hex::encode(decoded_event.hash) == did {
                 return true;
@@ -632,17 +657,16 @@ pub async fn add_payload_to_did(
             false
         }
     }
-    let _event_result: UpdatedDid =
-        wait_for_event(
-            metadata.clone(),
-            "DidModule",
-            "UpdatedDid",
-            None,
-            receiver,
-            event_watch(&did),
-        ).await
-        .ok_or("could not get event for updated did")??
-    ;
+    let _event_result: UpdatedDid = wait_for_event(
+        metadata.clone(),
+        "DidModule",
+        "UpdatedDid",
+        None,
+        receiver,
+        event_watch(&did),
+    )
+    .await
+    .ok_or("could not get event for updated did")??;
     Ok(())
 }
 
@@ -702,7 +726,10 @@ pub async fn update_payload_in_did(
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
-                Err(err) => { error!("could not decode event data: {}", &err); return false; },
+                Err(err) => {
+                    error!("could not decode event data: {}", &err);
+                    return false;
+                }
             };
             if &hex::encode(decoded_event.hash) == did {
                 return true;
@@ -711,18 +738,16 @@ pub async fn update_payload_in_did(
         }
     }
 
-    let _event_result: UpdatedDid =
-        wait_for_event(
-            metadata.clone(),
-            "DidModule",
-            "UpdatedDid",
-            None,
-            receiver,
-            event_watch(&did),
-        )
-        .await
-        .ok_or("could not could not get updated did event")??
-    ;
+    let _event_result: UpdatedDid = wait_for_event(
+        metadata.clone(),
+        "DidModule",
+        "UpdatedDid",
+        None,
+        receiver,
+        event_watch(&did),
+    )
+    .await
+    .ok_or("could not could not get updated did event")??;
     Ok(())
 }
 
@@ -774,7 +799,10 @@ pub async fn whitelist_identity(
         move |raw: &RawEvent| -> bool {
             let decoded_event: IdentityWhitelist = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
-                Err(err) => { error!("could not decode event data: {}", &err); return false; },
+                Err(err) => {
+                    error!("could not decode event data: {}", &err);
+                    return false;
+                }
             };
             if &decoded_event.identity == identity {
                 return true;
@@ -782,18 +810,16 @@ pub async fn whitelist_identity(
             false
         }
     }
-    let event_result: IdentityWhitelist =
-        wait_for_event(
-            metadata.clone(),
-            "DidModule",
-            "IdentityWhitelist",
-            None,
-            receiver,
-            event_watch(&identity),
-        )
-        .await
-        .ok_or("could not get whitelist identity event")??
-    ;
+    let event_result: IdentityWhitelist = wait_for_event(
+        metadata.clone(),
+        "DidModule",
+        "IdentityWhitelist",
+        None,
+        receiver,
+        event_watch(&identity),
+    )
+    .await
+    .ok_or("could not get whitelist identity event")??;
     if event_result.approved {
         Ok(())
     } else {
@@ -809,7 +835,10 @@ pub async fn whitelist_identity(
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `did` - DID to retrieve the count for
-pub async fn get_payload_count_for_did(url: String, did: String) -> Result<u32, Box<dyn std::error::Error>> {
+pub async fn get_payload_count_for_did(
+    url: String,
+    did: String,
+) -> Result<u32, Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let mut bytes_did_arr = [0; 32];
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
@@ -821,8 +850,7 @@ pub async fn get_payload_count_for_did(url: String, did: String) -> Result<u32, 
         "DidsDetailsCount",
         bytes_did.clone(),
     )
-    .await
-    ?;
+    .await?;
     if detail_count.is_none() {
         Ok(0)
     } else {

@@ -42,11 +42,11 @@ pub mod verifier {
             CredVerifier {}
         }
 
-        pub fn request_proof(attributes: Vec<&str>
+        pub fn request_proof(
+            attributes: Vec<&str>,
         ) -> Result<SubProofRequest, Box<dyn std::error::Error>> {
-            let mut sub_proof_request_builder =
-                CryptoVerifier::new_sub_proof_request_builder()
-                    .map_err(|e| format!("could not create sub proof request builder: {}", &e))?;
+            let mut sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder()
+                .map_err(|e| format!("could not create sub proof request builder: {}", &e))?;
             for i in 0..attributes.len() {
                 sub_proof_request_builder
                     .add_revealed_attr(&attributes[i])
@@ -70,11 +70,17 @@ pub mod verifier {
                 .map_err(|e| format!("could not create proof verifier: {}", &e))?;
 
             let mut non_credential_schema_builder =
-                CryptoIssuer::new_non_credential_schema_builder()
-                    .map_err(|e| format!("could not create non credential schema builder: {}", &e))?;
+                CryptoIssuer::new_non_credential_schema_builder().map_err(|e| {
+                    format!("could not create non credential schema builder: {}", &e)
+                })?;
             non_credential_schema_builder
                 .add_attr("master_secret")
-                .map_err(|e| format!("could not add master secret to non credential schema: {}", &e))?;
+                .map_err(|e| {
+                    format!(
+                        "could not add master secret to non credential schema: {}",
+                        &e
+                    )
+                })?;
             let non_credential_schema = non_credential_schema_builder
                 .finalize()
                 .map_err(|e| format!("could not finalize non credential schema: {}", &e))?;
@@ -83,8 +89,10 @@ pub mod verifier {
             let mut credential_schema_builder;
             let mut sub_proof_request_builder;
             for sub_proof_request in &proof_request.sub_proof_requests {
-                credential_schema_builder = CryptoIssuer::new_credential_schema_builder()
-                    .map_err(|e| format!("could not create new credential schema builder: {}", &e))?;
+                credential_schema_builder =
+                    CryptoIssuer::new_credential_schema_builder().map_err(|e| {
+                        format!("could not create new credential schema builder: {}", &e)
+                    })?;
                 for property in credential_schemas
                     .get(&sub_proof_request.schema)
                     .ok_or("could not get credential schema for sub proof request")?
@@ -96,16 +104,20 @@ pub mod verifier {
                         .map_err(|e| format!("could not add credential schema: {}", &e))?;
                 }
 
-                sub_proof_request_builder =
-                    CryptoVerifier::new_sub_proof_request_builder()
-                        .map_err(|e| format!("could not create proof request builder: {}", &e))?;
+                sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder()
+                    .map_err(|e| format!("could not create proof request builder: {}", &e))?;
                 for property in &sub_proof_request.revealed_attributes {
                     sub_proof_request_builder
                         .add_revealed_attr(&property)
-                        .map_err(|e| format!("could not add revealed attribute to sub proof request: {}", &e))?;
-                    credential_schema_builder
-                        .add_attr(property)
-                        .map_err(|e| format!("could not add attribute to credential schema: {}", &e))?;
+                        .map_err(|e| {
+                            format!(
+                                "could not add revealed attribute to sub proof request: {}",
+                                &e
+                            )
+                        })?;
+                    credential_schema_builder.add_attr(property).map_err(|e| {
+                        format!("could not add attribute to credential schema: {}", &e)
+                    })?;
                 }
 
                 let mut key: Option<RevocationKeyPublic> = None;
@@ -121,16 +133,12 @@ pub mod verifier {
                             .revocation_public_key
                             .clone(),
                     );
-                    registry = Some(
-                        serde_json::from_str(
-                            &serde_json::to_string(
-                                &reg_def
-                                    .as_ref()
-                                    .ok_or("could not get registry definition as reference")?
-                                    .registry,
-                            )?,
-                        )?,
-                    );
+                    registry = Some(serde_json::from_str(&serde_json::to_string(
+                        &reg_def
+                            .as_ref()
+                            .ok_or("could not get registry definition as reference")?
+                            .registry,
+                    )?)?);
                 }
 
                 pub_key = &credential_definitions

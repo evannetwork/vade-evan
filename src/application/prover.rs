@@ -249,8 +249,7 @@ impl Prover {
 
         let aggregated = AggregatedProof {
             nonce: proof_request.nonce,
-            aggregated_proof: serde_json::to_value(&crypto_proof)?["aggregated_proof"]
-                .to_string(),
+            aggregated_proof: serde_json::to_value(&crypto_proof)?["aggregated_proof"].to_string(),
         };
 
         Ok((proof_creds, aggregated))
@@ -292,7 +291,8 @@ impl Prover {
                     let mut hasher = Sha256::new();
                     hasher.input(&entry.1.to_owned());
                     let hash = hasher.result();
-                    let hash_arr: [u8; 32] = hash.try_into()
+                    let hash_arr: [u8; 32] = hash
+                        .try_into()
                         .map_err(|e| format!("slice with incorrect length: {}", &e))?;
                     let as_number = BigNumber::from_bytes(&hash_arr)
                         .map_err(|e| format!("could not convert hash to big number: {}", &e))?;
@@ -421,7 +421,7 @@ impl Prover {
             delta: big_delta.clone(),
             updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .map_err(|e| format!("Error generating unix timestamp for delta history: {}", &e))?
+                .map_err(|_| "Error generating unix timestamp for delta history")?
                 .as_secs(),
         })
     }

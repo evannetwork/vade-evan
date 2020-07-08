@@ -132,18 +132,19 @@ pub fn check_assertion_proof(
         debug!("checking vc document");
 
         // separate proof and vc document (vc document will be a Map after this)
-        let vc_without_proof = vc.as_object_mut().ok_or("could not get vc object as mutable")?;
+        let vc_without_proof = vc
+            .as_object_mut()
+            .ok_or("could not get vc object as mutable")?;
         let vc_proof = vc_without_proof
             .remove("proof")
             .ok_or("could not remove proof from vc")?;
 
         // recover address and payload text (pure jwt format)
-        let (address, decoded_payload_text) =
-            recover_address_and_data(
-                vc_proof["jws"]
-                    .as_str()
-                    .ok_or("could not get jws from vc proof")?,
-            )?;
+        let (address, decoded_payload_text) = recover_address_and_data(
+            vc_proof["jws"]
+                .as_str()
+                .ok_or("could not get jws from vc proof")?,
+        )?;
 
         debug!("checking if document given and document from jws are equal");
         let jws: JwsData = serde_json::from_str(&decoded_payload_text)?;
@@ -209,8 +210,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
         Ok(decoded) => decoded,
         Err(_) => match BASE64URL.decode(format!("{}=", signature).as_bytes()) {
             Ok(decoded) => decoded,
-            Err(_) => BASE64URL
-                .decode(format!("{}==", signature).as_bytes())?,
+            Err(_) => BASE64URL.decode(format!("{}==", signature).as_bytes())?,
         },
     };
     debug!("signature_decoded {:?}", &signature_decoded);
@@ -223,7 +223,9 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     debug!("header_and_data hash {:?}", hash);
 
     // prepare arguments for public key recovery
-    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "header_and_data hash invalid")?;
+    let hash_arr: [u8; 32] = hash
+        .try_into()
+        .map_err(|_| "header_and_data hash invalid")?;
     let ctx_msg = Message::parse(&hash_arr);
     let mut signature_array = [0u8; 64];
     for i in 0..64 {
@@ -255,7 +257,9 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
 /// # Returns
 /// `[u8; 65]` - Signature
 /// `[u8; 32]` - Hashed Message
-pub fn sign_message(message_to_sign: &str, signing_key: &str
+pub fn sign_message(
+    message_to_sign: &str,
+    signing_key: &str,
 ) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
     // create hash of data (including header)
     let mut hasher = Keccak256::new();

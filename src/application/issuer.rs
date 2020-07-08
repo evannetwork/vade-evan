@@ -187,7 +187,7 @@ impl Issuer {
             RevocationKeyPrivate,
             RevocationIdInformation,
         ),
-        Box<dyn std::error::Error>
+        Box<dyn std::error::Error>,
     > {
         let (crypto_rev_def, rev_key_private) = CryptoIssuer::create_revocation_registry(
             &credential_definition.public_key,
@@ -199,7 +199,7 @@ impl Issuer {
         let delta_history = DeltaHistory {
             created: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .expect("Error generating unix timestamp for delta history")
+                .map_err(|_| "Error generating unix timestamp for delta history")?
                 .as_secs(),
             delta: crypto_rev_def.registry_delta.clone(),
         };
@@ -335,9 +335,9 @@ impl Issuer {
 
         let credential_id = generate_uuid();
 
-        let delta: RevocationRegistryDelta = serde_json::from_str(
-            &serde_json::to_string(&revocation_registry_definition.registry)?,
-        )?;
+        let delta: RevocationRegistryDelta = serde_json::from_str(&serde_json::to_string(
+            &revocation_registry_definition.registry,
+        )?)?;
 
         let revocation_state = RevocationState {
             credential_id: credential_id.clone(),
@@ -345,7 +345,7 @@ impl Issuer {
             delta: delta.clone(),
             updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .expect("Error generating unix timestamp for delta history")
+                .map_err(|_| "Error generating unix timestamp for delta history")?
                 .as_secs(),
             witness,
         };
@@ -420,8 +420,7 @@ impl Issuer {
     ) -> Result<RevocationRegistryDefinition, Box<dyn std::error::Error>> {
         let updated_at = get_now_as_iso_string();
 
-        let delta =
-            CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id)?;
+        let delta = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id)?;
 
         let mut full_delta: RevocationRegistryDelta =
             revocation_registry_definition.registry_delta.clone();
@@ -431,7 +430,7 @@ impl Issuer {
 
         let unix_timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("Error generating unix timestamp for delta history")
+            .map_err(|_| "Error generating unix timestamp for delta history")?
             .as_secs();
         let delta_history = DeltaHistory {
             created: unix_timestamp,

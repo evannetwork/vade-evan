@@ -18,6 +18,7 @@ mod test_data;
 
 use serde_json::Value;
 use std::collections::HashMap;
+use std::env;
 use test_data::{
     ISSUER_DID,
     ISSUER_PRIVATE_KEY,
@@ -1056,15 +1057,13 @@ fn get_options() -> String {
             "privateKey": "{}",
             "identity": "{}"
         }}"###,
-        SIGNER_PRIVATE_KEY,
-        SIGNER_IDENTITY,
+        SIGNER_PRIVATE_KEY, SIGNER_IDENTITY,
     )
 }
 
 fn get_resolver() -> SubstrateDidResolverEvan {
     SubstrateDidResolverEvan::new(ResolverConfig {
-        // target: "13.69.59.185".to_string(),
-        target: "127.0.0.1".to_string(),
+        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "127.0.0.1".to_string()),
     })
 }
 
@@ -1246,7 +1245,7 @@ async fn verify_proof(
 
 async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
     let auth_string = get_options();
-    let mut json_editable: Value =  serde_json::from_str(&auth_string)?;
+    let mut json_editable: Value = serde_json::from_str(&auth_string)?;
     json_editable["operation"] = Value::from("whitelistIdentity");
     let options = serde_json::to_string(&json_editable).unwrap();
 
