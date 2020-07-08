@@ -650,7 +650,7 @@ impl VadePlugin for VadeEvan {
                 serde_json::from_str(
                     &self.vade.did_resolve(&schema_did).await?[0]
                         .as_ref()
-                        .ok_or("could not get did document")?,
+                        .ok_or("could not get schema did document")?,
                 )?,
             );
 
