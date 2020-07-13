@@ -1063,6 +1063,8 @@ fn get_options() -> String {
 
 fn get_resolver() -> SubstrateDidResolverEvan {
     SubstrateDidResolverEvan::new(ResolverConfig {
+        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
+            |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "127.0.0.1".to_string()),
     })
 }
@@ -1249,14 +1251,14 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
     json_editable["operation"] = Value::from("whitelistIdentity");
     let options = serde_json::to_string(&json_editable).unwrap();
 
-    let results = vade
+    let result = vade
         .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
         .await;
 
-    if results.is_err() || results?.is_empty() {
-        // test is not supposed to fail
-        panic!("could not whitelist identity")
-    }
+    match result {
+        Ok(values) => assert!(!values.is_empty()),
+        Err(e) => panic!("could not whitelist identity; {}", &e),
+    };
 
     Ok(())
 }

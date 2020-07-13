@@ -15,9 +15,8 @@
 */
 
 use crate::crypto::crypto_datatypes::AssertionProof;
-#[cfg(not(target_arch = "wasm32"))]
-use chrono::Utc;
 use data_encoding::BASE64URL;
+use reqwest;
 use secp256k1::{recover, sign, Message, RecoveryId, SecretKey, Signature};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::RawValue, Value};
@@ -25,10 +24,41 @@ use sha2::{Digest, Sha256};
 use sha3::Keccak256;
 use std::convert::TryInto;
 
+#[cfg(not(target_arch = "wasm32"))]
+use chrono::Utc;
+
+const KEY_TYPE: &str = "identityKey";
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JwsData<'a> {
     #[serde(borrow)]
     pub doc: &'a RawValue,
+}
+
+/// Arguments for signing endpoint.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct RemoteSigningArguments {
+    pub key: String,
+    pub r#type: String,
+    pub message: String,
+}
+
+/// Expected result from signing endpoint.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum RemoteSigningResult {
+    #[serde(rename_all = "camelCase")]
+    Ok {
+        message_hash: String,
+        signature: String,
+        signer_address: String,
+    },
+    #[serde(rename_all = "camelCase")]
+    Err {
+        error: String,
+    },
+
 }
 
 /// Creates proof for VC document
@@ -248,39 +278,53 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     Ok((address, data_string))
 }
 
-/// Signs a message using Keccak256
+/// Signs a message by using a remote endpoint
 ///
 /// # Arguments
 /// * `message_to_sign` - String to sign
-/// * `signing_key` - Key to be used for signing
+/// * `signing_key` - key reference to sign with
+/// * `signing_url` - endpoint that signs given message
 ///
 /// # Returns
 /// `[u8; 65]` - Signature
 /// `[u8; 32]` - Hashed Message
-pub fn sign_message(
+pub async fn sign_message(
     message_to_sign: &str,
     signing_key: &str,
+    signing_url: &str,
 ) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
-    // create hash of data (including header)
-    let mut hasher = Keccak256::new();
-    hasher.input(&message_to_sign);
-    let hash = hasher.result();
+    let client = reqwest::Client::new();
+    let body = RemoteSigningArguments {
+        key: signing_key.to_string(),
+        r#type: KEY_TYPE.to_string(),
+        message: message_to_sign.to_string(),
+    };
+    let parsed = client
+        .post(signing_url)
+        .json(&body)
+        .send()
+        .await?
+        .json::<RemoteSigningResult>()
+        .await?;
 
-    // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
-    let message = Message::parse(&hash_arr);
-    let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(signing_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
-    let secret_key = SecretKey::parse(&private_key_arr)?;
-    let (sig, rec): (Signature, _) = sign(&message, &secret_key);
+    match parsed {
+        RemoteSigningResult::Ok { message_hash, signature, signer_address: _ } => {
+            // parse into signature and hash
+            let mut signature_arr = [0u8; 65];
+            hex::decode_to_slice(
+                signature.trim_start_matches("0x"),
+                &mut signature_arr,
+            ).map_err(|_| "signature invalid")?;
+            let mut hash_arr = [0u8; 32];
+            hex::decode_to_slice(
+                message_hash.trim_start_matches("0x"),
+                &mut hash_arr,
+            ).map_err(|_| "hash invalid")?;
 
-    // sig to bytes (len 64), append recoveryid
-    let signature_arr = &sig.serialize();
-    let mut sig_and_rec: [u8; 65] = [0; 65];
-    for i in 0..64 {
-        sig_and_rec[i] = signature_arr[i];
+            Ok((signature_arr, hash_arr))
+        },
+        RemoteSigningResult::Err { error }=> {
+            Err(Box::from(format!("could not sign message with remote endpoint; {}", &error)))
+        },
     }
-    sig_and_rec[64] = rec.serialize();
-
-    Ok((sig_and_rec, hash_arr))
 }

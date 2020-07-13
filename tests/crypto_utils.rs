@@ -105,16 +105,17 @@ fn can_create_assertion_proof() {
     assert_eq!(format!("0x{}", address), ISSUER_ETHEREUM_ADDRESS);
 }
 
-#[test]
-fn can_sign_messages() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::test]
+async fn can_sign_messages() -> Result<(), Box<dyn std::error::Error>> {
     let (_signature, message): ([u8; 65], [u8; 32]) = sign_message(
-        "hallo",
-        "087d321d9474af5ed4ab1e55c713825b91550f8e491376c768a0d67204f59c49",
-    )?;
+        "one two three four",
+        "identityKey",
+        "http://localhost:7070/api/key/sign",
+    ).await?;
     let message_hash = format!("0x{}", hex::encode(message));
     assert_eq!(
         message_hash,
-        "0xd123f0a85b26264de171387e5503b75ee1f33737c297fdba8c43a3191ff2f8d0"
+        "0x52091d1299031b18c1099620a1786363855d9fcd91a7686c866ad64f83de13ff"
     );
 
     Ok(())

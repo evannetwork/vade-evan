@@ -109,7 +109,7 @@ pub const SIGNER_PRIVATE_KEY: &str =
     "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
 
 #[allow(dead_code)]
-pub const SIGNER_IDENTITY: &str = "did:evan:testcore:0x9670f7974e7021e4940c56d47f6b31fdfdd37de8";
+pub const SIGNER_IDENTITY: &str = "did:evan:testcore:0xdCCA99F72E3Ef25228067cDe8bE891D5c6940926";
 
 #[allow(dead_code)]
 pub const ISSUER_PUBLIC_KEY_DID: &str =

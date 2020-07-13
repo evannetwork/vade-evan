@@ -518,6 +518,8 @@ fn get_vade() -> Result<Vade, Box<dyn std::error::Error>> {
     let mut vade = Vade::new();
 
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
+        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
+            |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     });
     vade.register_plugin(Box::from(substrate_resolver));
@@ -528,6 +530,8 @@ fn get_vade() -> Result<Vade, Box<dyn std::error::Error>> {
 
 fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
     let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
+        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
+            |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     });
     let mut internal_vade = Vade::new();
