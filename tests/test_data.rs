@@ -106,7 +106,7 @@ pub const ISSUER_PRIVATE_KEY: &str =
 
 #[allow(dead_code)]
 pub const SIGNER_PRIVATE_KEY: &str =
-    "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
+    "a1c48241-5978-4348-991e-255e92d81f1e";
 
 #[allow(dead_code)]
 pub const SIGNER_IDENTITY: &str = "did:evan:testcore:0xdCCA99F72E3Ef25228067cDe8bE891D5c6940926";
