@@ -466,6 +466,7 @@ struct UpdatedDid {
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
+/// * `signing_url` - endpoint that signs given message
 /// * `identity` - Identity requesting the DID
 /// * `payload` - optional payload to set as DID document
 ///
@@ -684,6 +685,7 @@ pub async fn add_payload_to_did(
 /// * `payload` - Payload to save
 /// * `did` - DID to save payload under
 /// * `private_key` - Private key used to sign a message
+/// * `signing_url` - endpoint that signs given message
 /// * `identity` - Identity of the caller
 pub async fn update_payload_in_did(
     url: String,
@@ -767,12 +769,13 @@ pub async fn update_payload_in_did(
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
+/// * `signing_url` - endpoint that signs given message
 /// * `identity` - Identity of the caller
 pub async fn whitelist_identity(
     url: String,
     private_key: String,
-    identity: Vec<u8>,
     signing_url: &str,
+    identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     #[cfg(target_arch = "wasm32")]

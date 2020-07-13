@@ -170,8 +170,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 whitelist_identity(
                     self.config.target.clone(),
                     input.private_key.clone(),
-                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
                     &self.config.signing_url,
+                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
                 )
                 .await?;
                 Ok(VadePluginResultValue::Success(None))
