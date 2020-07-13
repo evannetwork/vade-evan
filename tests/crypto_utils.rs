@@ -109,8 +109,8 @@ fn can_create_assertion_proof() {
 async fn can_sign_messages() -> Result<(), Box<dyn std::error::Error>> {
     let (_signature, message): ([u8; 65], [u8; 32]) = sign_message(
         "one two three four",
-        "identityKey",
-        "http://localhost:7070/api/key/sign",
+        "a1c48241-5978-4348-991e-255e92d81f1e",
+        "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
     ).await?;
     let message_hash = format!("0x{}", hex::encode(message));
     assert_eq!(
