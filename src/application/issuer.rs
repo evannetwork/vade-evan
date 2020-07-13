@@ -173,7 +173,7 @@ impl Issuer {
     /// # Returns
     /// A 3-tuple consisting
     /// * `RevocationRegistryDefinition` - the definition
-    /// * `RevocationKeyPrivate` - the according revocation private key, and an revocaiton
+    /// * `RevocationKeyPrivate` - the according revocation private key, and an revocation
     /// * `RevocationIdInformation` - object used for keeping track of issued revocation IDs
     pub fn create_revocation_registry_definition(
         assigned_did: &str,

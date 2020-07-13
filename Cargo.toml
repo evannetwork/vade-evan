@@ -21,7 +21,7 @@ num-integer="0.1.42"
 parity_scale_codec = { package ="parity-scale-codec", version = "1.3.0" }
 primitive-types = "0.7.2"
 regex = "1.3.7"
-reqwest = { version = "0.10.4", default-features= false}
+reqwest = { version = "0.10.4", default-features= false, features = ["json", "default-tls"]}
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 sha2 = "0.8.1"
