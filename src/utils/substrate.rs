@@ -33,7 +33,7 @@ use std::env;
 use std::hash::Hasher;
 use twox_hash;
 
-use crate::crypto::crypto_utils::sign_message;
+use crate::utils::signing::sign_message;
 
 use crate::compose_extrinsic;
 use crate::utils::extrinsic::events::{
