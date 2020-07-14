@@ -28,12 +28,11 @@ use crate::utils::extrinsic::xt_primitives;
 use blake2_rfc;
 use hex;
 use reqwest;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::env;
 use std::hash::Hasher;
 use twox_hash;
-
-use crate::crypto::crypto_utils::sign_message;
 
 use crate::compose_extrinsic;
 use crate::utils::extrinsic::events::{
@@ -54,6 +53,34 @@ use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
 use sp_std::prelude::*;
 use std::convert::TryFrom;
+
+const KEY_TYPE: &str = "identityKey";
+
+/// Arguments for signing endpoint.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct RemoteSigningArguments {
+    pub key: String,
+    pub r#type: String,
+    pub message: String,
+}
+
+/// Expected result from signing endpoint.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum RemoteSigningResult {
+    #[serde(rename_all = "camelCase")]
+    Ok {
+        message_hash: String,
+        signature: String,
+        signer_address: String,
+    },
+    #[serde(rename_all = "camelCase")]
+    Err {
+        error: String,
+    },
+
+}
 
 pub async fn get_storage_value(
     url: &str,
@@ -570,27 +597,28 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await?;
-    let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
-        url.as_str(),
-        metadata.clone(),
-        "DidModule",
-        "DidsDetails",
-        (bytes_did.clone(), 0),
-    )
-    .await?
-    .ok_or("could not get storage map")?;
-    let body = reqwest::get(
-        &format!(
-            "http://{}:{}/ipfs/{}",
-            url,
-            env::var("VADE_EVAN_IPFS_PORT").unwrap_or_else(|_| "8081".to_string()),
-            std::str::from_utf8(&detail_hash)?
+    let detail_hash =
+        get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
+            url.as_str(),
+            metadata.clone(),
+            "DidModule",
+            "DidsDetails",
+            (bytes_did.clone(), 0),
         )
-        .to_string(),
-    )
-    .await?
-    .text()
-    .await?;
+        .await?
+        .ok_or("could not get storage map")?;
+    let did_url =  format!(
+        "http://{}:{}/ipfs/{}",
+        url,
+        env::var("VADE_EVAN_IPFS_PORT").unwrap_or_else(|_| "8081".to_string()),
+        std::str::from_utf8(&detail_hash)?
+    ).to_string();
+    trace!("fetching DID document at: {}", &did_url);
+    let body =
+        reqwest::get(&did_url)
+        .await?
+        .text()
+        .await?;
     Ok(body)
 }
 
@@ -958,5 +986,56 @@ pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
     match hexstr.as_str() {
         "null" => Ok([0u8].to_vec()),
         _ => hex::decode(&hexstr),
+    }
+}
+
+/// Signs a message by using a remote endpoint
+///
+/// # Arguments
+/// * `message_to_sign` - String to sign
+/// * `signing_key` - key reference to sign with
+/// * `signing_url` - endpoint that signs given message
+///
+/// # Returns
+/// `[u8; 65]` - Signature
+/// `[u8; 32]` - Hashed Message
+pub async fn sign_message(
+    message_to_sign: &str,
+    signing_key: &str,
+    signing_url: &str,
+) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let body = RemoteSigningArguments {
+        key: signing_key.to_string(),
+        r#type: KEY_TYPE.to_string(),
+        message: message_to_sign.to_string(),
+    };
+    let parsed = client
+        .post(signing_url)
+        .json(&body)
+        .send()
+        .await?
+        .json::<RemoteSigningResult>()
+        .await?;
+
+    match parsed {
+        RemoteSigningResult::Ok { message_hash, signature, signer_address: _ } => {
+            // parse into signature and hash
+            let mut signature_arr = [0u8; 65];
+            hex::decode_to_slice(
+                signature.trim_start_matches("0x"),
+                &mut signature_arr,
+            ).map_err(|_| "signature invalid")?;
+            let mut hash_arr = [0u8; 32];
+            hex::decode_to_slice(
+                message_hash.trim_start_matches("0x"),
+                &mut hash_arr,
+            ).map_err(|_| "hash invalid")?;
+
+            Ok((signature_arr, hash_arr))
+        },
+        RemoteSigningResult::Err { error }=> {
+            Err(Box::from(format!("could not sign message with remote endpoint; {}", &error)))
+        },
     }
 }

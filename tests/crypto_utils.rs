@@ -22,9 +22,9 @@ use vade_evan::application::datatypes::{CredentialSchema, SchemaProperty};
 use vade_evan::crypto::crypto_utils::{
     create_assertion_proof,
     recover_address_and_data,
-    sign_message,
     JwsData,
 };
+use vade_evan::utils::substrate::sign_message;
 
 const DOCUMENT_TO_SIGN: &str = r###"
 {

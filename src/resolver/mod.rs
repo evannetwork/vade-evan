@@ -31,7 +31,6 @@ use vade::{VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_PREFIX: &str = "did:evan:";
-const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
 
 const METHOD_REGEX: &'static str = r#"^(.*):0x(.*)$"#;
 
@@ -177,7 +176,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 Ok(VadePluginResultValue::Success(None))
             }
             "setDidDocument" => {
-                if !did.starts_with(EVAN_METHOD_ZKP_PREFIX) {
+                if !did.starts_with(EVAN_METHOD) {
                     return Ok(VadePluginResultValue::Ignored);
                 }
                 self.set_did_document(
@@ -205,7 +204,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         &mut self,
         did_id: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
-        if !did_id.starts_with(EVAN_METHOD_ZKP_PREFIX) {
+        if !did_id.starts_with(EVAN_METHOD) {
             return Ok(VadePluginResultValue::Ignored);
         }
         let did_result = get_did(
