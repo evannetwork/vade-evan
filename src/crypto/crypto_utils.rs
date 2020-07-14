@@ -16,7 +16,6 @@
 
 use crate::crypto::crypto_datatypes::AssertionProof;
 use data_encoding::BASE64URL;
-use reqwest;
 use secp256k1::{recover, sign, Message, RecoveryId, SecretKey, Signature};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::RawValue, Value};
@@ -26,8 +25,6 @@ use std::convert::TryInto;
 
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
-
-const KEY_TYPE: &str = "identityKey";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JwsData<'a> {
@@ -276,55 +273,4 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     debug!("address 0x{}", &address);
 
     Ok((address, data_string))
-}
-
-/// Signs a message by using a remote endpoint
-///
-/// # Arguments
-/// * `message_to_sign` - String to sign
-/// * `signing_key` - key reference to sign with
-/// * `signing_url` - endpoint that signs given message
-///
-/// # Returns
-/// `[u8; 65]` - Signature
-/// `[u8; 32]` - Hashed Message
-pub async fn sign_message(
-    message_to_sign: &str,
-    signing_key: &str,
-    signing_url: &str,
-) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
-    let client = reqwest::Client::new();
-    let body = RemoteSigningArguments {
-        key: signing_key.to_string(),
-        r#type: KEY_TYPE.to_string(),
-        message: message_to_sign.to_string(),
-    };
-    let parsed = client
-        .post(signing_url)
-        .json(&body)
-        .send()
-        .await?
-        .json::<RemoteSigningResult>()
-        .await?;
-
-    match parsed {
-        RemoteSigningResult::Ok { message_hash, signature, signer_address: _ } => {
-            // parse into signature and hash
-            let mut signature_arr = [0u8; 65];
-            hex::decode_to_slice(
-                signature.trim_start_matches("0x"),
-                &mut signature_arr,
-            ).map_err(|_| "signature invalid")?;
-            let mut hash_arr = [0u8; 32];
-            hex::decode_to_slice(
-                message_hash.trim_start_matches("0x"),
-                &mut hash_arr,
-            ).map_err(|_| "hash invalid")?;
-
-            Ok((signature_arr, hash_arr))
-        },
-        RemoteSigningResult::Err { error }=> {
-            Err(Box::from(format!("could not sign message with remote endpoint; {}", &error)))
-        },
-    }
 }

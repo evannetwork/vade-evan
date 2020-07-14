@@ -14,44 +14,86 @@
   limitations under the License.
 */
 
-extern crate console_error_panic_hook;
-extern crate hex;
-extern crate secp256k1;
-extern crate sha3;
-extern crate ursa;
-
+// shared
 use console_log;
-
-extern crate uuid;
-extern crate vade;
-
-use std::collections::HashMap;
-use std::env;
 use vade::Vade;
-
-use crate::{
-    application::datatypes::{
-        Credential,
-        CredentialDefinition,
-        CredentialOffer,
-        CredentialRequest,
-        CredentialSchema,
-        CredentialSecretsBlindingFactors,
-        MasterSecret,
-        ProofRequest,
-        RevocationRegistryDefinition,
-    },
-    application::prover::Prover,
-    resolver::{ResolverConfig, SubstrateDidResolverEvan},
-    IssueCredentialResult,
-    VadeEvan,
-};
-use serde_json::Value;
-use ursa::cl::Witness;
 use wasm_bindgen::prelude::*;
+// did
+#[cfg(feature = "did")]
+use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
+#[cfg(feature = "did")]
+use std::env;
+// vc-zkp
+#[cfg(feature = "vc-zkp")]
+use std::collections::HashMap;
+#[cfg(feature = "vc-zkp")]
+use crate::VadeEvan;
+#[cfg(feature = "vc-zkp")]
+use crate::{
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialRequest,
+            CredentialSchema,
+            CredentialSecretsBlindingFactors,
+            MasterSecret,
+            ProofRequest,
+            RevocationRegistryDefinition,
+        },
+        prover::Prover,
+    },
+    IssueCredentialResult,
+};
+#[cfg(feature = "vc-zkp")]
+use serde_json::Value;
+#[cfg(feature = "vc-zkp")]
+use ursa::cl::Witness;
 
+#[cfg(feature = "vc-zkp")]
 const EVAN_METHOD: &str = "did:evan";
 
+// shared
+#[wasm_bindgen]
+pub fn set_panic_hook() {
+    console_error_panic_hook::set_once();
+}
+
+#[wasm_bindgen]
+pub fn set_log_level(log_level: String) {
+    let _ = match log_level.as_str() {
+        "trace" => console_log::init_with_level(log::Level::Trace),
+        "debug" => console_log::init_with_level(log::Level::Debug),
+        "info" => console_log::init_with_level(log::Level::Info),
+        "error" => console_log::init_with_level(log::Level::Error),
+        _ => console_log::init_with_level(log::Level::Error),
+    };
+}
+
+// did
+#[cfg(feature = "did")]
+#[wasm_bindgen]
+pub async fn did_resolve(
+    did: String,
+) -> Result<String, JsValue> {
+    let mut vade = get_vade().map_err(jsify)?;
+    let results = vade
+        .did_resolve(&did)
+        .await
+        .map_err(jsify)?;
+
+    if results.len() == 0 {
+        return Err(JsValue::from("could not get DID document"));
+    }
+    Ok(results[0]
+        .as_ref()
+        .ok_or("could not get DID document")?
+        .to_string())
+}
+
+// vc-zkp
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn create_schema(
     issuer: String,
@@ -98,6 +140,7 @@ pub async fn create_schema(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn create_credential_definition(
     schema_id: String,
@@ -131,6 +174,7 @@ pub async fn create_credential_definition(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn request_proof(
     schema_id: String,
@@ -163,12 +207,14 @@ pub async fn request_proof(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub fn create_master_secret() -> Result<String, JsValue> {
     serde_json::to_string(&ursa::cl::prover::Prover::new_master_secret()?)
         .map_err(|e| JsValue::from(format!("{}", e)))
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn create_credential_proposal(
     schema_id: String,
@@ -197,6 +243,7 @@ pub async fn create_credential_proposal(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn create_credential_offer(
     proposal: String,
@@ -219,6 +266,7 @@ pub async fn create_credential_offer(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn create_credential_request(
     offer: String,
@@ -255,6 +303,7 @@ pub async fn create_credential_request(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn create_revocation_registry_definition(
     credential_definition_id: String,
@@ -288,6 +337,7 @@ pub async fn create_revocation_registry_definition(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn issue_credential(
     definition: String,
@@ -379,22 +429,7 @@ pub async fn issue_credential(
     Ok(serde_json::to_string(&result).map_err(jsify_serde)?)
 }
 
-#[wasm_bindgen]
-pub fn set_panic_hook() {
-    console_error_panic_hook::set_once();
-}
-
-#[wasm_bindgen]
-pub fn set_log_level(log_level: String) {
-    let _ = match log_level.as_str() {
-        "trace" => console_log::init_with_level(log::Level::Trace),
-        "debug" => console_log::init_with_level(log::Level::Debug),
-        "info" => console_log::init_with_level(log::Level::Info),
-        "error" => console_log::init_with_level(log::Level::Error),
-        _ => console_log::init_with_level(log::Level::Error),
-    };
-}
-
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn present_proof(
     proof_request: String,
@@ -445,6 +480,7 @@ pub async fn present_proof(
         .to_string())
 }
 
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn verify_proof(
     presented_proof: String,
@@ -480,6 +516,7 @@ pub async fn verify_proof(
 /// * `did` - Substrate identity to whitelist (e.g. did:evan:0x12345)
 /// * `private_key` - private key (without '0x' prefix)
 /// * `identity` - identity without prefix (e.g. 12345)
+#[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn whitelist_identity(
     did: String,
@@ -503,6 +540,7 @@ pub async fn whitelist_identity(
     Ok(())
 }
 
+#[cfg(feature = "vc-zkp")]
 fn get_options(private_key: String, identity: String) -> String {
     format!(
         r###"{{
@@ -514,28 +552,33 @@ fn get_options(private_key: String, identity: String) -> String {
 }
 
 fn get_vade() -> Result<Vade, Box<dyn std::error::Error>> {
-    let tnt = get_vade_evan()?;
     let mut vade = Vade::new();
 
-    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
+    #[cfg(feature = "did")]
+    vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
         signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
             |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
-    });
-    vade.register_plugin(Box::from(substrate_resolver));
-    vade.register_plugin(Box::from(tnt));
+    })));
+    #[cfg(feature = "vc-zkp")]
+    vade.register_plugin(Box::from(get_vade_evan()?));
 
     Ok(vade)
 }
 
+#[cfg(feature = "vc-zkp")]
 fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
-    let substrate_resolver = SubstrateDidResolverEvan::new(ResolverConfig {
+    #[cfg(not(feature = "did"))]
+    let internal_vade = Vade::new();
+    #[cfg(feature = "did")]
+    let mut internal_vade = Vade::new();
+    internal_vade.register_plugin(Box::from(substrate_resolver));
+    #[cfg(feature = "did")]
+    internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
         signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
             |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
-    });
-    let mut internal_vade = Vade::new();
-    internal_vade.register_plugin(Box::from(substrate_resolver));
+    })));
 
     Ok(VadeEvan::new(internal_vade))
 }
@@ -544,6 +587,7 @@ fn jsify(err: Box<dyn std::error::Error>) -> JsValue {
     JsValue::from(format!("{}", err))
 }
 
+#[cfg(feature = "vc-zkp")]
 fn jsify_serde(err: serde_json::error::Error) -> JsValue {
     JsValue::from(format!("{}", err))
 }
