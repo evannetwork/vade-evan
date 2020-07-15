@@ -54,6 +54,19 @@ use ursa::cl::Witness;
 #[cfg(feature = "vc-zkp")]
 const EVAN_METHOD: &str = "did:evan";
 
+/// small drop-in replacement for asserts
+/// if condition is false, will evaluate `create_msg` function and return an Err with it
+fn ensure<F>(condition: bool, create_msg: F)
+    -> Result<(), JsValue>
+    where F: FnOnce() -> String
+{
+    if condition {
+        Ok(())
+    } else {
+        Err(JsValue::from(&create_msg().to_string()))
+    }
+}
+
 // shared
 #[wasm_bindgen]
 pub fn set_panic_hook() {
@@ -83,12 +96,12 @@ pub async fn did_resolve(
         .await
         .map_err(jsify)?;
 
-    if results.len() == 0 {
-        return Err(JsValue::from("could not get DID document"));
-    }
+    let err_msg = "could not get DID document";
+    ensure(results.len() > 0, || format!("{}: '{}'", &err_msg, &did))?;
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not get DID document")?
+        .ok_or_else(|| err_msg.to_string())?
         .to_string())
 }
 
@@ -133,10 +146,12 @@ pub async fn create_schema(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create schema";
+    ensure(results.len() > 0, || &err_msg)?;
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create schema")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -167,10 +182,12 @@ pub async fn create_credential_definition(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create credential definition";
+    ensure(results.len() > 0, || &err_msg)?;
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create credential definition")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -200,10 +217,12 @@ pub async fn request_proof(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create proof request";
+    ensure(results.len() > 0, || &err_msg)?;
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create proof request")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -236,10 +255,12 @@ pub async fn create_credential_proposal(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create credential proposal";
+    ensure(results.len() > 0, || &err_msg)?;
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create credential proposal")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -258,11 +279,12 @@ pub async fn create_credential_offer(
         .vc_zkp_create_credential_offer(EVAN_METHOD, "", &payload)
         .await
         .map_err(jsify)?;
+    let err_msg = "could not create credential offer";
+    ensure(results.len() > 0, || &err_msg)?;
 
-    assert_eq!(results.len(), 1);
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create credential offer")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -296,10 +318,12 @@ pub async fn create_credential_request(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create credential request";
+    ensure(results.len() > 0, || &err_msg);
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create credential request")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -330,10 +354,12 @@ pub async fn create_revocation_registry_definition(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create revocation registry definition";
+    ensure(results.len() > 0, || &err_msg);
+
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create revocation registry definition")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -400,18 +426,27 @@ pub async fn issue_credential(
         .await
         .map_err(jsify)?;
 
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not issue credential";
+    ensure(results.len() > 0, || &err_msg);
     let mut result: IssueCredentialResult =
-        serde_json::from_str(results[0].as_ref().ok_or("could not issue credential")?)
+        serde_json::from_str(
+            results[0]
+                .as_ref()
+                .ok_or(err_msg)?
+            )
             .map_err(jsify_serde)?;
     debug!("get did {}", result.credential.credential_schema.id);
     let results = vade
         .did_resolve(&result.credential.credential_schema.id)
         .await
         .map_err(jsify)?;
+
+    let err_msg = "could not get schema did document";
+    ensure(results.len() > 0, || &err_msg);
+
     let schema_doc = results[0]
         .as_ref()
-        .ok_or("could not get schema did document")?;
+        .ok_or(&err_msg)?;
 
     let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
     Prover::post_process_credential_signature(
@@ -472,11 +507,12 @@ pub async fn present_proof(
         .map_err(jsify)?;
 
     // check results
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not create proof presentation";
+    ensure(results.len() > 0, || &err_msg);
 
     Ok(results[0]
         .as_ref()
-        .ok_or("could not create proof presentation")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -501,11 +537,12 @@ pub async fn verify_proof(
         .map_err(jsify)?;
 
     // check results
-    assert_eq!(results.len(), 1);
+    let err_msg = "could not verify proof";
+    ensure(results.len() > 0, || &err_msg);
 
     Ok(results[0]
         .as_ref()
-        .ok_or("could not verify proof")?
+        .ok_or(&err_msg)?
         .to_string())
 }
 
@@ -516,7 +553,7 @@ pub async fn verify_proof(
 /// * `did` - Substrate identity to whitelist (e.g. did:evan:0x12345)
 /// * `private_key` - private key (without '0x' prefix)
 /// * `identity` - identity without prefix (e.g. 12345)
-#[cfg(feature = "vc-zkp")]
+#[cfg(feature = "did")]
 #[wasm_bindgen]
 pub async fn whitelist_identity(
     did: String,
@@ -533,9 +570,14 @@ pub async fn whitelist_identity(
         private_key, identity,
     );
 
-    vade.did_update(&did, &payload, &"".to_string())
+    let results = vade.did_update(&did, &payload, &"".to_string())
         .await
         .map_err(jsify)?;
+    
+    ensure(
+        results.len() > 0,
+        || format!("could not whitelist identity '{}', no response from plugins", &did)
+    )?;
 
     Ok(())
 }
