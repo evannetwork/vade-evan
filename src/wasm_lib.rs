@@ -105,6 +105,26 @@ pub async fn did_resolve(
         .to_string())
 }
 
+// did
+#[cfg(feature = "did")]
+#[wasm_bindgen]
+pub async fn did_update(
+    did: String,
+    options: String,
+    payload: String,
+) -> Result<(), JsValue> {
+    let mut vade = get_vade().map_err(jsify)?;
+    let results = vade
+        .did_update(&did, &options, &payload)
+        .await
+        .map_err(jsify)?;
+
+    let err_msg = "could not update DID document";
+    ensure(results.len() > 0, || format!("{}: '{}'", &err_msg, &did))?;
+
+    Ok(())
+}
+
 // vc-zkp
 #[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
