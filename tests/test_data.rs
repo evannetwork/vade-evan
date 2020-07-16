@@ -101,15 +101,19 @@ pub const ISSUER_DID_DOCUMENT_STR: &str = r###"{
 }"###;
 
 #[allow(dead_code)]
-pub const ISSUER_PRIVATE_KEY: &str =
-    "d02f8a67f22ae7d1ffc5507ca9a4e6548024562a7b36881b7a29f66dd26c532e";
+pub const ISSUER_PRIVATE_KEY: &str = "a1c48241-5978-4348-991e-255e92d81f1e";
 
 #[allow(dead_code)]
-pub const SIGNER_PRIVATE_KEY: &str =
-    "a1c48241-5978-4348-991e-255e92d81f1e";
+pub const SIGNER_ADDRESS: &str = "0x3daa2c354dba8d51fdabc30cf9219b251c74eb56";
+
+#[allow(dead_code)]
+pub const SIGNER_PRIVATE_KEY: &str = "a1c48241-5978-4348-991e-255e92d81f1e";
 
 #[allow(dead_code)]
 pub const SIGNER_IDENTITY: &str = "did:evan:testcore:0xdCCA99F72E3Ef25228067cDe8bE891D5c6940926";
+
+#[allow(dead_code)]
+pub const SIGNING_URL: &str = "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign";
 
 #[allow(dead_code)]
 pub const ISSUER_PUBLIC_KEY_DID: &str =

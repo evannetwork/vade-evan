@@ -175,79 +175,83 @@ pub struct ValidateProofPayload {
 }
 
 pub struct VadeEvan {
-  vade: Vade,
+    signing_url: String,
+    vade: Vade,
 }
 
 impl VadeEvan {
-  /// Creates new instance of `VadeEvan`.
-  pub fn new(vade: Vade) -> VadeEvan {
-      match env_logger::try_init() {
-          Ok(_) | Err(_) => (),
-      };
-      VadeEvan { vade }
-  }
+    /// Creates new instance of `VadeEvan`.
+    pub fn new(vade: Vade, signing_url: &str) -> VadeEvan {
+        match env_logger::try_init() {
+            Ok(_) | Err(_) => (),
+        };
+        VadeEvan {
+            signing_url: signing_url.to_string(),
+            vade,
+        }
+    }
 }
 
 impl VadeEvan {
-  async fn generate_did(
-      &mut self,
-      private_key: &str,
-      identity: &str,
-  ) -> Result<String, Box<dyn std::error::Error>> {
-      let options = format!(
-          r###"{{
-          "privateKey": "{}",
-          "identity": "{}"
-      }}"###,
-          private_key, identity
-      );
-      let result = self
-          .vade
-          .did_create(EVAN_METHOD, &options, &"".to_string())
-          .await?;
-      if result.is_empty() {
-          return Err(Box::from(
-              "Could not generate DID as no listeners were registered for this method",
-          ));
-      }
+    async fn generate_did(
+        &mut self,
+        private_key: &str,
+        identity: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let options = format!(
+            r###"{{
+            "privateKey": "{}",
+            "identity": "{}"
+        }}"###,
+            private_key, identity
+        );
+        let result = self
+            .vade
+            .did_create(EVAN_METHOD, &options, &"".to_string())
+            .await?;
+        if result.is_empty() {
+            return Err(Box::from(
+                "Could not generate DID as no listeners were registered for this method",
+            ));
+        }
 
-      let generated_did = format!(
-          "{}{}",
-          EVAN_METHOD_ZKP_PREFIX,
-          &result[0]
-              .as_ref()
-              .ok_or("could not generate DID")?
-              .to_owned(),
-      );
+        let generated_did = format!(
+            "{}{}",
+            EVAN_METHOD_ZKP_PREFIX,
+            &result[0]
+                .as_ref()
+                .ok_or("could not generate DID")?
+                .to_owned(),
+        );
 
-      Ok(generated_did)
-  }
+        Ok(generated_did)
+    }
 
-  async fn set_did_document(
-      &mut self,
-      did: &str,
-      payload: &str,
-      private_key: &str,
-      identity: &str,
-  ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-      let options = format!(
-          r###"{{
-          "privateKey": "{}",
-          "identity": "{}",
-          "operation": "setDidDocument"
-      }}"###,
-          &private_key, &identity
-      );
-      let result = self.vade.did_update(&did, &options, &payload).await?;
+    async fn set_did_document(
+        &mut self,
+        did: &str,
+        payload: &str,
+        private_key: &str,
+        identity: &str,
+    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let options = format!(
+            r###"{{
+            "privateKey": "{}",
+            "identity": "{}",
+            "operation": "setDidDocument"
+        }}"###,
+            &private_key, &identity
+        );
+        let result = self.vade.did_update(&did, &options, &payload).await?;
 
-      if result.is_empty() {
-          return Err(Box::from(
-              "Could not set did document as no listeners were registered for this method",
-          ));
-      }
+        if result.is_empty() {
+            return Err(Box::from(
+                "Could not set did document as no listeners were registered for this method",
+            ));
+        }
 
-      Ok(Some("".to_string()))
-  }
+        Ok(Some("".to_string()))
+    }
 }
 
 #[async_trait(?Send)]
@@ -298,7 +302,8 @@ impl VadePlugin for VadeEvan {
             &schema,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        )?;
+            &self.signing_url,
+        ).await?;
 
         let serialized = serde_json::to_string(&(&definition, &pk))?;
         let serialized_definition = serde_json::to_string(&definition)?;
@@ -351,7 +356,8 @@ impl VadePlugin for VadeEvan {
             payload.allow_additional_properties,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        )?;
+            &self.signing_url,
+        ).await?;
 
         let serialized = serde_json::to_string(&schema)?;
         self.set_did_document(
@@ -414,8 +420,9 @@ impl VadePlugin for VadeEvan {
                 &definition,
                 &payload.issuer_public_key_did,
                 &payload.issuer_proving_key,
+                &self.signing_url,
                 payload.maximum_credential_count,
-            )?;
+            ).await?;
 
         let serialized_def = serde_json::to_string(&definition)?;
 
@@ -802,7 +809,8 @@ impl VadePlugin for VadeEvan {
             payload.credential_revocation_id,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        )?;
+            &self.signing_url,
+        ).await?;
 
         let serialized = serde_json::to_string(&updated_registry)?;
 
