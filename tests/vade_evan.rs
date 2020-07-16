@@ -31,6 +31,7 @@ use test_data::{
     SCHEMA_REQUIRED_PROPERTIES,
     SIGNER_IDENTITY,
     SIGNER_PRIVATE_KEY,
+    SIGNING_URL,
     SUBJECT_DID,
 };
 use ursa::bn::BigNumber;
@@ -1063,8 +1064,7 @@ fn get_options() -> String {
 
 fn get_resolver() -> SubstrateDidResolverEvan {
     SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
-            |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
+        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     })
 }
@@ -1083,7 +1083,7 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeEvan::new(internal_vade)
+    VadeEvan::new(internal_vade, &SIGNING_URL)
 }
 
 async fn issue_credential(

@@ -642,7 +642,7 @@ fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     })));
 
-    Ok(VadeEvan::new(internal_vade))
+    Ok(VadeEvan::new(internal_vade, &signing_url))
 }
 
 fn jsify(err: Box<dyn std::error::Error>) -> JsValue {

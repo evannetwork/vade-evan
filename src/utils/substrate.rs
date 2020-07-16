@@ -34,6 +34,8 @@ use std::env;
 use std::hash::Hasher;
 use twox_hash;
 
+use crate::utils::signing::sign_message;
+
 use crate::compose_extrinsic;
 use crate::utils::extrinsic::events::{
     DispatchError,
@@ -53,8 +55,6 @@ use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
 use sp_std::prelude::*;
 use std::convert::TryFrom;
-
-const KEY_TYPE: &str = "identityKey";
 
 /// Arguments for signing endpoint.
 #[derive(Serialize, Deserialize, Debug)]
@@ -986,56 +986,5 @@ pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
     match hexstr.as_str() {
         "null" => Ok([0u8].to_vec()),
         _ => hex::decode(&hexstr),
-    }
-}
-
-/// Signs a message by using a remote endpoint
-///
-/// # Arguments
-/// * `message_to_sign` - String to sign
-/// * `signing_key` - key reference to sign with
-/// * `signing_url` - endpoint that signs given message
-///
-/// # Returns
-/// `[u8; 65]` - Signature
-/// `[u8; 32]` - Hashed Message
-pub async fn sign_message(
-    message_to_sign: &str,
-    signing_key: &str,
-    signing_url: &str,
-) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
-    let client = reqwest::Client::new();
-    let body = RemoteSigningArguments {
-        key: signing_key.to_string(),
-        r#type: KEY_TYPE.to_string(),
-        message: message_to_sign.to_string(),
-    };
-    let parsed = client
-        .post(signing_url)
-        .json(&body)
-        .send()
-        .await?
-        .json::<RemoteSigningResult>()
-        .await?;
-
-    match parsed {
-        RemoteSigningResult::Ok { message_hash, signature, signer_address: _ } => {
-            // parse into signature and hash
-            let mut signature_arr = [0u8; 65];
-            hex::decode_to_slice(
-                signature.trim_start_matches("0x"),
-                &mut signature_arr,
-            ).map_err(|_| "signature invalid")?;
-            let mut hash_arr = [0u8; 32];
-            hex::decode_to_slice(
-                message_hash.trim_start_matches("0x"),
-                &mut hash_arr,
-            ).map_err(|_| "hash invalid")?;
-
-            Ok((signature_arr, hash_arr))
-        },
-        RemoteSigningResult::Err { error }=> {
-            Err(Box::from(format!("could not sign message with remote endpoint; {}", &error)))
-        },
     }
 }

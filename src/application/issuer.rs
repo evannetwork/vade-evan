@@ -65,16 +65,18 @@ impl Issuer {
     /// * `schema` - The `CredentialSchema` this definition belongs to
     /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
     /// * `issuer_proving_key` - Private key used to create the assertion proof
+    /// * `signing_url` - endpoint that signs given message
     ///
     /// # Returns
     /// * `CredentialDefinition` - The definition object to be saved in a publicly available and temper-proof way
     /// * `CredentialPrivateKey` - The private key used to sign credentials. Needs to be stored privately & securely
-    pub fn create_credential_definition(
+    pub async fn create_credential_definition(
         assigned_did: &str,
         issuer_did: &str,
         schema: &CredentialSchema,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
+        signing_url: &str,
     ) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
         let created_at = get_now_as_iso_string();
         let (credential_private_key, crypto_credential_def) =
@@ -97,7 +99,8 @@ impl Issuer {
             &issuer_public_key_did,
             &issuer_did,
             &issuer_proving_key,
-        )?;
+            signing_url,
+        ).await?;
 
         definition.proof = Some(proof);
 
@@ -108,7 +111,7 @@ impl Issuer {
     /// The schema needs to be stored in a publicly available and temper-proof way.
     ///
     /// # Arguments
-    /// * `assigned_did` - DID to be used to revole this credential definition
+    /// * `assigned_did` - DID to be used to resolve this credential definition
     /// * `issuer_did` - DID of the issuer
     /// * `schema_name` - Name of the schema
     /// * `description` - Description for the schema. Can be left blank
@@ -117,10 +120,11 @@ impl Issuer {
     /// * `allow_additional_properties` - Specifies whether a credential under this schema is considered valid if it specifies more properties than the schema specifies.
     /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
     /// * `issuer_proving_key` - Private key used to create the assertion proof
+    /// * `signing_url` - endpoint that signs given message
     ///
     /// # Returns
     /// * `CredentialSchema` - The schema object to be saved in a publicly available and temper-proof way
-    pub fn create_credential_schema(
+    pub async fn create_credential_schema(
         assigned_did: &str,
         issuer_did: &str,
         schema_name: &str,
@@ -130,6 +134,7 @@ impl Issuer {
         allow_additional_properties: bool,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
+        signing_url: &str
     ) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
         let created_at = get_now_as_iso_string();
 
@@ -153,7 +158,8 @@ impl Issuer {
             &issuer_public_key_did,
             &issuer_did,
             &issuer_proving_key,
-        )?;
+            signing_url,
+        ).await?;
 
         schema.proof = Some(proof);
 
@@ -168,6 +174,7 @@ impl Issuer {
     /// * `credential_definition` - Credential definition this revocation registry definition will be associated with
     /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
     /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
+    /// * `signing_url` - endpoint that signs given message
     /// * `maximum_credential_count` - Capacity of the revocation registry in terms of issuable credentials
     ///
     /// # Returns
@@ -175,11 +182,12 @@ impl Issuer {
     /// * `RevocationRegistryDefinition` - the definition
     /// * `RevocationKeyPrivate` - the according revocation private key, and an revocation
     /// * `RevocationIdInformation` - object used for keeping track of issued revocation IDs
-    pub fn create_revocation_registry_definition(
+    pub async fn create_revocation_registry_definition(
         assigned_did: &str,
         credential_definition: &CredentialDefinition,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
+        signing_url: &str,
         maximum_credential_count: u32,
     ) -> Result<
         (
@@ -229,7 +237,8 @@ impl Issuer {
             &issuer_public_key_did,
             &credential_definition.issuer,
             &issuer_proving_key,
-        )?;
+            signing_url,
+        ).await?;
 
         rev_reg_def.proof = Some(proof);
 
@@ -408,15 +417,17 @@ impl Issuer {
     /// * `revocation_id` - Revocation ID of the credential
     /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
     /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
+    /// * `signing_url` - endpoint that signs given message
     ///
     /// # Returns
     /// * `RevocationRegistryDefinition` - The updated revocation registry definition that needs to be stored in the original revocation registry definition's place.
-    pub fn revoke_credential(
+    pub async fn revoke_credential(
         issuer: &str,
         revocation_registry_definition: &RevocationRegistryDefinition,
         revocation_id: u32,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
+        signing_url: &str,
     ) -> Result<RevocationRegistryDefinition, Box<dyn std::error::Error>> {
         let updated_at = get_now_as_iso_string();
 
@@ -466,7 +477,8 @@ impl Issuer {
             issuer_public_key_did,
             issuer,
             issuer_proving_key,
-        )?;
+            &signing_url,
+        ).await?;
 
         rev_reg_def.proof = Some(proof);
 
