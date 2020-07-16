@@ -755,7 +755,7 @@ pub async fn update_payload_in_did(
         identity.clone(),
         now_timestamp
     );
-    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
+    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized)
         .await
         .map_err(|_e| format!("Error updating payload in DID: {:?} on index: {} with payload: {:?} and identity: {:?} and error; {}",did.clone(), index.clone(), payload.clone(), hex::encode(identity.clone()), _e));
     match ext_error {
