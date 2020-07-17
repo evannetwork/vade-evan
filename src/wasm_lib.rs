@@ -167,11 +167,11 @@ pub async fn create_schema(
         .map_err(jsify)?;
 
     let err_msg = "could not create schema";
-    ensure(results.len() > 0, || &err_msg)?;
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -203,11 +203,11 @@ pub async fn create_credential_definition(
         .map_err(jsify)?;
 
     let err_msg = "could not create credential definition";
-    ensure(results.len() > 0, || &err_msg)?;
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -238,11 +238,11 @@ pub async fn request_proof(
         .map_err(jsify)?;
 
     let err_msg = "could not create proof request";
-    ensure(results.len() > 0, || &err_msg)?;
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -276,11 +276,11 @@ pub async fn create_credential_proposal(
         .map_err(jsify)?;
 
     let err_msg = "could not create credential proposal";
-    ensure(results.len() > 0, || &err_msg)?;
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -300,11 +300,11 @@ pub async fn create_credential_offer(
         .await
         .map_err(jsify)?;
     let err_msg = "could not create credential offer";
-    ensure(results.len() > 0, || &err_msg)?;
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -339,11 +339,11 @@ pub async fn create_credential_request(
         .map_err(jsify)?;
 
     let err_msg = "could not create credential request";
-    ensure(results.len() > 0, || &err_msg);
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -375,11 +375,11 @@ pub async fn create_revocation_registry_definition(
         .map_err(jsify)?;
 
     let err_msg = "could not create revocation registry definition";
-    ensure(results.len() > 0, || &err_msg);
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -447,7 +447,7 @@ pub async fn issue_credential(
         .map_err(jsify)?;
 
     let err_msg = "could not issue credential";
-    ensure(results.len() > 0, || &err_msg);
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
     let mut result: IssueCredentialResult =
         serde_json::from_str(
             results[0]
@@ -462,11 +462,11 @@ pub async fn issue_credential(
         .map_err(jsify)?;
 
     let err_msg = "could not get schema did document";
-    ensure(results.len() > 0, || &err_msg);
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     let schema_doc = results[0]
         .as_ref()
-        .ok_or(&err_msg)?;
+        .ok_or(err_msg)?;
 
     let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
     Prover::post_process_credential_signature(
@@ -528,11 +528,11 @@ pub async fn present_proof(
 
     // check results
     let err_msg = "could not create proof presentation";
-    ensure(results.len() > 0, || &err_msg);
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -558,11 +558,11 @@ pub async fn verify_proof(
 
     // check results
     let err_msg = "could not verify proof";
-    ensure(results.len() > 0, || &err_msg);
+    ensure(results.len() > 0, || (&err_msg).to_string())?;
 
     Ok(results[0]
         .as_ref()
-        .ok_or(&err_msg)?
+        .ok_or(err_msg)?
         .to_string())
 }
 
@@ -632,13 +632,17 @@ fn get_vade() -> Result<Vade, Box<dyn std::error::Error>> {
 fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
     #[cfg(not(feature = "did"))]
     let internal_vade = Vade::new();
+    #[cfg(not(feature = "did"))]
+    let signing_url = "";
+
     #[cfg(feature = "did")]
     let mut internal_vade = Vade::new();
-    internal_vade.register_plugin(Box::from(substrate_resolver));
+    #[cfg(feature = "did")]
+    let signing_url = env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
+        |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string());
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
-            |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
+        signing_url: signing_url.to_string(),
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     })));
 
