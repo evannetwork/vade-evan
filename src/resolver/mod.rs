@@ -16,13 +16,16 @@
 
 extern crate regex;
 extern crate vade;
-use crate::utils::substrate::{
-    add_payload_to_did,
-    create_did,
-    get_did,
-    get_payload_count_for_did,
-    update_payload_in_did,
-    whitelist_identity,
+use crate::utils::{
+    substrate::{
+        add_payload_to_did,
+        create_did,
+        get_did,
+        get_payload_count_for_did,
+        update_payload_in_did,
+        whitelist_identity,
+    },
+    signing::Signer,
 };
 use async_trait::async_trait;
 use regex::Regex;
@@ -49,9 +52,8 @@ pub struct IdentityArguments {
     pub identity: String,
 }
 
-#[derive(Debug)]
 pub struct ResolverConfig {
-    pub signing_url: String,
+    pub signer: Box<dyn Signer>,
     pub target: String,
 }
 
@@ -66,7 +68,6 @@ impl SubstrateDidResolverEvan {
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
-        trace!("created new resolver with config: {:?}", &config);
         SubstrateDidResolverEvan { config }
     }
 
@@ -90,7 +91,7 @@ impl SubstrateDidResolverEvan {
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
-                self.config.signing_url.to_string(),
+                &self.config.signer,
                 hex::decode(identity)?,
             )
             .await?;
@@ -100,7 +101,7 @@ impl SubstrateDidResolverEvan {
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
-                self.config.signing_url.to_string(),
+                &self.config.signer,
                 hex::decode(identity)?,
             )
             .await?;
@@ -132,7 +133,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
-            self.config.signing_url.to_string(),
+            &self.config.signer,
             hex::decode(&convert_did_to_substrate_identity(&options.identity)?)?,
             match payload {
                 "" => None,
@@ -171,7 +172,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 whitelist_identity(
                     self.config.target.clone(),
                     input.private_key.clone(),
-                    &self.config.signing_url,
+                    &self.config.signer,
                     hex::decode(convert_did_to_substrate_identity(&did)?)?,
                 )
                 .await?;

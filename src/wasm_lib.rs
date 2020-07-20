@@ -15,6 +15,7 @@
 */
 
 // shared
+use crate::utils::signing::{RemoteSigner, Signer};
 use console_log;
 use std::collections::HashMap;
 use vade::Vade;
@@ -676,9 +677,11 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
 
     let mut vade = Vade::new();
 
+    #[cfg(feature = "did")] 
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: signing_url.to_string(),
+        signer,
         target: target.to_string(),
     })));
     #[cfg(feature = "vc-zkp")]
@@ -703,13 +706,16 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::erro
 
     #[cfg(feature = "did")]
     let mut internal_vade = Vade::new();
+    #[cfg(feature = "did")] 
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: signing_url.to_string(),
+        signer,
         target: target.to_string(),
     })));
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
 
-    Ok(VadeEvan::new(internal_vade, &signing_url))
+    Ok(VadeEvan::new(internal_vade, signer))
 }
 
 fn jsify(err: Box<dyn std::error::Error>) -> JsValue {
