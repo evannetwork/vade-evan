@@ -51,6 +51,7 @@ pub struct IdentityArguments {
 }
 
 pub struct ResolverConfig {
+    pub signing_url: String,
     pub target: String,
 }
 
@@ -88,6 +89,7 @@ impl SubstrateDidResolverEvan {
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
+                self.config.signing_url.to_string(),
                 hex::decode(identity)?,
             )
             .await?;
@@ -97,6 +99,7 @@ impl SubstrateDidResolverEvan {
                 payload.to_string(),
                 did.to_string(),
                 private_key.to_string(),
+                self.config.signing_url.to_string(),
                 hex::decode(identity)?,
             )
             .await?;
@@ -128,6 +131,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
+            self.config.signing_url.to_string(),
             hex::decode(&convert_did_to_substrate_identity(&options.identity)?)?,
             match payload {
                 "" => None,
@@ -166,6 +170,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 whitelist_identity(
                     self.config.target.clone(),
                     input.private_key.clone(),
+                    &self.config.signing_url,
                     hex::decode(convert_did_to_substrate_identity(&did)?)?,
                 )
                 .await?;

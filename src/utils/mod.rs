@@ -14,6 +14,7 @@
   limitations under the License.
 */
 
+pub mod signing;
 pub mod substrate;
 pub mod utils;
 

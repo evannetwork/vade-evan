@@ -244,16 +244,20 @@ pub struct ValidateProofPayload {
 }
 
 pub struct VadeEvan {
+    signing_url: String,
     vade: Vade,
 }
 
 impl VadeEvan {
     /// Creates new instance of `VadeEvan`.
-    pub fn new(vade: Vade) -> VadeEvan {
+    pub fn new(vade: Vade, signing_url: &str) -> VadeEvan {
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
-        VadeEvan { vade }
+        VadeEvan {
+            signing_url: signing_url.to_string(),
+            vade,
+        }
     }
 }
 
@@ -367,7 +371,8 @@ impl VadePlugin for VadeEvan {
             &schema,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        )?;
+            &self.signing_url,
+        ).await?;
 
         let serialized = serde_json::to_string(&(&definition, &pk))?;
         let serialized_definition = serde_json::to_string(&definition)?;
@@ -420,7 +425,8 @@ impl VadePlugin for VadeEvan {
             payload.allow_additional_properties,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        )?;
+            &self.signing_url,
+        ).await?;
 
         let serialized = serde_json::to_string(&schema)?;
         self.set_did_document(
@@ -483,8 +489,9 @@ impl VadePlugin for VadeEvan {
                 &definition,
                 &payload.issuer_public_key_did,
                 &payload.issuer_proving_key,
+                &self.signing_url,
                 payload.maximum_credential_count,
-            )?;
+            ).await?;
 
         let serialized_def = serde_json::to_string(&definition)?;
 
@@ -871,7 +878,8 @@ impl VadePlugin for VadeEvan {
             payload.credential_revocation_id,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-        )?;
+            &self.signing_url,
+        ).await?;
 
         let serialized = serde_json::to_string(&updated_registry)?;
 
