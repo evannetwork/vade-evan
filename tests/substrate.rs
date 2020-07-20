@@ -17,7 +17,13 @@
 extern crate regex;
 use regex::Regex;
 mod test_data;
-use vade_evan::utils::substrate;
+use vade_evan::utils::{
+    signing::{
+        RemoteSigner,
+        Signer,
+    },
+    substrate,
+};
 use test_data::{
     SIGNER_PRIVATE_KEY,
     SIGNING_URL,
@@ -26,15 +32,30 @@ use test_data::{
 
 #[tokio::test]
 async fn can_whitelist_identity() {
-    let converted_identity = hex::decode(convert_did_to_substrate_identity(&SIGNER_IDENTITY).unwrap()).unwrap();
-    substrate::whitelist_identity("127.0.0.1".to_string(), SIGNER_PRIVATE_KEY.to_string(), SIGNING_URL, converted_identity).await.unwrap();
+    let converted_identity = hex::decode(
+        convert_did_to_substrate_identity(&SIGNER_IDENTITY).unwrap()).unwrap();
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(SIGNING_URL.to_string()));
+    substrate::whitelist_identity(
+        "127.0.0.1".to_string(),
+        SIGNER_PRIVATE_KEY.to_string(),
+        &signer,
+        converted_identity,
+    ).await.unwrap();
 }
 
 
 #[tokio::test]
 async fn can_create_a_did() {
-    let converted_identity = hex::decode(convert_did_to_substrate_identity(&SIGNER_IDENTITY).unwrap()).unwrap();
-    let did = substrate::create_did("127.0.0.1".to_string(), SIGNER_PRIVATE_KEY.to_string(), SIGNING_URL.to_string(), converted_identity, None).await.unwrap();
+    let converted_identity = hex::decode(
+        convert_did_to_substrate_identity(&SIGNER_IDENTITY).unwrap()).unwrap();
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(SIGNING_URL.to_string()));
+    let did = substrate::create_did(
+        "127.0.0.1".to_string(),
+        SIGNER_PRIVATE_KEY.to_string(),
+        &signer,
+        converted_identity,
+        None,
+    ).await.unwrap();
 
     println!("DID: {:?}", did);
 }
@@ -45,15 +66,47 @@ async fn can_add_payload_to_did() {
     match env_logger::try_init() {
         Ok(_) | Err(_) => (),
     };
-    let converted_identity = hex::decode(convert_did_to_substrate_identity(&SIGNER_IDENTITY).unwrap()).unwrap();
-    let did = substrate::create_did("127.0.0.1".to_string(), SIGNER_PRIVATE_KEY.to_string(), SIGNING_URL.to_string(), converted_identity.clone(), None).await.unwrap();
-    substrate::add_payload_to_did("127.0.0.1".to_string(), "Hello_World".to_string(), did.clone(), SIGNER_PRIVATE_KEY.to_string(), SIGNING_URL.to_string(), converted_identity.clone()).await.unwrap();
-    let detail_count = substrate::get_payload_count_for_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
-    let did_detail = substrate::get_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
-    substrate::update_payload_in_did("127.0.0.1".to_string(), 0, "Hello_World_update".to_string(), did.clone(), SIGNER_PRIVATE_KEY.to_string(), SIGNING_URL.to_string(), converted_identity.clone()).await.unwrap();
-    let did_detail = substrate::get_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
-    substrate::update_payload_in_did("127.0.0.1".to_string(), 0, "Hello_World".to_string(), did.clone(), SIGNER_PRIVATE_KEY.to_string(), SIGNING_URL.to_string(), converted_identity.clone()).await.unwrap();
-    let did_detail = substrate::get_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
+    let converted_identity = hex::decode(
+        convert_did_to_substrate_identity(&SIGNER_IDENTITY).unwrap()).unwrap();
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(SIGNING_URL.to_string()));
+    let did = substrate::create_did(
+        "127.0.0.1".to_string(),
+        SIGNER_PRIVATE_KEY.to_string(),
+        &signer,
+        converted_identity.clone(),
+        None,
+    ).await.unwrap();
+    substrate::add_payload_to_did(
+        "127.0.0.1".to_string(),
+        "Hello_World".to_string(),
+        did.clone(),
+        SIGNER_PRIVATE_KEY.to_string(),
+        &signer,
+        converted_identity.clone(),
+    ).await.unwrap();
+    let _detail_count = substrate::get_payload_count_for_did(
+        "127.0.0.1".to_string(), did.clone()).await.unwrap();
+    let _did_detail = substrate::get_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
+    substrate::update_payload_in_did(
+        "127.0.0.1".to_string(),
+        0,
+        "Hello_World_update".to_string(),
+        did.clone(),
+        SIGNER_PRIVATE_KEY.to_string(),
+        &signer,
+        converted_identity.clone(),
+    ).await.unwrap();
+    let _did_detail = substrate::get_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
+    substrate::update_payload_in_did(
+        "127.0.0.1".to_string(),
+        0,
+        "Hello_World".to_string(),
+       did.clone(),
+        SIGNER_PRIVATE_KEY.to_string(),
+        &signer,
+        converted_identity.clone(),
+    ).await.unwrap();
+    let _did_detail = substrate::get_did("127.0.0.1".to_string(), did.clone()).await.unwrap();
 }
 
 
