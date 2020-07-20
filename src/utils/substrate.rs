@@ -25,16 +25,11 @@ use crate::utils::extrinsic::rpc::{
     start_rpc_client_thread,
 };
 use crate::utils::extrinsic::xt_primitives;
-use blake2_rfc;
-use hex;
-use reqwest;
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::env;
 use std::hash::Hasher;
-use twox_hash;
 
-use crate::utils::signing::sign_message;
+use crate::utils::signing::Signer;
 
 use crate::compose_extrinsic;
 use crate::utils::extrinsic::events::{
@@ -55,32 +50,6 @@ use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
 use sp_std::prelude::*;
 use std::convert::TryFrom;
-
-/// Arguments for signing endpoint.
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct RemoteSigningArguments {
-    pub key: String,
-    pub r#type: String,
-    pub message: String,
-}
-
-/// Expected result from signing endpoint.
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
-enum RemoteSigningResult {
-    #[serde(rename_all = "camelCase")]
-    Ok {
-        message_hash: String,
-        signature: String,
-        signer_address: String,
-    },
-    #[serde(rename_all = "camelCase")]
-    Err {
-        error: String,
-    },
-
-}
 
 pub async fn get_storage_value(
     url: &str,
@@ -494,7 +463,7 @@ struct UpdatedDid {
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity requesting the DID
 /// * `payload` - optional payload to set as DID document
 ///
@@ -503,7 +472,7 @@ struct UpdatedDid {
 pub async fn create_did(
     url: String,
     private_key: String,
-    signing_url: String,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
     payload: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -513,11 +482,7 @@ pub async fn create_did(
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url,
-        ).await?;
+        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
     let xt: String = match payload {
@@ -630,14 +595,14 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
 /// * `payload` - Payload to save
 /// * `did` - DID to save payload under
 /// * `private_key` - key reference to sign with
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity of the caller
 pub async fn add_payload_to_did(
     url: String,
     payload: String,
     did: String,
     private_key: String,
-    signing_url: String,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
@@ -650,11 +615,7 @@ pub async fn add_payload_to_did(
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url,
-        ).await?;
+        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -715,7 +676,7 @@ pub async fn add_payload_to_did(
 /// * `payload` - Payload to save
 /// * `did` - DID to save payload under
 /// * `private_key` - Private key used to sign a message
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity of the caller
 pub async fn update_payload_in_did(
     url: String,
@@ -723,7 +684,7 @@ pub async fn update_payload_in_did(
     payload: String,
     did: String,
     private_key: String,
-    signing_url: String,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
@@ -736,11 +697,7 @@ pub async fn update_payload_in_did(
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url
-        ).await?;
+        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -800,12 +757,12 @@ pub async fn update_payload_in_did(
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity of the caller
 pub async fn whitelist_identity(
     url: String,
     private_key: String,
-    signing_url: &str,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
@@ -814,11 +771,7 @@ pub async fn whitelist_identity(
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
     let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url,
-        ).await?;
+        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
 
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;

@@ -23,9 +23,20 @@ mod test_data;
 use std::collections::HashMap;
 use std::env;
 use test_data::{EXAMPLE_GENERATED_DID, SIGNER_ADDRESS, SIGNER_PRIVATE_KEY, SIGNING_URL};
-use vade_evan::application::datatypes::{CredentialSchema, SchemaProperty};
-use vade_evan::application::issuer::Issuer;
-use vade_evan::crypto::crypto_utils::check_assertion_proof;
+use vade_evan::{
+  application::{
+    datatypes::{
+      CredentialSchema,
+      SchemaProperty
+    },
+    issuer::Issuer,
+  },
+  crypto::crypto_utils::check_assertion_proof,
+  utils::signing::{
+    RemoteSigner,
+    Signer,
+  },
+};
 
 const EXAMPLE_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
 const EXAMPLE_DID_DOCUMENT_STR: &str = r###"
@@ -103,6 +114,8 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     );
     required_properties.push("test_property_string".to_owned());
 
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
+        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
     let schema: CredentialSchema = Issuer::create_credential_schema(
         EXAMPLE_GENERATED_DID,
         EXAMPLE_DID,
@@ -113,7 +126,7 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
         false,
         &did_document["publicKey"][0]["id"].to_string(),
         &SIGNER_PRIVATE_KEY,
-        &(env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())),
+        &signer,
     ).await?;
 
     assert_eq!(&schema.author, &EXAMPLE_DID);
@@ -143,13 +156,15 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn can_create_credential_definition() -> Result<(), Box<dyn std::error::Error>> {
     let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
+      "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
     let (definition, _) = Issuer::create_credential_definition(
         test_data::EXAMPLE_GENERATED_DID,
         &EXAMPLE_DID,
         &schema,
         "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
         &SIGNER_PRIVATE_KEY,
-        &(env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())),
+        &signer,
     ).await?;
 
     assert_eq!(
