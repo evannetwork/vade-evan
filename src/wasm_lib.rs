@@ -673,12 +673,6 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
         [signing_url, target, ..] => (signing_url, target),
         _ => { return Err(Box::from("invalid vade config")); },
     };
-    match &config {
-        Some(value) => error!("config value: {:?}", &value),
-        None => error!("no config"),
-    };
-    error!("signing_url: {}", &signing_url);
-    error!("target: {}", &target);
 
     let mut vade = Vade::new();
 
