@@ -486,6 +486,7 @@ struct Created {
 struct UpdatedDid {
     hash: sp_core::H256,
     _index: u32,
+    nonce: u64
 }
 
 /// Anchors a new DID on the chain.
@@ -640,8 +641,9 @@ pub async fn add_payload_to_did(
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
+    let did = did.trim_start_matches("0x").to_string();
     let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    bytes_did_arr.copy_from_slice(&hex::decode(did.clone())?[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
@@ -726,7 +728,8 @@ pub async fn update_payload_in_did(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let did = did.trim_start_matches("0x").to_string();
+    bytes_did_arr.copy_from_slice(&hex::decode(did.clone())?[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
@@ -755,7 +758,7 @@ pub async fn update_payload_in_did(
         identity.clone(),
         now_timestamp
     );
-    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::Finalized)
+    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock)
         .await
         .map_err(|_e| format!("Error updating payload in DID: {:?} on index: {} with payload: {:?} and identity: {:?} and error; {}",did.clone(), index.clone(), payload.clone(), hex::encode(identity.clone()), _e));
     match ext_error {
@@ -763,7 +766,7 @@ pub async fn update_payload_in_did(
         _ => (),
     }
 
-    fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(did: &String, now_timestamp: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -772,7 +775,7 @@ pub async fn update_payload_in_did(
                     return false;
                 }
             };
-            if &hex::encode(decoded_event.hash) == did {
+            if &hex::encode(decoded_event.hash) == did && now_timestamp == decoded_event.nonce {
                 return true;
             }
             false
@@ -785,7 +788,7 @@ pub async fn update_payload_in_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&did),
+        event_watch(&did, now_timestamp),
     )
     .await
     .ok_or("could not could not get updated did event")??;
