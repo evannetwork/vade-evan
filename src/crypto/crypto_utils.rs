@@ -15,7 +15,7 @@
 */
 
 use crate::crypto::crypto_datatypes::AssertionProof;
-use crate::utils::signing::sign_message;
+use crate::utils::signing::Signer;
 use data_encoding::BASE64URL;
 use secp256k1::{recover, Message, RecoveryId, Signature};
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ pub struct JwsData<'a> {
 /// * `vc` - vc to create proof for
 /// * `verification_method` - issuer of VC
 /// * `private_key` - private key to create proof as 32B hex string
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 ///
 /// # Returns
 /// * `AssertionProof` - Proof object containing a JWT and metadata
@@ -48,7 +48,7 @@ pub async fn create_assertion_proof(
     verification_method: &str,
     issuer: &str,
     private_key: &str,
-    signing_url: &str,
+    signer: &Box<dyn Signer>,
 ) -> Result<AssertionProof, Box<dyn std::error::Error>> {
     // create to-be-signed jwt
     let header_str = r#"{"typ":"JWT","alg":"ES256K-R"}"#;
@@ -81,7 +81,7 @@ pub async fn create_assertion_proof(
     // sign this hash
     let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
     let message = format!("0x{}", &hex::encode(hash_arr));
-    let (sig_and_rec, _): ([u8; 65], _) = sign_message(&message, &private_key, &signing_url).await?;
+    let (sig_and_rec, _): ([u8; 65], _) = signer.sign_message(&message, &private_key).await?;
     let padded = BASE64URL.encode(&sig_and_rec);
     let sig_base64url = padded.trim_end_matches('=');
     debug!("signature base64 url encoded: {:?}", &sig_base64url);

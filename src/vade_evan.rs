@@ -42,6 +42,7 @@ use crate::{
     application::issuer::Issuer,
     application::prover::Prover,
     application::verifier::Verifier,
+    utils::signing::Signer,
 };
 use ursa::cl::Witness;
 
@@ -174,19 +175,19 @@ pub struct ValidateProofPayload {
     pub proof_request: ProofRequest,
 }
 
-pub struct VadeEvan {
-    signing_url: String,
+pub struct VadeEvan{
+    signer: Box<dyn Signer>,
     vade: Vade,
 }
 
-impl VadeEvan {
+impl VadeEvan{
     /// Creates new instance of `VadeEvan`.
-    pub fn new(vade: Vade, signing_url: &str) -> VadeEvan {
+    pub fn new(vade: Vade, signer: Box<dyn Signer>) -> VadeEvan{
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
         VadeEvan {
-            signing_url: signing_url.to_string(),
+            signer,
             vade,
         }
     }
@@ -302,7 +303,7 @@ impl VadePlugin for VadeEvan {
             &schema,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-            &self.signing_url,
+            &self.signer,
         ).await?;
 
         let serialized = serde_json::to_string(&(&definition, &pk))?;
@@ -356,7 +357,7 @@ impl VadePlugin for VadeEvan {
             payload.allow_additional_properties,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-            &self.signing_url,
+            &self.signer,
         ).await?;
 
         let serialized = serde_json::to_string(&schema)?;
@@ -420,7 +421,7 @@ impl VadePlugin for VadeEvan {
                 &definition,
                 &payload.issuer_public_key_did,
                 &payload.issuer_proving_key,
-                &self.signing_url,
+                &self.signer,
                 payload.maximum_credential_count,
             ).await?;
 
@@ -809,7 +810,7 @@ impl VadePlugin for VadeEvan {
             payload.credential_revocation_id,
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
-            &self.signing_url,
+            &self.signer,
         ).await?;
 
         let serialized = serde_json::to_string(&updated_registry)?;

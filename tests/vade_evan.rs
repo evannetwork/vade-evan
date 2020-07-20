@@ -39,25 +39,31 @@ use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
 use vade::Vade;
 use vade_evan::resolver::SubstrateDidResolverEvan;
 use vade_evan::{
-    application::datatypes::{
-        Credential,
-        CredentialDefinition,
-        CredentialOffer,
-        CredentialPrivateKey,
-        CredentialProposal,
-        CredentialRequest,
-        CredentialSchema,
-        MasterSecret,
-        ProofPresentation,
-        ProofRequest,
-        ProofVerification,
-        RevocationIdInformation,
-        RevocationKeyPrivate,
-        RevocationRegistryDefinition,
-        RevocationState,
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialPrivateKey,
+            CredentialProposal,
+            CredentialRequest,
+            CredentialSchema,
+            MasterSecret,
+            ProofPresentation,
+            ProofRequest,
+            ProofVerification,
+            RevocationIdInformation,
+            RevocationKeyPrivate,
+            RevocationRegistryDefinition,
+            RevocationState,
+        },
+        prover::Prover,
     },
-    application::prover::Prover,
     resolver::ResolverConfig,
+    utils::signing::{
+        RemoteSigner,
+        Signer,
+    },
     CreateRevocationRegistryDefinitionResult,
     IssueCredentialResult,
     VadeEvan,
@@ -1063,8 +1069,10 @@ fn get_options() -> String {
 }
 
 fn get_resolver() -> SubstrateDidResolverEvan {
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
+        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
     SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+        signer,
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     })
 }
@@ -1083,7 +1091,9 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeEvan::new(internal_vade, &SIGNING_URL)
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
+        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
+    VadeEvan::new(internal_vade, signer)
 }
 
 async fn issue_credential(

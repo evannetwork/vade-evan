@@ -32,7 +32,10 @@ use vade_evan::crypto::crypto_utils::{
     recover_address_and_data,
     JwsData,
 };
-use vade_evan::utils::signing::sign_message;
+use vade_evan::utils::signing::{
+    Signer,
+    RemoteSigner,
+};
 
 const DOCUMENT_TO_SIGN: &str = r###"
 {
@@ -97,12 +100,14 @@ async fn can_create_assertion_proof() {
     // First deserialize it into a data type or else serde_json will serialize the document into raw unformatted text
     let schema: CredentialSchema = serde_json::from_str(DOCUMENT_TO_SIGN).unwrap();
     let doc_to_sign = serde_json::to_value(&schema).unwrap();
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
+        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
     let proof = create_assertion_proof(
         &doc_to_sign,
         VERIFICATION_METHOD,
         ISSUER,
         SIGNER_PRIVATE_KEY,
-        &(env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())),
+        &signer,
     ).await.unwrap();
 
     assert_eq!(proof.proof_purpose, "assertionMethod".to_owned());
@@ -122,11 +127,14 @@ async fn can_create_assertion_proof() {
 }
 
 #[tokio::test]
-async fn can_sign_messages() -> Result<(), Box<dyn std::error::Error>> {
-    let (_signature, message): ([u8; 65], [u8; 32]) = sign_message(
+async fn can_sign_messages_remotely() -> Result<(), Box<dyn std::error::Error>> {
+    let signer = RemoteSigner::new(
+        (env::var("VADE_EVAN_SIGNING_URL")
+            .unwrap_or_else(|_| SIGNING_URL.to_string())).to_string()
+    );
+    let (_signature, message): ([u8; 65], [u8; 32]) = signer.sign_message(
         "one two three four",
         "a1c48241-5978-4348-991e-255e92d81f1e",
-        "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
     ).await?;
     let message_hash = format!("0x{}", hex::encode(message));
     assert_eq!(
