@@ -49,6 +49,7 @@ pub struct IdentityArguments {
     pub identity: String,
 }
 
+#[derive(Debug)]
 pub struct ResolverConfig {
     pub signing_url: String,
     pub target: String,
@@ -65,6 +66,7 @@ impl SubstrateDidResolverEvan {
         match env_logger::try_init() {
             Ok(_) | Err(_) => (),
         };
+        trace!("created new resolver with config: {:?}", &config);
         SubstrateDidResolverEvan { config }
     }
 

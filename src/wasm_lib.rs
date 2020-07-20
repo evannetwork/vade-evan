@@ -16,16 +16,13 @@
 
 // shared
 use console_log;
+use std::collections::HashMap;
 use vade::Vade;
 use wasm_bindgen::prelude::*;
 // did
 #[cfg(feature = "did")]
 use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
-#[cfg(feature = "did")]
-use std::env;
 // vc-zkp
-#[cfg(feature = "vc-zkp")]
-use std::collections::HashMap;
 #[cfg(feature = "vc-zkp")]
 use crate::VadeEvan;
 #[cfg(feature = "vc-zkp")]
@@ -89,8 +86,9 @@ pub fn set_log_level(log_level: String) {
 #[wasm_bindgen]
 pub async fn did_resolve(
     did: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     let results = vade
         .did_resolve(&did)
         .await
@@ -112,8 +110,9 @@ pub async fn did_update(
     did: String,
     options: String,
     payload: String,
+    config: JsValue,
 ) -> Result<(), JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     let results = vade
         .did_update(&did, &options, &payload)
         .await
@@ -138,8 +137,9 @@ pub async fn create_schema(
     issuer_proving_key: String,
     private_key: String,
     identity: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
 
     let options = get_options(private_key, identity);
     let payload = format!(
@@ -184,8 +184,9 @@ pub async fn create_credential_definition(
     issuer_private_key: String,
     private_key: String,
     identity: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
 
     let options = get_options(private_key, identity);
     let payload = format!(
@@ -218,8 +219,9 @@ pub async fn request_proof(
     subject_did: String,
     issuer_did: String,
     revealed_attributes: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
 
     let payload = format!(
         r###"{{
@@ -259,8 +261,9 @@ pub async fn create_credential_proposal(
     schema_id: String,
     subject_did: String,
     issuer_did: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
 
     let payload = format!(
         r###"{{
@@ -289,8 +292,9 @@ pub async fn create_credential_proposal(
 pub async fn create_credential_offer(
     proposal: String,
     credential_definition_id: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     let mut message_value: Value = serde_json::from_str(&proposal).map_err(jsify_serde)?;
     message_value["credentialDefinition"] = Value::from(credential_definition_id);
     let payload = serde_json::to_string(&message_value).map_err(jsify_serde)?;
@@ -314,8 +318,9 @@ pub async fn create_credential_request(
     offer: String,
     master_secret: String,
     credential_values: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     let offer_object: CredentialOffer = serde_json::from_str(&offer).map_err(jsify_serde)?;
     let results = vade
         .did_resolve(&offer_object.schema)
@@ -356,8 +361,9 @@ pub async fn create_revocation_registry_definition(
     issuer_private_key: String,
     private_key: String,
     identity: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
 
     let options = get_options(private_key, identity);
     let payload = format!(
@@ -396,8 +402,9 @@ pub async fn issue_credential(
     master_secret: String,
     issuer_did: String,
     subject_did: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     debug!("get did {}", definition);
     let results = &vade.did_resolve(&definition).await.map_err(jsify)?;
     let credential_definition_doc = results[0]
@@ -491,8 +498,9 @@ pub async fn present_proof(
     credential: String,
     master_secret: String,
     witness: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
 
     let proof_request_parsed: ProofRequest =
         serde_json::from_str(&proof_request).map_err(jsify_serde)?;
@@ -541,8 +549,9 @@ pub async fn present_proof(
 pub async fn verify_proof(
     presented_proof: String,
     proof_request: String,
+    config: JsValue,
 ) -> Result<String, JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     console_error_panic_hook::set_once();
     let payload = format!(
         r###"{{
@@ -579,8 +588,9 @@ pub async fn whitelist_identity(
     did: String,
     private_key: String,
     identity: String,
+    config: JsValue,
 ) -> Result<(), JsValue> {
-    let mut vade = get_vade().map_err(jsify)?;
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     let payload = format!(
         r###"{{
             "privateKey": "{}",
@@ -602,6 +612,49 @@ pub async fn whitelist_identity(
     Ok(())
 }
 
+fn get_config_values(config: Option<&JsValue>, keys: Vec<String>
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let mut vec = Vec::new();
+    let mut config_undefined = true;
+    
+    let config_hash_map: HashMap<String, String>;
+    match config {
+        Some(value) => {
+            if !value.is_undefined() {
+                config_hash_map = value.into_serde()?;
+                config_undefined = false;
+            } else {
+                config_hash_map = HashMap::<String, String>::new();
+            }
+        },
+        None => {
+            config_hash_map = HashMap::<String, String>::new();
+        },
+    };
+
+    for key in keys {
+        if config_undefined || !config_hash_map.contains_key(&key) {
+            vec.push(get_config_default(&key)?);
+        } else {
+            vec.push(config_hash_map
+                .get(&key)
+                .ok_or_else(|| format!("could not get key '{}' from config", &key))?
+                .to_string()
+            );
+        }
+    }
+
+    Ok(vec)
+}
+
+fn get_config_default(key: &str) -> Result<String, Box<dyn std::error::Error>> {
+    Ok(match key {
+        "signingUrl" => "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
+        "target" => "13.69.59.185",
+        _ => { return Err(Box::from(format!("invalid invalid config key '{}'", key))) },
+    }.to_string())
+}
+
 #[cfg(feature = "vc-zkp")]
 fn get_options(private_key: String, identity: String) -> String {
     format!(
@@ -613,23 +666,42 @@ fn get_options(private_key: String, identity: String) -> String {
     )
 }
 
-fn get_vade() -> Result<Vade, Box<dyn std::error::Error>> {
+fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>> {
+    let config_values = get_config_values(
+        config, vec!["signingUrl".to_string(), "target".to_string()])?;
+    let (signing_url, target) = match config_values.as_slice() {
+        [signing_url, target, ..] => (signing_url, target),
+        _ => { return Err(Box::from("invalid vade config")); },
+    };
+    match &config {
+        Some(value) => error!("config value: {:?}", &value),
+        None => error!("no config"),
+    };
+    error!("signing_url: {}", &signing_url);
+    error!("target: {}", &target);
+
     let mut vade = Vade::new();
 
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
-            |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string()),
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        signing_url: signing_url.to_string(),
+        target: target.to_string(),
     })));
     #[cfg(feature = "vc-zkp")]
-    vade.register_plugin(Box::from(get_vade_evan()?));
+    vade.register_plugin(Box::from(get_vade_evan(config)?));
 
     Ok(vade)
 }
 
 #[cfg(feature = "vc-zkp")]
-fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
+fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::error::Error>> {
+    let config_values = get_config_values(
+        config, vec!["signingUrl".to_string(), "target".to_string()])?;
+    let (signing_url, target) = match config_values.as_slice() {
+        [signing_url, target, ..] => (signing_url, target),
+        _ => { return Err(Box::from("invalid vade config")); },
+    };
+
     #[cfg(not(feature = "did"))]
     let internal_vade = Vade::new();
     #[cfg(not(feature = "did"))]
@@ -638,12 +710,9 @@ fn get_vade_evan() -> Result<VadeEvan, Box<dyn std::error::Error>> {
     #[cfg(feature = "did")]
     let mut internal_vade = Vade::new();
     #[cfg(feature = "did")]
-    let signing_url = env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(
-        |_| "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign".to_string());
-    #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
         signing_url: signing_url.to_string(),
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        target: target.to_string(),
     })));
 
     Ok(VadeEvan::new(internal_vade, &signing_url))
