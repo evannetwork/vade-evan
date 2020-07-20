@@ -31,6 +31,7 @@ use test_data::{
     SCHEMA_REQUIRED_PROPERTIES,
     SIGNER_IDENTITY,
     SIGNER_PRIVATE_KEY,
+    SIGNING_URL,
     SUBJECT_DID,
 };
 use ursa::bn::BigNumber;
@@ -1063,7 +1064,8 @@ fn get_options() -> String {
 
 fn get_resolver() -> SubstrateDidResolverEvan {
     SubstrateDidResolverEvan::new(ResolverConfig {
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "127.0.0.1".to_string()),
+        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
     })
 }
 
@@ -1081,7 +1083,7 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeEvan::new(internal_vade)
+    VadeEvan::new(internal_vade, &SIGNING_URL)
 }
 
 async fn issue_credential(
@@ -1249,14 +1251,14 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
     json_editable["operation"] = Value::from("whitelistIdentity");
     let options = serde_json::to_string(&json_editable).unwrap();
 
-    let results = vade
+    let result = vade
         .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
         .await;
 
-    if results.is_err() || results?.is_empty() {
-        // test is not supposed to fail
-        panic!("could not whitelist identity")
-    }
+    match result {
+        Ok(values) => assert!(!values.is_empty()),
+        Err(e) => panic!("could not whitelist identity; {}", &e),
+    };
 
     Ok(())
 }

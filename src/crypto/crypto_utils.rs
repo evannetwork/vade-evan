@@ -15,15 +15,17 @@
 */
 
 use crate::crypto::crypto_datatypes::AssertionProof;
-#[cfg(not(target_arch = "wasm32"))]
-use chrono::Utc;
+use crate::utils::signing::sign_message;
 use data_encoding::BASE64URL;
-use secp256k1::{recover, sign, Message, RecoveryId, SecretKey, Signature};
+use secp256k1::{recover, Message, RecoveryId, Signature};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::RawValue, Value};
 use sha2::{Digest, Sha256};
 use sha3::Keccak256;
 use std::convert::TryInto;
+
+#[cfg(not(target_arch = "wasm32"))]
+use chrono::Utc;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JwsData<'a> {
@@ -37,15 +39,16 @@ pub struct JwsData<'a> {
 /// * `vc` - vc to create proof for
 /// * `verification_method` - issuer of VC
 /// * `private_key` - private key to create proof as 32B hex string
-/// * `now` - timestamp of issuing, may have also been used to determine `validFrom` in VC
+/// * `signing_url` - endpoint that signs given message
 ///
 /// # Returns
 /// * `AssertionProof` - Proof object containing a JWT and metadata
-pub fn create_assertion_proof(
+pub async fn create_assertion_proof(
     document_to_sign: &Value,
     verification_method: &str,
     issuer: &str,
     private_key: &str,
+    signing_url: &str,
 ) -> Result<AssertionProof, Box<dyn std::error::Error>> {
     // create to-be-signed jwt
     let header_str = r#"{"typ":"JWT","alg":"ES256K-R"}"#;
@@ -77,18 +80,8 @@ pub fn create_assertion_proof(
 
     // sign this hash
     let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
-    let message = Message::parse(&hash_arr);
-    let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(&private_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
-    let secret_key = SecretKey::parse(&private_key_arr)?;
-    let (sig, rec): (Signature, _) = sign(&message, &secret_key);
-    // sig to bytes (len 64), append recoveryid
-    let signature_arr = &sig.serialize();
-    let mut sig_and_rec: [u8; 65] = [0; 65];
-    for i in 0..64 {
-        sig_and_rec[i] = signature_arr[i];
-    }
-    sig_and_rec[64] = rec.serialize();
+    let message = format!("0x{}", &hex::encode(hash_arr));
+    let (sig_and_rec, _): ([u8; 65], _) = sign_message(&message, &private_key, &signing_url).await?;
     let padded = BASE64URL.encode(&sig_and_rec);
     let sig_base64url = padded.trim_end_matches('=');
     debug!("signature base64 url encoded: {:?}", &sig_base64url);
@@ -234,7 +227,13 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     // slice signature and recovery for recovery
     debug!("recovery id; {}", signature_decoded[64]);
     let ctx_sig = Signature::parse(&signature_array);
-    let recovery_id = RecoveryId::parse(signature_decoded[64])?;
+    let signature_normalized =
+        if signature_decoded[64] < 27 {
+            signature_decoded[64]
+        } else {
+            signature_decoded[64] - 27
+        };
+    let recovery_id = RecoveryId::parse(signature_normalized)?;
 
     // recover public key, build ethereum address from it
     let recovered_key = recover(&ctx_msg, &ctx_sig, &recovery_id)?;
@@ -246,41 +245,4 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     debug!("address 0x{}", &address);
 
     Ok((address, data_string))
-}
-
-/// Signs a message using Keccak256
-///
-/// # Arguments
-/// * `message_to_sign` - String to sign
-/// * `signing_key` - Key to be used for signing
-///
-/// # Returns
-/// `[u8; 65]` - Signature
-/// `[u8; 32]` - Hashed Message
-pub fn sign_message(
-    message_to_sign: &str,
-    signing_key: &str,
-) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
-    // create hash of data (including header)
-    let mut hasher = Keccak256::new();
-    hasher.input(&message_to_sign);
-    let hash = hasher.result();
-
-    // sign this hash
-    let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
-    let message = Message::parse(&hash_arr);
-    let mut private_key_arr = [0u8; 32];
-    hex::decode_to_slice(signing_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
-    let secret_key = SecretKey::parse(&private_key_arr)?;
-    let (sig, rec): (Signature, _) = sign(&message, &secret_key);
-
-    // sig to bytes (len 64), append recoveryid
-    let signature_arr = &sig.serialize();
-    let mut sig_and_rec: [u8; 65] = [0; 65];
-    for i in 0..64 {
-        sig_and_rec[i] = signature_arr[i];
-    }
-    sig_and_rec[64] = rec.serialize();
-
-    Ok((sig_and_rec, hash_arr))
 }
