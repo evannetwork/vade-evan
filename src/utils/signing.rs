@@ -15,8 +15,11 @@
 */
 
 use async_trait::async_trait;
-use reqwest;
+use secp256k1::{sign, Message, SecretKey, Signature};
 use serde::{Deserialize, Serialize};
+use sha2::Digest ;
+use sha3::Keccak256;
+use std::convert::TryInto;
 
 const KEY_TYPE: &str = "identityKey";
 
@@ -55,16 +58,71 @@ pub trait Signer {
     ) ->  Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>>;
 }
 
+/// Signer for signing messages locally with a private key.
+pub struct LocalSigner {}
+
+impl LocalSigner {
+    /// Creates new `LocalSigner` instance.
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[async_trait(?Send)]
+impl Signer for LocalSigner {
+    /// Signs a message using Keccak256
+    ///
+    /// # Arguments
+    /// * `message_to_sign` - String to sign
+    /// * `signing_key` - Key to be used for signing
+    ///
+    /// # Returns
+    /// `[u8; 65]` - Signature
+    /// `[u8; 32]` - Hashed Message
+    async fn sign_message(
+        &self,
+        message_to_sign: &str,
+        signing_key: &str,
+    ) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
+        // create hash of data (including header)
+        let mut hasher = Keccak256::new();
+        hasher.input(&message_to_sign);
+        let hash = hasher.result();
+
+        // sign this hash
+        let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
+        let message = Message::parse(&hash_arr);
+        let mut private_key_arr = [0u8; 32];
+        hex::decode_to_slice(signing_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
+        let secret_key = SecretKey::parse(&private_key_arr)?;
+        let (sig, rec): (Signature, _) = sign(&message, &secret_key);
+
+        // sig to bytes (len 64), append recoveryid
+        let signature_arr = &sig.serialize();
+        let mut sig_and_rec: [u8; 65] = [0; 65];
+        for i in 0..64 {
+            sig_and_rec[i] = signature_arr[i];
+        }
+        sig_and_rec[64] = rec.serialize();
+
+        Ok((sig_and_rec, hash_arr))
+    }
+}
+
+/// Signer for signing messages locally with a remote endpoint.
 pub struct RemoteSigner {
     signing_endpoint: String,
 }
 
 impl RemoteSigner {
+    /// Creates a new `RemoteSigner` instance.
+    ///
+    /// # Arguments
+    /// * `signing_endpoint` - endpoint to use for signing with this signer.
     pub fn new(signing_endpoint: String) -> Self {
         Self { signing_endpoint }
     }
 }
-
 
 #[async_trait(?Send)]
 impl Signer for RemoteSigner {
@@ -72,7 +130,7 @@ impl Signer for RemoteSigner {
     ///
     /// # Arguments
     /// * `message_to_sign` - String to sign
-    /// * `signing_key` - key reference to sign with
+    /// * `signing_key` - key reference to sign with (e.g. the key-ID)
     /// * `signing_url` - endpoint that signs given message
     ///
     /// # Returns
