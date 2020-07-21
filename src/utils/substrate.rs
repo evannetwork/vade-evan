@@ -14,21 +14,11 @@
   limitations under the License.
 */
 
-use serde_json::{json, Value};
-use std::env;
-use std::hash::Hasher;
 use crate::{
     compose_extrinsic,
     signing::Signer,
     utils::extrinsic::{
-        events::{
-            DispatchError,
-            EventsDecoder,
-            Phase,
-            RawEvent,
-            RuntimeEvent,
-            SystemEvent,
-        },
+        events::{DispatchError, EventsDecoder, Phase, RawEvent, RuntimeEvent, SystemEvent},
         frame_metadata::RuntimeMetadataPrefixed,
         node_metadata::Metadata,
         rpc::{
@@ -50,8 +40,11 @@ use chrono::Utc;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
+use serde_json::{json, Value};
 use sp_std::prelude::*;
 use std::convert::TryFrom;
+use std::env;
+use std::hash::Hasher;
 
 pub async fn get_storage_value(
     url: &str,
@@ -457,7 +450,7 @@ struct Created {
 struct UpdatedDid {
     hash: sp_core::H256,
     _index: u32,
-    nonce: u64
+    nonce: u64,
 }
 
 /// Anchors a new DID on the chain.
@@ -483,8 +476,9 @@ pub async fn create_did(
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
     let xt: String = match payload {
@@ -565,28 +559,24 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
     bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await?;
-    let detail_hash =
-        get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
-            url.as_str(),
-            metadata.clone(),
-            "DidModule",
-            "DidsDetails",
-            (bytes_did.clone(), 0),
-        )
-        .await?
-        .ok_or("could not get storage map")?;
-    let did_url =  format!(
+    let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
+        url.as_str(),
+        metadata.clone(),
+        "DidModule",
+        "DidsDetails",
+        (bytes_did.clone(), 0),
+    )
+    .await?
+    .ok_or("could not get storage map")?;
+    let did_url = format!(
         "http://{}:{}/ipfs/{}",
         url,
         env::var("VADE_EVAN_IPFS_PORT").unwrap_or_else(|_| "8081".to_string()),
         std::str::from_utf8(&detail_hash)?
-    ).to_string();
+    )
+    .to_string();
     trace!("fetching DID document at: {}", &did_url);
-    let body =
-        reqwest::get(&did_url)
-        .await?
-        .text()
-        .await?;
+    let body = reqwest::get(&did_url).await?.text().await?;
     Ok(body)
 }
 
@@ -616,8 +606,9 @@ pub async fn add_payload_to_did(
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -698,8 +689,9 @@ pub async fn update_payload_in_did(
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -772,8 +764,9 @@ pub async fn whitelist_identity(
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        signer.sign_message(&now_timestamp.to_string(), &private_key.to_string()).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
 
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;

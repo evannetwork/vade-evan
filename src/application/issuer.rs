@@ -34,17 +34,9 @@ use crate::{
         },
         prover::Prover,
     },
-    crypto::{
-        crypto_issuer::Issuer as CryptoIssuer,
-        crypto_utils::create_assertion_proof,
-    },
+    crypto::{crypto_issuer::Issuer as CryptoIssuer, crypto_utils::create_assertion_proof},
     signing::Signer,
-    utils::{
-        utils::{
-            generate_uuid,
-            get_now_as_iso_string
-        },
-    }
+    utils::utils::{generate_uuid, get_now_as_iso_string},
 };
 use std::collections::{HashMap, HashSet};
 #[cfg(not(target_arch = "wasm32"))]
@@ -112,7 +104,8 @@ impl Issuer {
             &issuer_did,
             &issuer_proving_key,
             &signer,
-        ).await?;
+        )
+        .await?;
 
         definition.proof = Some(proof);
 
@@ -171,7 +164,8 @@ impl Issuer {
             &issuer_did,
             &issuer_proving_key,
             &signer,
-        ).await?;
+        )
+        .await?;
 
         schema.proof = Some(proof);
 
@@ -250,7 +244,8 @@ impl Issuer {
             &credential_definition.issuer,
             &issuer_proving_key,
             &signer,
-        ).await?;
+        )
+        .await?;
 
         rev_reg_def.proof = Some(proof);
 
@@ -490,7 +485,8 @@ impl Issuer {
             issuer,
             issuer_proving_key,
             &signer,
-        ).await?;
+        )
+        .await?;
 
         rev_reg_def.proof = Some(proof);
 

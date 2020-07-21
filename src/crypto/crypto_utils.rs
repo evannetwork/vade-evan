@@ -14,10 +14,7 @@
   limitations under the License.
 */
 
-use crate::{
-    crypto::crypto_datatypes::AssertionProof,
-    signing::Signer,
-};
+use crate::{crypto::crypto_datatypes::AssertionProof, signing::Signer};
 use data_encoding::BASE64URL;
 use secp256k1::{recover, Message, RecoveryId, Signature};
 use serde::{Deserialize, Serialize};
@@ -229,12 +226,11 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
     // slice signature and recovery for recovery
     debug!("recovery id; {}", signature_decoded[64]);
     let ctx_sig = Signature::parse(&signature_array);
-    let signature_normalized =
-        if signature_decoded[64] < 27 {
-            signature_decoded[64]
-        } else {
-            signature_decoded[64] - 27
-        };
+    let signature_normalized = if signature_decoded[64] < 27 {
+        signature_decoded[64]
+    } else {
+        signature_decoded[64] - 27
+    };
     let recovery_id = RecoveryId::parse(signature_normalized)?;
 
     // recover public key, build ethereum address from it
