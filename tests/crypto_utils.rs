@@ -33,6 +33,7 @@ use vade_evan::crypto::crypto_utils::{
     JwsData,
 };
 use vade_evan::utils::signing::{
+    LocalSigner,
     Signer,
     RemoteSigner,
 };
@@ -140,6 +141,22 @@ async fn can_sign_messages_remotely() -> Result<(), Box<dyn std::error::Error>> 
     assert_eq!(
         message_hash,
         "0x52091d1299031b18c1099620a1786363855d9fcd91a7686c866ad64f83de13ff"
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_sign_messages_locally() -> Result<(), Box<dyn std::error::Error>> {
+    let signer = LocalSigner::new();
+    let (_signature, message): ([u8; 65], [u8; 32]) = signer.sign_message(
+        "one two three four",
+        "1111111111222222222233333333334444444444555555555566666666667777",
+    ).await?;
+    let message_hash = format!("0x{}", hex::encode(message));
+    assert_eq!(
+        message_hash,
+        "0x216f85bc4d561a7c05231d12139a2d1a050c3baf3d33e057b8c25dcb3d7a8b94"
     );
 
     Ok(())
