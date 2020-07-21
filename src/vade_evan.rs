@@ -279,8 +279,10 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)?;
-        let payload: CreateCredentialDefinitionPayload = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)
+            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
+        let payload: CreateCredentialDefinitionPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         let results = &self.vade.did_resolve(&payload.schema_did).await?;
         if results.is_empty() {
@@ -340,8 +342,10 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)?;
-        let payload: CreateCredentialSchemaPayload = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)
+            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
+        let payload: CreateCredentialSchemaPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -396,8 +400,10 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)?;
-        let payload: CreateRevocationRegistryDefinitionPayload = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)
+            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
+        let payload: CreateRevocationRegistryDefinitionPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         debug!(
             "fetching credential definition with did; {}",
@@ -467,7 +473,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: IssueCredentialPayload = serde_json::from_str(&payload)?;
+        let payload: IssueCredentialPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         debug!(
             "fetching credential definition with did; {}",
@@ -544,7 +551,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: OfferCredentialPayload = serde_json::from_str(&payload)?;
+        let payload: OfferCredentialPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
         let result: CredentialOffer = Issuer::offer_credential(
             &payload.issuer,
             &payload.subject,
@@ -577,7 +585,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: PresentProofPayload = serde_json::from_str(&payload)?;
+        let payload: PresentProofPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
@@ -673,7 +682,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: CreateCredentialProposalPayload = serde_json::from_str(&payload)?;
+        let payload: CreateCredentialProposalPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
         let result: CredentialProposal =
             Prover::propose_credential(&payload.issuer, &payload.subject, &payload.schema);
 
@@ -704,7 +714,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: RequestCredentialPayload = serde_json::from_str(&payload)?;
+        let payload: RequestCredentialPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         debug!(
             "fetching credential definition with did; {}",
@@ -753,7 +764,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: RequestProofPayload = serde_json::from_str(&payload)?;
+        let payload: RequestProofPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
         let result: ProofRequest = Verifier::request_proof(
             &payload.verifier_did,
             &payload.prover_did,
@@ -766,7 +778,7 @@ impl VadePlugin for VadeEvan {
     }
 
     /// Revokes a credential. After revocation the published revocation registry needs to be updated with information
-    /// returned by this function. To revoke a credential, tbe revoker must be in posession of the private key associated
+    /// returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated
     /// with the credential's revocation registry. After revocation, the published revocation registry must be updated.
     /// Only then is the credential truly revoked.
     ///
@@ -790,8 +802,10 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)?;
-        let payload: RevokeCredentialPayload = serde_json::from_str(&payload)?;
+        let options: AuthenticationOptions = serde_json::from_str(&options)
+            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
+        let payload: RevokeCredentialPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         debug!(
             "fetching revocation definition with did; {}",
@@ -848,7 +862,8 @@ impl VadePlugin for VadeEvan {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: ValidateProofPayload = serde_json::from_str(&payload)?;
+        let payload: ValidateProofPayload = serde_json::from_str(&payload)
+            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
