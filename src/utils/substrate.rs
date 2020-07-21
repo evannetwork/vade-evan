@@ -441,14 +441,14 @@ struct IdentityWhitelist {
 
 #[derive(Decode)]
 struct Created {
-    hash: sp_core::H256,
+    hash: Vec<u8>,
     _owner: Vec<u8>,
     nonce: u64,
 }
 
 #[derive(Decode)]
 struct UpdatedDid {
-    hash: sp_core::H256,
+    hash: Vec<u8>,
     _index: u32,
     nonce: u64,
 }
@@ -618,7 +618,7 @@ pub async fn add_payload_to_did(
         metadata.clone(),
         "DidModule",
         "add_did_detail",
-        bytes_did.clone(),
+        bytes_did.clone().to_fixed_bytes(),
         payload_hex,
         signature.to_vec(),
         signed_message.to_vec(),
@@ -701,7 +701,7 @@ pub async fn update_payload_in_did(
         metadata.clone(),
         "DidModule",
         "update_did_detail",
-        bytes_did.clone(),
+        bytes_did.clone().to_fixed_bytes(),
         payload_hex,
         index,
         signature.to_vec(),
