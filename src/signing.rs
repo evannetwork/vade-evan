@@ -17,7 +17,7 @@
 use async_trait::async_trait;
 use secp256k1::{sign, Message, SecretKey, Signature};
 use serde::{Deserialize, Serialize};
-use sha2::Digest ;
+use sha2::Digest;
 use sha3::Keccak256;
 use std::convert::TryInto;
 
@@ -34,9 +34,7 @@ enum RemoteSigningResult {
         signer_address: String,
     },
     #[serde(rename_all = "camelCase")]
-    Err {
-        error: String,
-    },
+    Err { error: String },
 }
 
 /// Arguments for signing endpoint.
@@ -48,14 +46,13 @@ struct RemoteSigningArguments {
     pub message: String,
 }
 
-
 #[async_trait(?Send)]
 pub trait Signer {
     async fn sign_message(
         &self,
         message_to_sign: &str,
         signing_key: &str,
-    ) ->  Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>>;
+    ) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>>;
 }
 
 /// Signer for signing messages locally with a private key.
@@ -93,7 +90,8 @@ impl Signer for LocalSigner {
         let hash_arr: [u8; 32] = hash.try_into().map_err(|_| "slice with incorrect length")?;
         let message = Message::parse(&hash_arr);
         let mut private_key_arr = [0u8; 32];
-        hex::decode_to_slice(signing_key, &mut private_key_arr).map_err(|_| "private key invalid")?;
+        hex::decode_to_slice(signing_key, &mut private_key_arr)
+            .map_err(|_| "private key invalid")?;
         let secret_key = SecretKey::parse(&private_key_arr)?;
         let (sig, rec): (Signature, _) = sign(&message, &secret_key);
 
@@ -140,7 +138,7 @@ impl Signer for RemoteSigner {
         &self,
         message_to_sign: &str,
         signing_key: &str,
-    ) ->  Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
+    ) -> Result<([u8; 65], [u8; 32]), Box<dyn std::error::Error>> {
         let client = reqwest::Client::new();
         let body = RemoteSigningArguments {
             key: signing_key.to_string(),
@@ -154,26 +152,27 @@ impl Signer for RemoteSigner {
             .await?
             .json::<RemoteSigningResult>()
             .await?;
-    
+
         match parsed {
-            RemoteSigningResult::Ok { message_hash, signature, signer_address: _ } => {
+            RemoteSigningResult::Ok {
+                message_hash,
+                signature,
+                signer_address: _,
+            } => {
                 // parse into signature and hash
                 let mut signature_arr = [0u8; 65];
-                hex::decode_to_slice(
-                    signature.trim_start_matches("0x"),
-                    &mut signature_arr,
-                ).map_err(|_| "signature invalid")?;
+                hex::decode_to_slice(signature.trim_start_matches("0x"), &mut signature_arr)
+                    .map_err(|_| "signature invalid")?;
                 let mut hash_arr = [0u8; 32];
-                hex::decode_to_slice(
-                    message_hash.trim_start_matches("0x"),
-                    &mut hash_arr,
-                ).map_err(|_| "hash invalid")?;
-    
+                hex::decode_to_slice(message_hash.trim_start_matches("0x"), &mut hash_arr)
+                    .map_err(|_| "hash invalid")?;
+
                 Ok((signature_arr, hash_arr))
-            },
-            RemoteSigningResult::Err { error }=> {
-                Err(Box::from(format!("could not sign message with remote endpoint; {}", &error)))
-            },
+            }
+            RemoteSigningResult::Err { error } => Err(Box::from(format!(
+                "could not sign message with remote endpoint; {}",
+                &error
+            ))),
         }
     }
 }

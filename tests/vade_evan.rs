@@ -60,10 +60,7 @@ use vade_evan::{
         prover::Prover,
     },
     resolver::ResolverConfig,
-    signing::{
-        RemoteSigner,
-        Signer,
-    },
+    signing::{RemoteSigner, Signer},
     CreateRevocationRegistryDefinitionResult,
     IssueCredentialResult,
     VadeEvan,
@@ -1069,8 +1066,9 @@ fn get_options() -> String {
 }
 
 fn get_resolver() -> SubstrateDidResolverEvan {
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
-        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
         target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
@@ -1091,8 +1089,9 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
-        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     VadeEvan::new(internal_vade, signer)
 }
 

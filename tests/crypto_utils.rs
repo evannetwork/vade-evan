@@ -21,26 +21,11 @@ mod test_data;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
-use test_data::{
-    SIGNER_ADDRESS,
-    SIGNER_PRIVATE_KEY,
-    SIGNING_URL,
-};
+use test_data::{SIGNER_ADDRESS, SIGNER_PRIVATE_KEY, SIGNING_URL};
 use vade_evan::{
-    application::datatypes::{
-        CredentialSchema,
-        SchemaProperty,
-    },
-    crypto::crypto_utils::{
-        create_assertion_proof,
-        recover_address_and_data,
-        JwsData,
-    },
-    signing::{
-        LocalSigner,
-        Signer,
-        RemoteSigner,
-    },
+    application::datatypes::{CredentialSchema, SchemaProperty},
+    crypto::crypto_utils::{create_assertion_proof, recover_address_and_data, JwsData},
+    signing::{LocalSigner, RemoteSigner, Signer},
 };
 
 const DOCUMENT_TO_SIGN: &str = r###"
@@ -102,19 +87,22 @@ async fn can_create_assertion_proof() {
     match env_logger::try_init() {
         Ok(_) | Err(_) => (),
     };
-    
+
     // First deserialize it into a data type or else serde_json will serialize the document into raw unformatted text
     let schema: CredentialSchema = serde_json::from_str(DOCUMENT_TO_SIGN).unwrap();
     let doc_to_sign = serde_json::to_value(&schema).unwrap();
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
-        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     let proof = create_assertion_proof(
         &doc_to_sign,
         VERIFICATION_METHOD,
         ISSUER,
         SIGNER_PRIVATE_KEY,
         &signer,
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
 
     assert_eq!(proof.proof_purpose, "assertionMethod".to_owned());
     assert_eq!(proof.r#type, "EcdsaPublicKeySecp256k1".to_owned());
@@ -135,13 +123,11 @@ async fn can_create_assertion_proof() {
 #[tokio::test]
 async fn can_sign_messages_remotely() -> Result<(), Box<dyn std::error::Error>> {
     let signer = RemoteSigner::new(
-        (env::var("VADE_EVAN_SIGNING_URL")
-            .unwrap_or_else(|_| SIGNING_URL.to_string())).to_string()
+        (env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())).to_string(),
     );
-    let (_signature, message): ([u8; 65], [u8; 32]) = signer.sign_message(
-        "one two three four",
-        "a1c48241-5978-4348-991e-255e92d81f1e",
-    ).await?;
+    let (_signature, message): ([u8; 65], [u8; 32]) = signer
+        .sign_message("one two three four", "a1c48241-5978-4348-991e-255e92d81f1e")
+        .await?;
     let message_hash = format!("0x{}", hex::encode(message));
     assert_eq!(
         message_hash,
@@ -154,10 +140,12 @@ async fn can_sign_messages_remotely() -> Result<(), Box<dyn std::error::Error>> 
 #[tokio::test]
 async fn can_sign_messages_locally() -> Result<(), Box<dyn std::error::Error>> {
     let signer = LocalSigner::new();
-    let (_signature, message): ([u8; 65], [u8; 32]) = signer.sign_message(
-        "one two three four",
-        "1111111111222222222233333333334444444444555555555566666666667777",
-    ).await?;
+    let (_signature, message): ([u8; 65], [u8; 32]) = signer
+        .sign_message(
+            "one two three four",
+            "1111111111222222222233333333334444444444555555555566666666667777",
+        )
+        .await?;
     let message_hash = format!("0x{}", hex::encode(message));
     assert_eq!(
         message_hash,

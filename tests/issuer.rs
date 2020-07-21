@@ -24,18 +24,12 @@ use std::collections::HashMap;
 use std::env;
 use test_data::{EXAMPLE_GENERATED_DID, SIGNER_ADDRESS, SIGNER_PRIVATE_KEY, SIGNING_URL};
 use vade_evan::{
-  application::{
-    datatypes::{
-      CredentialSchema,
-      SchemaProperty
+    application::{
+        datatypes::{CredentialSchema, SchemaProperty},
+        issuer::Issuer,
     },
-    issuer::Issuer,
-  },
-  crypto::crypto_utils::check_assertion_proof,
-  signing::{
-    RemoteSigner,
-    Signer,
-  },
+    crypto::crypto_utils::check_assertion_proof,
+    signing::{RemoteSigner, Signer},
 };
 
 const EXAMPLE_DID: &str = "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD1";
@@ -114,8 +108,9 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     );
     required_properties.push("test_property_string".to_owned());
 
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
-        "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     let schema: CredentialSchema = Issuer::create_credential_schema(
         EXAMPLE_GENERATED_DID,
         EXAMPLE_DID,
@@ -127,7 +122,8 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
         &did_document["publicKey"][0]["id"].to_string(),
         &SIGNER_PRIVATE_KEY,
         &signer,
-    ).await?;
+    )
+    .await?;
 
     assert_eq!(&schema.author, &EXAMPLE_DID);
     assert_eq!(schema.additional_properties, false);
@@ -143,12 +139,10 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let serialized = serde_json::to_string(&schema).unwrap();
-    assert!(
-        match check_assertion_proof(&serialized, SIGNER_ADDRESS) {
-            Ok(()) => true,
-            Err(e) => panic!("assertion check failed with: {}", e),
-        }
-    );
+    assert!(match check_assertion_proof(&serialized, SIGNER_ADDRESS) {
+        Ok(()) => true,
+        Err(e) => panic!("assertion check failed with: {}", e),
+    });
 
     Ok(())
 }
@@ -156,8 +150,9 @@ async fn can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn can_create_credential_definition() -> Result<(), Box<dyn std::error::Error>> {
     let schema: CredentialSchema = serde_json::from_str(&EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(env::var(
-      "VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string())));
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     let (definition, _) = Issuer::create_credential_definition(
         test_data::EXAMPLE_GENERATED_DID,
         &EXAMPLE_DID,
@@ -165,7 +160,8 @@ async fn can_create_credential_definition() -> Result<(), Box<dyn std::error::Er
         "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
         &SIGNER_PRIVATE_KEY,
         &signer,
-    ).await?;
+    )
+    .await?;
 
     assert_eq!(
         serde_json::to_string(&definition.issuer).unwrap(),
@@ -180,12 +176,10 @@ async fn can_create_credential_definition() -> Result<(), Box<dyn std::error::Er
     assert_eq!(&definition.id, EXAMPLE_GENERATED_DID);
 
     let serialized = serde_json::to_string(&definition).unwrap();
-    assert!(
-        match check_assertion_proof(&serialized, SIGNER_ADDRESS) {
-            Ok(()) => true,
-            Err(e) => panic!("assertion check failed with: {}", e),
-        }
-    );
+    assert!(match check_assertion_proof(&serialized, SIGNER_ADDRESS) {
+        Ok(()) => true,
+        Err(e) => panic!("assertion check failed with: {}", e),
+    });
 
     Ok(())
 }

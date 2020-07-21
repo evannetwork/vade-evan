@@ -53,9 +53,9 @@ const EVAN_METHOD: &str = "did:evan";
 
 /// small drop-in replacement for asserts
 /// if condition is false, will evaluate `create_msg` function and return an Err with it
-fn ensure<F>(condition: bool, create_msg: F)
-    -> Result<(), JsValue>
-    where F: FnOnce() -> String
+fn ensure<F>(condition: bool, create_msg: F) -> Result<(), JsValue>
+where
+    F: FnOnce() -> String,
 {
     if condition {
         Ok(())
@@ -84,15 +84,9 @@ pub fn set_log_level(log_level: String) {
 // did
 #[cfg(feature = "did")]
 #[wasm_bindgen]
-pub async fn did_resolve(
-    did: String,
-    config: JsValue,
-) -> Result<String, JsValue> {
+pub async fn did_resolve(did: String, config: JsValue) -> Result<String, JsValue> {
     let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-    let results = vade
-        .did_resolve(&did)
-        .await
-        .map_err(jsify)?;
+    let results = vade.did_resolve(&did).await.map_err(jsify)?;
 
     let err_msg = "could not get DID document";
     ensure(results.len() > 0, || format!("{}: '{}'", &err_msg, &did))?;
@@ -169,10 +163,7 @@ pub async fn create_schema(
     let err_msg = "could not create schema";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -206,10 +197,7 @@ pub async fn create_credential_definition(
     let err_msg = "could not create credential definition";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -242,10 +230,7 @@ pub async fn request_proof(
     let err_msg = "could not create proof request";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -281,10 +266,7 @@ pub async fn create_credential_proposal(
     let err_msg = "could not create credential proposal";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -306,10 +288,7 @@ pub async fn create_credential_offer(
     let err_msg = "could not create credential offer";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -346,10 +325,7 @@ pub async fn create_credential_request(
     let err_msg = "could not create credential request";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -383,10 +359,7 @@ pub async fn create_revocation_registry_definition(
     let err_msg = "could not create revocation registry definition";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -456,12 +429,7 @@ pub async fn issue_credential(
     let err_msg = "could not issue credential";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
     let mut result: IssueCredentialResult =
-        serde_json::from_str(
-            results[0]
-                .as_ref()
-                .ok_or(err_msg)?
-            )
-            .map_err(jsify_serde)?;
+        serde_json::from_str(results[0].as_ref().ok_or(err_msg)?).map_err(jsify_serde)?;
     debug!("get did {}", result.credential.credential_schema.id);
     let results = vade
         .did_resolve(&result.credential.credential_schema.id)
@@ -471,9 +439,7 @@ pub async fn issue_credential(
     let err_msg = "could not get schema did document";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    let schema_doc = results[0]
-        .as_ref()
-        .ok_or(err_msg)?;
+    let schema_doc = results[0].as_ref().ok_or(err_msg)?;
 
     let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
     Prover::post_process_credential_signature(
@@ -538,10 +504,7 @@ pub async fn present_proof(
     let err_msg = "could not create proof presentation";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -569,10 +532,7 @@ pub async fn verify_proof(
     let err_msg = "could not verify proof";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
 
-    Ok(results[0]
-        .as_ref()
-        .ok_or(err_msg)?
-        .to_string())
+    Ok(results[0].as_ref().ok_or(err_msg)?.to_string())
 }
 
 /// Whitelists a specific evan did on substrate that this private key can create DIDs.
@@ -600,23 +560,28 @@ pub async fn whitelist_identity(
         private_key, identity,
     );
 
-    let results = vade.did_update(&did, &payload, &"".to_string())
+    let results = vade
+        .did_update(&did, &payload, &"".to_string())
         .await
         .map_err(jsify)?;
-    
-    ensure(
-        results.len() > 0,
-        || format!("could not whitelist identity '{}', no response from plugins", &did)
-    )?;
+
+    ensure(results.len() > 0, || {
+        format!(
+            "could not whitelist identity '{}', no response from plugins",
+            &did
+        )
+    })?;
 
     Ok(())
 }
 
-fn get_config_values(config: Option<&JsValue>, keys: Vec<String>
+fn get_config_values(
+    config: Option<&JsValue>,
+    keys: Vec<String>,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut vec = Vec::new();
     let mut config_undefined = true;
-    
+
     let config_hash_map: HashMap<String, String>;
     match config {
         Some(value) => {
@@ -626,20 +591,21 @@ fn get_config_values(config: Option<&JsValue>, keys: Vec<String>
             } else {
                 config_hash_map = HashMap::<String, String>::new();
             }
-        },
+        }
         None => {
             config_hash_map = HashMap::<String, String>::new();
-        },
+        }
     };
 
     for key in keys {
         if config_undefined || !config_hash_map.contains_key(&key) {
             vec.push(get_config_default(&key)?);
         } else {
-            vec.push(config_hash_map
-                .get(&key)
-                .ok_or_else(|| format!("could not get key '{}' from config", &key))?
-                .to_string()
+            vec.push(
+                config_hash_map
+                    .get(&key)
+                    .ok_or_else(|| format!("could not get key '{}' from config", &key))?
+                    .to_string(),
             );
         }
     }
@@ -651,8 +617,9 @@ fn get_config_default(key: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(match key {
         "signingUrl" => "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
         "target" => "13.69.59.185",
-        _ => { return Err(Box::from(format!("invalid invalid config key '{}'", key))) },
-    }.to_string())
+        _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
+    }
+    .to_string())
 }
 
 #[cfg(feature = "vc-zkp")]
@@ -667,16 +634,18 @@ fn get_options(private_key: String, identity: String) -> String {
 }
 
 fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>> {
-    let config_values = get_config_values(
-        config, vec!["signingUrl".to_string(), "target".to_string()])?;
+    let config_values =
+        get_config_values(config, vec!["signingUrl".to_string(), "target".to_string()])?;
     let (signing_url, target) = match config_values.as_slice() {
         [signing_url, target, ..] => (signing_url, target),
-        _ => { return Err(Box::from("invalid vade config")); },
+        _ => {
+            return Err(Box::from("invalid vade config"));
+        }
     };
 
     let mut vade = Vade::new();
 
-    #[cfg(feature = "did")] 
+    #[cfg(feature = "did")]
     let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
@@ -691,11 +660,13 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
 
 #[cfg(feature = "vc-zkp")]
 fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::error::Error>> {
-    let config_values = get_config_values(
-        config, vec!["signingUrl".to_string(), "target".to_string()])?;
+    let config_values =
+        get_config_values(config, vec!["signingUrl".to_string(), "target".to_string()])?;
     let (signing_url, target) = match config_values.as_slice() {
         [signing_url, target, ..] => (signing_url, target),
-        _ => { return Err(Box::from("invalid vade config")); },
+        _ => {
+            return Err(Box::from("invalid vade config"));
+        }
     };
 
     #[cfg(not(feature = "did"))]
@@ -705,7 +676,7 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::erro
 
     #[cfg(feature = "did")]
     let mut internal_vade = Vade::new();
-    #[cfg(feature = "did")] 
+    #[cfg(feature = "did")]
     let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
