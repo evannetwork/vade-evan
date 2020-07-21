@@ -14,31 +14,37 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    Credential,
-    CredentialDefinition,
-    CredentialOffer,
-    CredentialRequest,
-    CredentialSchema,
-    CredentialSchemaReference,
-    CredentialSignature,
-    CredentialSubject,
-    DeltaHistory,
-    EncodedCredentialValue,
-    RevocationIdInformation,
-    RevocationRegistryDefinition,
-    RevocationState,
-    SchemaProperty,
-};
-use crate::application::prover::Prover;
-use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
-use crate::crypto::crypto_utils::create_assertion_proof;
-use crate::utils::{
+use crate::{
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialRequest,
+            CredentialSchema,
+            CredentialSchemaReference,
+            CredentialSignature,
+            CredentialSubject,
+            DeltaHistory,
+            EncodedCredentialValue,
+            RevocationIdInformation,
+            RevocationRegistryDefinition,
+            RevocationState,
+            SchemaProperty,
+        },
+        prover::Prover,
+    },
+    crypto::{
+        crypto_issuer::Issuer as CryptoIssuer,
+        crypto_utils::create_assertion_proof,
+    },
     signing::Signer,
     utils::{
-        generate_uuid,
-        get_now_as_iso_string
-    },
+        utils::{
+            generate_uuid,
+            get_now_as_iso_string
+        },
+    }
 };
 use std::collections::{HashMap, HashSet};
 #[cfg(not(target_arch = "wasm32"))]

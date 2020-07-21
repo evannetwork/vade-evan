@@ -32,7 +32,7 @@ use vade_evan::{
     issuer::Issuer,
   },
   crypto::crypto_utils::check_assertion_proof,
-  utils::signing::{
+  signing::{
     RemoteSigner,
     Signer,
   },

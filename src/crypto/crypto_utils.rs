@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-use crate::crypto::crypto_datatypes::AssertionProof;
-use crate::utils::signing::Signer;
+use crate::{
+    crypto::crypto_datatypes::AssertionProof,
+    signing::Signer,
+};
 use data_encoding::BASE64URL;
 use secp256k1::{recover, Message, RecoveryId, Signature};
 use serde::{Deserialize, Serialize};

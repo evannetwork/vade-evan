@@ -20,29 +20,31 @@ use std::collections::HashMap;
 use vade::{Vade, VadePlugin, VadePluginResultValue};
 
 use crate::{
-    application::datatypes::{
-        Credential,
-        CredentialDefinition,
-        CredentialOffer,
-        CredentialPrivateKey,
-        CredentialProposal,
-        CredentialRequest,
-        CredentialSchema,
-        MasterSecret,
-        ProofPresentation,
-        ProofRequest,
-        ProofVerification,
-        RevocationIdInformation,
-        RevocationKeyPrivate,
-        RevocationRegistryDefinition,
-        RevocationState,
-        SchemaProperty,
-        SubProofRequest,
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialPrivateKey,
+            CredentialProposal,
+            CredentialRequest,
+            CredentialSchema,
+            MasterSecret,
+            ProofPresentation,
+            ProofRequest,
+            ProofVerification,
+            RevocationIdInformation,
+            RevocationKeyPrivate,
+            RevocationRegistryDefinition,
+            RevocationState,
+            SchemaProperty,
+            SubProofRequest,
+        },
+        issuer::Issuer,
+        prover::Prover,
+        verifier::Verifier,
     },
-    application::issuer::Issuer,
-    application::prover::Prover,
-    application::verifier::Verifier,
-    utils::signing::Signer,
+    signing::Signer,
 };
 use ursa::cl::Witness;
 

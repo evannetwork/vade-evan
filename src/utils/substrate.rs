@@ -14,35 +14,37 @@
   limitations under the License.
 */
 
-use crate::utils::extrinsic::rpc::{
-    client::{
-        on_extrinsic_msg_until_broadcast,
-        on_extrinsic_msg_until_finalized,
-        on_extrinsic_msg_until_in_block,
-        on_extrinsic_msg_until_ready,
-        on_subscription_msg,
-    },
-    start_rpc_client_thread,
-};
-use crate::utils::extrinsic::xt_primitives;
 use serde_json::{json, Value};
 use std::env;
 use std::hash::Hasher;
-
-use crate::utils::signing::Signer;
-
-use crate::compose_extrinsic;
-use crate::utils::extrinsic::events::{
-    DispatchError,
-    EventsDecoder,
-    Phase,
-    RawEvent,
-    RuntimeEvent,
-    SystemEvent,
+use crate::{
+    compose_extrinsic,
+    signing::Signer,
+    utils::extrinsic::{
+        events::{
+            DispatchError,
+            EventsDecoder,
+            Phase,
+            RawEvent,
+            RuntimeEvent,
+            SystemEvent,
+        },
+        frame_metadata::RuntimeMetadataPrefixed,
+        node_metadata::Metadata,
+        rpc::{
+            client::{
+                on_extrinsic_msg_until_broadcast,
+                on_extrinsic_msg_until_finalized,
+                on_extrinsic_msg_until_in_block,
+                on_extrinsic_msg_until_ready,
+                on_subscription_msg,
+            },
+            start_rpc_client_thread,
+            XtStatus,
+        },
+        xt_primitives,
+    },
 };
-use crate::utils::extrinsic::frame_metadata::RuntimeMetadataPrefixed;
-use crate::utils::extrinsic::node_metadata::Metadata;
-use crate::utils::extrinsic::rpc::client::XtStatus;
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
 use futures::channel::mpsc::{channel, Receiver, Sender};

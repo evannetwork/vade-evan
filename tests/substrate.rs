@@ -17,12 +17,12 @@
 extern crate regex;
 use regex::Regex;
 mod test_data;
-use vade_evan::utils::{
+use vade_evan::{
     signing::{
         RemoteSigner,
         Signer,
     },
-    substrate,
+    utils::substrate,
 };
 use test_data::{
     SIGNER_PRIVATE_KEY,

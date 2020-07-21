@@ -60,7 +60,7 @@ use vade_evan::{
         prover::Prover,
     },
     resolver::ResolverConfig,
-    utils::signing::{
+    signing::{
         RemoteSigner,
         Signer,
     },
