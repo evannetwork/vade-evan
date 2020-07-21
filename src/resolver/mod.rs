@@ -129,7 +129,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
         if did_method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: IdentityArguments = serde_json::from_str(&options)?;
+        let options: IdentityArguments = serde_json::from_str(&options)
+            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
@@ -166,7 +167,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
         if !did.starts_with(EVAN_METHOD_PREFIX) {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let input: DidUpdateArguments = serde_json::from_str(&options)?;
+        let input: DidUpdateArguments = serde_json::from_str(&options)
+            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
         match input.operation.as_str() {
             "whitelistIdentity" => {
                 whitelist_identity(
