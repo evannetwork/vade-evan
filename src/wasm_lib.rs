@@ -15,7 +15,7 @@
 */
 
 // shared
-use crate::utils::signing::{RemoteSigner, Signer};
+use crate::signing::{RemoteSigner, Signer};
 use console_log;
 use std::collections::HashMap;
 use vade::Vade;
@@ -24,8 +24,6 @@ use wasm_bindgen::prelude::*;
 #[cfg(feature = "did")]
 use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
 // vc-zkp
-#[cfg(feature = "vc-zkp")]
-use crate::VadeEvan;
 #[cfg(feature = "vc-zkp")]
 use crate::{
     application::{
@@ -43,6 +41,7 @@ use crate::{
         prover::Prover,
     },
     IssueCredentialResult,
+    VadeEvan,
 };
 #[cfg(feature = "vc-zkp")]
 use serde_json::Value;

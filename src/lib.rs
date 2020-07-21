@@ -69,6 +69,7 @@ pub extern crate log;
 
 // --------- mod
 // shared
+pub mod signing;
 pub mod utils;
 
 // did

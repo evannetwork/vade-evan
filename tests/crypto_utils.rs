@@ -26,16 +26,21 @@ use test_data::{
     SIGNER_PRIVATE_KEY,
     SIGNING_URL,
 };
-use vade_evan::application::datatypes::{CredentialSchema, SchemaProperty};
-use vade_evan::crypto::crypto_utils::{
-    create_assertion_proof,
-    recover_address_and_data,
-    JwsData,
-};
-use vade_evan::utils::signing::{
-    LocalSigner,
-    Signer,
-    RemoteSigner,
+use vade_evan::{
+    application::datatypes::{
+        CredentialSchema,
+        SchemaProperty,
+    },
+    crypto::crypto_utils::{
+        create_assertion_proof,
+        recover_address_and_data,
+        JwsData,
+    },
+    signing::{
+        LocalSigner,
+        Signer,
+        RemoteSigner,
+    },
 };
 
 const DOCUMENT_TO_SIGN: &str = r###"

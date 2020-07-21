@@ -16,8 +16,9 @@
 
 extern crate regex;
 extern crate vade;
-use crate::utils::{
-    substrate::{
+use crate::{
+    signing::Signer,
+    utils::substrate::{
         add_payload_to_did,
         create_did,
         get_did,
@@ -25,7 +26,6 @@ use crate::utils::{
         update_payload_in_did,
         whitelist_identity,
     },
-    signing::Signer,
 };
 use async_trait::async_trait;
 use regex::Regex;

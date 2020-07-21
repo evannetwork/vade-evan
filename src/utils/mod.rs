@@ -14,7 +14,6 @@
   limitations under the License.
 */
 
-pub mod signing;
 #[cfg(feature = "did")]
 pub mod substrate;
 #[cfg(feature = "vc-zkp")]
