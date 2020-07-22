@@ -41,8 +41,11 @@ use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
 use serde_json::{json, Value};
+use sha2::Digest;
+use sha3::Keccak256;
 use sp_std::prelude::*;
 use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::env;
 use std::hash::Hasher;
 
@@ -426,7 +429,7 @@ pub async fn wait_for_extrinsic_status(
                         }
                     }
                 }
-                Err(_) => error!("couldn't decode event record list"),
+                Err(err) => error!("couldn't decode event record list; {}", &err),
             }
         }
     }
@@ -555,8 +558,7 @@ pub async fn create_did(
 /// # Returns
 /// * `String` - Content saved behind the DID
 pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::error::Error>> {
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await?;
     let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
@@ -599,8 +601,7 @@ pub async fn add_payload_to_did(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let did = did.trim_start_matches("0x").to_string();
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.clone())?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
@@ -681,9 +682,7 @@ pub async fn update_payload_in_did(
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    let mut bytes_did_arr = [0; 32];
-    let did = did.trim_start_matches("0x").to_string();
-    bytes_did_arr.copy_from_slice(&hex::decode(did.clone())?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
@@ -739,7 +738,7 @@ pub async fn update_payload_in_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&did, now_timestamp),
+        event_watch(&hex::encode(bytes_did_arr), now_timestamp),
     )
     .await
     .ok_or("could not could not get updated did event")??;
@@ -838,8 +837,7 @@ pub async fn get_payload_count_for_did(
     did: String,
 ) -> Result<u32, Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let detail_count = get_storage_map::<sp_core::H256, u32>(
         url.as_str(),
@@ -919,15 +917,6 @@ pub fn blake2_256(data: &[u8]) -> [u8; 32] {
     r
 }
 
-fn json_req(method: &str, params: &str, id: u32) -> Value {
-    json!({
-        "method": method,
-        "params": [params],
-        "jsonrpc": "2.0",
-        "id": id.to_string(),
-    })
-}
-
 pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
     let hexstr = hexstr
         .trim_matches('\"')
@@ -938,4 +927,33 @@ pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
         "null" => Ok([0u8].to_vec()),
         _ => hex::decode(&hexstr),
     }
+}
+
+fn get_did_bytes_array(did: &String) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+    let did_string = did.trim_start_matches("0x");
+    let mut bytes_did_arr;
+    if did_string.len() == 64 {
+        trace!("DID {} has length of 32B will use it as is", &did);
+        bytes_did_arr = [0; 32];
+        bytes_did_arr.copy_from_slice(&hex::decode(did_string)?[0..32]);
+    } else {
+        trace!("DID {} has length of {}B will hash it", &did, did.len());
+        // create hash of data (including header)
+        let mut hasher = Keccak256::new();
+        hasher.input(hex::decode(&did_string)?);
+        let hash = hasher.result();
+        trace!("hashed DID: {:?}", &hash);
+        bytes_did_arr = hash.try_into().map_err(|_| "slice with incorrect length")?;
+    }
+
+    Ok(bytes_did_arr)
+}
+
+fn json_req(method: &str, params: &str, id: u32) -> Value {
+    json!({
+        "method": method,
+        "params": [params],
+        "jsonrpc": "2.0",
+        "id": id.to_string(),
+    })
 }
