@@ -37,7 +37,6 @@ use test_data::{
 use ursa::bn::BigNumber;
 use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
 use vade::Vade;
-use vade_evan::resolver::SubstrateDidResolverEvan;
 use vade_evan::{
     application::{
         datatypes::{
@@ -59,7 +58,7 @@ use vade_evan::{
         },
         prover::Prover,
     },
-    resolver::ResolverConfig,
+    resolver::{ResolverConfig, SubstrateDidResolverEvan},
     signing::{RemoteSigner, Signer},
     CreateRevocationRegistryDefinitionResult,
     IssueCredentialResult,
