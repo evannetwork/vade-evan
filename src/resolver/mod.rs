@@ -126,7 +126,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         options: &str,
         payload: &str,
     ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
-        if did_method != EVAN_METHOD {
+        if !did_method.starts_with(EVAN_METHOD) {
             return Ok(VadePluginResultValue::Ignored);
         }
         let options: IdentityArguments = serde_json::from_str(&options)
@@ -142,7 +142,11 @@ impl VadePlugin for SubstrateDidResolverEvan {
             },
         )
         .await?;
-        Ok(VadePluginResultValue::Success(Some(inner_result)))
+
+        Ok(VadePluginResultValue::Success(Some(format!(
+            "{}:{}",
+            &did_method, &inner_result
+        ))))
     }
 
     /// Updates data related to a DID. Two updates are supported depending on the value of

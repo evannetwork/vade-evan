@@ -49,7 +49,7 @@ use crate::{
 use ursa::cl::Witness;
 
 const EVAN_METHOD: &str = "did:evan";
-const EVAN_METHOD_ZKP_PREFIX: &str = "did:evan:zkp:";
+const EVAN_METHOD_ZKP: &str = "did:evan:zkp";
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -207,7 +207,7 @@ impl VadeEvan {
         );
         let result = self
             .vade
-            .did_create(EVAN_METHOD, &options, &"".to_string())
+            .did_create(EVAN_METHOD_ZKP, &options, &"".to_string())
             .await?;
         if result.is_empty() {
             return Err(Box::from(
@@ -215,14 +215,10 @@ impl VadeEvan {
             ));
         }
 
-        let generated_did = format!(
-            "{}{}",
-            EVAN_METHOD_ZKP_PREFIX,
-            &result[0]
-                .as_ref()
-                .ok_or("could not generate DID")?
-                .to_owned(),
-        );
+        let generated_did = result[0]
+            .as_ref()
+            .ok_or("could not generate DID")?
+            .to_owned();
 
         Ok(generated_did)
     }
