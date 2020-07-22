@@ -15,7 +15,7 @@
 */
 
 // shared
-use crate::signing::{RemoteSigner, Signer};
+use crate::signing::{LocalSigner, RemoteSigner, Signer};
 use console_log;
 use std::collections::HashMap;
 use vade::Vade;
@@ -615,7 +615,8 @@ fn get_config_values(
 
 fn get_config_default(key: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(match key {
-        "signingUrl" => "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
+        "signer" => "remote|https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
+        // "signer" => "local",
         "target" => "13.69.59.185",
         _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
     }
@@ -633,11 +634,29 @@ fn get_options(private_key: String, identity: String) -> String {
     )
 }
 
+fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn std::error::Error>> {
+    if signer_config == "local" {
+        Ok(Box::new(LocalSigner::new()))
+    } else if signer_config.starts_with("remote|") {
+        Ok(Box::new(RemoteSigner::new(
+            signer_config
+                .strip_prefix("remote|")
+                .ok_or("invalid signer_config")?
+                .to_string(),
+        )))
+    } else {
+        Err(Box::from(format!(
+            "invalid signer config {}",
+            &signer_config
+        )))
+    }
+}
+
 fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>> {
     let config_values =
-        get_config_values(config, vec!["signingUrl".to_string(), "target".to_string()])?;
-    let (signing_url, target) = match config_values.as_slice() {
-        [signing_url, target, ..] => (signing_url, target),
+        get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
+    let (signer_config, target) = match config_values.as_slice() {
+        [signer_config, target, ..] => (signer_config, target),
         _ => {
             return Err(Box::from("invalid vade config"));
         }
@@ -646,7 +665,7 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
     let mut vade = Vade::new();
 
     #[cfg(feature = "did")]
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
+    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
@@ -661,9 +680,9 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
 #[cfg(feature = "vc-zkp")]
 fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::error::Error>> {
     let config_values =
-        get_config_values(config, vec!["signingUrl".to_string(), "target".to_string()])?;
-    let (signing_url, target) = match config_values.as_slice() {
-        [signing_url, target, ..] => (signing_url, target),
+        get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
+    let (signer_config, target) = match config_values.as_slice() {
+        [signer_config, target, ..] => (signer_config, target),
         _ => {
             return Err(Box::from("invalid vade config"));
         }
@@ -672,18 +691,18 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::erro
     #[cfg(not(feature = "did"))]
     let internal_vade = Vade::new();
     #[cfg(not(feature = "did"))]
-    let signing_url = "";
+    let signer = "";
 
     #[cfg(feature = "did")]
     let mut internal_vade = Vade::new();
     #[cfg(feature = "did")]
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
+    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
         target: target.to_string(),
     })));
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(signing_url.to_string()));
+    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
 
     Ok(VadeEvan::new(internal_vade, signer))
 }
