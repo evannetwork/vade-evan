@@ -22,7 +22,8 @@ use std::env;
 use test_data::{
     ISSUER_DID, ISSUER_PRIVATE_KEY, ISSUER_PUBLIC_KEY_DID, SCHEMA_DESCRIPTION,
     SCHEMA_EXTENDED_PROPERTIES, SCHEMA_MORE_EXTENDED_PROPERTIES, SCHEMA_NAME, SCHEMA_PROPERTIES,
-    SCHEMA_REQUIRED_PROPERTIES, SIGNER_IDENTITY, SIGNER_PRIVATE_KEY, SIGNING_URL, SUBJECT_DID,
+    SCHEMA_REQUIRED_PROPERTIES, SIGNER_2_KEY_REFERENCE, SIGNER_IDENTITY, SIGNER_IDENTITY_2,
+    SIGNER_PRIVATE_KEY, SIGNING_URL, SUBJECT_DID,
 };
 use ursa::bn::BigNumber;
 use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
@@ -39,6 +40,7 @@ use vade_evan::{
     },
     resolver::{ResolverConfig, SubstrateDidResolverEvan},
     signing::{RemoteSigner, Signer},
+    utils::substrate::is_whitelisted,
     CreateRevocationRegistryDefinitionResult, IssueCredentialResult, VadeEvan,
 };
 
@@ -74,19 +76,29 @@ async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Er
     // run test
     whitelist_identity(&mut vade).await?;
 
-    let auth_string = get_options();
-    let mut json_editable: Value = serde_json::from_str(&auth_string)?;
-    json_editable["operation"] = Value::from("checkIfWhitelisted");
-    let options = serde_json::to_string(&json_editable).unwrap();
+    Ok(())
+}
 
-    let result = vade
-        .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
-        .await;
+#[tokio::test]
+async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn std::error::Error>> {
+    let mut vade = get_vade();
+    let resolver = get_resolver();
 
-    match result {
-        Ok(values) => assert!(!values.is_empty()),
-        Err(e) => panic!("could not whitelist identity; {}", &e),
-    };
+    assert_eq!(
+        false,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
+            .await?
+    );
+
+    ensure_whitelist(&mut vade, &SIGNER_IDENTITY_2).await?;
+
+    assert_eq!(
+        true,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
+            .await?
+    );
 
     Ok(())
 }
@@ -1253,6 +1265,28 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
     let result = vade
         .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
         .await;
+
+    match result {
+        Ok(values) => assert!(!values.is_empty()),
+        Err(e) => panic!("could not whitelist identity; {}", &e),
+    };
+
+    Ok(())
+}
+
+async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let auth_string = format!(
+        r###"{{
+            "privateKey": "{}",
+            "identity": "{}"
+        }}"###,
+        SIGNER_2_KEY_REFERENCE, SIGNER_IDENTITY_2,
+    );
+    let mut json_editable: Value = serde_json::from_str(&auth_string)?;
+    json_editable["operation"] = Value::from("ensureWhitelisted");
+    let options = serde_json::to_string(&json_editable).unwrap();
+
+    let result = vade.did_update(signer, &options, &"".to_string()).await;
 
     match result {
         Ok(values) => assert!(!values.is_empty()),

@@ -28,20 +28,13 @@ use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
 use crate::{
     application::{
         datatypes::{
-            Credential,
-            CredentialDefinition,
-            CredentialOffer,
-            CredentialRequest,
-            CredentialSchema,
-            CredentialSecretsBlindingFactors,
-            MasterSecret,
-            ProofRequest,
+            Credential, CredentialDefinition, CredentialOffer, CredentialRequest, CredentialSchema,
+            CredentialSecretsBlindingFactors, MasterSecret, ProofRequest,
             RevocationRegistryDefinition,
         },
         prover::Prover,
     },
-    IssueCredentialResult,
-    VadeEvan,
+    IssueCredentialResult, VadeEvan,
 };
 #[cfg(feature = "vc-zkp")]
 use serde_json::Value;
@@ -590,7 +583,47 @@ pub async fn whitelist_identity(
 
     ensure(results.len() > 0, || {
         format!(
-            "could not whitelist identity '{}', no response from plugins",
+            "could not whitelist did '{}', no response from plugins",
+            &did
+        )
+    })?;
+
+    Ok(())
+}
+
+/// Checks whether a given DID is whitelisted and, if not, whitelists it.
+///
+/// # Arguments
+///
+/// * `did` - Substrate did to whitelist (e.g. did:evan:0x12345)
+/// * `private_key` - private key (without '0x' prefix)
+/// * `identity` - identity without prefix (e.g. 12345)
+#[cfg(feature = "did")]
+#[wasm_bindgen]
+pub async fn ensure_whitelisted(
+    did: String,
+    private_key: String,
+    identity: String,
+    config: JsValue,
+) -> Result<(), JsValue> {
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
+    let payload = format!(
+        r###"{{
+            "privateKey": "{}",
+            "identity": "{}",
+            "operation": "ensureWhitelisted"
+        }}"###,
+        private_key, identity,
+    );
+
+    let results = vade
+        .did_update(&did, &payload, &"".to_string())
+        .await
+        .map_err(jsify)?;
+
+    ensure(results.len() > 0, || {
+        format!(
+            "could not ensure whitelisting of did '{}', no response from plugins",
             &did
         )
     })?;
