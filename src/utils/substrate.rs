@@ -23,14 +23,10 @@ use crate::{
         node_metadata::Metadata,
         rpc::{
             client::{
-                on_extrinsic_msg_until_broadcast,
-                on_extrinsic_msg_until_finalized,
-                on_extrinsic_msg_until_in_block,
-                on_extrinsic_msg_until_ready,
-                on_subscription_msg,
+                on_extrinsic_msg_until_broadcast, on_extrinsic_msg_until_finalized,
+                on_extrinsic_msg_until_in_block, on_extrinsic_msg_until_ready, on_subscription_msg,
             },
-            start_rpc_client_thread,
-            XtStatus,
+            start_rpc_client_thread, XtStatus,
         },
         xt_primitives,
     },
@@ -40,6 +36,7 @@ use chrono::Utc;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
+use secp256k1::{Message, RecoveryId, Signature};
 use serde_json::{json, Value};
 use sha2::Digest;
 use sha3::Keccak256;
@@ -854,6 +851,53 @@ pub async fn get_payload_count_for_did(
     }
 }
 
+/// Checks whether a given identity for a given account is whitelisted
+pub async fn is_whitelisted(
+    url: String,
+    private_key: String,
+    signer: &Box<dyn Signer>,
+    identity: Vec<u8>,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let metadata = get_metadata(url.as_str()).await?;
+
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
+    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+
+    // Sign a message to use for retrieving the account ID
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
+
+    let account = recover_ethereum_account(signature, signed_message)
+        .map_err(|err| format!("Error recovering etherum account: {}", err))?;
+
+    // Access whitelist using account and identity
+    let mut hasher = Keccak256::new();
+    hasher.input(&account);
+    let acc_hash = hasher.result();
+
+    hasher = Keccak256::new();
+    hasher.input(&identity[..identity.len()]);
+    let identity_hash = hasher.result();
+
+    println!("Checking for hashes");
+    println!("Identity: {}", hex::encode(identity_hash));
+    println!("Account: {}", hex::encode(acc_hash));
+    let is_whitelisted = get_storage_map::<(Vec<u8>, Vec<u8>), bool>(
+        url.as_str(),
+        metadata.clone(),
+        "DidModule",
+        "WhitelistedIdentities",
+        (identity_hash.to_vec(), acc_hash.to_vec()),
+    )
+    .await?
+    .ok_or("could not get storage map")?;
+
+    Ok(is_whitelisted)
+}
+
 /// Do a XX 256-bit hash and place result in `dest`.
 pub fn twox_256(data: &[u8]) -> [u8; 32] {
     let mut r: [u8; 32] = [0; 32];
@@ -956,4 +1000,36 @@ fn json_req(method: &str, params: &str, id: u32) -> Value {
         "jsonrpc": "2.0",
         "id": id.to_string(),
     })
+}
+
+fn recover_ethereum_account(
+    full_signature: [u8; 65],
+    signed_message: [u8; 32],
+) -> Result<[u8; 20], Box<dyn std::error::Error>> {
+    // recover the account out of the signed message, otherwise throw error and fail the execution
+    let mut signature: [u8; 64] = [0; 64];
+    signature.copy_from_slice(&full_signature[0..64]);
+    //TODO: Maybe signature up until 64?
+    let signature_normalized = if full_signature[64] < 27 {
+        full_signature[64]
+    } else {
+        full_signature[64] - 27
+    };
+    let recovery_id = RecoveryId::parse(signature_normalized)
+        .map_err(|err| format!("could not parse recovery ID: {}", &err))?;
+
+    let sig_mess = Message::parse(&signed_message);
+    let sig = Signature::parse(&signature);
+    let recovered_pub_key = secp256k1::recover(&sig_mess, &sig, &recovery_id)?;
+
+    // create keccack hash of the recovered public key
+    let mut hasher = Keccak256::new();
+    hasher.input(&recovered_pub_key.serialize()[0..65]);
+    let hash = hasher.result();
+
+    // create the ethereum account id out of the last 20 bytes of the hash
+    let mut account_id: [u8; 20] = [0; 20];
+    account_id.copy_from_slice(&hash[12..32]);
+    println!("[{:?}] --- Recovered account", hex::encode(account_id));
+    Ok(account_id)
 }

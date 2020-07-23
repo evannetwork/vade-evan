@@ -20,19 +20,9 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use test_data::{
-    ISSUER_DID,
-    ISSUER_PRIVATE_KEY,
-    ISSUER_PUBLIC_KEY_DID,
-    SCHEMA_DESCRIPTION,
-    SCHEMA_EXTENDED_PROPERTIES,
-    SCHEMA_MORE_EXTENDED_PROPERTIES,
-    SCHEMA_NAME,
-    SCHEMA_PROPERTIES,
-    SCHEMA_REQUIRED_PROPERTIES,
-    SIGNER_IDENTITY,
-    SIGNER_PRIVATE_KEY,
-    SIGNING_URL,
-    SUBJECT_DID,
+    ISSUER_DID, ISSUER_PRIVATE_KEY, ISSUER_PUBLIC_KEY_DID, SCHEMA_DESCRIPTION,
+    SCHEMA_EXTENDED_PROPERTIES, SCHEMA_MORE_EXTENDED_PROPERTIES, SCHEMA_NAME, SCHEMA_PROPERTIES,
+    SCHEMA_REQUIRED_PROPERTIES, SIGNER_IDENTITY, SIGNER_PRIVATE_KEY, SIGNING_URL, SUBJECT_DID,
 };
 use ursa::bn::BigNumber;
 use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
@@ -40,29 +30,16 @@ use vade::Vade;
 use vade_evan::{
     application::{
         datatypes::{
-            Credential,
-            CredentialDefinition,
-            CredentialOffer,
-            CredentialPrivateKey,
-            CredentialProposal,
-            CredentialRequest,
-            CredentialSchema,
-            MasterSecret,
-            ProofPresentation,
-            ProofRequest,
-            ProofVerification,
-            RevocationIdInformation,
-            RevocationKeyPrivate,
-            RevocationRegistryDefinition,
-            RevocationState,
+            Credential, CredentialDefinition, CredentialOffer, CredentialPrivateKey,
+            CredentialProposal, CredentialRequest, CredentialSchema, MasterSecret,
+            ProofPresentation, ProofRequest, ProofVerification, RevocationIdInformation,
+            RevocationKeyPrivate, RevocationRegistryDefinition, RevocationState,
         },
         prover::Prover,
     },
     resolver::{ResolverConfig, SubstrateDidResolverEvan},
     signing::{RemoteSigner, Signer},
-    CreateRevocationRegistryDefinitionResult,
-    IssueCredentialResult,
-    VadeEvan,
+    CreateRevocationRegistryDefinitionResult, IssueCredentialResult, VadeEvan,
 };
 
 const EVAN_METHOD: &str = "did:evan";
@@ -96,6 +73,20 @@ async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Er
 
     // run test
     whitelist_identity(&mut vade).await?;
+
+    let auth_string = get_options();
+    let mut json_editable: Value = serde_json::from_str(&auth_string)?;
+    json_editable["operation"] = Value::from("checkIfWhitelisted");
+    let options = serde_json::to_string(&json_editable).unwrap();
+
+    let result = vade
+        .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
+        .await;
+
+    match result {
+        Ok(values) => assert!(!values.is_empty()),
+        Err(e) => panic!("could not whitelist identity; {}", &e),
+    };
 
     Ok(())
 }
@@ -1070,7 +1061,7 @@ fn get_resolver() -> SubstrateDidResolverEvan {
     ));
     SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        target: "127.0.0.1".to_owned(),
     })
 }
 
