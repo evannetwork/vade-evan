@@ -880,9 +880,6 @@ pub async fn is_whitelisted(
     hasher.input(&identity[..identity.len()]);
     let identity_hash = hasher.result();
 
-    println!("Checking for hashes");
-    println!("Identity: {}", hex::encode(identity_hash));
-    println!("Account: {}", hex::encode(acc_hash));
     let is_whitelisted = get_storage_map::<(Vec<u8>, Vec<u8>), bool>(
         url.as_str(),
         metadata.clone(),
@@ -891,7 +888,7 @@ pub async fn is_whitelisted(
         (identity_hash.to_vec(), acc_hash.to_vec()),
     )
     .await?
-    .ok_or("could not get storage map")?;
+    .unwrap_or_else(|| false);
 
     Ok(is_whitelisted)
 }
@@ -1007,7 +1004,7 @@ fn recover_ethereum_account(
     // recover the account out of the signed message, otherwise throw error and fail the execution
     let mut signature: [u8; 64] = [0; 64];
     signature.copy_from_slice(&full_signature[0..64]);
-    //TODO: Maybe signature up until 64?
+
     let signature_normalized = if full_signature[64] < 27 {
         full_signature[64]
     } else {
@@ -1022,7 +1019,7 @@ fn recover_ethereum_account(
 
     // create keccack hash of the recovered public key
     let mut hasher = Keccak256::new();
-    hasher.input(&recovered_pub_key.serialize()[0..65]);
+    hasher.input(&recovered_pub_key.serialize()[1..65]);
     let hash = hasher.result();
 
     // create the ethereum account id out of the last 20 bytes of the hash

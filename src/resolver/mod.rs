@@ -104,6 +104,23 @@ impl SubstrateDidResolverEvan {
         }
         Ok(Some("".to_string()))
     }
+
+    pub async fn is_whitelisted(
+        &self,
+        did: &str,
+        private_key: &str,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        let (method, substrate_identity) = convert_did_to_substrate_identity(&did)?;
+        let substrate_identity_vec = hex::decode(&substrate_identity)?;
+        let result = is_whitelisted(
+            self.config.target.clone(),
+            private_key.to_owned(),
+            &self.config.signer,
+            substrate_identity_vec,
+        )
+        .await?;
+        Ok(result)
+    }
 }
 
 #[async_trait(?Send)]
@@ -173,17 +190,25 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let (method, substrate_identity) = convert_did_to_substrate_identity(&did)?;
         let substrate_identity_vec = hex::decode(&substrate_identity)?;
         match input.operation.as_str() {
-            "checkIfWhitelisted" => {
-                let is = is_whitelisted(
+            "ensureWhitelisted" => {
+                // Check if identity is whitelisted
+                let is_whitelisted = is_whitelisted(
                     self.config.target.clone(),
                     input.private_key.clone(),
                     &self.config.signer,
-                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
+                    substrate_identity_vec,
                 )
                 .await?;
-                Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
-                    &is,
-                )?)))
+                // Execute whitelistIdentity operation
+                if !is_whitelisted {
+                    let mut new_input: DidUpdateArguments = serde_json::from_str(&options)?;
+                    new_input.operation = "whitelistIdentity".to_owned();
+                    Ok(self
+                        .did_update(did, &serde_json::to_string(&new_input)?, payload)
+                        .await?)
+                } else {
+                    Ok(VadePluginResultValue::Success(None))
+                }
             }
             "whitelistIdentity" => {
                 whitelist_identity(
