@@ -19,12 +19,8 @@ extern crate vade;
 use crate::{
     signing::Signer,
     utils::substrate::{
-        add_payload_to_did,
-        create_did,
-        get_did,
-        get_payload_count_for_did,
-        update_payload_in_did,
-        whitelist_identity,
+        add_payload_to_did, create_did, get_did, get_payload_count_for_did, is_whitelisted,
+        update_payload_in_did, whitelist_identity,
     },
 };
 use async_trait::async_trait;
@@ -174,6 +170,18 @@ impl VadePlugin for SubstrateDidResolverEvan {
         let input: DidUpdateArguments = serde_json::from_str(&options)
             .map_err(|e| format!("{} when parsing {}", &e, &options))?;
         match input.operation.as_str() {
+            "checkIfWhitelisted" => {
+                let is = is_whitelisted(
+                    self.config.target.clone(),
+                    input.private_key.clone(),
+                    &self.config.signer,
+                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
+                )
+                .await?;
+                Ok(VadePluginResultValue::Success(Some(serde_json::to_string(
+                    &is,
+                )?)))
+            }
             "whitelistIdentity" => {
                 whitelist_identity(
                     self.config.target.clone(),
