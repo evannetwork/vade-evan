@@ -84,6 +84,29 @@ pub fn set_log_level(log_level: String) {
 // did
 #[cfg(feature = "did")]
 #[wasm_bindgen]
+pub async fn did_create(
+    method: String,
+    options: String,
+    payload: String,
+    config: JsValue,
+) -> Result<String, JsValue> {
+    let mut vade = get_vade(Some(&config)).map_err(jsify)?;
+    let results = vade
+        .did_create(&method, &options, &payload)
+        .await
+        .map_err(jsify)?;
+
+    let err_msg = "could not create DID";
+    ensure(results.len() > 0, || format!("{}: '{}'", &err_msg, &method))?;
+
+    Ok(results[0]
+        .as_ref()
+        .ok_or_else(|| err_msg.to_string())?
+        .to_string())
+}
+
+#[cfg(feature = "did")]
+#[wasm_bindgen]
 pub async fn did_resolve(did: String, config: JsValue) -> Result<String, JsValue> {
     let mut vade = get_vade(Some(&config)).map_err(jsify)?;
     let results = vade.did_resolve(&did).await.map_err(jsify)?;

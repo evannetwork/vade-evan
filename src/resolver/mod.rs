@@ -31,7 +31,7 @@ use vade::{VadePlugin, VadePluginResultValue};
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_PREFIX: &str = "did:evan:";
 
-const METHOD_REGEX: &'static str = r#"^(.*):0x(.*)$"#;
+const METHOD_REGEX: &str = r#"^(.*):0x(.*)$"#;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -75,7 +75,7 @@ impl SubstrateDidResolverEvan {
         payload: &str,
     ) -> Result<Option<String>, Box<dyn std::error::Error>> {
         debug!(
-            "setting DID document for did: {}, iden; {}",
+            "setting DID document for did: {}, identity; {}",
             &did, &identity
         );
         let payload_count: u32 =
@@ -127,11 +127,12 @@ impl VadePlugin for SubstrateDidResolverEvan {
         }
         let options: IdentityArguments = serde_json::from_str(&options)
             .map_err(|e| format!("{} when parsing {}", &e, &options))?;
+        let (_, substrate_identity) = convert_did_to_substrate_identity(&options.identity)?;
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
             &self.config.signer,
-            hex::decode(&convert_did_to_substrate_identity(&options.identity)?)?,
+            hex::decode(&substrate_identity)?,
             match payload {
                 "" => None,
                 _ => Some(payload),
@@ -169,6 +170,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
         }
         let input: DidUpdateArguments = serde_json::from_str(&options)
             .map_err(|e| format!("{} when parsing {}", &e, &options))?;
+        let (method, substrate_identity) = convert_did_to_substrate_identity(&did)?;
+        let substrate_identity_vec = hex::decode(&substrate_identity)?;
         match input.operation.as_str() {
             "checkIfWhitelisted" => {
                 let is = is_whitelisted(
@@ -187,7 +190,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
                     self.config.target.clone(),
                     input.private_key.clone(),
                     &self.config.signer,
-                    hex::decode(convert_did_to_substrate_identity(&did)?)?,
+                    method,
+                    substrate_identity_vec,
                 )
                 .await?;
                 Ok(VadePluginResultValue::Success(None))
@@ -196,10 +200,11 @@ impl VadePlugin for SubstrateDidResolverEvan {
                 if !did.starts_with(EVAN_METHOD) {
                     return Ok(VadePluginResultValue::Ignored);
                 }
+                let (_, executing_did) = convert_did_to_substrate_identity(&input.identity)?;
                 self.set_did_document(
-                    &convert_did_to_substrate_identity(&did)?,
+                    &substrate_identity,
                     &input.private_key,
-                    &convert_did_to_substrate_identity(&input.identity)?,
+                    &executing_did,
                     payload,
                 )
                 .await?;
@@ -224,11 +229,8 @@ impl VadePlugin for SubstrateDidResolverEvan {
         if !did_id.starts_with(EVAN_METHOD) {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let did_result = get_did(
-            self.config.target.clone(),
-            convert_did_to_substrate_identity(&did_id)?,
-        )
-        .await?;
+        let (_, substrate_identity) = convert_did_to_substrate_identity(&did_id)?;
+        let did_result = get_did(self.config.target.clone(), substrate_identity).await?;
         Ok(VadePluginResultValue::Success(Some(did_result)))
     }
 }
@@ -241,15 +243,19 @@ impl VadePlugin for SubstrateDidResolverEvan {
 ///
 /// # Returns
 ///
-/// substrate DID hex string, e.g. `02001234`
-fn convert_did_to_substrate_identity(did: &str) -> Result<String, Box<dyn std::error::Error>> {
+/// tuple with
+///     method of DID (e.g. 1 for core, 2 for testcore, 0 for unassigned)
+///     32B substrate DID hex string without 0x prefix
+fn convert_did_to_substrate_identity(
+    did: &str,
+) -> Result<(u8, String), Box<dyn std::error::Error>> {
     let re = Regex::new(METHOD_REGEX)?;
     let result = re.captures(&did);
     if let Some(caps) = result {
         match &caps[1] {
-            "did:evan" => Ok(format!("0100{}", &caps[2])),
-            "did:evan:testcore" => Ok(format!("0200{}", &caps[2])),
-            "did:evan:zkp" => Ok(caps[2].to_string()),
+            "did:evan" => Ok((1, caps[2].to_string())),
+            "did:evan:testcore" => Ok((2, caps[2].to_string())),
+            "did:evan:zkp" => Ok((0, caps[2].to_string())),
             _ => Err(Box::from(format!("unknown DID format; {}", did))),
         }
     } else {
