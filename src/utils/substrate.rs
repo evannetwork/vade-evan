@@ -519,9 +519,8 @@ pub async fn create_did(
                 _e
             )
         });
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
     let event_watch = move |raw: &RawEvent| -> bool {
         let decoded_event: Created = match Decode::decode(&mut &raw.data[..]) {
@@ -566,7 +565,7 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
         metadata.clone(),
         "DidModule",
         "DidsDetails",
-        (bytes_did.clone(), 0),
+        (bytes_did, 0),
     )
     .await?
     .ok_or("could not get storage map")?;
@@ -629,9 +628,8 @@ pub async fn add_payload_to_did(
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
         .await
         .map_err(|_e| format!("Error adding payload to DID: {:?} with payload: {:?} and identity: {:?} and error; {}",did.clone(), payload.clone(), hex::encode(identity.clone()), _e));
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
 
     fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
@@ -711,9 +709,8 @@ pub async fn update_payload_in_did(
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock)
         .await
         .map_err(|_e| format!("Error updating payload in DID: {:?} on index: {} with payload: {:?} and identity: {:?} and error; {}",did.clone(), index.clone(), payload.clone(), hex::encode(identity.clone()), _e));
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
 
     fn event_watch(did: &String, now_timestamp: u64) -> impl Fn(&RawEvent) -> bool + '_ {
@@ -756,6 +753,7 @@ pub async fn whitelist_identity(
     url: String,
     private_key: String,
     signer: &Box<dyn Signer>,
+    method: u8,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
@@ -774,6 +772,7 @@ pub async fn whitelist_identity(
         metadata.clone(),
         "DidModule",
         "whitelist_identity",
+        method,
         signature.to_vec(),
         signed_message.to_vec(),
         identity.clone(),
@@ -788,9 +787,8 @@ pub async fn whitelist_identity(
                 _e
             )
         });
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
     fn event_watch(identity: &Vec<u8>) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
@@ -844,7 +842,7 @@ pub async fn get_payload_count_for_did(
         metadata.clone(),
         "DidModule",
         "DidsDetailsCount",
-        bytes_did.clone(),
+        bytes_did,
     )
     .await?;
     if detail_count.is_none() {
