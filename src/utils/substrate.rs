@@ -1025,6 +1025,6 @@ fn recover_ethereum_account(
     // create the ethereum account id out of the last 20 bytes of the hash
     let mut account_id: [u8; 20] = [0; 20];
     account_id.copy_from_slice(&hash[12..32]);
-    println!("[{:?}] --- Recovered account", hex::encode(account_id));
+
     Ok(account_id)
 }
