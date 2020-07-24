@@ -565,7 +565,7 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
         (bytes_did, 0),
     )
     .await?
-    .ok_or("could not get storage map")?;
+    .ok_or("DID not found")?;
     let did_url = format!(
         "http://{}:{}/ipfs/{}",
         url,
