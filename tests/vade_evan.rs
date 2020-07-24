@@ -82,23 +82,8 @@ async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Er
 #[tokio::test]
 async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn std::error::Error>> {
     let mut vade = get_vade();
-    let resolver = get_resolver();
-
-    assert_eq!(
-        false,
-        resolver
-            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
-            .await?
-    );
 
     ensure_whitelist(&mut vade, &SIGNER_IDENTITY_2).await?;
-
-    assert_eq!(
-        true,
-        resolver
-            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
-            .await?
-    );
 
     Ok(())
 }
@@ -1257,6 +1242,14 @@ async fn verify_proof(
 }
 
 async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
+    let resolver = get_resolver();
+    assert_eq!(
+        false,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY, &SIGNER_PRIVATE_KEY)
+            .await?
+    );
+
     let auth_string = get_options();
     let mut json_editable: Value = serde_json::from_str(&auth_string)?;
     json_editable["operation"] = Value::from("whitelistIdentity");
@@ -1271,10 +1264,26 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
         Err(e) => panic!("could not whitelist identity; {}", &e),
     };
 
+    assert_eq!(
+        true,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY, &SIGNER_PRIVATE_KEY)
+            .await?
+    );
+
     Ok(())
 }
 
 async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let resolver = get_resolver();
+
+    assert_eq!(
+        false,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
+            .await?
+    );
+
     let auth_string = format!(
         r###"{{
             "privateKey": "{}",
@@ -1292,6 +1301,15 @@ async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn s
         Ok(values) => assert!(!values.is_empty()),
         Err(e) => panic!("could not whitelist identity; {}", &e),
     };
+
+    let resolver = get_resolver();
+
+    assert_eq!(
+        true,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
+            .await?
+    );
 
     Ok(())
 }
