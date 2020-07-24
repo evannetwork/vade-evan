@@ -19,8 +19,13 @@ extern crate vade;
 use crate::{
     signing::Signer,
     utils::substrate::{
-        add_payload_to_did, create_did, get_did, get_payload_count_for_did, is_whitelisted,
-        update_payload_in_did, whitelist_identity,
+        add_payload_to_did,
+        create_did,
+        get_did,
+        get_payload_count_for_did,
+        is_whitelisted,
+        update_payload_in_did,
+        whitelist_identity,
     },
 };
 use async_trait::async_trait;
@@ -110,7 +115,7 @@ impl SubstrateDidResolverEvan {
         did: &str,
         private_key: &str,
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let (method, substrate_identity) = convert_did_to_substrate_identity(&did)?;
+        let (_, substrate_identity) = convert_did_to_substrate_identity(&did)?;
         let substrate_identity_vec = hex::decode(&substrate_identity)?;
         let result = is_whitelisted(
             self.config.target.clone(),

@@ -28,13 +28,20 @@ use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
 use crate::{
     application::{
         datatypes::{
-            Credential, CredentialDefinition, CredentialOffer, CredentialRequest, CredentialSchema,
-            CredentialSecretsBlindingFactors, MasterSecret, ProofRequest,
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialRequest,
+            CredentialSchema,
+            CredentialSecretsBlindingFactors,
+            MasterSecret,
+            ProofRequest,
             RevocationRegistryDefinition,
         },
         prover::Prover,
     },
-    IssueCredentialResult, VadeEvan,
+    IssueCredentialResult,
+    VadeEvan,
 };
 #[cfg(feature = "vc-zkp")]
 use serde_json::Value;
@@ -708,6 +715,7 @@ fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn std::err
     }
 }
 
+#[allow(unused_variables)] // allow possibly unused variables due to feature mix
 fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
@@ -734,6 +742,7 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
 }
 
 #[cfg(feature = "vc-zkp")]
+#[allow(unused_variables)] // allow possibly unused variables due to feature mix
 fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::error::Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
