@@ -32,6 +32,10 @@ vc-zkp = [
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[profile.release]
+lto = true
+opt-level = 'z'
+
 [dependencies]
 # shared
 async-trait = "0.1.31"
