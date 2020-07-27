@@ -20,10 +20,21 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use test_data::{
-    ISSUER_DID, ISSUER_PRIVATE_KEY, ISSUER_PUBLIC_KEY_DID, SCHEMA_DESCRIPTION,
-    SCHEMA_EXTENDED_PROPERTIES, SCHEMA_MORE_EXTENDED_PROPERTIES, SCHEMA_NAME, SCHEMA_PROPERTIES,
-    SCHEMA_REQUIRED_PROPERTIES, SIGNER_2_KEY_REFERENCE, SIGNER_IDENTITY, SIGNER_IDENTITY_2,
-    SIGNER_PRIVATE_KEY, SIGNING_URL, SUBJECT_DID,
+    ISSUER_DID,
+    ISSUER_PRIVATE_KEY,
+    ISSUER_PUBLIC_KEY_DID,
+    SCHEMA_DESCRIPTION,
+    SCHEMA_EXTENDED_PROPERTIES,
+    SCHEMA_MORE_EXTENDED_PROPERTIES,
+    SCHEMA_NAME,
+    SCHEMA_PROPERTIES,
+    SCHEMA_REQUIRED_PROPERTIES,
+    SIGNER_2_KEY_REFERENCE,
+    SIGNER_IDENTITY,
+    SIGNER_IDENTITY_2,
+    SIGNER_PRIVATE_KEY,
+    SIGNING_URL,
+    SUBJECT_DID,
 };
 use ursa::bn::BigNumber;
 use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
@@ -31,17 +42,29 @@ use vade::Vade;
 use vade_evan::{
     application::{
         datatypes::{
-            Credential, CredentialDefinition, CredentialOffer, CredentialPrivateKey,
-            CredentialProposal, CredentialRequest, CredentialSchema, MasterSecret,
-            ProofPresentation, ProofRequest, ProofVerification, RevocationIdInformation,
-            RevocationKeyPrivate, RevocationRegistryDefinition, RevocationState,
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialPrivateKey,
+            CredentialProposal,
+            CredentialRequest,
+            CredentialSchema,
+            MasterSecret,
+            ProofPresentation,
+            ProofRequest,
+            ProofVerification,
+            RevocationIdInformation,
+            RevocationKeyPrivate,
+            RevocationRegistryDefinition,
+            RevocationState,
         },
         prover::Prover,
     },
     resolver::{ResolverConfig, SubstrateDidResolverEvan},
     signing::{RemoteSigner, Signer},
-    utils::substrate::is_whitelisted,
-    CreateRevocationRegistryDefinitionResult, IssueCredentialResult, VadeEvan,
+    CreateRevocationRegistryDefinitionResult,
+    IssueCredentialResult,
+    VadeEvan,
 };
 
 const EVAN_METHOD: &str = "did:evan";
@@ -1243,12 +1266,6 @@ async fn verify_proof(
 
 async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
     let resolver = get_resolver();
-    assert_eq!(
-        false,
-        resolver
-            .is_whitelisted(&SIGNER_IDENTITY, &SIGNER_PRIVATE_KEY)
-            .await?
-    );
 
     let auth_string = get_options();
     let mut json_editable: Value = serde_json::from_str(&auth_string)?;
@@ -1276,13 +1293,6 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
 
 async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn std::error::Error>> {
     let resolver = get_resolver();
-
-    assert_eq!(
-        false,
-        resolver
-            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
-            .await?
-    );
 
     let auth_string = format!(
         r###"{{
