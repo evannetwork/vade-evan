@@ -149,7 +149,13 @@ impl VadePlugin for SubstrateDidResolverEvan {
         }
         let options: IdentityArguments = serde_json::from_str(&options)
             .map_err(|e| format!("{} when parsing {}", &e, &options))?;
-        let (_, substrate_identity) = convert_did_to_substrate_identity(&options.identity)?;
+        let (_, substrate_identity) = convert_did_to_substrate_identity(&options.identity)
+            .map_err(|err| {
+                format!(
+                    "invalid identity in options: {}; {}",
+                    &options.identity, &err
+                )
+            })?;
         let inner_result = create_did(
             self.config.target.clone(),
             options.private_key.clone(),
