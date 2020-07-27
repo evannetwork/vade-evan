@@ -23,10 +23,14 @@ use crate::{
         node_metadata::Metadata,
         rpc::{
             client::{
-                on_extrinsic_msg_until_broadcast, on_extrinsic_msg_until_finalized,
-                on_extrinsic_msg_until_in_block, on_extrinsic_msg_until_ready, on_subscription_msg,
+                on_extrinsic_msg_until_broadcast,
+                on_extrinsic_msg_until_finalized,
+                on_extrinsic_msg_until_in_block,
+                on_extrinsic_msg_until_ready,
+                on_subscription_msg,
             },
-            start_rpc_client_thread, XtStatus,
+            start_rpc_client_thread,
+            XtStatus,
         },
         xt_primitives,
     },
