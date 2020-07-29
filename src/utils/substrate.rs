@@ -604,6 +604,7 @@ pub async fn add_payload_to_did(
     let did = did.trim_start_matches("0x").to_string();
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
+    let bytes_did_string = hex::encode(&bytes_did);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
@@ -634,7 +635,7 @@ pub async fn add_payload_to_did(
         return Err(Box::from(e));
     }
 
-    fn event_watch(did: &String, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(substrate_did: &String, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -643,7 +644,7 @@ pub async fn add_payload_to_did(
                     return false;
                 }
             };
-            if decoded_event.nonce == nonce && &hex::encode(decoded_event.hash) == did {
+            if decoded_event.nonce == nonce && &hex::encode(decoded_event.hash) == substrate_did {
                 return true;
             }
             false
@@ -655,7 +656,7 @@ pub async fn add_payload_to_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&did, now_timestamp),
+        event_watch(&bytes_did_string, now_timestamp),
     )
     .await
     .ok_or("could not get event for updated did")??;
