@@ -20,17 +20,15 @@ mod test_data;
 use regex::Regex;
 use std::error::Error;
 use std::sync::Once;
-use test_data::{SIGNER_IDENTITY, SIGNER_PRIVATE_KEY, SIGNING_URL};
 use vade_evan::{
-    signing::{RemoteSigner, Signer},
-    // signing::{LocalSigner, Signer},
+    signing::{LocalSigner, Signer},
     utils::substrate,
 };
 
 static INIT: Once = Once::new();
 
-// const SIGNER_IDENTITY: &str = "did:evan:testcore:0x9670f7974e7021e4940c56d47f6b31fdfdd37de8";
-// const SIGNER_PRIVATE_KEY: &str = "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
+const SIGNER_IDENTITY: &str = "did:evan:testcore:0x9670f7974e7021e4940c56d47f6b31fdfdd37de8";
+const SIGNER_PRIVATE_KEY: &str = "4ea724e22ede0b7bea88771612485205cfc344131a16b8ab23d4970132be8dab";
 const METHOD_REGEX: &str = r#"^(.*):0x(.*)$"#;
 
 #[tokio::test]
@@ -146,6 +144,5 @@ fn enable_logging() {
 }
 
 fn get_signer() -> Box<dyn Signer> {
-    Box::new(RemoteSigner::new(SIGNING_URL.to_string()))
-    // Box::new(LocalSigner::new())
+    Box::new(LocalSigner::new())
 }
