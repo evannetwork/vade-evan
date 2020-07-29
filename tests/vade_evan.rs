@@ -357,7 +357,7 @@ async fn vade_evan_can_present_proofs_with_less_properties(
 }
 
 #[tokio::test]
-async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_properties(
+async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_ones(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut vade = get_vade();
 
