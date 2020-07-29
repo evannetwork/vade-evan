@@ -441,6 +441,7 @@ struct IdentityWhitelist {
     identity: Vec<u8>,
     _account: Vec<u8>,
     approved: bool,
+    nonce: u64,
 }
 
 #[derive(Decode)]
@@ -791,7 +792,7 @@ pub async fn whitelist_identity(
     if let Err(e) = ext_error {
         return Err(Box::from(e));
     }
-    fn event_watch(identity: &Vec<u8>) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(identity: &Vec<u8>, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: IdentityWhitelist = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -800,7 +801,7 @@ pub async fn whitelist_identity(
                     return false;
                 }
             };
-            if &decoded_event.identity == identity {
+            if decoded_event.nonce == nonce {
                 return true;
             }
             false
@@ -812,7 +813,7 @@ pub async fn whitelist_identity(
         "IdentityWhitelist",
         None,
         receiver,
-        event_watch(&identity),
+        event_watch(&identity, now_timestamp),
     )
     .await
     .ok_or("could not get whitelist identity event")??;
