@@ -634,7 +634,7 @@ pub async fn add_payload_to_did(
         return Err(Box::from(e));
     }
 
-    fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(did: &String, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -643,7 +643,7 @@ pub async fn add_payload_to_did(
                     return false;
                 }
             };
-            if &hex::encode(decoded_event.hash) == did {
+            if decoded_event.nonce == nonce && &hex::encode(decoded_event.hash) == did {
                 return true;
             }
             false
@@ -655,7 +655,7 @@ pub async fn add_payload_to_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&did),
+        event_watch(&did, now_timestamp),
     )
     .await
     .ok_or("could not get event for updated did")??;
@@ -715,7 +715,7 @@ pub async fn update_payload_in_did(
         return Err(Box::from(e));
     }
 
-    fn event_watch(did: &String, now_timestamp: u64) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(did: &String, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -724,7 +724,7 @@ pub async fn update_payload_in_did(
                     return false;
                 }
             };
-            if &hex::encode(decoded_event.hash) == did && now_timestamp == decoded_event.nonce {
+            if decoded_event.nonce == nonce && &hex::encode(decoded_event.hash) == did {
                 return true;
             }
             false
@@ -801,7 +801,7 @@ pub async fn whitelist_identity(
                     return false;
                 }
             };
-            if decoded_event.nonce == nonce {
+            if decoded_event.nonce == nonce && &decoded_event.identity == identity {
                 return true;
             }
             false
