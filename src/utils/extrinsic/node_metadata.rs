@@ -384,6 +384,7 @@ impl StorageMetadata {
             _ => Err(MetadataError::StorageTypeError),
         }
     }
+
     pub fn get_map<K: Encode, V: Decode + Clone>(&self) -> Result<StorageMap<K, V>, MetadataError> {
         match &self.ty {
             StorageEntryType::Map { hasher, .. } => {
@@ -408,6 +409,7 @@ impl StorageMetadata {
             _ => Err(MetadataError::StorageTypeError),
         }
     }
+
     pub fn get_value(&self) -> Result<StorageValue, MetadataError> {
         match &self.ty {
             StorageEntryType::Plain { .. } => {
