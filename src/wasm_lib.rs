@@ -407,24 +407,6 @@ pub async fn issue_credential(
         .as_ref()
         .ok_or("could not get credential definition did document")?;
 
-    debug!("parse doc");
-    let definition_parsed: CredentialDefinition =
-        serde_json::from_str(&credential_definition_doc).map_err(jsify_serde)?;
-    let request_parsed: CredentialRequest = serde_json::from_str(&request).map_err(jsify_serde)?;
-    let blinding_factors_parsed: CredentialSecretsBlindingFactors =
-        serde_json::from_str(&blinding_factors).map_err(jsify_serde)?;
-    let master_secret_parsed: MasterSecret =
-        serde_json::from_str(&master_secret).map_err(jsify_serde)?;
-    let results = &vade
-        .did_resolve(&revocation_definition)
-        .await
-        .map_err(jsify)?;
-    let revocation_definition_doc = results[0]
-        .as_ref()
-        .ok_or("could not get revocation registry did document")?;
-    let revocation_definition_parsed: RevocationRegistryDefinition =
-        serde_json::from_str(&revocation_definition_doc).map_err(jsify_serde)?;
-
     let payload = format!(
         r###"{{
           "issuer": "{}",
@@ -433,15 +415,19 @@ pub async fn issue_credential(
           "credentialPrivateKey": {},
           "credentialRevocationDefinition": "{}",
           "revocationPrivateKey": {},
-          "revocationInformation": {}
+          "revocationInformation": {},
+          "blindingFactors": {},
+          "masterSecret": {}
       }}"###,
         issuer_did,
         subject_did,
         request,
         credential_private_key,
-        revocation_definition_parsed.id,
+        revocation_definition,
         revocation_key_private,
         revocation_info,
+        blinding_factors,
+        master_secret
     );
 
     let results = vade
@@ -453,29 +439,6 @@ pub async fn issue_credential(
     ensure(results.len() > 0, || (&err_msg).to_string())?;
     let mut result: IssueCredentialResult =
         serde_json::from_str(results[0].as_ref().ok_or(err_msg)?).map_err(jsify_serde)?;
-    debug!("get did {}", result.credential.credential_schema.id);
-    let results = vade
-        .did_resolve(&result.credential.credential_schema.id)
-        .await
-        .map_err(jsify)?;
-
-    let err_msg = "could not get schema did document";
-    ensure(results.len() > 0, || (&err_msg).to_string())?;
-
-    let schema_doc = results[0].as_ref().ok_or(err_msg)?;
-
-    let schema: CredentialSchema = serde_json::from_str(&schema_doc).map_err(jsify_serde)?;
-    Prover::post_process_credential_signature(
-        &mut result.credential,
-        &schema,
-        &request_parsed,
-        &definition_parsed,
-        blinding_factors_parsed,
-        &master_secret_parsed,
-        &revocation_definition_parsed,
-        &result.revocation_state.witness,
-    )
-    .map_err(jsify)?;
 
     Ok(serde_json::to_string(&result).map_err(jsify_serde)?)
 }
