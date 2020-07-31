@@ -14,46 +14,41 @@
   limitations under the License.
 */
 
-use crate::utils::extrinsic::rpc::{
-    client::{
-        on_extrinsic_msg_until_broadcast,
-        on_extrinsic_msg_until_finalized,
-        on_extrinsic_msg_until_in_block,
-        on_extrinsic_msg_until_ready,
-        on_subscription_msg,
+use crate::{
+    compose_extrinsic,
+    signing::Signer,
+    utils::extrinsic::{
+        events::{DispatchError, EventsDecoder, Phase, RawEvent, RuntimeEvent, SystemEvent},
+        frame_metadata::RuntimeMetadataPrefixed,
+        node_metadata::Metadata,
+        rpc::{
+            client::{
+                on_extrinsic_msg_until_broadcast,
+                on_extrinsic_msg_until_finalized,
+                on_extrinsic_msg_until_in_block,
+                on_extrinsic_msg_until_ready,
+                on_subscription_msg,
+            },
+            start_rpc_client_thread,
+            XtStatus,
+        },
+        xt_primitives,
     },
-    start_rpc_client_thread,
 };
-use crate::utils::extrinsic::xt_primitives;
-use blake2_rfc;
-use hex;
-use reqwest;
-use serde_json::{json, Value};
-use std::env;
-use std::hash::Hasher;
-use twox_hash;
-
-use crate::utils::signing::sign_message;
-
-use crate::compose_extrinsic;
-use crate::utils::extrinsic::events::{
-    DispatchError,
-    EventsDecoder,
-    Phase,
-    RawEvent,
-    RuntimeEvent,
-    SystemEvent,
-};
-use crate::utils::extrinsic::frame_metadata::RuntimeMetadataPrefixed;
-use crate::utils::extrinsic::node_metadata::Metadata;
-use crate::utils::extrinsic::rpc::client::XtStatus;
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::stream::StreamExt;
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
+use secp256k1::{Message, RecoveryId, Signature};
+use serde_json::{json, Value};
+use sha2::Digest;
+use sha3::Keccak256;
 use sp_std::prelude::*;
 use std::convert::TryFrom;
+use std::convert::TryInto;
+use std::env;
+use std::hash::Hasher;
 
 pub async fn get_storage_value(
     url: &str,
@@ -435,7 +430,7 @@ pub async fn wait_for_extrinsic_status(
                         }
                     }
                 }
-                Err(_) => error!("couldn't decode event record list"),
+                Err(err) => error!("couldn't decode event record list; {}", &err),
             }
         }
     }
@@ -446,19 +441,21 @@ struct IdentityWhitelist {
     identity: Vec<u8>,
     _account: Vec<u8>,
     approved: bool,
+    nonce: u64,
 }
 
 #[derive(Decode)]
 struct Created {
-    hash: sp_core::H256,
+    hash: Vec<u8>,
     _owner: Vec<u8>,
     nonce: u64,
 }
 
 #[derive(Decode)]
 struct UpdatedDid {
-    hash: sp_core::H256,
+    hash: Vec<u8>,
     _index: u32,
+    nonce: u64,
 }
 
 /// Anchors a new DID on the chain.
@@ -466,7 +463,7 @@ struct UpdatedDid {
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity requesting the DID
 /// * `payload` - optional payload to set as DID document
 ///
@@ -475,7 +472,7 @@ struct UpdatedDid {
 pub async fn create_did(
     url: String,
     private_key: String,
-    signing_url: String,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
     payload: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -484,12 +481,9 @@ pub async fn create_did(
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url,
-        ).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
     let xt: String = match payload {
@@ -527,9 +521,8 @@ pub async fn create_did(
                 _e
             )
         });
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
     let event_watch = move |raw: &RawEvent| -> bool {
         let decoded_event: Created = match Decode::decode(&mut &raw.data[..]) {
@@ -566,8 +559,7 @@ pub async fn create_did(
 /// # Returns
 /// * `String` - Content saved behind the DID
 pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::error::Error>> {
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await?;
     let detail_hash = get_storage_map::<(sp_core::H256, u32), Vec<u8>>(
@@ -575,22 +567,19 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
         metadata.clone(),
         "DidModule",
         "DidsDetails",
-        (bytes_did.clone(), 0),
+        (bytes_did, 0),
     )
     .await?
-    .ok_or("could not get storage map")?;
-    let body = reqwest::get(
-        &format!(
-            "http://{}:{}/ipfs/{}",
-            url,
-            env::var("VADE_EVAN_IPFS_PORT").unwrap_or_else(|_| "8081".to_string()),
-            std::str::from_utf8(&detail_hash)?
-        )
-        .to_string(),
+    .ok_or("DID not found")?;
+    let did_url = format!(
+        "http://{}:{}/ipfs/{}",
+        url,
+        env::var("VADE_EVAN_IPFS_PORT").unwrap_or_else(|_| "8081".to_string()),
+        std::str::from_utf8(&detail_hash)?
     )
-    .await?
-    .text()
-    .await?;
+    .to_string();
+    trace!("fetching DID document at: {}", &did_url);
+    let body = reqwest::get(&did_url).await?.text().await?;
     Ok(body)
 }
 
@@ -601,30 +590,28 @@ pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::er
 /// * `payload` - Payload to save
 /// * `did` - DID to save payload under
 /// * `private_key` - key reference to sign with
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity of the caller
 pub async fn add_payload_to_did(
     url: String,
     payload: String,
     did: String,
     private_key: String,
-    signing_url: String,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let did = did.trim_start_matches("0x").to_string();
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
+    let bytes_did_string = hex::encode(&bytes_did);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url,
-        ).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -634,7 +621,7 @@ pub async fn add_payload_to_did(
         metadata.clone(),
         "DidModule",
         "add_did_detail",
-        bytes_did.clone(),
+        bytes_did.clone().to_fixed_bytes(),
         payload_hex,
         signature.to_vec(),
         signed_message.to_vec(),
@@ -644,12 +631,11 @@ pub async fn add_payload_to_did(
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
         .await
         .map_err(|_e| format!("Error adding payload to DID: {:?} with payload: {:?} and identity: {:?} and error; {}",did.clone(), payload.clone(), hex::encode(identity.clone()), _e));
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
 
-    fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(substrate_did: &String, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -658,7 +644,7 @@ pub async fn add_payload_to_did(
                     return false;
                 }
             };
-            if &hex::encode(decoded_event.hash) == did {
+            if decoded_event.nonce == nonce && &hex::encode(decoded_event.hash) == substrate_did {
                 return true;
             }
             false
@@ -670,7 +656,7 @@ pub async fn add_payload_to_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&did),
+        event_watch(&bytes_did_string, now_timestamp),
     )
     .await
     .ok_or("could not get event for updated did")??;
@@ -685,7 +671,7 @@ pub async fn add_payload_to_did(
 /// * `payload` - Payload to save
 /// * `did` - DID to save payload under
 /// * `private_key` - Private key used to sign a message
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity of the caller
 pub async fn update_payload_in_did(
     url: String,
@@ -693,23 +679,19 @@ pub async fn update_payload_in_did(
     payload: String,
     did: String,
     private_key: String,
-    signing_url: String,
+    signer: &Box<dyn Signer>,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url
-        ).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -719,7 +701,7 @@ pub async fn update_payload_in_did(
         metadata.clone(),
         "DidModule",
         "update_did_detail",
-        bytes_did.clone(),
+        bytes_did.clone().to_fixed_bytes(),
         payload_hex,
         index,
         signature.to_vec(),
@@ -727,15 +709,14 @@ pub async fn update_payload_in_did(
         identity.clone(),
         now_timestamp
     );
-    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
+    let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock)
         .await
         .map_err(|_e| format!("Error updating payload in DID: {:?} on index: {} with payload: {:?} and identity: {:?} and error; {}",did.clone(), index.clone(), payload.clone(), hex::encode(identity.clone()), _e));
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
 
-    fn event_watch(did: &String) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(did: &String, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: UpdatedDid = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -744,7 +725,7 @@ pub async fn update_payload_in_did(
                     return false;
                 }
             };
-            if &hex::encode(decoded_event.hash) == did {
+            if decoded_event.nonce == nonce && &hex::encode(decoded_event.hash) == did {
                 return true;
             }
             false
@@ -757,7 +738,7 @@ pub async fn update_payload_in_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&did),
+        event_watch(&hex::encode(bytes_did_arr), now_timestamp),
     )
     .await
     .ok_or("could not could not get updated did event")??;
@@ -769,12 +750,13 @@ pub async fn update_payload_in_did(
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `private_key` - Private key used to sign a message
-/// * `signing_url` - endpoint that signs given message
+/// * `signer` - `Signer` to sign with
 /// * `identity` - Identity of the caller
 pub async fn whitelist_identity(
     url: String,
     private_key: String,
-    signing_url: &str,
+    signer: &Box<dyn Signer>,
+    method: u8,
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
@@ -782,12 +764,9 @@ pub async fn whitelist_identity(
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
     #[cfg(not(target_arch = "wasm32"))]
     let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
-    let (signature, signed_message) =
-        sign_message(
-            &now_timestamp.to_string(),
-            &private_key.to_string(),
-            &signing_url,
-        ).await?;
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
 
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
@@ -796,6 +775,7 @@ pub async fn whitelist_identity(
         metadata.clone(),
         "DidModule",
         "whitelist_identity",
+        method,
         signature.to_vec(),
         signed_message.to_vec(),
         identity.clone(),
@@ -810,11 +790,10 @@ pub async fn whitelist_identity(
                 _e
             )
         });
-    match ext_error {
-        Err(e) => return Err(Box::from(e)),
-        _ => (),
+    if let Err(e) = ext_error {
+        return Err(Box::from(e));
     }
-    fn event_watch(identity: &Vec<u8>) -> impl Fn(&RawEvent) -> bool + '_ {
+    fn event_watch(identity: &Vec<u8>, nonce: u64) -> impl Fn(&RawEvent) -> bool + '_ {
         move |raw: &RawEvent| -> bool {
             let decoded_event: IdentityWhitelist = match Decode::decode(&mut &raw.data[..]) {
                 Ok(result) => result,
@@ -823,7 +802,7 @@ pub async fn whitelist_identity(
                     return false;
                 }
             };
-            if &decoded_event.identity == identity {
+            if decoded_event.nonce == nonce && &decoded_event.identity == identity {
                 return true;
             }
             false
@@ -835,7 +814,7 @@ pub async fn whitelist_identity(
         "IdentityWhitelist",
         None,
         receiver,
-        event_watch(&identity),
+        event_watch(&identity, now_timestamp),
     )
     .await
     .ok_or("could not get whitelist identity event")??;
@@ -859,15 +838,14 @@ pub async fn get_payload_count_for_did(
     did: String,
 ) -> Result<u32, Box<dyn std::error::Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    let mut bytes_did_arr = [0; 32];
-    bytes_did_arr.copy_from_slice(&hex::decode(did.trim_start_matches("0x"))?[0..32]);
+    let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let detail_count = get_storage_map::<sp_core::H256, u32>(
         url.as_str(),
         metadata.clone(),
         "DidModule",
         "DidsDetailsCount",
-        bytes_did.clone(),
+        bytes_did,
     )
     .await?;
     if detail_count.is_none() {
@@ -875,6 +853,50 @@ pub async fn get_payload_count_for_did(
     } else {
         detail_count.ok_or_else(|| Box::from("could not get detail count"))
     }
+}
+
+/// Checks whether a given identity for a given account is whitelisted
+pub async fn is_whitelisted(
+    url: String,
+    private_key: String,
+    signer: &Box<dyn Signer>,
+    identity: Vec<u8>,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let metadata = get_metadata(url.as_str()).await?;
+
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
+    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+
+    // Sign a message to use for retrieving the account ID
+    let (signature, signed_message) = signer
+        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .await?;
+
+    let account = recover_ethereum_account(signature, signed_message)
+        .map_err(|err| format!("Error recovering etherum account: {}", err))?;
+
+    // Access whitelist using account and identity
+    let mut hasher = Keccak256::new();
+    hasher.input(&account);
+    let acc_hash = hasher.result();
+
+    hasher = Keccak256::new();
+    hasher.input(&identity[..identity.len()]);
+    let identity_hash = hasher.result();
+
+    let is_whitelisted = get_storage_map::<(Vec<u8>, Vec<u8>), bool>(
+        url.as_str(),
+        metadata.clone(),
+        "DidModule",
+        "WhitelistedIdentities",
+        (identity_hash.to_vec(), acc_hash.to_vec()),
+    )
+    .await?
+    .unwrap_or_else(|| false);
+
+    Ok(is_whitelisted)
 }
 
 /// Do a XX 256-bit hash and place result in `dest`.
@@ -940,15 +962,6 @@ pub fn blake2_256(data: &[u8]) -> [u8; 32] {
     r
 }
 
-fn json_req(method: &str, params: &str, id: u32) -> Value {
-    json!({
-        "method": method,
-        "params": [params],
-        "jsonrpc": "2.0",
-        "id": id.to_string(),
-    })
-}
-
 pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
     let hexstr = hexstr
         .trim_matches('\"')
@@ -959,4 +972,65 @@ pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
         "null" => Ok([0u8].to_vec()),
         _ => hex::decode(&hexstr),
     }
+}
+
+fn get_did_bytes_array(did: &String) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+    let did_string = did.trim_start_matches("0x");
+    let mut bytes_did_arr;
+    if did_string.len() == 64 {
+        trace!("DID {} has length of 32B will use it as is", &did);
+        bytes_did_arr = [0; 32];
+        bytes_did_arr.copy_from_slice(&hex::decode(did_string)?[0..32]);
+    } else {
+        trace!("DID {} has length of {}B will hash it", &did, did.len());
+        // create hash of data (including header)
+        let mut hasher = Keccak256::new();
+        hasher.input(hex::decode(&did_string)?);
+        let hash = hasher.result();
+        trace!("hashed DID: {:?}", &hash);
+        bytes_did_arr = hash.try_into().map_err(|_| "slice with incorrect length")?;
+    }
+
+    Ok(bytes_did_arr)
+}
+
+fn json_req(method: &str, params: &str, id: u32) -> Value {
+    json!({
+        "method": method,
+        "params": [params],
+        "jsonrpc": "2.0",
+        "id": id.to_string(),
+    })
+}
+
+fn recover_ethereum_account(
+    full_signature: [u8; 65],
+    signed_message: [u8; 32],
+) -> Result<[u8; 20], Box<dyn std::error::Error>> {
+    // recover the account out of the signed message, otherwise throw error and fail the execution
+    let mut signature: [u8; 64] = [0; 64];
+    signature.copy_from_slice(&full_signature[0..64]);
+
+    let signature_normalized = if full_signature[64] < 27 {
+        full_signature[64]
+    } else {
+        full_signature[64] - 27
+    };
+    let recovery_id = RecoveryId::parse(signature_normalized)
+        .map_err(|err| format!("could not parse recovery ID: {}", &err))?;
+
+    let sig_mess = Message::parse(&signed_message);
+    let sig = Signature::parse(&signature);
+    let recovered_pub_key = secp256k1::recover(&sig_mess, &sig, &recovery_id)?;
+
+    // create keccack hash of the recovered public key
+    let mut hasher = Keccak256::new();
+    hasher.input(&recovered_pub_key.serialize()[1..65]);
+    let hash = hasher.result();
+
+    // create the ethereum account id out of the last 20 bytes of the hash
+    let mut account_id: [u8; 20] = [0; 20];
+    account_id.copy_from_slice(&hash[12..32]);
+
+    Ok(account_id)
 }

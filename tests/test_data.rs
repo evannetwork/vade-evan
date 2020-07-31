@@ -107,13 +107,65 @@ pub const ISSUER_PRIVATE_KEY: &str = "a1c48241-5978-4348-991e-255e92d81f1e";
 pub const SIGNER_ADDRESS: &str = "0x3daa2c354dba8d51fdabc30cf9219b251c74eb56";
 
 #[allow(dead_code)]
+pub const SIGNER_LOCAL_DID_DOCUMENT1: &str = r###"{
+  "@context": "https://w3id.org/did/v1",
+  "id": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+  "publicKey": [
+    {
+      "id": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906#key-1",
+      "type": "Secp256k1VerificationKey2018",
+      "controller": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+      "ethereumAddress": "0xcd5e1dbb5552c2baa1943e6b5f66d22107e9c05c"
+    }
+  ],
+  "authentication": [
+    "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906#key-1"
+  ],
+  "created": "2011-11-11T11:11:11.111Z",
+  "updated": "2011-11-11T11:11:11.111Z"
+}"###;
+
+#[allow(dead_code)]
+pub const SIGNER_LOCAL_DID_DOCUMENT2: &str = r###"{
+  "@context": "https://w3id.org/did/v1",
+  "id": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+  "publicKey": [
+    {
+      "id": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906#key-1",
+      "type": "Secp256k1VerificationKey2018",
+      "controller": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+      "ethereumAddress": "0xcd5e1dbb5552c2baa1943e6b5f66d22107e9c05c"
+    }
+  ],
+  "authentication": [
+    "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906#key-1"
+  ],
+  "created": "2022-22-22T22:22:22.222Z",
+  "updated": "2022-22-22T22:22:22.222Z"
+}"###;
+
+#[allow(dead_code)]
+pub const SIGNER_LOCAL_IDENTITY: &str =
+    "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906";
+
+#[allow(dead_code)]
+pub const SIGNER_LOCAL_PRIVATE_KEY: &str =
+    "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
+
+#[allow(dead_code)]
 pub const SIGNER_PRIVATE_KEY: &str = "a1c48241-5978-4348-991e-255e92d81f1e";
+
+#[allow(dead_code)]
+pub const SIGNER_2_KEY_REFERENCE: &str = "25b661b5-01eb-4769-825d-3f57bee4e042";
 
 #[allow(dead_code)]
 pub const SIGNER_IDENTITY: &str = "did:evan:testcore:0xdCCA99F72E3Ef25228067cDe8bE891D5c6940926";
 
 #[allow(dead_code)]
-pub const SIGNING_URL: &str = "https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign";
+pub const SIGNER_IDENTITY_2: &str = "did:evan:testcore:0x6739d59066172AC613BD41E30D180D3eBe146087";
+
+#[allow(dead_code)]
+pub const SIGNING_URL: &str = "http://tntkeyservices-e0ae.azurewebsites.net/api/key/sign";
 
 #[allow(dead_code)]
 pub const ISSUER_PUBLIC_KEY_DID: &str =

@@ -29,7 +29,9 @@ use test_data::{
     SCHEMA_NAME,
     SCHEMA_PROPERTIES,
     SCHEMA_REQUIRED_PROPERTIES,
+    SIGNER_2_KEY_REFERENCE,
     SIGNER_IDENTITY,
+    SIGNER_IDENTITY_2,
     SIGNER_PRIVATE_KEY,
     SIGNING_URL,
     SUBJECT_DID,
@@ -37,27 +39,29 @@ use test_data::{
 use ursa::bn::BigNumber;
 use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
 use vade::Vade;
-use vade_evan::resolver::SubstrateDidResolverEvan;
 use vade_evan::{
-    application::datatypes::{
-        Credential,
-        CredentialDefinition,
-        CredentialOffer,
-        CredentialPrivateKey,
-        CredentialProposal,
-        CredentialRequest,
-        CredentialSchema,
-        MasterSecret,
-        ProofPresentation,
-        ProofRequest,
-        ProofVerification,
-        RevocationIdInformation,
-        RevocationKeyPrivate,
-        RevocationRegistryDefinition,
-        RevocationState,
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialPrivateKey,
+            CredentialProposal,
+            CredentialRequest,
+            CredentialSchema,
+            MasterSecret,
+            ProofPresentation,
+            ProofRequest,
+            ProofVerification,
+            RevocationIdInformation,
+            RevocationKeyPrivate,
+            RevocationRegistryDefinition,
+            RevocationState,
+        },
+        prover::Prover,
     },
-    application::prover::Prover,
-    resolver::ResolverConfig,
+    resolver::{ResolverConfig, SubstrateDidResolverEvan},
+    signing::{RemoteSigner, Signer},
     CreateRevocationRegistryDefinitionResult,
     IssueCredentialResult,
     VadeEvan,
@@ -94,6 +98,15 @@ async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Er
 
     // run test
     whitelist_identity(&mut vade).await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn std::error::Error>> {
+    let mut vade = get_vade();
+
+    ensure_whitelist(&mut vade, &SIGNER_IDENTITY_2).await?;
 
     Ok(())
 }
@@ -344,7 +357,7 @@ async fn vade_evan_can_present_proofs_with_less_properties(
 }
 
 #[tokio::test]
-async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_properties(
+async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_ones(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut vade = get_vade();
 
@@ -1063,9 +1076,12 @@ fn get_options() -> String {
 }
 
 fn get_resolver() -> SubstrateDidResolverEvan {
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     SubstrateDidResolverEvan::new(ResolverConfig {
-        signing_url: env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        signer,
+        target: "127.0.0.1".to_owned(),
     })
 }
 
@@ -1083,7 +1099,10 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    VadeEvan::new(internal_vade, &SIGNING_URL)
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
+    VadeEvan::new(internal_vade, signer)
 }
 
 async fn issue_credential(
@@ -1246,6 +1265,8 @@ async fn verify_proof(
 }
 
 async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
+    let resolver = get_resolver();
+
     let auth_string = get_options();
     let mut json_editable: Value = serde_json::from_str(&auth_string)?;
     json_editable["operation"] = Value::from("whitelistIdentity");
@@ -1259,6 +1280,46 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
         Ok(values) => assert!(!values.is_empty()),
         Err(e) => panic!("could not whitelist identity; {}", &e),
     };
+
+    assert_eq!(
+        true,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY, &SIGNER_PRIVATE_KEY)
+            .await?
+    );
+
+    Ok(())
+}
+
+async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let resolver = get_resolver();
+
+    let auth_string = format!(
+        r###"{{
+            "privateKey": "{}",
+            "identity": "{}"
+        }}"###,
+        SIGNER_2_KEY_REFERENCE, SIGNER_IDENTITY_2,
+    );
+    let mut json_editable: Value = serde_json::from_str(&auth_string)?;
+    json_editable["operation"] = Value::from("ensureWhitelisted");
+    let options = serde_json::to_string(&json_editable).unwrap();
+
+    let result = vade.did_update(signer, &options, &"".to_string()).await;
+
+    match result {
+        Ok(values) => assert!(!values.is_empty()),
+        Err(e) => panic!("could not whitelist identity; {}", &e),
+    };
+
+    let resolver = get_resolver();
+
+    assert_eq!(
+        true,
+        resolver
+            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
+            .await?
+    );
 
     Ok(())
 }
