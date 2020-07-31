@@ -4,52 +4,85 @@ version = "0.0.1"
 authors = ["Philip Kaiser <philip.kaiser@evan.team>"]
 edition = "2018"
 
+[features]
+default = ["did", "vc-zkp"]
+
+did = [
+    "blake2-rfc",
+    "byteorder",
+    "futures",
+    "parity_scale_codec",
+    "regex",
+    "sp-core",
+    "sp-runtime-interface",
+    "sp-std",
+    "sp-storage",
+    "thiserror",
+    "twox-hash",
+    "ws",
+    "web-sys",
+]
+
+vc-zkp = [
+    "data-encoding",
+    "ursa",
+    "wasm-timer",
+]
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[profile.release]
+lto = true
+opt-level = 'z'
+
 [dependencies]
+# shared
 async-trait = "0.1.31"
-blake2-rfc = "0.2.18"
-byteorder = "1.3.4"
-data-encoding = "2.2.0"
 env_logger = "0.7.1"
-futures = "0.3.5"
 hex = "0.4.2"
 libsecp256k1 = "0.3.5"
 log = "0.4.8"
-num-integer="0.1.42"
-parity_scale_codec = { package ="parity-scale-codec", version = "1.3.0" }
-primitive-types = "0.7.2"
-regex = "1.3.7"
-reqwest = { version = "0.10.4", default-features= false, features = ["json", "default-tls"]}
+reqwest = { version = "0.10.4", default-features= false, features = ["json", "default-tls"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 sha2 = "0.8.1"
 sha3 = "0.8.2"
-sp-core = { version = "2.0.0-rc4", default-features = false }
-sp-runtime-interface = { version = "2.0.0-rc4", default-features = false, features = ["disable_target_static_assertions" ]}
-sp-std = { version = "2.0.0-rc4", default-features = false }
-sp-storage = { version = "2.0.0-rc4", default-features = false }
-thiserror = { version = "1.0"}
-twox-hash = "1.5.0"
-# we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
-# ursa = "0.3.2"
-ursa = { path = "./../ursa/libursa", features=["portable_wasm"], default-features = false }
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 vade = { path = "../vade", version = "0.0.7" }
-wee_alloc = { version = "0.4.5", optional = true }
+# did
+blake2-rfc = { version = "0.2.18", optional = true }
+byteorder = { version = "1.3.4", optional = true }
+futures = { version = "0.3.5", optional = true }
+parity_scale_codec = { package ="parity-scale-codec", version = "1.3.0", optional = true }
+regex = { version = "1.3.7", optional = true }
+sp-core = { version = "2.0.0-rc4", default-features = false, optional = true }
+sp-runtime-interface = { version = "2.0.0-rc4", default-features = false, features = ["disable_target_static_assertions" ], optional = true}
+sp-std = { version = "2.0.0-rc4", default-features = false, optional = true }
+sp-storage = { version = "2.0.0-rc4", default-features = false, optional = true }
+thiserror = { version = "1.0", optional = true }
+twox-hash = { version = "1.5.0", optional = true }
+# vc-zkp
+data-encoding = { version = "2.2.0", optional = true }
+# we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
+# ursa = "0.3.2"
+ursa = { path = "./../ursa/libursa", features=["portable_wasm"], default-features = false, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# shared
 chrono = { version = "0.4.11",  default-features = false, features=["wasm-bindgen", "clock", "js-sys"] }
-ws = { version = "0.7", features = ["ssl"] }
+# vc-zkp
+ws = { version = "0.7", features = ["ssl"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+# shared
 console_error_panic_hook = "0.1.6"
 console_log = { version = "0.2", features = ["color"] }
 js-sys = { version = "0.3" }
-wasm-bindgen = "0.2"
+serde_derive = "1.0.114"
+wasm-bindgen = { version = "0.2",features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.5"
-wasm-timer = "0.2.4"
+# did
 web-sys = { version = "0.3.39", features = [
     'WebSocket',
     'Response',
@@ -58,7 +91,9 @@ web-sys = { version = "0.3.39", features = [
     'MessageEvent',
 	'ErrorEvent',
     'console'
-] }
+], optional = true }
+# vc-zkp
+wasm-timer = { version = "0.2.4", optional = true }
 
 [dev-dependencies]
 tokio = { version = "0.2.21", features = ["macros", "rt-threaded"] }

@@ -306,7 +306,7 @@ impl EventsDecoder {
             debug!("Phase {:?}, Event: {:?}", phase, event);
 
             debug!("Decoding topics {:?}", input);
-            let _topics = Vec::<sp_core::H256>::decode(input)?;
+            let _ignore_topic_errors = Vec::<sp_core::H256>::decode(input);
             r.push((phase, event));
         }
         Ok(r)

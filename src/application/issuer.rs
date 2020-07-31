@@ -14,26 +14,30 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    Credential,
-    CredentialDefinition,
-    CredentialOffer,
-    CredentialRequest,
-    CredentialSchema,
-    CredentialSchemaReference,
-    CredentialSignature,
-    CredentialSubject,
-    DeltaHistory,
-    EncodedCredentialValue,
-    RevocationIdInformation,
-    RevocationRegistryDefinition,
-    RevocationState,
-    SchemaProperty,
+use crate::{
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialOffer,
+            CredentialRequest,
+            CredentialSchema,
+            CredentialSchemaReference,
+            CredentialSignature,
+            CredentialSubject,
+            DeltaHistory,
+            EncodedCredentialValue,
+            RevocationIdInformation,
+            RevocationRegistryDefinition,
+            RevocationState,
+            SchemaProperty,
+        },
+        prover::Prover,
+    },
+    crypto::{crypto_issuer::Issuer as CryptoIssuer, crypto_utils::create_assertion_proof},
+    signing::Signer,
+    utils::utils::{generate_uuid, get_now_as_iso_string},
 };
-use crate::application::prover::Prover;
-use crate::crypto::crypto_issuer::Issuer as CryptoIssuer;
-use crate::crypto::crypto_utils::create_assertion_proof;
-use crate::utils::utils::{generate_uuid, get_now_as_iso_string};
 use std::collections::{HashMap, HashSet};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -60,12 +64,12 @@ impl Issuer {
     /// in a publicly available and temper-proof way.
     ///
     /// # Arguments
-    /// * `assigned_did` - DID to be used to revole this credential definition
+    /// * `assigned_did` - DID to be used to revoke this credential definition
     /// * `issuer_did` - DID of the issuer
     /// * `schema` - The `CredentialSchema` this definition belongs to
     /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
     /// * `issuer_proving_key` - Private key used to create the assertion proof
-    /// * `signing_url` - endpoint that signs given message
+    /// * `signer` - `Signer` to sign with
     ///
     /// # Returns
     /// * `CredentialDefinition` - The definition object to be saved in a publicly available and temper-proof way
@@ -76,7 +80,7 @@ impl Issuer {
         schema: &CredentialSchema,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
-        signing_url: &str,
+        signer: &Box<dyn Signer>,
     ) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
         let created_at = get_now_as_iso_string();
         let (credential_private_key, crypto_credential_def) =
@@ -99,8 +103,9 @@ impl Issuer {
             &issuer_public_key_did,
             &issuer_did,
             &issuer_proving_key,
-            signing_url,
-        ).await?;
+            &signer,
+        )
+        .await?;
 
         definition.proof = Some(proof);
 
@@ -120,7 +125,7 @@ impl Issuer {
     /// * `allow_additional_properties` - Specifies whether a credential under this schema is considered valid if it specifies more properties than the schema specifies.
     /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
     /// * `issuer_proving_key` - Private key used to create the assertion proof
-    /// * `signing_url` - endpoint that signs given message
+    /// * `signer` - `Signer` to sign with
     ///
     /// # Returns
     /// * `CredentialSchema` - The schema object to be saved in a publicly available and temper-proof way
@@ -134,7 +139,7 @@ impl Issuer {
         allow_additional_properties: bool,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
-        signing_url: &str
+        signer: &Box<dyn Signer>,
     ) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
         let created_at = get_now_as_iso_string();
 
@@ -158,8 +163,9 @@ impl Issuer {
             &issuer_public_key_did,
             &issuer_did,
             &issuer_proving_key,
-            signing_url,
-        ).await?;
+            &signer,
+        )
+        .await?;
 
         schema.proof = Some(proof);
 
@@ -174,7 +180,7 @@ impl Issuer {
     /// * `credential_definition` - Credential definition this revocation registry definition will be associated with
     /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
     /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
-    /// * `signing_url` - endpoint that signs given message
+    /// * `signer` - `Signer` to sign with
     /// * `maximum_credential_count` - Capacity of the revocation registry in terms of issuable credentials
     ///
     /// # Returns
@@ -187,7 +193,7 @@ impl Issuer {
         credential_definition: &CredentialDefinition,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
-        signing_url: &str,
+        signer: &Box<dyn Signer>,
         maximum_credential_count: u32,
     ) -> Result<
         (
@@ -237,8 +243,9 @@ impl Issuer {
             &issuer_public_key_did,
             &credential_definition.issuer,
             &issuer_proving_key,
-            signing_url,
-        ).await?;
+            &signer,
+        )
+        .await?;
 
         rev_reg_def.proof = Some(proof);
 
@@ -417,7 +424,7 @@ impl Issuer {
     /// * `revocation_id` - Revocation ID of the credential
     /// * `issuer_public_key_did` - DID of the public key that will be associated with the created signature
     /// * `issuer_proving_key` - Private key of the issuer used for signing the definition
-    /// * `signing_url` - endpoint that signs given message
+    /// * `signer` - `Signer` to sign with
     ///
     /// # Returns
     /// * `RevocationRegistryDefinition` - The updated revocation registry definition that needs to be stored in the original revocation registry definition's place.
@@ -427,7 +434,7 @@ impl Issuer {
         revocation_id: u32,
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
-        signing_url: &str,
+        signer: &Box<dyn Signer>,
     ) -> Result<RevocationRegistryDefinition, Box<dyn std::error::Error>> {
         let updated_at = get_now_as_iso_string();
 
@@ -477,8 +484,9 @@ impl Issuer {
             issuer_public_key_did,
             issuer,
             issuer_proving_key,
-            &signing_url,
-        ).await?;
+            &signer,
+        )
+        .await?;
 
         rev_reg_def.proof = Some(proof);
 
