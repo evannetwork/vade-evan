@@ -1,5 +1,5 @@
 extern crate clap;
-use clap::{App, Arg, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use ursa::cl::prover::Prover;
 use vade::Vade;
 use vade_evan::{
@@ -10,7 +10,7 @@ use vade_evan::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = get_args();
+    let matches = get_args()?;
 
     let mut vade = get_vade(
         get_arg(&matches, "target", Some("13.69.59.185")),
@@ -18,71 +18,113 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .unwrap();
 
-    let command = get_arg(&matches, "command", Some(""));
-    let mut did = "";
-    let mut method = "";
-
-    if command.starts_with("did_") {
-        did = get_arg(&matches, "did", None);
-    } else if command.starts_with("vc_zkp_") {
-        method = get_arg(&matches, "method", None);
-    }
-
-    let options = get_arg(&matches, "options", Some(""));
-    let payload = get_arg(&matches, "payload", Some(""));
-
-    let results = match command {
-        "create_master_secret" => vec![Some(
-            serde_json::to_string(&Prover::new_master_secret().unwrap()).unwrap(),
-        )],
-        "did_create" => vade.did_create(&did, &options, &payload).await.unwrap(),
-        "did_resolve" => vade.did_resolve(&did).await.unwrap(),
-        "did_update" => vade.did_update(&did, &options, &payload).await?,
-        "vc_zkp_create_credential_definition" => vade
-            .vc_zkp_create_credential_definition(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_create_credential_schema" => vade
-            .vc_zkp_create_credential_schema(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_create_revocation_registry_definition" => vade
-            .vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_issue_credential" => vade
-            .vc_zkp_issue_credential(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_create_credential_offer" => vade
-            .vc_zkp_create_credential_offer(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_present_proof" => vade
-            .vc_zkp_present_proof(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_create_credential_proposal" => vade
-            .vc_zkp_create_credential_proposal(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_request_credential" => vade
-            .vc_zkp_request_credential(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_request_proof" => vade
-            .vc_zkp_request_proof(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_revoke_credential" => vade
-            .vc_zkp_revoke_credential(&method, &options, &payload)
-            .await
-            .unwrap(),
-        "vc_zkp_verify_proof" => vade
-            .vc_zkp_verify_proof(&method, &options, &payload)
-            .await
-            .unwrap(),
-        _ => panic!("unsupported command: {}", &command),
+    let results = match matches.subcommand() {
+        ("did", Some(sub_m)) => match sub_m.subcommand() {
+            ("create", Some(sub_m)) => {
+                let did = get_arg(&sub_m, "did", None);
+                let options = get_arg(&sub_m, "options", None);
+                vade.did_create(&did, &options, &String::new()).await?
+            }
+            ("resolve", Some(sub_m)) => {
+                let did = get_arg(&sub_m, "did", None);
+                vade.did_resolve(&did).await?
+            }
+            ("update", Some(sub_m)) => {
+                let did = get_arg(&sub_m, "did", None);
+                let options = get_arg(&sub_m, "options", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.did_update(&did, &options, &payload).await?
+            }
+            _ => {
+                return Err(Box::from(clap::Error::with_description(
+                    "invalid subcommand",
+                    clap::ErrorKind::InvalidSubcommand,
+                )));
+            }
+        },
+        ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
+            ("create_credential_definition", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let options = get_arg(&sub_m, "options", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_create_credential_definition(&method, &options, &payload)
+                    .await?
+            }
+            ("create_credential_schema", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let options = get_arg(&sub_m, "options", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_create_credential_schema(&method, &options, &payload)
+                    .await?
+            }
+            ("create_master_secret", Some(_)) => vec![Some(serde_json::to_string(
+                &Prover::new_master_secret().map_err(|_| "could not create master secret")?,
+            )?)],
+            ("create_revocation_registry_definition", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let options = get_arg(&sub_m, "options", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
+                    .await?
+            }
+            ("issue_credential", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_issue_credential(&method, "", &payload).await?
+            }
+            ("create_credential_offer", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_create_credential_offer(&method, "", &payload)
+                    .await?
+            }
+            ("present_proof", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_present_proof(&method, "", &payload).await?
+            }
+            ("create_credential_proposal", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_create_credential_proposal(&method, "", &payload)
+                    .await?
+            }
+            ("request_credential", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_request_credential(&method, "", &payload)
+                    .await?
+            }
+            ("request_proof", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_request_proof(&method, "", &payload).await?
+            }
+            ("revoke_credential", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let options = get_arg(&sub_m, "options", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_revoke_credential(&method, &options, &payload)
+                    .await?
+            }
+            ("verify_proof", Some(sub_m)) => {
+                let method = get_arg(&sub_m, "method", None);
+                let payload = get_arg(&sub_m, "payload", None);
+                vade.vc_zkp_verify_proof(&method, "", &payload).await?
+            }
+            _ => {
+                return Err(Box::from(clap::Error::with_description(
+                    "invalid subcommand",
+                    clap::ErrorKind::InvalidSubcommand,
+                )));
+            }
+        },
+        _ => {
+            return Err(Box::from(clap::Error::with_description(
+                "invalid subcommand",
+                clap::ErrorKind::InvalidSubcommand,
+            )));
+        }
     };
     if results.is_empty() {
         panic!("no results");
@@ -112,69 +154,196 @@ fn get_arg<'a>(matches: &'a ArgMatches, arg_name: &'a str, fallback: Option<&'a 
     }
 }
 
-fn get_args() -> ArgMatches<'static> {
-    App::new("vade_evan_bin")
+fn get_arg_arg(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> {
+    Ok(match arg_name {
+        "did" => Arg::with_name("did")
+            .long("did")
+            .short("d")
+            .value_name("did")
+            .required(true)
+            .help("a DID to work on, e.g. 'did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906'")
+            .takes_value(true),
+        "method" => Arg::with_name("method")
+            .long("method")
+            .short("m")
+            .value_name("method")
+            .required(true)
+            .help("method to work on, e.g. 'did:evan'")
+            .takes_value(true),
+        "options" => Arg::with_name("options")
+            .long("options")
+            .short("o")
+            .value_name("options")
+            .required(true)
+            .help("options to send to vade call, serialized JSON, e.g. '{ \"identity\": \"...\", \"privateKey\": \"...\" }'")
+            .takes_value(true),
+        "payload" => Arg::with_name("payload")
+            .long("payload")
+            .short("p")
+            .value_name("payload")
+            .required(true)
+            .help("options to send to vade call, serialized JSON, e.g. '{ \"foo\": \"bar\" }'")
+            .takes_value(true),
+        "target" => Arg::with_name("target")
+            .long("target")
+            .short("t")
+            .value_name("target")
+            .help("substrate to use for DID handling, e.g. '127.0.0.1'")
+            .takes_value(true),
+        "signer" => Arg::with_name("signer")
+            .long("signer")
+            .short("s")
+            .value_name("signer")
+            .help("signer to use to sign messages with, e.g. 'local' or 'remote|http://somewhere'")
+            .takes_value(true),
+        _ => {
+            return Err(Box::from(format!("invalid arg_name: '{}'", &arg_name)));
+        },
+    })
+}
+
+fn get_args() -> Result<ArgMatches<'static>, Box<dyn std::error::Error>> {
+    Ok(App::new("vade_evan_bin")
         .version("0.0.6")
         .author("evan GmbH")
-        .about("allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace")
-        .arg(
-            Arg::with_name("command")
-                .long("command")
-                .short("c")
-                .required(true)
-                .value_name("command")
-                .help("vade command, e.g. 'vc_zkp_issue_credential'")
-                .takes_value(true),
+        .about("Allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace")
+        .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .subcommand(
+            SubCommand::with_name("did")
+                .about("Works with DIDs on TRUST & TRACE.")
+                .setting(AppSettings::DeriveDisplayOrder)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("create")
+                        .about("Creates a new DID on substrate.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("options")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("resolve")
+                        .about("Fetch data about a DID, which returns this DID's DID document.")
+                        .arg(get_arg_arg("did")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("update")
+                        .about(r###"Updates data related to a DID. Two updates are supported depending on the value of `options.operation`.
+            - whitelistIdentity: whitelists identity `did` on substrate, this is required to be able to perform transactions this this identity
+            - setDidDocument: sets the DID document for `did`"###)
+                        .arg(get_arg_arg("did")?)
+                        .arg(get_arg_arg("options")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
         )
-        .arg(
-            Arg::with_name("did")
-                .long("did")
-                .short("d")
-                .value_name("did")
-                .help("a DID to work on, e.g. 'did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906'")
-                .takes_value(true),
+        .subcommand(
+            SubCommand::with_name("vc_zkp")
+                .about("Works with zero knowledge proof VCs on TRUST & TRACE.")
+                .setting(AppSettings::DeriveDisplayOrder)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("create_master_secret")
+                        .about("Creates a new master secret.")
+                )
+                .subcommand(
+                    SubCommand::with_name("create_credential_definition")
+                        .about("Creates a new credential definition and stores the public part on-chain. The private part (key) needs to be stored in a safe way and must not be shared. A credential definition holds cryptographic material needed to verify proofs. Every definition is bound to one credential schema. Note that `options.identity` needs to be whitelisted for this function.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("options")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("create_credential_schema")
+                        .about("Creates a new zero-knowledge proof credential schema. Note that `options.identity` needs to be whitelisted for this function.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("options")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("create_revocation_registry_definition")
+                        .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials. Note that `options.identity` needs to be whitelisted for this function.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("options")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("issue_credential")
+                        .about("Issues a new credential. This requires an issued schema, credential definition, an active revocation registry and a credential request message.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("create_credential_offer")
+                        .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema and definition the issuer is capable and willing to use for credential issuance.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("present_proof")
+                        .about("Presents a proof for one or more credentials. A proof presentation is the response to a proof request. The proof needs to incorporate all required fields from all required schemas requested in the proof request.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("create_credential_proposal")
+                        .about("Creates a new zero-knowledge proof credential proposal. This message is the first in the credential issuance flow and is sent by the potential credential holder to the credential issuer.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("request_credential")
+                        .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("request_proof")
+                        .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("revoke_credential")
+                        .about("Revokes a credential. After revocation the published revocation registry needs to be updated with information returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated with the credential's revocation registry. After revocation, the published revocation registry must be updated. Only then is the credential truly revoked. Note that `options.identity` needs to be whitelisted for this function.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("options")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("verify_proof")
+                        .about("Verifies a one or multiple proofs sent in a proof presentation.")
+                        .arg(get_arg_arg("method")?)
+                        .arg(get_arg_arg("payload")?)
+                        .arg(get_arg_arg("target")?)
+                        .arg(get_arg_arg("signer")?),
+                )
         )
-        .arg(
-            Arg::with_name("method")
-                .long("method")
-                .short("m")
-                .value_name("method")
-                .help("method to work on, e.g. 'did:evan'")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("options")
-                .long("options")
-                .short("o")
-                .value_name("options")
-                .help("options to send to vade call, serialized JSON, e.g. '{ \"identity\": \"...\", \"privateKey\": \"...\" }'")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("payload")
-                .long("payload")
-                .short("p")
-                .value_name("payload")
-                .help("options to send to vade call, serialized JSON, e.g. '{ \"foo\": \"bar\" }'")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("target")
-                .long("target")
-                .short("t")
-                .value_name("target")
-                .help("substrate to use for DID handling, e.g. '127.0.0.1'")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("signer")
-                .long("signer")
-                .short("s")
-                .value_name("signer")
-                .help("signer to use to sign messages with, e.g. 'local' or 'remote|http://somewhere'")
-                .takes_value(true),
-        )
-        .get_matches()
+        .get_matches())
 }
 
 fn get_signer(signer: &str) -> Box<dyn Signer> {

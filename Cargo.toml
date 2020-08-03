@@ -4,15 +4,28 @@ version = "0.0.1"
 authors = ["Philip Kaiser <philip.kaiser@evan.team>"]
 edition = "2018"
 
+[lib]
+name = "vade_evan"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "vade_evan_cli"
+path = "src/main.rs"
+required-features = ["cli"]
+
 [features]
 default = ["did", "vc-zkp"]
 
+# add command line interface; not compatible with `wasm` feature
 cli = [
     "clap",
     "did",
+    "tokio",
     "vc-zkp",
 ]
 
+# enables using DIDs, also required for some vc-zkp functions
 did = [
     "blake2-rfc",
     "byteorder",
@@ -29,25 +42,17 @@ did = [
     "web-sys",
 ]
 
+# enables zero knowledge VC support
 vc-zkp = [
     "data-encoding",
     "ursa",
     "wasm-timer",
 ]
 
-[lib]
-name = "vade_evan"
-path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
 
-[[bin]]
-name = "vade_evan_cli"
-path = "src/main.rs"
-required-features = ["cli"]
-
-[profile.release]
-lto = true
-opt-level = 'z'
+# [profile.release]
+# lto = true
+# opt-level = 'z'
 
 [dependencies]
 # shared
@@ -56,12 +61,12 @@ env_logger = "0.7.1"
 hex = "0.4.2"
 libsecp256k1 = "0.3.5"
 log = "0.4.8"
-# reqwest = { version = "0.10.4", default-features= false, features = ["json", "default-tls"] }
 reqwest = { version = "0.10.4", default-features= false, features = ["json", "rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 sha2 = "0.8.1"
 sha3 = "0.8.2"
+tokio = { version = "0.2.22", optional = true }
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 vade = { path = "../vade", version = "0.0.7" }
 # cli
@@ -83,13 +88,11 @@ data-encoding = { version = "2.2.0", optional = true }
 # we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
 # ursa = "0.3.2"
 ursa = { path = "./../ursa/libursa", features=["portable_wasm"], default-features = false, optional = true }
-tokio = "0.2.22"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # shared
 chrono = { version = "0.4.11",  default-features = false, features=["wasm-bindgen", "clock", "js-sys"] }
 # vc-zkp
-# ws = { version = "0.7", features = ["ssl"], optional = true }
 ws = { version = "0.7", features = [], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
