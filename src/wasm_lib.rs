@@ -29,16 +29,9 @@ use crate::{
     application::{
         datatypes::{
             Credential,
-            CredentialDefinition,
             CredentialOffer,
-            CredentialRequest,
-            CredentialSchema,
-            CredentialSecretsBlindingFactors,
-            MasterSecret,
             ProofRequest,
-            RevocationRegistryDefinition,
         },
-        prover::Prover,
     },
     IssueCredentialResult,
     VadeEvan,
@@ -388,7 +381,6 @@ pub async fn create_revocation_registry_definition(
 #[cfg(feature = "vc-zkp")]
 #[wasm_bindgen]
 pub async fn issue_credential(
-    definition: String,
     credential_private_key: String,
     request: String,
     revocation_key_private: String,
@@ -401,11 +393,6 @@ pub async fn issue_credential(
     config: JsValue,
 ) -> Result<String, JsValue> {
     let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-    debug!("get did {}", definition);
-    let results = &vade.did_resolve(&definition).await.map_err(jsify)?;
-    let credential_definition_doc = results[0]
-        .as_ref()
-        .ok_or("could not get credential definition did document")?;
 
     let payload = format!(
         r###"{{
@@ -437,7 +424,7 @@ pub async fn issue_credential(
 
     let err_msg = "could not issue credential";
     ensure(results.len() > 0, || (&err_msg).to_string())?;
-    let mut result: IssueCredentialResult =
+    let result: IssueCredentialResult =
         serde_json::from_str(results[0].as_ref().ok_or(err_msg)?).map_err(jsify_serde)?;
 
     Ok(serde_json::to_string(&result).map_err(jsify_serde)?)
