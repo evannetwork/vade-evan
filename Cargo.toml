@@ -14,8 +14,11 @@ name = "vade_evan_cli"
 path = "src/main.rs"
 required-features = ["cli"]
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]
+
 [features]
-default = ["did", "vc-zkp"]
+default = ["did", "native", "vc-zkp"]
 
 # add command line interface; not compatible with `wasm` feature
 cli = [
@@ -42,6 +45,11 @@ did = [
     "web-sys",
 ]
 
+# build to run native-ly (non-wasm); not compatible with `wasm` feature
+native = [
+    "ursa/portable_native",
+]
+
 # enables zero knowledge VC support
 vc-zkp = [
     "data-encoding",
@@ -49,10 +57,10 @@ vc-zkp = [
     "wasm-timer",
 ]
 
-
-# [profile.release]
-# lto = true
-# opt-level = 'z'
+# build to run as wasm file; not compatible with `native` feature
+wasm = [
+    "ursa/portable_wasm",
+]
 
 [dependencies]
 # shared
@@ -87,7 +95,8 @@ twox-hash = { version = "1.5.0", optional = true }
 data-encoding = { version = "2.2.0", optional = true }
 # we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
 # ursa = "0.3.2"
-ursa = { path = "./../ursa/libursa", features=["portable_wasm"], default-features = false, optional = true }
+# ursa = { path = "./../ursa/libursa", default-features = false, optional = true }
+ursa = { git = "https://github.com/evannetwork/ursa", default-features = false, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # shared
