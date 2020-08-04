@@ -19,7 +19,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use vade::{Vade, VadePlugin, VadePluginResultValue};
 
-
 use crate::{
     application::{
         datatypes::{
@@ -110,7 +109,7 @@ pub struct IssueCredentialPayload {
     pub revocation_private_key: RevocationKeyPrivate,
     pub revocation_information: RevocationIdInformation,
     pub blinding_factors: CredentialSecretsBlindingFactors,
-    pub master_secret: MasterSecret
+    pub master_secret: MasterSecret,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -296,7 +295,7 @@ impl VadePlugin for VadeEvan {
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
-            .await?;    
+            .await?;
 
         let (definition, pk) = Issuer::create_credential_definition(
             &generated_did,
@@ -509,8 +508,10 @@ impl VadePlugin for VadeEvan {
                 .ok_or("could not get revocation definition did document")?,
         )?;
         let schema_copy: CredentialSchema = serde_json::from_str(&serde_json::to_string(&schema)?)?;
-        let request_copy: CredentialRequest = serde_json::from_str(&serde_json::to_string(&payload.credential_request)?)?;
-        let definition_copy: CredentialDefinition = serde_json::from_str(&serde_json::to_string(&definition)?)?;
+        let request_copy: CredentialRequest =
+            serde_json::from_str(&serde_json::to_string(&payload.credential_request)?)?;
+        let definition_copy: CredentialDefinition =
+            serde_json::from_str(&serde_json::to_string(&definition)?)?;
         let (mut credential, revocation_state, revocation_info) = Issuer::issue_credential(
             &payload.issuer,
             &payload.subject,
