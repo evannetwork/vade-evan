@@ -26,13 +26,7 @@ use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
 // vc-zkp
 #[cfg(feature = "vc-zkp")]
 use crate::{
-    application::{
-        datatypes::{
-            Credential,
-            CredentialOffer,
-            ProofRequest,
-        },
-    },
+    application::datatypes::{Credential, CredentialOffer, ProofRequest},
     IssueCredentialResult,
     VadeEvan,
 };
