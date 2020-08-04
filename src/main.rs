@@ -12,28 +12,22 @@ use vade_evan::{
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = get_args()?;
 
-    let mut vade = get_vade(
-        get_arg(&matches, "target", Some("13.69.59.185")),
-        get_arg(&matches, "signer", Some("local")),
-    )
-    .unwrap();
-
     let results = match matches.subcommand() {
         ("did", Some(sub_m)) => match sub_m.subcommand() {
             ("create", Some(sub_m)) => {
                 let did = get_arg(&sub_m, "did", None);
                 let options = get_arg(&sub_m, "options", None);
-                vade.did_create(&did, &options, &String::new()).await?
+                get_vade(&sub_m)?.did_create(&did, &options, &String::new()).await?
             }
             ("resolve", Some(sub_m)) => {
                 let did = get_arg(&sub_m, "did", None);
-                vade.did_resolve(&did).await?
+                get_vade(&sub_m)?.did_resolve(&did).await?
             }
             ("update", Some(sub_m)) => {
                 let did = get_arg(&sub_m, "did", None);
                 let options = get_arg(&sub_m, "options", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.did_update(&did, &options, &payload).await?
+                get_vade(&sub_m)?.did_update(&did, &options, &payload).await?
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
@@ -47,14 +41,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let method = get_arg(&sub_m, "method", None);
                 let options = get_arg(&sub_m, "options", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_create_credential_definition(&method, &options, &payload)
+                get_vade(&sub_m)?.vc_zkp_create_credential_definition(&method, &options, &payload)
                     .await?
             }
             ("create_credential_schema", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let options = get_arg(&sub_m, "options", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_create_credential_schema(&method, &options, &payload)
+                get_vade(&sub_m)?.vc_zkp_create_credential_schema(&method, &options, &payload)
                     .await?
             }
             ("create_master_secret", Some(_)) => vec![Some(serde_json::to_string(
@@ -64,53 +58,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let method = get_arg(&sub_m, "method", None);
                 let options = get_arg(&sub_m, "options", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
+                get_vade(&sub_m)?.vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
                     .await?
             }
             ("issue_credential", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_issue_credential(&method, "", &payload).await?
+                get_vade(&sub_m)?.vc_zkp_issue_credential(&method, "", &payload).await?
             }
             ("create_credential_offer", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_create_credential_offer(&method, "", &payload)
+                get_vade(&sub_m)?.vc_zkp_create_credential_offer(&method, "", &payload)
                     .await?
             }
             ("present_proof", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_present_proof(&method, "", &payload).await?
+                get_vade(&sub_m)?.vc_zkp_present_proof(&method, "", &payload).await?
             }
             ("create_credential_proposal", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_create_credential_proposal(&method, "", &payload)
+                get_vade(&sub_m)?.vc_zkp_create_credential_proposal(&method, "", &payload)
                     .await?
             }
             ("request_credential", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_request_credential(&method, "", &payload)
+                get_vade(&sub_m)?.vc_zkp_request_credential(&method, "", &payload)
                     .await?
             }
             ("request_proof", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_request_proof(&method, "", &payload).await?
+                get_vade(&sub_m)?.vc_zkp_request_proof(&method, "", &payload).await?
             }
             ("revoke_credential", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let options = get_arg(&sub_m, "options", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_revoke_credential(&method, &options, &payload)
+                get_vade(&sub_m)?.vc_zkp_revoke_credential(&method, &options, &payload)
                     .await?
             }
             ("verify_proof", Some(sub_m)) => {
                 let method = get_arg(&sub_m, "method", None);
                 let payload = get_arg(&sub_m, "payload", None);
-                vade.vc_zkp_verify_proof(&method, "", &payload).await?
+                get_vade(&sub_m)?.vc_zkp_verify_proof(&method, "", &payload).await?
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
@@ -358,7 +352,10 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
-fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn std::error::Error>> {
+fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn std::error::Error>> {
+    let target = get_arg(&matches, "target", Some("13.69.59.185"));
+    let signer = get_arg(&matches, "signer", Some("local"));
+
     let mut vade = Vade::new();
 
     let signer_box: Box<dyn Signer> = get_signer(signer);
