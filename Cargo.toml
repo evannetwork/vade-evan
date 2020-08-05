@@ -1,7 +1,11 @@
 [package]
 name = "vade-evan"
 version = "0.0.1"
-authors = ["Philip Kaiser <philip.kaiser@evan.team>"]
+authors = [
+    "Sebastian Wolfram <sebastian.wolfram@evan.team>",
+    "Sebastian Dechant <sebastian.dechant@evan.team>",
+    "Philip Kaiser <philip.kaiser@evan.team>",
+]
 edition = "2018"
 
 [lib]
