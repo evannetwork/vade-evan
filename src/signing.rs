@@ -91,7 +91,7 @@ impl Signer for LocalSigner {
         let message = Message::parse(&hash_arr);
         let mut private_key_arr = [0u8; 32];
         hex::decode_to_slice(signing_key, &mut private_key_arr)
-            .map_err(|_| "private key invalid")?;
+            .map_err(|err| format!("private key for local signer invalid; {}", &err))?;
         let secret_key = SecretKey::parse(&private_key_arr)?;
         let (sig, rec): (Signature, _) = sign(&message, &secret_key);
 
