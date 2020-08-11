@@ -37,18 +37,24 @@ use crate::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
-use futures::channel::mpsc::{channel, Receiver, Sender};
-use futures::stream::StreamExt;
+use futures::{
+    channel::mpsc::{channel, Receiver, Sender},
+    stream::StreamExt,
+};
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
 use secp256k1::{Message, RecoveryId, Signature};
 use serde_json::{json, Value};
 use sha2::Digest;
 use sha3::Keccak256;
 use sp_std::prelude::*;
-use std::convert::TryFrom;
-use std::convert::TryInto;
-use std::env;
-use std::hash::Hasher;
+use std::{
+    convert::{TryFrom, TryInto},
+    env,
+    hash::Hasher,
+    time::{Duration, Instant},
+};
+
+const SUBSTRATE_TIMEOUT: u64 = 60;
 
 pub async fn get_storage_value(
     url: &str,
@@ -318,7 +324,18 @@ pub async fn wait_for_raw_event(
             }
         },
     };
+    let start = Instant::now();
     loop {
+        // check if timeout reached
+        let duration: Duration = start.elapsed();
+        if duration.as_secs() > SUBSTRATE_TIMEOUT {
+            error!(
+                "substrate timeout for module '{}', variant '{}', after; {}s",
+                &module, &variant, SUBSTRATE_TIMEOUT
+            );
+            return None;
+        }
+
         if let Some(data) = receiver.next().await {
             let value: Value = match serde_json::from_str(&data) {
                 Ok(result) => result,
@@ -386,7 +403,17 @@ pub async fn wait_for_extrinsic_status(
             }
         },
     };
+    let start = Instant::now();
     loop {
+        // check if timeout reached
+        let duration: Duration = start.elapsed();
+        if duration.as_secs() > SUBSTRATE_TIMEOUT {
+            error!(
+                "substrate timeout while waiting for extrinsic status, after; {}s",
+                SUBSTRATE_TIMEOUT
+            );
+            return None;
+        }
         if let Some(data) = receiver.next().await {
             let value: Value = match serde_json::from_str(&data) {
                 Ok(result) => result,
@@ -630,7 +657,7 @@ pub async fn add_payload_to_did(
     );
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
         .await
-        .map_err(|_e| format!("Error adding payload to DID: {:?} with payload: {:?} and identity: {:?} and error; {}",did.clone(), payload.clone(), hex::encode(identity.clone()), _e));
+        .map_err(|_e| format!("Error adding payload to DID: {:?} with payload: {:?} and identity: {:?} and error; {}", did.clone(), payload.clone(), hex::encode(identity.clone()), _e));
     if let Err(e) = ext_error {
         return Err(Box::from(e));
     }

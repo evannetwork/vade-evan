@@ -58,6 +58,10 @@ pub const EXAMPLE_CREDENTIAL_SCHEMA: &str = r###"{
 pub const EXAMPLE_CREDENTIAL_SCHEMA_DID: &str = "did:evan:zkp:0x123451234512345123451234512346";
 
 #[allow(dead_code)]
+pub const EXAMPLE_DID: &str =
+    "did:evan:0x55fac09efafa357da30798d777d26e01b18ee8eefb285807ae264f16decb4c24";
+
+#[allow(dead_code)]
 pub const EXAMPLE_GENERATED_DID: &str =
     "did:evan:testcore:0x0F737D1478eA29df0856169F25cA9129035d6FD2";
 
@@ -107,7 +111,7 @@ pub const ISSUER_PRIVATE_KEY: &str = "a1c48241-5978-4348-991e-255e92d81f1e";
 pub const SIGNER_ADDRESS: &str = "0x3daa2c354dba8d51fdabc30cf9219b251c74eb56";
 
 #[allow(dead_code)]
-pub const SIGNER_LOCAL_DID_DOCUMENT1: &str = r###"{
+pub const EXAMPLE_DID_DOCUMENT1: &str = r###"{
   "@context": "https://w3id.org/did/v1",
   "id": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
   "publicKey": [
@@ -126,7 +130,7 @@ pub const SIGNER_LOCAL_DID_DOCUMENT1: &str = r###"{
 }"###;
 
 #[allow(dead_code)]
-pub const SIGNER_LOCAL_DID_DOCUMENT2: &str = r###"{
+pub const EXAMPLE_DID_DOCUMENT2: &str = r###"{
   "@context": "https://w3id.org/did/v1",
   "id": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
   "publicKey": [
