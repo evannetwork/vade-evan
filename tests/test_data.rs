@@ -145,9 +145,11 @@ pub const SIGNER_LOCAL_DID_DOCUMENT2: &str = r###"{
 }"###;
 
 #[allow(dead_code)]
+pub const SIGNER_LOCAL_ADDRESS: &str = "0xcd5e1dbb5552c2baa1943e6b5f66d22107e9c05c";
+
+#[allow(dead_code)]
 pub const SIGNER_LOCAL_IDENTITY: &str =
     "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906";
-
 #[allow(dead_code)]
 pub const SIGNER_LOCAL_PRIVATE_KEY: &str =
     "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";

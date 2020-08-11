@@ -1292,8 +1292,6 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
 }
 
 async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let resolver = get_resolver();
-
     let auth_string = format!(
         r###"{{
             "privateKey": "{}",
