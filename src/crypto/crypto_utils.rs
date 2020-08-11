@@ -53,7 +53,7 @@ pub async fn create_assertion_proof(
     let header_str = r#"{"typ":"JWT","alg":"ES256K-R"}"#;
     let padded = BASE64URL.encode(header_str.as_bytes());
     let header_encoded = padded.trim_end_matches('=');
-    debug!("header base64 url encdoded: {:?}", &header_encoded);
+    debug!("header base64 url encoded: {:?}", &header_encoded);
 
     #[cfg(target_arch = "wasm32")]
     let now: String = js_sys::Date::new_0().to_iso_string().to_string().into();
@@ -68,7 +68,7 @@ pub async fn create_assertion_proof(
     data_json["iss"] = Value::from(issuer);
     let padded = BASE64URL.encode(format!("{}", &data_json).as_bytes());
     let data_encoded = padded.trim_end_matches('=');
-    debug!("data base64 url encdoded: {:?}", &data_encoded);
+    debug!("data base64 url encoded: {:?}", &data_encoded);
 
     // create hash of data (including header)
     let header_and_data = format!("{}.{}", header_encoded, data_encoded);
