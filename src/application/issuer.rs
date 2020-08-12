@@ -38,8 +38,6 @@ use crate::{
     signing::Signer,
     utils::utils::{generate_uuid, get_now_as_iso_string},
 };
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
     collections::{HashMap, HashSet},
     error::Error,
@@ -52,6 +50,10 @@ use ursa::cl::{
     RevocationRegistryDelta,
     RevocationTailsGenerator,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::{SystemTime, UNIX_EPOCH};
+
 #[cfg(target_arch = "wasm32")]
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 

@@ -14,40 +14,44 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    AggregatedProof,
-    Credential,
-    CredentialDefinition,
-    CredentialOffer,
-    CredentialProposal,
-    CredentialRequest,
-    CredentialSchema,
-    CredentialSubProof,
-    CredentialSubject,
-    DeltaHistory,
-    EncodedCredentialValue,
-    ProofCredential,
-    ProofPresentation,
-    ProofRequest,
-    RevocationRegistryDefinition,
-    RevocationState,
+use crate::{
+    application::datatypes::{
+        AggregatedProof,
+        Credential,
+        CredentialDefinition,
+        CredentialOffer,
+        CredentialProposal,
+        CredentialRequest,
+        CredentialSchema,
+        CredentialSubProof,
+        CredentialSubject,
+        DeltaHistory,
+        EncodedCredentialValue,
+        ProofCredential,
+        ProofPresentation,
+        ProofRequest,
+        RevocationRegistryDefinition,
+        RevocationState,
+    },
+    crypto::{crypto_datatypes::CryptoCredentialDefinition, crypto_prover::Prover as CryptoProver},
+    utils::utils::generate_uuid,
 };
-use crate::crypto::crypto_datatypes::CryptoCredentialDefinition;
-use crate::crypto::crypto_prover::Prover as CryptoProver;
-use crate::utils::utils::generate_uuid;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
-use std::convert::TryInto;
+use std::{collections::HashMap, convert::TryInto, error::Error};
+use ursa::{
+    bn::BigNumber,
+    cl::{
+        CredentialSecretsBlindingFactors,
+        MasterSecret,
+        RevocationTailsGenerator,
+        SimpleTailsAccessor,
+        Witness,
+    },
+};
+
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
-use ursa::bn::BigNumber;
-use ursa::cl::{
-    CredentialSecretsBlindingFactors,
-    MasterSecret,
-    RevocationTailsGenerator,
-    SimpleTailsAccessor,
-    Witness,
-};
+
 #[cfg(target_arch = "wasm32")]
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 
