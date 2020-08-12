@@ -197,7 +197,7 @@ async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn Error>> {
     let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
 
     let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
-    let (request, _) =
+    let (request, blinding_factors) =
         create_credential_request(&mut vade, &schema, &offer, &master_secret).await?;
 
     let rev_reg_def: CreateRevocationRegistryDefinitionResult =
@@ -212,6 +212,8 @@ async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn Error>> {
         &rev_reg_def.private_key,
         &rev_reg_def.revocation_info,
         &rev_reg_def.revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -269,6 +271,8 @@ async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn Error>> {
         &rev_reg_def.private_key,
         &rev_reg_def.revocation_info,
         &rev_reg_def.revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -327,6 +331,8 @@ async fn vade_evan_can_present_proofs_with_less_properties(
         &rev_reg_def.private_key,
         &rev_reg_def.revocation_info,
         &rev_reg_def.revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -385,6 +391,8 @@ async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omit
         &rev_reg_def.private_key,
         &rev_reg_def.revocation_info,
         &rev_reg_def.revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -479,6 +487,8 @@ async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn Error>> {
         &rev_reg_def.private_key,
         &rev_reg_def.revocation_info,
         &rev_reg_def.revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -544,6 +554,8 @@ async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn Error>> {
         &revocation_key_private,
         &revocation_info,
         &revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -620,6 +632,8 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
         &revocation_key_private,
         &revocation_info,
         &revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -653,6 +667,8 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
         &revocation_key_private,
         &revocation_info,
         &revocation_registry_definition,
+        &other_blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -734,6 +750,8 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &revocation_key_private,
         &revocation_info,
         &revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -770,6 +788,8 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &revocation_key_private,
         &revocation_info,
         &updated_registry,
+        &other_blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -803,6 +823,8 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
         &revocation_key_private,
         &revocation_info,
         &updated_registry,
+        &third_blinding_factors,
+        &master_secret,
     )
     .await?;
 
@@ -923,7 +945,7 @@ async fn create_credential_request(
     let payload = format!(
         r###"{{
             "credentialOffering": {},
-            "credentialSchema": {},
+            "credentialSchema": "{}",
             "masterSecret": {},
             "credentialValues": {{
                 "test_property_string": "test_property_string_value"
@@ -931,7 +953,7 @@ async fn create_credential_request(
         }}
         "###,
         serde_json::to_string(&offer).unwrap(),
-        serde_json::to_string(&schema).unwrap(),
+        schema.id,
         serde_json::to_string(&master_secret).unwrap()
     );
     let results = vade
@@ -955,7 +977,7 @@ async fn create_two_property_credential_request(
     let payload = format!(
         r###"{{
     "credentialOffering": {},
-    "credentialSchema": {},
+    "credentialSchema": "{}",
     "masterSecret": {},
     "credentialValues": {{
         "test_property_string": "test_property_string_value",
@@ -963,7 +985,7 @@ async fn create_two_property_credential_request(
     }}
   }}"###,
         serde_json::to_string(&offer).unwrap(),
-        serde_json::to_string(&schema).unwrap(),
+        schema.id,
         serde_json::to_string(&master_secret).unwrap()
     );
     let results = vade
@@ -987,14 +1009,14 @@ async fn create_credential_request_with_missing_required_property(
     let payload = format!(
         r###"{{
     "credentialOffering": {},
-    "credentialSchema": {},
+    "credentialSchema": "{}",
     "masterSecret": {},
     "credentialValues": {{
         "test_property_string2": "test_property_string_value2"
     }}
   }}"###,
         serde_json::to_string(&offer).unwrap(),
-        serde_json::to_string(&schema).unwrap(),
+        schema.id,
         serde_json::to_string(&master_secret).unwrap()
     );
     let results = vade
@@ -1116,6 +1138,8 @@ async fn issue_credential(
     revocation_key_private: &RevocationKeyPrivate,
     revocation_info: &RevocationIdInformation,
     revocation_definition: &RevocationRegistryDefinition,
+    blinding_factors: &CredentialSecretsBlindingFactors,
+    master_secret: &MasterSecret,
 ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn Error>> {
     let payload = format!(
         r###"{{
@@ -1126,7 +1150,9 @@ async fn issue_credential(
             "credentialPrivateKey": {},
             "credentialRevocationDefinition": "{}",
             "revocationPrivateKey": {},
-            "revocationInformation": {}
+            "revocationInformation": {},
+            "blindingFactors": {},
+            "masterSecret": {}
         }}"###,
         ISSUER_DID,
         SUBJECT_DID,
@@ -1136,6 +1162,8 @@ async fn issue_credential(
         &revocation_definition.id,
         serde_json::to_string(&revocation_key_private).unwrap(),
         serde_json::to_string(&revocation_info).unwrap(),
+        serde_json::to_string(&blinding_factors).unwrap(),
+        serde_json::to_string(&master_secret).unwrap(),
     );
     let results = vade
         .vc_zkp_issue_credential(EVAN_METHOD, "", &payload)

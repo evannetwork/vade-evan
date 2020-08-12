@@ -206,7 +206,7 @@ pub const SIGNER_IDENTITY: &str = "did:evan:testcore:0xdCCA99F72E3Ef25228067cDe8
 pub const SIGNER_IDENTITY_2: &str = "did:evan:testcore:0x6739d59066172AC613BD41E30D180D3eBe146087";
 
 #[allow(dead_code)]
-pub const SIGNING_URL: &str = "http://tntkeyservices-e0ae.azurewebsites.net/api/key/sign";
+pub const SIGNING_URL: &str = "http://tntkeyservices-5b02.azurewebsites.net/api/key/sign";
 
 #[allow(dead_code)]
 pub const ISSUER_PUBLIC_KEY_DID: &str =
