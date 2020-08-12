@@ -16,11 +16,11 @@
 
 extern crate vade_evan;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 use vade_evan::application::prover::Prover;
 
 #[test]
-fn encodes_values_correctly() -> Result<(), Box<dyn std::error::Error>> {
+fn encodes_values_correctly() -> Result<(), Box<dyn Error>> {
     // Test values taken from https://gist.github.com/swcurran/78e5a9e8d11236f003f6a6263c6619a6
     let mut values: HashMap<String, String> = HashMap::new();
     values.insert("string".to_owned(), "101 Wilson Lane".to_owned());

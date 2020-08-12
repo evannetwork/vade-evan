@@ -71,7 +71,7 @@ pub fn start_subcriber(url: String, json_req: String, result_in: ThreadOut<Strin
     start_rpc_client_thread(url, json_req, result_in, on_subscription_msg)
 }
 
-// TODO: update return value to Result<(), Box<dyn std::error::Error>> for proper error handling
+// TODO: update return value to Result<(), Box<dyn Error>> for proper error handling
 #[cfg(not(target_arch = "wasm32"))]
 pub fn start_rpc_client_thread(
     url: String,
@@ -101,7 +101,7 @@ pub fn start_rpc_client_thread(
     };
 }
 
-// TODO: update return value to Result<(), Box<dyn std::error::Error>> for proper error handling
+// TODO: update return value to Result<(), Box<dyn Error>> for proper error handling
 #[cfg(target_arch = "wasm32")]
 pub fn start_rpc_client_thread(
     url: String,

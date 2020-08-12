@@ -38,16 +38,19 @@ use crate::{
     signing::Signer,
     utils::utils::{generate_uuid, get_now_as_iso_string},
 };
-use std::collections::{HashMap, HashSet};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
-use ursa::cl::RevocationTailsGenerator;
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+};
 use ursa::cl::{
     new_nonce,
     CredentialPrivateKey,
     RevocationKeyPrivate,
     RevocationRegistry,
     RevocationRegistryDelta,
+    RevocationTailsGenerator,
 };
 #[cfg(target_arch = "wasm32")]
 use wasm_timer::{SystemTime, UNIX_EPOCH};
@@ -81,7 +84,7 @@ impl Issuer {
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
         signer: &Box<dyn Signer>,
-    ) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
+    ) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn Error>> {
         let created_at = get_now_as_iso_string();
         let (credential_private_key, crypto_credential_def) =
             CryptoIssuer::create_credential_definition(&schema)?;
@@ -140,7 +143,7 @@ impl Issuer {
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
         signer: &Box<dyn Signer>,
-    ) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
+    ) -> Result<CredentialSchema, Box<dyn Error>> {
         let created_at = get_now_as_iso_string();
 
         let mut schema = CredentialSchema {
@@ -201,7 +204,7 @@ impl Issuer {
             RevocationKeyPrivate,
             RevocationIdInformation,
         ),
-        Box<dyn std::error::Error>,
+        Box<dyn Error>,
     > {
         let (crypto_rev_def, rev_key_private) = CryptoIssuer::create_revocation_registry(
             &credential_definition.public_key,
@@ -279,8 +282,7 @@ impl Issuer {
         revocation_registry_definition: &mut RevocationRegistryDefinition,
         revocation_private_key: RevocationKeyPrivate,
         revocation_info: &RevocationIdInformation,
-    ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn std::error::Error>>
-    {
+    ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn Error>> {
         let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
         //
         // Optional value handling
@@ -403,7 +405,7 @@ impl Issuer {
         subject_did: &str,
         schema_did: &str,
         credential_definition_did: &str,
-    ) -> Result<CredentialOffer, Box<dyn std::error::Error>> {
+    ) -> Result<CredentialOffer, Box<dyn Error>> {
         let nonce = new_nonce().map_err(|e| format!("could not get nonce; {}", &e))?;
 
         Ok(CredentialOffer {
@@ -435,7 +437,7 @@ impl Issuer {
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
         signer: &Box<dyn Signer>,
-    ) -> Result<RevocationRegistryDefinition, Box<dyn std::error::Error>> {
+    ) -> Result<RevocationRegistryDefinition, Box<dyn Error>> {
         let updated_at = get_now_as_iso_string();
 
         let delta = CryptoIssuer::revoke_credential(revocation_registry_definition, revocation_id)?;

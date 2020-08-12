@@ -98,8 +98,7 @@ impl Prover {
         credential_schema: CredentialSchema,
         master_secret: MasterSecret,
         credential_values: HashMap<String, String>,
-    ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>>
-    {
+    ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn Error>> {
         for required in &credential_schema.required {
             if credential_values.get(required).is_none() {
                 let error = format!("Missing required schema property; {}", required);
@@ -159,7 +158,7 @@ impl Prover {
         revocation_registries: HashMap<String, RevocationRegistryDefinition>,
         witnesses: HashMap<String, Witness>,
         master_secret: &MasterSecret,
-    ) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
+    ) -> Result<ProofPresentation, Box<dyn Error>> {
         let (vcs, aggregated_proof) = Prover::create_proof_credentials(
             proof_request,
             credentials,
@@ -187,7 +186,7 @@ impl Prover {
         revocation_registries: HashMap<String, RevocationRegistryDefinition>,
         witnesses: HashMap<String, Witness>,
         master_secret: &MasterSecret,
-    ) -> Result<(Vec<ProofCredential>, AggregatedProof), Box<dyn std::error::Error>> {
+    ) -> Result<(Vec<ProofCredential>, AggregatedProof), Box<dyn Error>> {
         let crypto_proof = CryptoProver::create_proof_with_revoc(
             &proof_request,
             &credentials,
@@ -274,7 +273,7 @@ impl Prover {
     /// ```
     pub fn encode_values(
         credential_values: HashMap<String, String>,
-    ) -> Result<HashMap<String, EncodedCredentialValue>, Box<dyn std::error::Error>> {
+    ) -> Result<HashMap<String, EncodedCredentialValue>, Box<dyn Error>> {
         let mut encoded_values: HashMap<String, EncodedCredentialValue> = HashMap::new();
 
         let mut encoded: String;
@@ -341,7 +340,7 @@ impl Prover {
         master_secret: &MasterSecret,
         revocation_registry_definition: &RevocationRegistryDefinition,
         witness: &Witness,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         let rev_reg_def: RevocationRegistryDefinition =
             serde_json::from_str(&serde_json::to_string(revocation_registry_definition)?)?;
 
@@ -385,7 +384,7 @@ impl Prover {
     pub fn update_revocation_state_for_credential(
         revocation_state: RevocationState,
         rev_reg_def: RevocationRegistryDefinition,
-    ) -> Result<RevocationState, Box<dyn std::error::Error>> {
+    ) -> Result<RevocationState, Box<dyn Error>> {
         let mut witness: Witness = revocation_state.witness.clone();
 
         let mut deltas: Vec<DeltaHistory> = rev_reg_def

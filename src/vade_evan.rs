@@ -14,11 +14,6 @@
   limitations under the License.
 */
 
-use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use vade::{Vade, VadePlugin, VadePluginResultValue};
-
 use crate::{
     application::{
         datatypes::{
@@ -47,7 +42,11 @@ use crate::{
     },
     signing::Signer,
 };
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, error::Error};
 use ursa::cl::Witness;
+use vade::{Vade, VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_ZKP: &str = "did:evan:zkp";
@@ -200,7 +199,7 @@ impl VadeEvan {
         &mut self,
         private_key: &str,
         identity: &str,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String, Box<dyn Error>> {
         let options = format!(
             r###"{{
             "privateKey": "{}",
@@ -232,7 +231,7 @@ impl VadeEvan {
         payload: &str,
         private_key: &str,
         identity: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<String>, Box<dyn Error>> {
         let options = format!(
             r###"{{
             "privateKey": "{}",
@@ -274,7 +273,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -337,7 +336,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -395,7 +394,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -468,7 +467,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -561,7 +560,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -595,7 +594,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -692,7 +691,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -724,7 +723,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -781,7 +780,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -819,7 +818,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -879,7 +878,7 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }

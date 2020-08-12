@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{value::RawValue, Value};
 use sha2::{Digest, Sha256};
 use sha3::Keccak256;
-use std::convert::TryInto;
+use std::{convert::TryInto, error::Error};
 
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
@@ -48,7 +48,7 @@ pub async fn create_assertion_proof(
     issuer: &str,
     private_key: &str,
     signer: &Box<dyn Signer>,
-) -> Result<AssertionProof, Box<dyn std::error::Error>> {
+) -> Result<AssertionProof, Box<dyn Error>> {
     // create to-be-signed jwt
     let header_str = r#"{"typ":"JWT","alg":"ES256K-R"}"#;
     let padded = BASE64URL.encode(header_str.as_bytes());
@@ -115,7 +115,7 @@ pub async fn create_assertion_proof(
 pub fn check_assertion_proof(
     vc_document: &str,
     signer_address: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vc: Value = serde_json::from_str(vc_document)?;
     if vc["proof"].is_null() {
         debug!("vcs without a proof are considered as valid");
@@ -178,7 +178,7 @@ pub fn check_assertion_proof(
 ///
 /// # Returns
 /// * `(String, String)` - (Address, Data) tuple
-pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn Error>> {
     // jwt text parsing
     let split: Vec<&str> = jwt.split('.').collect();
     let (header, data, signature) = (split[0], split[1], split[2]);

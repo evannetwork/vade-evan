@@ -18,9 +18,7 @@ extern crate regex;
 mod test_data;
 
 use regex::Regex;
-use std::env;
-use std::error::Error;
-use std::sync::Once;
+use std::{env, error::Error, sync::Once};
 use test_data::{
     EXAMPLE_DID_DOCUMENT1,
     EXAMPLE_DID_DOCUMENT2,

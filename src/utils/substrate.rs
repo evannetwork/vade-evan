@@ -50,6 +50,7 @@ use sp_std::prelude::*;
 use std::{
     convert::{TryFrom, TryInto},
     env,
+    error::Error,
     hash::Hasher,
     time::{Duration, Instant},
 };
@@ -60,7 +61,7 @@ pub async fn get_storage_value(
     url: &str,
     storage_prefix: &str,
     storage_key_name: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn Error>> {
     let mut bytes = twox_128(&storage_prefix.as_bytes()).to_vec();
     bytes.extend(&twox_128(&storage_key_name.as_bytes())[..]);
     let hex_string = format!("0x{}", hex::encode(bytes));
@@ -88,7 +89,7 @@ pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(
     storage_prefix: &'static str,
     storage_key_name: &'static str,
     map_key: K,
-) -> Result<Option<V>, Box<dyn std::error::Error>> {
+) -> Result<Option<V>, Box<dyn Error>> {
     let storagekey: sp_core::storage::StorageKey = metadata
         .module(storage_prefix)?
         .storage(storage_key_name)?
@@ -129,7 +130,7 @@ pub async fn get_storage_map<K: Encode + std::fmt::Debug, V: Decode + Clone>(
     Ok(None)
 }
 
-pub async fn get_metadata(url: &str) -> Result<Metadata, Box<dyn std::error::Error>> {
+pub async fn get_metadata(url: &str) -> Result<Metadata, Box<dyn Error>> {
     let json = json!({
         "method": "state_getMetadata",
         "params": null,
@@ -161,7 +162,7 @@ pub async fn send_extrinsic(
     url: &str,
     xthex_prefixed: String,
     exit_on: XtStatus,
-) -> Result<Option<String>, Box<dyn std::error::Error>> {
+) -> Result<Option<String>, Box<dyn Error>> {
     let json = json!({
         "method": "author_submitAndWatchExtrinsic",
         "params": [xthex_prefixed],
@@ -231,11 +232,14 @@ pub async fn send_extrinsic(
                 .await
                 .ok_or("could not get extrinsic status")?;
                 match ext_status {
-                    SystemEvent::ExtrinsicFailed(DispatchError::Module {
-                        index,
-                        error,
-                        message: _,
-                    }, _) => {
+                    SystemEvent::ExtrinsicFailed(
+                        DispatchError::Module {
+                            index,
+                            error,
+                            message: _,
+                        },
+                        _,
+                    ) => {
                         let clear_error = metadata.module_with_errors(index)?;
                         return Err(Box::from(clear_error.event(error)?.name.to_string()));
                     }
@@ -502,7 +506,7 @@ pub async fn create_did(
     signer: &Box<dyn Signer>,
     identity: Vec<u8>,
     payload: Option<&str>,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
@@ -585,7 +589,7 @@ pub async fn create_did(
 ///
 /// # Returns
 /// * `String` - Content saved behind the DID
-pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn get_did(url: String, did: String) -> Result<String, Box<dyn Error>> {
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let metadata = get_metadata(url.as_str()).await?;
@@ -626,7 +630,7 @@ pub async fn add_payload_to_did(
     private_key: String,
     signer: &Box<dyn Signer>,
     identity: Vec<u8>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let did = did.trim_start_matches("0x").to_string();
     let bytes_did_arr = get_did_bytes_array(&did)?;
@@ -708,7 +712,7 @@ pub async fn update_payload_in_did(
     private_key: String,
     signer: &Box<dyn Signer>,
     identity: Vec<u8>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
@@ -785,7 +789,7 @@ pub async fn whitelist_identity(
     signer: &Box<dyn Signer>,
     method: u8,
     identity: Vec<u8>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     #[cfg(target_arch = "wasm32")]
     let now_timestamp = js_sys::Date::new_0().get_time() as u64;
@@ -860,10 +864,7 @@ pub async fn whitelist_identity(
 /// # Arguments
 /// * `url` - Substrate URL
 /// * `did` - DID to retrieve the count for
-pub async fn get_payload_count_for_did(
-    url: String,
-    did: String,
-) -> Result<u32, Box<dyn std::error::Error>> {
+pub async fn get_payload_count_for_did(url: String, did: String) -> Result<u32, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
@@ -888,7 +889,7 @@ pub async fn is_whitelisted(
     private_key: String,
     signer: &Box<dyn Signer>,
     identity: Vec<u8>,
-) -> Result<bool, Box<dyn std::error::Error>> {
+) -> Result<bool, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
 
     #[cfg(target_arch = "wasm32")]
@@ -1001,7 +1002,7 @@ pub fn hexstr_to_vec(hexstr: String) -> Result<Vec<u8>, hex::FromHexError> {
     }
 }
 
-fn get_did_bytes_array(did: &String) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+fn get_did_bytes_array(did: &String) -> Result<[u8; 32], Box<dyn Error>> {
     let did_string = did.trim_start_matches("0x");
     let mut bytes_did_arr;
     if did_string.len() == 64 {
@@ -1033,7 +1034,7 @@ fn json_req(method: &str, params: &str, id: u32) -> Value {
 fn recover_ethereum_account(
     full_signature: [u8; 65],
     signed_message: [u8; 32],
-) -> Result<[u8; 20], Box<dyn std::error::Error>> {
+) -> Result<[u8; 20], Box<dyn Error>> {
     // recover the account out of the signed message, otherwise throw error and fail the execution
     let mut signature: [u8; 64] = [0; 64];
     signature.copy_from_slice(&full_signature[0..64]);

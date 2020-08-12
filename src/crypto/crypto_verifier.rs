@@ -17,14 +17,6 @@
 pub mod verifier {
     extern crate ursa;
 
-    use ursa::cl::issuer::Issuer as CryptoIssuer;
-    use ursa::cl::verifier::Verifier as CryptoVerifier;
-    use ursa::cl::Proof as CryptoProof;
-    use ursa::cl::RevocationKeyPublic;
-    use ursa::cl::RevocationRegistry;
-    use ursa::cl::SubProof;
-    use ursa::cl::SubProofRequest;
-
     use crate::application::datatypes::{
         CredentialDefinition,
         CredentialSchema,
@@ -32,7 +24,16 @@ pub mod verifier {
         ProofRequest,
         RevocationRegistryDefinition,
     };
-    use std::collections::HashMap;
+    use std::{collections::HashMap, error::Error};
+    use ursa::cl::{
+        issuer::Issuer as CryptoIssuer,
+        verifier::Verifier as CryptoVerifier,
+        Proof as CryptoProof,
+        RevocationKeyPublic,
+        RevocationRegistry,
+        SubProof,
+        SubProofRequest,
+    };
 
     // Mediator class to broker between the high-level vade-evan application verifier and the Ursa verifier class
     pub struct CredVerifier {}
@@ -42,9 +43,7 @@ pub mod verifier {
             CredVerifier {}
         }
 
-        pub fn request_proof(
-            attributes: Vec<&str>,
-        ) -> Result<SubProofRequest, Box<dyn std::error::Error>> {
+        pub fn request_proof(attributes: Vec<&str>) -> Result<SubProofRequest, Box<dyn Error>> {
             let mut sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder()
                 .map_err(|e| format!("could not create sub proof request builder; {}", &e))?;
             for i in 0..attributes.len() {
@@ -64,8 +63,8 @@ pub mod verifier {
             proof_request: &ProofRequest,
             credential_definitions: &HashMap<String, CredentialDefinition>,
             credential_schemas: &HashMap<String, CredentialSchema>,
-            revocation_registiry_definition: &HashMap<String, Option<RevocationRegistryDefinition>>,
-        ) -> Result<(), Box<dyn std::error::Error>> {
+            revocation_registry_definition: &HashMap<String, Option<RevocationRegistryDefinition>>,
+        ) -> Result<(), Box<dyn Error>> {
             let mut proof_verifier = CryptoVerifier::new_proof_verifier()
                 .map_err(|e| format!("could not create proof verifier; {}", &e))?;
 
@@ -122,7 +121,7 @@ pub mod verifier {
 
                 let mut key: Option<RevocationKeyPublic> = None;
                 let mut registry: Option<RevocationRegistry> = None;
-                let reg_def = revocation_registiry_definition
+                let reg_def = revocation_registry_definition
                     .get(&sub_proof_request.schema)
                     .ok_or("could not get sub proof request schema from revocation registry def")?;
                 if reg_def.is_some() {

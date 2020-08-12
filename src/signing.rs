@@ -19,8 +19,7 @@ use secp256k1::{sign, Message, SecretKey, Signature};
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use sha3::Keccak256;
-use std::convert::TryInto;
-use std::error::Error;
+use std::{convert::TryInto, error::Error};
 
 const KEY_TYPE: &str = "identityKey";
 
