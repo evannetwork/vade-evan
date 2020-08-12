@@ -20,8 +20,10 @@
 
 use crate::crypto::crypto_datatypes::AssertionProof;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use std::convert::TryInto;
+use std::{
+    collections::{HashMap, HashSet},
+    convert::TryInto,
+};
 use ursa::cl::{
     issuer::Issuer as UrsaIssuer,
     BlindedCredentialSecrets,

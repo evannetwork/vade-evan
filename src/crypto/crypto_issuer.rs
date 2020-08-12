@@ -14,18 +14,13 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    CredentialRequest,
-    CredentialSchema,
-    RevocationRegistryDefinition,
-};
-use crate::crypto::crypto_datatypes::{
-    CryptoCredentialDefinition,
-    CryptoRevocationRegistryDefinition,
+use crate::{
+    application::datatypes::{CredentialRequest, CredentialSchema, RevocationRegistryDefinition},
+    crypto::crypto_datatypes::{CryptoCredentialDefinition, CryptoRevocationRegistryDefinition},
 };
 use std::{collections::HashSet, error::Error};
-use ursa::cl::issuer::Issuer as CryptoIssuer;
 use ursa::cl::{
+    issuer::Issuer as CryptoIssuer,
     new_nonce,
     CredentialPrivateKey,
     CredentialPublicKey,

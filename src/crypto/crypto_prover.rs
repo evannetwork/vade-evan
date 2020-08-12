@@ -33,20 +33,22 @@ use crate::{
     crypto::crypto_datatypes::{CryptoCredentialDefinition, CryptoCredentialRequest},
 };
 use std::{collections::HashMap, error::Error};
-use ursa::cl::{
-    issuer::Issuer as CryptoIssuer,
-    prover::Prover as CryptoProver,
-    verifier::Verifier as CryptoVerifier,
-    CredentialPublicKey,
-    CredentialSecretsBlindingFactors,
-    MasterSecret,
-    Nonce,
-    Proof,
-    RevocationKeyPublic,
-    RevocationRegistry,
-    Witness,
+use ursa::{
+    cl::{
+        issuer::Issuer as CryptoIssuer,
+        prover::Prover as CryptoProver,
+        verifier::Verifier as CryptoVerifier,
+        CredentialPublicKey,
+        CredentialSecretsBlindingFactors,
+        MasterSecret,
+        Nonce,
+        Proof,
+        RevocationKeyPublic,
+        RevocationRegistry,
+        Witness,
+    },
+    errors::UrsaCryptoResult,
 };
-use ursa::errors::UrsaCryptoResult;
 
 // Mediator class to broker between the high-level vade-evan application prover and the Ursa prover class
 pub struct Prover {}

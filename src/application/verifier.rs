@@ -14,18 +14,20 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    CredentialDefinition,
-    CredentialSchema,
-    ProofPresentation,
-    ProofRequest,
-    ProofVerification,
-    RevocationRegistryDefinition,
-    SubProofRequest,
+use crate::{
+    application::datatypes::{
+        CredentialDefinition,
+        CredentialSchema,
+        ProofPresentation,
+        ProofRequest,
+        ProofVerification,
+        RevocationRegistryDefinition,
+        SubProofRequest,
+    },
+    crypto::crypto_verifier::verifier::CredVerifier,
+    utils::utils::get_now_as_iso_string,
 };
-use crate::crypto::crypto_verifier::verifier::CredVerifier;
-use crate::utils::utils::get_now_as_iso_string;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 use ursa::cl::new_nonce;
 
 /// Holds the logic needed to verify proofs

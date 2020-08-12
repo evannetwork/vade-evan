@@ -20,9 +20,11 @@ use console_log;
 use std::collections::HashMap;
 use vade::Vade;
 use wasm_bindgen::prelude::*;
+
 // did
 #[cfg(feature = "did")]
 use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
+
 // vc-zkp
 #[cfg(feature = "vc-zkp")]
 use crate::{

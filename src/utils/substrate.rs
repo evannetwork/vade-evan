@@ -35,8 +35,6 @@ use crate::{
         xt_primitives,
     },
 };
-#[cfg(not(target_arch = "wasm32"))]
-use chrono::Utc;
 use futures::{
     channel::mpsc::{channel, Receiver, Sender},
     stream::StreamExt,
@@ -54,6 +52,9 @@ use std::{
     hash::Hasher,
     time::{Duration, Instant},
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use chrono::Utc;
 
 const SUBSTRATE_TIMEOUT: u64 = 60;
 

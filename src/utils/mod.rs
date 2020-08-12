@@ -15,10 +15,10 @@
 */
 
 #[cfg(feature = "did")]
-pub mod substrate;
-#[cfg(feature = "vc-zkp")]
-pub mod utils;
-
-#[cfg(feature = "did")]
 #[macro_use]
 pub mod extrinsic;
+#[cfg(feature = "did")]
+pub mod substrate;
+
+#[cfg(feature = "vc-zkp")]
+pub mod utils;

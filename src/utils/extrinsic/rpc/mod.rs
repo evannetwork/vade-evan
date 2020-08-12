@@ -15,9 +15,14 @@
 
 */
 
+pub use client::XtStatus;
+use client::*;
 use futures::channel::mpsc::Sender as ThreadOut;
+
 #[cfg(not(target_arch = "wasm32"))]
 use std::thread;
+#[cfg(not(target_arch = "wasm32"))]
+use ws::connect;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -25,12 +30,6 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 #[cfg(target_arch = "wasm32")]
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
-
-#[cfg(not(target_arch = "wasm32"))]
-use ws::connect;
-
-pub use client::XtStatus;
-use client::*;
 
 pub mod client;
 pub mod json_req;

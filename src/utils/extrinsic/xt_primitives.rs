@@ -15,11 +15,12 @@
 
 */
 
+use parity_scale_codec::{Decode, Encode, Error, Input};
+use sp_std;
+
 #[cfg(feature = "std")]
 use std::fmt;
 
-use parity_scale_codec::{Decode, Encode, Error, Input};
-use sp_std;
 /// Mirrors the currently used Extrinsic format (V3) from substrate. Has less traits and methods though.
 /// The SingedExtra used does not need to implement SingedExtension here.
 #[derive(Clone, PartialEq)]

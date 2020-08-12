@@ -17,6 +17,7 @@
 
 use futures::channel::mpsc::Sender as ThreadOut;
 use log::{debug, error, warn};
+
 #[cfg(not(target_arch = "wasm32"))]
 use ws::{CloseCode, Handler, Handshake, Message, Result, Sender};
 
@@ -38,11 +39,8 @@ pub enum XtStatus {
 pub type OnMessageFn = fn(msg: Message, out: Sender, result: ThreadOut<String>) -> Result<()>;
 
 #[cfg(target_arch = "wasm32")]
-pub type OnMessageFn = fn(
-    msg: &str,
-    out: &WebSocket,
-    result: ThreadOut<String>,
-) -> Result<(), Box<dyn Error>>;
+pub type OnMessageFn =
+    fn(msg: &str, out: &WebSocket, result: ThreadOut<String>) -> Result<(), Box<dyn Error>>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub struct RpcClient {
