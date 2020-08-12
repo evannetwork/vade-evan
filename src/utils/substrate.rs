@@ -235,11 +235,11 @@ pub async fn send_extrinsic(
                         index,
                         error,
                         message: _,
-                    }) => {
+                    }, _) => {
                         let clear_error = metadata.module_with_errors(index)?;
                         return Err(Box::from(clear_error.event(error)?.name.to_string()));
                     }
-                    SystemEvent::ExtrinsicFailed(_) => return Err(Box::from("other error")),
+                    SystemEvent::ExtrinsicFailed(_, _) => return Err(Box::from("other error")),
                     SystemEvent::ExtrinsicSuccess(_info) => {
                         return Ok(Some(data));
                     }

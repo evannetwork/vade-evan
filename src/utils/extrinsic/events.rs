@@ -30,7 +30,7 @@ pub enum SystemEvent {
     // An extrinsic completed successfully.
     ExtrinsicSuccess(DispatchInfo),
     // An extrinsic failed.
-    ExtrinsicFailed(DispatchError),
+    ExtrinsicFailed(DispatchError, DispatchInfo),
 }
 
 /// Top level Event that can be produced by a substrate runtime
