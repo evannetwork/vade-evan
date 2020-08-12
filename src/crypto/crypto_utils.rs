@@ -87,14 +87,13 @@ pub async fn create_assertion_proof(
 
     // build proof property as serde object
     let jws: String = format!("{}.{}", &header_and_data, sig_base64url);
-    let utc_now: String = format!("{}", &now);
 
     let proof = AssertionProof {
         r#type: "EcdsaPublicKeySecp256k1".to_string(),
-        created: utc_now.to_string(),
+        created: now,
         proof_purpose: "assertionMethod".to_string(),
         verification_method: verification_method.to_string(),
-        jws: jws.to_string(),
+        jws,
     };
 
     Ok(proof)
@@ -220,9 +219,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn E
         .map_err(|_| "header_and_data hash invalid")?;
     let ctx_msg = Message::parse(&hash_arr);
     let mut signature_array = [0u8; 64];
-    for i in 0..64 {
-        signature_array[i] = signature_decoded[i];
-    }
+    signature_array[..64].clone_from_slice(&signature_decoded[..64]);
     // slice signature and recovery for recovery
     debug!("recovery id; {}", signature_decoded[64]);
     let ctx_sig = Signature::parse(&signature_array);

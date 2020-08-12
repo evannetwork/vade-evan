@@ -77,12 +77,12 @@ impl Prover {
         subject_did: &str,
         schema_did: &str,
     ) -> CredentialProposal {
-        return CredentialProposal {
+        CredentialProposal {
             issuer: issuer_did.to_owned(),
             subject: subject_did.to_owned(),
             schema: schema_did.to_owned(),
             r#type: "EvanZKPCredentialProposal".to_string(),
-        };
+        }
     }
 
     /// Request a new credential based on a received credential offering.
@@ -202,8 +202,7 @@ impl Prover {
         )?;
 
         let mut proof_creds: Vec<ProofCredential> = Vec::new();
-        let mut i = 0;
-        for sub_request in proof_request.sub_proof_requests {
+        for (i, sub_request) in proof_request.sub_proof_requests.into_iter().enumerate() {
             let credential = credentials
                 .get(&sub_request.schema)
                 .ok_or("Requested credential not provided")?;
@@ -246,8 +245,6 @@ impl Prover {
             };
 
             proof_creds.push(proof_cred);
-
-            i += 1;
         }
 
         let aggregated = AggregatedProof {
@@ -320,7 +317,7 @@ impl Prover {
     /// Create a new master secret to be stored privately on the prover's site.
     pub fn create_master_secret() -> MasterSecret {
         match CryptoProver::create_master_secret() {
-            Ok(secret) => return secret,
+            Ok(secret) => secret,
             Err(e) => panic!(e), // TODO how to handle error
         }
     }
@@ -399,7 +396,7 @@ impl Prover {
             .collect();
         deltas.sort_by(|a, b| a.created.cmp(&b.created));
         let max_cred = rev_reg_def.maximum_credential_count;
-        let mut generator: RevocationTailsGenerator = rev_reg_def.tails.clone();
+        let mut generator: RevocationTailsGenerator = rev_reg_def.tails;
         let mut big_delta = revocation_state.delta.clone();
         for delta in deltas {
             big_delta
@@ -420,12 +417,18 @@ impl Prover {
         Ok(RevocationState {
             credential_id: revocation_state.credential_id.clone(),
             revocation_id: revocation_state.revocation_id,
-            witness: witness.clone(),
-            delta: big_delta.clone(),
+            witness,
+            delta: big_delta,
             updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_err(|_| "Error generating unix timestamp for delta history")?
                 .as_secs(),
         })
+    }
+}
+
+impl Default for Prover {
+    fn default() -> Self {
+        Self::new()
     }
 }

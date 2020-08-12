@@ -311,3 +311,9 @@ impl Prover {
         Ok(())
     }
 }
+
+impl Default for Prover {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -231,3 +231,9 @@ impl Issuer {
         return new_registry;
     }
 }
+
+impl Default for Issuer {
+    fn default() -> Self {
+        Self::new()
+    }
+}

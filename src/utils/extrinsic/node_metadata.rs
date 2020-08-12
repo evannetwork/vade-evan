@@ -585,10 +585,7 @@ fn convert_event(
         let arg = arg.parse::<EventArg>()?;
         arguments.push(arg);
     }
-    Ok(ModuleEventMetadata {
-        name: name.to_string(),
-        arguments,
-    })
+    Ok(ModuleEventMetadata { name, arguments })
 }
 
 fn convert_error(
@@ -596,10 +593,7 @@ fn convert_error(
 ) -> Result<ModuleEventMetadata, ConversionError> {
     let name = convert(event.name)?;
     let arguments = Vec::new();
-    Ok(ModuleEventMetadata {
-        name: name.to_string(),
-        arguments,
-    })
+    Ok(ModuleEventMetadata { name, arguments })
 }
 
 fn convert_entry(

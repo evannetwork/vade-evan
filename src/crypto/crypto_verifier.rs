@@ -46,9 +46,9 @@ pub mod verifier {
         pub fn request_proof(attributes: Vec<&str>) -> Result<SubProofRequest, Box<dyn Error>> {
             let mut sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder()
                 .map_err(|e| format!("could not create sub proof request builder; {}", &e))?;
-            for i in 0..attributes.len() {
+            for attribute in &attributes {
                 sub_proof_request_builder
-                    .add_revealed_attr(&attributes[i])
+                    .add_revealed_attr(&attribute)
                     .map_err(|e| format!("could not add revealed attribute; {}", &e))?;
             }
             let sub_proof_request = sub_proof_request_builder
@@ -183,6 +183,12 @@ pub mod verifier {
             } else {
                 Err(From::from("Proof verification failed"))
             }
+        }
+    }
+
+    impl Default for CredVerifier {
+        fn default() -> Self {
+            Self::new()
         }
     }
 }

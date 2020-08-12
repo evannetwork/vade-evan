@@ -362,7 +362,7 @@ impl Issuer {
         let revocation_state = RevocationState {
             credential_id: credential_id.clone(),
             revocation_id: rev_idx,
-            delta: delta.clone(),
+            delta,
             updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_err(|_| "Error generating unix timestamp for delta history")?
@@ -382,7 +382,7 @@ impl Issuer {
 
         let credential = Credential {
             context: vec!["https://www.w3.org/2018/credentials/v1".to_string()],
-            id: credential_id.clone(),
+            id: credential_id,
             r#type: vec!["VerifiableCredential".to_string()],
             issuer: issuer_did.to_owned(),
             credential_subject,
@@ -462,8 +462,7 @@ impl Issuer {
         let mut history_vec = revocation_registry_definition.delta_history.clone();
         history_vec.push(delta_history);
 
-        let tails: RevocationTailsGenerator =
-            revocation_registry_definition.tails.clone().to_owned();
+        let tails: RevocationTailsGenerator = revocation_registry_definition.tails.clone();
         let mut rev_reg_def = RevocationRegistryDefinition {
             id: revocation_registry_definition.id.to_owned(),
             credential_definition: revocation_registry_definition
@@ -473,10 +472,7 @@ impl Issuer {
             registry_delta: full_delta,
             delta_history: history_vec,
             maximum_credential_count: revocation_registry_definition.maximum_credential_count,
-            revocation_public_key: revocation_registry_definition
-                .revocation_public_key
-                .clone()
-                .to_owned(),
+            revocation_public_key: revocation_registry_definition.revocation_public_key.clone(),
             tails,
             updated_at,
             proof: None,
@@ -495,5 +491,11 @@ impl Issuer {
         rev_reg_def.proof = Some(proof);
 
         Ok(rev_reg_def)
+    }
+}
+
+impl Default for Issuer {
+    fn default() -> Self {
+        Self::new()
     }
 }
