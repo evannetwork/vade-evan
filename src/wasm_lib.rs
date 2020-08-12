@@ -585,7 +585,7 @@ pub async fn ensure_whitelisted(
 fn get_config_values(
     config: Option<&JsValue>,
     keys: Vec<String>,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<Vec<String>, Box<dyn Error>> {
     let mut vec = Vec::new();
     let mut config_undefined = true;
 
@@ -620,7 +620,7 @@ fn get_config_values(
     Ok(vec)
 }
 
-fn get_config_default(key: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
         "signer" => "remote|https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
         // "signer" => "local",
@@ -641,7 +641,7 @@ fn get_options(private_key: String, identity: String) -> String {
     )
 }
 
-fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn std::error::Error>> {
+fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn Error>> {
     if signer_config == "local" {
         Ok(Box::new(LocalSigner::new()))
     } else if signer_config.starts_with("remote|") {
@@ -660,7 +660,7 @@ fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn std::err
 }
 
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>> {
+fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
     let (signer_config, target) = match config_values.as_slice() {
@@ -687,7 +687,7 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn std::error::Error>
 
 #[cfg(feature = "vc-zkp")]
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::error::Error>> {
+fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
     let (signer_config, target) = match config_values.as_slice() {
@@ -716,7 +716,7 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn std::erro
     Ok(VadeEvan::new(internal_vade, signer))
 }
 
-fn jsify(err: Box<dyn std::error::Error>) -> JsValue {
+fn jsify(err: Box<dyn Error>) -> JsValue {
     JsValue::from(format!("{}", err))
 }
 

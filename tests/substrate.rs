@@ -135,7 +135,7 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn convert_did_to_substrate_did(did: &str) -> Result<(u8, String), Box<dyn std::error::Error>> {
+fn convert_did_to_substrate_did(did: &str) -> Result<(u8, String), Box<dyn Error>> {
     let re = Regex::new(METHOD_REGEX)?;
     let result = re.captures(&did);
     if let Some(caps) = result {

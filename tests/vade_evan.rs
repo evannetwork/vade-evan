@@ -17,8 +17,11 @@
 mod test_data;
 
 use serde_json::Value;
-use std::collections::HashMap;
-use std::env;
+use std::{
+    collections::HashMap,
+    env,
+    error::Error,
+};
 use test_data::{
     ISSUER_DID,
     ISSUER_PRIVATE_KEY,
@@ -75,7 +78,7 @@ const EVAN_METHOD: &str = "did:evan";
 // TODO: Test proving after revoking another credential of the same registry
 
 #[tokio::test]
-async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // run test
@@ -93,7 +96,7 @@ async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn std::erro
 }
 
 #[tokio::test]
-async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // run test
@@ -103,7 +106,7 @@ async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn std::error::Er
 }
 
 #[tokio::test]
-async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     ensure_whitelist(&mut vade, &SIGNER_IDENTITY_2).await?;
@@ -112,7 +115,7 @@ async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn std::error::Er
 }
 
 #[tokio::test]
-async fn vade_evan_can_create_schema() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_create_schema() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // run test
@@ -122,7 +125,7 @@ async fn vade_evan_can_create_schema() -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[tokio::test]
-async fn vade_evan_can_propose_credentials() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_propose_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
 
@@ -137,7 +140,7 @@ async fn vade_evan_can_propose_credentials() -> Result<(), Box<dyn std::error::E
 }
 
 #[tokio::test]
-async fn vade_evan_can_offer_credentials() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_offer_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -159,7 +162,7 @@ async fn vade_evan_can_offer_credentials() -> Result<(), Box<dyn std::error::Err
 }
 
 #[tokio::test]
-async fn vade_evan_can_request_credentials() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_request_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -181,7 +184,7 @@ async fn vade_evan_can_request_credentials() -> Result<(), Box<dyn std::error::E
 }
 
 #[tokio::test]
-async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -219,7 +222,7 @@ async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn std::error::Err
 }
 
 #[tokio::test]
-async fn vade_evan_can_request_proof() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_request_proof() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -242,7 +245,7 @@ async fn vade_evan_can_request_proof() -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[tokio::test]
-async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -300,7 +303,7 @@ async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn std::error::Error>
 
 #[tokio::test]
 async fn vade_evan_can_present_proofs_with_less_properties(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_extended_credential_schema(&mut vade).await?;
@@ -358,7 +361,7 @@ async fn vade_evan_can_present_proofs_with_less_properties(
 
 #[tokio::test]
 async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_ones(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_three_property_credential_request(&mut vade).await?;
@@ -422,7 +425,7 @@ async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omit
 
 #[tokio::test]
 async fn vade_tnt_cannot_request_credential_with_missing_required_properties(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_three_property_credential_request(&mut vade).await?;
@@ -451,7 +454,7 @@ async fn vade_tnt_cannot_request_credential_with_missing_required_properties(
 }
 
 #[tokio::test]
-async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -510,7 +513,7 @@ async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn std::error::Error>> 
 }
 
 #[tokio::test]
-async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn std::error::Error>> {
+async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // Issue credential
@@ -582,7 +585,7 @@ async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn std::error::Err
 
 #[tokio::test]
 async fn vade_evan_can_verify_proof_after_revocation_update(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // Issue main credential
@@ -696,7 +699,7 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
 
 #[tokio::test]
 async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // Issue main credential
@@ -846,7 +849,7 @@ async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
 async fn create_credential_definition(
     vade: &mut Vade,
     schema: &CredentialSchema,
-) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn std::error::Error>> {
+) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "schemaDid": "{}",
@@ -871,7 +874,7 @@ async fn create_credential_offer(
     vade: &mut Vade,
     proposal: &CredentialProposal,
     credential_definition: &CredentialDefinition,
-) -> Result<CredentialOffer, Box<dyn std::error::Error>> {
+) -> Result<CredentialOffer, Box<dyn Error>> {
     let payload = serde_json::to_string(&proposal).unwrap();
     let mut message_value: Value = serde_json::from_str(&payload).unwrap();
     message_value["credentialDefinition"] = Value::from(credential_definition.id.clone());
@@ -891,7 +894,7 @@ async fn create_credential_offer(
 async fn create_credential_proposal(
     vade: &mut Vade,
     schema: &CredentialSchema,
-) -> Result<CredentialProposal, Box<dyn std::error::Error>> {
+) -> Result<CredentialProposal, Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "issuer": "{}",
@@ -916,7 +919,7 @@ async fn create_credential_request(
     schema: &CredentialSchema,
     offer: &CredentialOffer,
     master_secret: &MasterSecret,
-) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
+) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "credentialOffering": {},
@@ -948,7 +951,7 @@ async fn create_two_property_credential_request(
     schema: &CredentialSchema,
     offer: &CredentialOffer,
     master_secret: &MasterSecret,
-) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
+) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn Error>> {
     let payload = format!(
         r###"{{
     "credentialOffering": {},
@@ -980,7 +983,7 @@ async fn create_credential_request_with_missing_required_property(
     schema: &CredentialSchema,
     offer: &CredentialOffer,
     master_secret: &MasterSecret,
-) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>> {
+) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn Error>> {
     let payload = format!(
         r###"{{
     "credentialOffering": {},
@@ -1008,7 +1011,7 @@ async fn create_credential_request_with_missing_required_property(
 
 async fn create_extended_credential_schema(
     vade: &mut Vade,
-) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
+) -> Result<CredentialSchema, Box<dyn Error>> {
     let payload = format!(
         r###"{{
         "issuer": "{}",
@@ -1043,7 +1046,7 @@ async fn create_revocation_registry_definition(
     vade: &mut Vade,
     credential_definition: &CredentialDefinition,
     max_credential_count: u32,
-) -> Result<CreateRevocationRegistryDefinitionResult, Box<dyn std::error::Error>> {
+) -> Result<CreateRevocationRegistryDefinitionResult, Box<dyn Error>> {
     let payload = format!(
         r###"{{
         "credentialDefinition": "{}",
@@ -1113,7 +1116,7 @@ async fn issue_credential(
     revocation_key_private: &RevocationKeyPrivate,
     revocation_info: &RevocationIdInformation,
     revocation_definition: &RevocationRegistryDefinition,
-) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn std::error::Error>> {
+) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "issuer": "{}",
@@ -1152,7 +1155,7 @@ async fn issue_credential(
 async fn request_proof(
     vade: &mut Vade,
     schema: &CredentialSchema,
-) -> Result<ProofRequest, Box<dyn std::error::Error>> {
+) -> Result<ProofRequest, Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "verifierDid": "{}",
@@ -1177,7 +1180,7 @@ async fn revoke_credential(
     vade: &mut Vade,
     credential: &Credential,
     revocation_registry_definition: &RevocationRegistryDefinition,
-) -> Result<RevocationRegistryDefinition, Box<dyn std::error::Error>> {
+) -> Result<RevocationRegistryDefinition, Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "issuer": "{}",
@@ -1210,7 +1213,7 @@ async fn present_proof(
     credential: &Credential,
     witness: &Witness,
     master_secret: &MasterSecret,
-) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
+) -> Result<ProofPresentation, Box<dyn Error>> {
     let schema_did = &proof_request.sub_proof_requests[0].schema;
     let mut credentials: HashMap<String, Credential> = HashMap::new();
     credentials.insert(
@@ -1246,7 +1249,7 @@ async fn verify_proof(
     vade: &mut Vade,
     presented_proof: &ProofPresentation,
     proof_request: &ProofRequest,
-) -> Result<ProofVerification, Box<dyn std::error::Error>> {
+) -> Result<ProofVerification, Box<dyn Error>> {
     let payload = format!(
         r###"{{
             "presentedProof": {},
@@ -1264,7 +1267,7 @@ async fn verify_proof(
     Ok(result)
 }
 
-async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::Error>> {
+async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn Error>> {
     let resolver = get_resolver();
 
     let auth_string = get_options();
@@ -1291,7 +1294,7 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
-async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn Error>> {
     let auth_string = format!(
         r###"{{
             "privateKey": "{}",
@@ -1324,7 +1327,7 @@ async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn s
 
 async fn create_credential_schema(
     vade: &mut Vade,
-) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
+) -> Result<CredentialSchema, Box<dyn Error>> {
     let message_str = format!(
         r###"{{
       "issuer": "{}",
@@ -1357,7 +1360,7 @@ async fn create_credential_schema(
 
 async fn create_three_property_credential_request(
     vade: &mut Vade,
-) -> Result<CredentialSchema, Box<dyn std::error::Error>> {
+) -> Result<CredentialSchema, Box<dyn Error>> {
     let message_str = format!(
         r###"{{
       "issuer": "{}",

@@ -42,7 +42,7 @@ pub type OnMessageFn = fn(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>>;
+) -> Result<(), Box<dyn Error>>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub struct RpcClient {
@@ -188,7 +188,7 @@ pub fn on_get_request_msg(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let value: serde_json::Value = serde_json::from_str(msg)?;
 
     result.clone().try_send(value["result"].to_string())?;
@@ -201,7 +201,7 @@ pub fn on_subscription_msg(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let value: serde_json::Value = serde_json::from_str(msg)?;
     match value["id"].as_str() {
         Some(_idstr) => {}
@@ -238,7 +238,7 @@ pub fn on_extrinsic_msg_until_finalized(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Error, e) => end_process(out, result, e),
@@ -256,7 +256,7 @@ pub fn on_extrinsic_msg_until_in_block(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::InBlock, val) => end_process(out, result, val),
@@ -272,7 +272,7 @@ pub fn on_extrinsic_msg_until_broadcast(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Broadcast, _) => end_process(out, result, None),
@@ -288,7 +288,7 @@ pub fn on_extrinsic_msg_until_ready(
     msg: &str,
     out: &WebSocket,
     result: ThreadOut<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     match parse_status(msg) {
         (XtStatus::Finalized, val) => end_process(out, result, val),
         (XtStatus::Ready, _) => end_process(out, result, None),

@@ -16,22 +16,26 @@
 
 extern crate ursa;
 
-use crate::application::datatypes::{
-    Credential,
-    CredentialDefinition,
-    CredentialRequest,
-    CredentialSchema,
-    CredentialSignature,
-    EncodedCredentialValue,
-    ProofRequest,
-    RevocationRegistryDefinition,
+use crate::{
+    application::{
+        datatypes::{
+            Credential,
+            CredentialDefinition,
+            CredentialRequest,
+            CredentialSchema,
+            CredentialSignature,
+            EncodedCredentialValue,
+            ProofRequest,
+            RevocationRegistryDefinition,
+        },
+        prover::Prover as ApplicationProver,
+    },
+    crypto::crypto_datatypes::{CryptoCredentialDefinition, CryptoCredentialRequest},
 };
-use crate::application::prover::Prover as ApplicationProver;
-use crate::crypto::crypto_datatypes::{CryptoCredentialDefinition, CryptoCredentialRequest};
-use std::collections::HashMap;
-use ursa::cl::issuer::Issuer as CryptoIssuer;
-use ursa::cl::prover::Prover as CryptoProver;
+use std::{collections::HashMap, error::Error};
 use ursa::cl::{
+    issuer::Issuer as CryptoIssuer,
+    prover::Prover as CryptoProver,
     verifier::Verifier as CryptoVerifier,
     CredentialPublicKey,
     CredentialSecretsBlindingFactors,
@@ -58,10 +62,7 @@ impl Prover {
         master_secret: MasterSecret,
         credential_definition: CryptoCredentialDefinition,
         credential_nonce: Nonce,
-    ) -> Result<
-        (CryptoCredentialRequest, CredentialSecretsBlindingFactors),
-        Box<dyn std::error::Error>,
-    > {
+    ) -> Result<(CryptoCredentialRequest, CredentialSecretsBlindingFactors), Box<dyn Error>> {
         // Master secret will be used to prove that each proof was really issued to the holder/subject/prover
         // Needs to stay secret
         let mut credential_values_builder = CryptoIssuer::new_credential_values_builder()
@@ -117,7 +118,7 @@ impl Prover {
         revocation_registries: &HashMap<String, RevocationRegistryDefinition>,
         master_secret: &MasterSecret,
         witnesses: &HashMap<String, Witness>,
-    ) -> Result<Proof, Box<dyn std::error::Error>> {
+    ) -> Result<Proof, Box<dyn Error>> {
         let mut non_credential_schema_builder =
             CryptoIssuer::new_non_credential_schema_builder()
                 .map_err(|e| format!("could not create non credential schema builder; {}", &e))?;
@@ -264,7 +265,7 @@ impl Prover {
         master_secret: &MasterSecret,
         revocation_registry_definition: Option<RevocationRegistryDefinition>,
         witness: &Witness,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         let mut revocation_key_public: Option<RevocationKeyPublic> = None;
         let mut revocation_registry: Option<RevocationRegistry> = None;
         if let Some(rrd_value) = revocation_registry_definition {

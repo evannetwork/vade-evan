@@ -49,7 +49,7 @@ impl Verifier {
         verifier_did: &str,
         prover_did: &str,
         sub_proof_requests: Vec<SubProofRequest>,
-    ) -> Result<ProofRequest, Box<dyn std::error::Error>> {
+    ) -> Result<ProofRequest, Box<dyn Error>> {
         Ok(ProofRequest {
             verifier: verifier_did.to_owned(),
             prover: prover_did.to_owned(),

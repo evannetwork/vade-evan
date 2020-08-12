@@ -31,6 +31,7 @@ use crate::{
 use async_trait::async_trait;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 use vade::{VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
@@ -78,7 +79,7 @@ impl SubstrateDidResolverEvan {
         private_key: &str,
         identity: &str,
         payload: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<String>, Box<dyn Error>> {
         debug!(
             "setting DID document for did: {}, identity; {}",
             &did, &identity
@@ -114,7 +115,7 @@ impl SubstrateDidResolverEvan {
         &self,
         did: &str,
         private_key: &str,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
+    ) -> Result<bool, Box<dyn Error>> {
         let (_, substrate_identity) = convert_did_to_substrate_identity(&did)?;
         let substrate_identity_vec = hex::decode(&substrate_identity)?;
         let result = is_whitelisted(
@@ -143,7 +144,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         did_method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if !did_method.starts_with(EVAN_METHOD) {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -192,7 +193,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
         did: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if !did.starts_with(EVAN_METHOD_PREFIX) {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -261,7 +262,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
     async fn did_resolve(
         &mut self,
         did_id: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if !did_id.starts_with(EVAN_METHOD) {
             return Ok(VadePluginResultValue::Ignored);
         }
@@ -282,9 +283,7 @@ impl VadePlugin for SubstrateDidResolverEvan {
 /// tuple with
 ///     method of DID (e.g. 1 for core, 2 for testcore, 0 for unassigned)
 ///     32B substrate DID hex string without 0x prefix
-fn convert_did_to_substrate_identity(
-    did: &str,
-) -> Result<(u8, String), Box<dyn std::error::Error>> {
+fn convert_did_to_substrate_identity(did: &str) -> Result<(u8, String), Box<dyn Error>> {
     let re = Regex::new(METHOD_REGEX)?;
     let result = re.captures(&did);
     if let Some(caps) = result {
