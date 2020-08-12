@@ -55,7 +55,7 @@ impl Verifier {
         Ok(ProofRequest {
             verifier: verifier_did.to_owned(),
             prover: prover_did.to_owned(),
-            created_at: get_now_as_iso_string().to_owned(),
+            created_at: get_now_as_iso_string(),
             nonce: new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?,
             sub_proof_requests,
         })
@@ -95,10 +95,16 @@ impl Verifier {
             }
         };
 
-        return ProofVerification {
-            presented_proof: presented_proof.id.to_owned(),
+        ProofVerification {
+            presented_proof: presented_proof.id,
             status: status.to_owned(),
             reason,
-        };
+        }
+    }
+}
+
+impl Default for Verifier {
+    fn default() -> Self {
+        Self::new()
     }
 }

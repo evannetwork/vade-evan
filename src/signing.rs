@@ -65,6 +65,12 @@ impl LocalSigner {
     }
 }
 
+impl Default for LocalSigner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait(?Send)]
 impl Signer for LocalSigner {
     /// Signs a message using secp256k1.

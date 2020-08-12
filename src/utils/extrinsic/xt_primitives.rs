@@ -16,7 +16,6 @@
 */
 
 use parity_scale_codec::{Decode, Encode, Error, Input};
-use sp_std;
 
 #[cfg(feature = "std")]
 use std::fmt;

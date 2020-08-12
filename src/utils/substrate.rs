@@ -175,7 +175,7 @@ pub async fn send_extrinsic(
     match exit_on {
         XtStatus::Finalized => {
             start_rpc_client_thread(
-                format!("ws://{}:9944", url).to_string(),
+                format!("ws://{}:9944", url),
                 json.to_string(),
                 sender,
                 on_extrinsic_msg_until_finalized,
@@ -188,7 +188,7 @@ pub async fn send_extrinsic(
         XtStatus::InBlock => {
             let metadata = get_metadata(url).await?;
             start_rpc_client_thread(
-                format!("ws://{}:9944", url).to_string(),
+                format!("ws://{}:9944", url),
                 json.to_string(),
                 sender,
                 on_extrinsic_msg_until_in_block,
@@ -254,7 +254,7 @@ pub async fn send_extrinsic(
         }
         XtStatus::Broadcast => {
             start_rpc_client_thread(
-                format!("ws://{}:9944", url).to_string(),
+                format!("ws://{}:9944", url),
                 json.to_string(),
                 sender,
                 on_extrinsic_msg_until_broadcast,
@@ -266,7 +266,7 @@ pub async fn send_extrinsic(
         }
         XtStatus::Ready => {
             start_rpc_client_thread(
-                format!("ws://{}:9944", url).to_string(),
+                format!("ws://{}:9944", url),
                 json.to_string(),
                 sender,
                 on_extrinsic_msg_until_ready,
@@ -281,8 +281,8 @@ pub async fn send_extrinsic(
 }
 
 pub async fn subscribe_events(url: &str, sender: Sender<String>) {
-    let mut bytes = twox_128("System".as_bytes()).to_vec();
-    bytes.extend(&twox_128("Events".as_bytes())[..]);
+    let mut bytes = twox_128(b"System").to_vec();
+    bytes.extend(&twox_128(b"Events")[..]);
     let key = format!("0x{}", hex::encode(bytes));
     let jsonreq = json!({
         "method": "state_subscribeStorage",
@@ -291,7 +291,7 @@ pub async fn subscribe_events(url: &str, sender: Sender<String>) {
         "id": "1",
     });
     start_rpc_client_thread(
-        format!("ws://{}:9944", url).to_string(),
+        format!("ws://{}:9944", url),
         jsonreq.to_string(),
         sender,
         on_subscription_msg,
