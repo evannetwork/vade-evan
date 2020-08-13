@@ -16,8 +16,8 @@ pool:
 
 steps:
   - template: '_build/install-rust.yml'
-  - script: cargo build --all
+  - script: cargo build --release
     displayName: Cargo build
-  - script: cargo test --all
+  - script: cargo test --release
     displayName: Cargo test
   
