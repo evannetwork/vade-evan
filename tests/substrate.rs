@@ -19,7 +19,7 @@ mod test_data;
 
 use regex::Regex;
 use std::{env, error::Error, sync::Once};
-use test_data::{SIGNER_LOCAL_IDENTITY, SIGNER_LOCAL_PRIVATE_KEY};
+use test_data::accounts::local::{SIGNER_1_DID, SIGNER_1_PRIVATE_KEY};
 use vade_evan::{
     signing::{LocalSigner, Signer},
     utils::substrate,
@@ -32,11 +32,11 @@ const METHOD_REGEX: &str = r#"^(.*):0x(.*)$"#;
 #[tokio::test]
 async fn substrate_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
     enable_logging();
-    let (method, substrate_did) = convert_did_to_substrate_did(&SIGNER_LOCAL_IDENTITY)?;
+    let (method, substrate_did) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let signer: Box<dyn Signer> = get_signer();
     substrate::whitelist_identity(
         env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
-        SIGNER_LOCAL_PRIVATE_KEY.to_string(),
+        SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         method,
         hex::decode(substrate_did)?,
@@ -48,11 +48,11 @@ async fn substrate_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 async fn substrate_can_create_a_did() -> Result<(), Box<dyn Error>> {
     enable_logging();
-    let (_, substrate_did) = convert_did_to_substrate_did(&SIGNER_LOCAL_IDENTITY)?;
+    let (_, substrate_did) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let signer: Box<dyn Signer> = get_signer();
     let did = substrate::create_did(
         env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
-        SIGNER_LOCAL_PRIVATE_KEY.to_string(),
+        SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         hex::decode(substrate_did)?,
         None,
@@ -67,12 +67,12 @@ async fn substrate_can_create_a_did() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     enable_logging();
-    let (_, converted_identity) = convert_did_to_substrate_did(&SIGNER_LOCAL_IDENTITY)?;
+    let (_, converted_identity) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let converted_identity_vec = hex::decode(converted_identity)?;
     let signer: Box<dyn Signer> = get_signer();
     let did = substrate::create_did(
         env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
-        SIGNER_LOCAL_PRIVATE_KEY.to_string(),
+        SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         converted_identity_vec.clone(),
         None,
@@ -82,7 +82,7 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
         env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
         "Hello_World".to_string(),
         did.clone(),
-        SIGNER_LOCAL_PRIVATE_KEY.to_string(),
+        SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         converted_identity_vec.clone(),
     )
@@ -102,7 +102,7 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
         0,
         "Hello_World_update".to_string(),
         did.clone(),
-        SIGNER_LOCAL_PRIVATE_KEY.to_string(),
+        SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         converted_identity_vec.clone(),
     )
@@ -117,7 +117,7 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
         0,
         "Hello_World".to_string(),
         did.clone(),
-        SIGNER_LOCAL_PRIVATE_KEY.to_string(),
+        SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         converted_identity_vec.clone(),
     )

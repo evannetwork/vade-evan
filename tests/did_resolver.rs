@@ -20,10 +20,8 @@ mod test_data;
 use regex::Regex;
 use std::{env, error::Error, sync::Once};
 use test_data::{
-    EXAMPLE_DID_DOCUMENT1,
-    EXAMPLE_DID_DOCUMENT2,
-    SIGNER_LOCAL_IDENTITY,
-    SIGNER_LOCAL_PRIVATE_KEY,
+    accounts::local::{SIGNER_1_DID, SIGNER_1_PRIVATE_KEY},
+    did::{EXAMPLE_DID_DOCUMENT_1, EXAMPLE_DID_DOCUMENT_2},
 };
 use vade::{VadePlugin, VadePluginResultValue};
 use vade_evan::{
@@ -40,7 +38,7 @@ async fn can_create_dids() -> Result<(), Box<dyn Error>> {
 
     // whitelist identity
     resolver
-        .did_update(SIGNER_LOCAL_IDENTITY, &get_options("whitelistIdentity"), "")
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
         .await?;
 
     // create did
@@ -67,7 +65,7 @@ async fn can_set_did_document() -> Result<(), Box<dyn Error>> {
     // whitelist identity
     let mut resolver: SubstrateDidResolverEvan = get_resolver();
     resolver
-        .did_update(SIGNER_LOCAL_IDENTITY, &get_options("whitelistIdentity"), "")
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
         .await?;
 
     // create did
@@ -83,7 +81,11 @@ async fn can_set_did_document() -> Result<(), Box<dyn Error>> {
 
     // setting did document should not run into an error
     resolver
-        .did_update(&did, &get_options("setDidDocument"), &EXAMPLE_DID_DOCUMENT1)
+        .did_update(
+            &did,
+            &get_options("setDidDocument"),
+            &EXAMPLE_DID_DOCUMENT_1,
+        )
         .await?;
 
     Ok(())
@@ -96,7 +98,7 @@ async fn can_get_did_document() -> Result<(), Box<dyn Error>> {
     // whitelist identity
     let mut resolver: SubstrateDidResolverEvan = get_resolver();
     resolver
-        .did_update(SIGNER_LOCAL_IDENTITY, &get_options("whitelistIdentity"), "")
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
         .await?;
 
     // create did
@@ -112,14 +114,18 @@ async fn can_get_did_document() -> Result<(), Box<dyn Error>> {
 
     // set document
     resolver
-        .did_update(&did, &get_options("setDidDocument"), &EXAMPLE_DID_DOCUMENT1)
+        .did_update(
+            &did,
+            &get_options("setDidDocument"),
+            &EXAMPLE_DID_DOCUMENT_1,
+        )
         .await?;
     // fetch it
     let did_document = match resolver.did_resolve(&did).await? {
         VadePluginResultValue::Success(Some(value)) => value,
         _ => return Err(Box::from("could not get DID document")),
     };
-    assert!(did_document == EXAMPLE_DID_DOCUMENT1);
+    assert!(did_document == EXAMPLE_DID_DOCUMENT_1);
 
     Ok(())
 }
@@ -131,7 +137,7 @@ async fn can_update_did_document() -> Result<(), Box<dyn Error>> {
     // whitelist identity
     let mut resolver: SubstrateDidResolverEvan = get_resolver();
     resolver
-        .did_update(SIGNER_LOCAL_IDENTITY, &get_options("whitelistIdentity"), "")
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
         .await?;
 
     // create did
@@ -147,23 +153,31 @@ async fn can_update_did_document() -> Result<(), Box<dyn Error>> {
 
     // set once to ensure we have a known DID document at the beginning
     resolver
-        .did_update(&did, &get_options("setDidDocument"), &EXAMPLE_DID_DOCUMENT1)
+        .did_update(
+            &did,
+            &get_options("setDidDocument"),
+            &EXAMPLE_DID_DOCUMENT_1,
+        )
         .await?;
     let did_document = match resolver.did_resolve(&did).await? {
         VadePluginResultValue::Success(Some(value)) => value,
         _ => return Err(Box::from("could not get DID document")),
     };
-    assert!(did_document == EXAMPLE_DID_DOCUMENT1);
+    assert!(did_document == EXAMPLE_DID_DOCUMENT_1);
 
     // overwrite and check again
     resolver
-        .did_update(&did, &get_options("setDidDocument"), &EXAMPLE_DID_DOCUMENT2)
+        .did_update(
+            &did,
+            &get_options("setDidDocument"),
+            &EXAMPLE_DID_DOCUMENT_2,
+        )
         .await?;
     let did_document = match resolver.did_resolve(&did).await? {
         VadePluginResultValue::Success(Some(value)) => value,
         _ => return Err(Box::from("could not get DID document")),
     };
-    assert!(did_document == EXAMPLE_DID_DOCUMENT2);
+    assert!(did_document == EXAMPLE_DID_DOCUMENT_2);
 
     Ok(())
 }
@@ -181,7 +195,7 @@ fn get_options(operation: &str) -> String {
             "identity": "{}",
             "operation": "{}"
         }}"###,
-        SIGNER_LOCAL_PRIVATE_KEY, SIGNER_LOCAL_IDENTITY, operation
+        SIGNER_1_PRIVATE_KEY, SIGNER_1_DID, operation
     )
 }
 
