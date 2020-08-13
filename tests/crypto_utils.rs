@@ -21,11 +21,15 @@ mod test_data;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env, error::Error};
 use test_data::{
-    EXAMPLE_CREDENTIAL_SCHEMA,
-    SIGNER_LOCAL_ADDRESS,
-    SIGNER_LOCAL_DID_DOCUMENT_JWS,
-    SIGNER_LOCAL_IDENTITY,
-    SIGNER_LOCAL_PRIVATE_KEY,
+    accounts::{
+        local::{SIGNER_1_ADDRESS, SIGNER_1_DID, SIGNER_1_DID_DOCUMENT_JWS, SIGNER_1_PRIVATE_KEY},
+        remote::{
+            SIGNER_1_PRIVATE_KEY as REMOTE_SIGNER_1_PRIVATE_KEY,
+            SIGNER_1_SIGNED_MESSAGE_HASH as REMOTE_SIGNER_1_SIGNED_MESSAGE_HASH,
+            SIGNING_URL,
+        },
+    },
+    vc_zkp::EXAMPLE_CREDENTIAL_SCHEMA,
 };
 use vade_evan::{
     application::datatypes::{CredentialSchema, SchemaProperty},
@@ -46,25 +50,22 @@ struct JwsDoc {
 
 #[test]
 fn can_recover_address_and_data_from_signature() {
-    let (address, data) = recover_address_and_data(SIGNER_LOCAL_DID_DOCUMENT_JWS).unwrap();
-    assert_eq!(format!("0x{}", address), SIGNER_LOCAL_ADDRESS);
+    let (address, data) = recover_address_and_data(SIGNER_1_DID_DOCUMENT_JWS).unwrap();
+    assert_eq!(format!("0x{}", address), SIGNER_1_ADDRESS);
 
     // if we find these strings, we can assume the recovery is fine
     println!("data: {}", &data);
-    assert_eq!(
-        true,
-        data.contains(&format!(r#""id":"{}""#, &SIGNER_LOCAL_IDENTITY))
-    );
+    assert_eq!(true, data.contains(&format!(r#""id":"{}""#, &SIGNER_1_DID)));
     assert_eq!(
         true,
         data.contains(&format!(
             r##""publicKey":[{{"id":"{}#key-1""##,
-            &SIGNER_LOCAL_IDENTITY
+            &SIGNER_1_DID
         ))
     );
     assert_eq!(
         true,
-        data.contains(&format!(r#"ethereumAddress":"{}"#, &SIGNER_LOCAL_ADDRESS))
+        data.contains(&format!(r#"ethereumAddress":"{}"#, &SIGNER_1_ADDRESS))
     );
 }
 
@@ -80,9 +81,9 @@ async fn can_create_assertion_proof() -> Result<(), Box<dyn Error>> {
     let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
     let proof = create_assertion_proof(
         &doc_to_sign,
-        &format!("{}#key-1", &SIGNER_LOCAL_IDENTITY),
-        SIGNER_LOCAL_IDENTITY,
-        &SIGNER_LOCAL_PRIVATE_KEY,
+        &format!("{}#key-1", &SIGNER_1_DID),
+        SIGNER_1_DID,
+        &SIGNER_1_PRIVATE_KEY,
         &signer,
     )
     .await
@@ -92,7 +93,7 @@ async fn can_create_assertion_proof() -> Result<(), Box<dyn Error>> {
     assert_eq!(proof.r#type, "EcdsaPublicKeySecp256k1".to_owned());
     assert_eq!(
         proof.verification_method,
-        format!("{}#key-1", &SIGNER_LOCAL_IDENTITY)
+        format!("{}#key-1", &SIGNER_1_DID)
     );
 
     // Recover document from signature and check if it equals the original
@@ -104,24 +105,21 @@ async fn can_create_assertion_proof() -> Result<(), Box<dyn Error>> {
         serde_json::to_string(&doc).unwrap(),
         serde_json::to_string(&orig).unwrap()
     );
-    assert_eq!(format!("0x{}", address), SIGNER_LOCAL_ADDRESS);
+    assert_eq!(format!("0x{}", address), SIGNER_1_ADDRESS);
 
     Ok(())
 }
 
 #[tokio::test]
 async fn can_sign_messages_remotely() -> Result<(), Box<dyn Error>> {
-    let signer = RemoteSigner::new(
-        env::var("VADE_EVAN_SIGNING_URL").map_err(|_| "missing VADE_EVAN_SIGNING_URL in env")?,
-    );
+    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
+        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+    ));
     let (_signature, message): ([u8; 65], [u8; 32]) = signer
-        .sign_message("one two three four", "33657f78-3dee-4c06-8fe5-be9af93963a1")
+        .sign_message("one two three four", REMOTE_SIGNER_1_PRIVATE_KEY)
         .await?;
     let message_hash = format!("0x{}", hex::encode(message));
-    assert_eq!(
-        message_hash,
-        "0x52091d1299031b18c1099620a1786363855d9fcd91a7686c866ad64f83de13ff"
-    );
+    assert_eq!(message_hash, REMOTE_SIGNER_1_SIGNED_MESSAGE_HASH);
 
     Ok(())
 }
@@ -130,7 +128,7 @@ async fn can_sign_messages_remotely() -> Result<(), Box<dyn Error>> {
 async fn can_sign_messages_locally() -> Result<(), Box<dyn Error>> {
     let signer = LocalSigner::new();
     let (_signature, message): ([u8; 65], [u8; 32]) = signer
-        .sign_message("one two three four", SIGNER_LOCAL_PRIVATE_KEY)
+        .sign_message("one two three four", SIGNER_1_PRIVATE_KEY)
         .await?;
     let message_hash = format!("0x{}", hex::encode(message));
     assert_eq!(

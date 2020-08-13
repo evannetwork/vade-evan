@@ -17,27 +17,26 @@
 mod test_data;
 
 use serde_json::Value;
-use std::{
-    collections::HashMap,
-    env,
-    error::Error,
-};
+use std::{collections::HashMap, error::Error};
 use test_data::{
-    ISSUER_DID,
-    ISSUER_PRIVATE_KEY,
-    ISSUER_PUBLIC_KEY_DID,
-    SCHEMA_DESCRIPTION,
-    SCHEMA_EXTENDED_PROPERTIES,
-    SCHEMA_MORE_EXTENDED_PROPERTIES,
-    SCHEMA_NAME,
-    SCHEMA_PROPERTIES,
-    SCHEMA_REQUIRED_PROPERTIES,
-    SIGNER_2_KEY_REFERENCE,
-    SIGNER_IDENTITY,
-    SIGNER_IDENTITY_2,
-    SIGNER_PRIVATE_KEY,
-    SIGNING_URL,
-    SUBJECT_DID,
+    accounts::local::{
+        ISSUER_DID,
+        ISSUER_PRIVATE_KEY,
+        ISSUER_PUBLIC_KEY_DID,
+        SIGNER_1_DID,
+        SIGNER_1_PRIVATE_KEY,
+        SIGNER_2_DID,
+        SIGNER_2_PRIVATE_KEY,
+    },
+    vc_zkp::{
+        SCHEMA_DESCRIPTION,
+        SCHEMA_NAME,
+        SCHEMA_PROPERTIES,
+        SCHEMA_PROPERTIES_EXTENDED,
+        SCHEMA_PROPERTIES_MORE_EXTENDED,
+        SCHEMA_REQUIRED_PROPERTIES,
+        SUBJECT_DID,
+    },
 };
 use ursa::bn::BigNumber;
 use ursa::cl::{CredentialSecretsBlindingFactors, Witness};
@@ -64,7 +63,7 @@ use vade_evan::{
         prover::Prover,
     },
     resolver::{ResolverConfig, SubstrateDidResolverEvan},
-    signing::{RemoteSigner, Signer},
+    signing::{LocalSigner, Signer},
     CreateRevocationRegistryDefinitionResult,
     IssueCredentialResult,
     VadeEvan,
@@ -78,7 +77,7 @@ const EVAN_METHOD: &str = "did:evan";
 // TODO: Test proving after revoking another credential of the same registry
 
 #[tokio::test]
-async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn Error>> {
+async fn can_be_registered_as_plugin() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // run test
@@ -96,7 +95,7 @@ async fn vade_evan_can_be_registered_as_plugin() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
+async fn can_whitelist_identity() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // run test
@@ -106,16 +105,16 @@ async fn vade_evan_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_ensure_whitelisted() -> Result<(), Box<dyn Error>> {
+async fn can_ensure_whitelisted() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
-    ensure_whitelist(&mut vade, &SIGNER_IDENTITY_2).await?;
+    ensure_whitelist(&mut vade, &SIGNER_2_DID).await?;
 
     Ok(())
 }
 
 #[tokio::test]
-async fn vade_evan_can_create_schema() -> Result<(), Box<dyn Error>> {
+async fn can_create_schema() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // run test
@@ -125,7 +124,7 @@ async fn vade_evan_can_create_schema() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_propose_credentials() -> Result<(), Box<dyn Error>> {
+async fn can_propose_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
 
@@ -140,7 +139,7 @@ async fn vade_evan_can_propose_credentials() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_offer_credentials() -> Result<(), Box<dyn Error>> {
+async fn can_offer_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -162,7 +161,7 @@ async fn vade_evan_can_offer_credentials() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_request_credentials() -> Result<(), Box<dyn Error>> {
+async fn can_request_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -184,7 +183,7 @@ async fn vade_evan_can_request_credentials() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn Error>> {
+async fn can_issue_credentials() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -224,7 +223,7 @@ async fn vade_evan_can_issue_credentials() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_request_proof() -> Result<(), Box<dyn Error>> {
+async fn can_request_proof() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -247,7 +246,7 @@ async fn vade_evan_can_request_proof() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn Error>> {
+async fn can_present_proofs() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -306,8 +305,7 @@ async fn vade_evan_can_present_proofs() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_present_proofs_with_less_properties(
-) -> Result<(), Box<dyn Error>> {
+async fn can_present_proofs_with_less_properties() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_extended_credential_schema(&mut vade).await?;
@@ -462,7 +460,7 @@ async fn vade_tnt_cannot_request_credential_with_missing_required_properties(
 }
 
 #[tokio::test]
-async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn Error>> {
+async fn can_verify_proof() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
@@ -523,7 +521,7 @@ async fn vade_evan_can_verify_proof() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn Error>> {
+async fn can_revoke_credential() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // Issue credential
@@ -596,8 +594,7 @@ async fn vade_evan_can_revoke_credential() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn vade_evan_can_verify_proof_after_revocation_update(
-) -> Result<(), Box<dyn Error>> {
+async fn can_verify_proof_after_revocation_update() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // Issue main credential
@@ -713,10 +710,9 @@ async fn vade_evan_can_verify_proof_after_revocation_update(
     Ok(())
 }
 
-#[ignored]
+#[ignore]
 #[tokio::test]
-async fn vade_evan_can_verify_proof_after_multiple_revocation_updates(
-) -> Result<(), Box<dyn Error>> {
+async fn can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
     // Issue main credential
@@ -1049,7 +1045,7 @@ async fn create_extended_credential_schema(
         ISSUER_DID,
         SCHEMA_NAME,
         SCHEMA_DESCRIPTION,
-        SCHEMA_EXTENDED_PROPERTIES,
+        SCHEMA_PROPERTIES_EXTENDED,
         SCHEMA_REQUIRED_PROPERTIES,
         ISSUER_PUBLIC_KEY_DID,
         ISSUER_PRIVATE_KEY
@@ -1097,14 +1093,12 @@ fn get_options() -> String {
             "privateKey": "{}",
             "identity": "{}"
         }}"###,
-        SIGNER_PRIVATE_KEY, SIGNER_IDENTITY,
+        SIGNER_1_PRIVATE_KEY, SIGNER_1_DID,
     )
 }
 
 fn get_resolver() -> SubstrateDidResolverEvan {
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
-        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
-    ));
+    let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
     SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
         target: "127.0.0.1".to_owned(),
@@ -1125,9 +1119,7 @@ fn get_vade_evan() -> VadeEvan {
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(substrate_resolver));
 
-    let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
-        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
-    ));
+    let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
     VadeEvan::new(internal_vade, signer)
 }
 
@@ -1305,7 +1297,7 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn Error>> {
     let options = serde_json::to_string(&json_editable).unwrap();
 
     let result = vade
-        .did_update(&SIGNER_IDENTITY, &options, &"".to_string())
+        .did_update(&SIGNER_1_DID, &options, &"".to_string())
         .await;
 
     match result {
@@ -1316,7 +1308,7 @@ async fn whitelist_identity(vade: &mut Vade) -> Result<(), Box<dyn Error>> {
     assert_eq!(
         true,
         resolver
-            .is_whitelisted(&SIGNER_IDENTITY, &SIGNER_PRIVATE_KEY)
+            .is_whitelisted(&SIGNER_1_DID, &SIGNER_1_PRIVATE_KEY)
             .await?
     );
 
@@ -1329,7 +1321,7 @@ async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn E
             "privateKey": "{}",
             "identity": "{}"
         }}"###,
-        SIGNER_2_KEY_REFERENCE, SIGNER_IDENTITY_2,
+        SIGNER_2_PRIVATE_KEY, SIGNER_2_DID,
     );
     let mut json_editable: Value = serde_json::from_str(&auth_string)?;
     json_editable["operation"] = Value::from("ensureWhitelisted");
@@ -1347,16 +1339,14 @@ async fn ensure_whitelist(vade: &mut Vade, signer: &str) -> Result<(), Box<dyn E
     assert_eq!(
         true,
         resolver
-            .is_whitelisted(&SIGNER_IDENTITY_2, &SIGNER_2_KEY_REFERENCE)
+            .is_whitelisted(&SIGNER_2_DID, &SIGNER_2_PRIVATE_KEY)
             .await?
     );
 
     Ok(())
 }
 
-async fn create_credential_schema(
-    vade: &mut Vade,
-) -> Result<CredentialSchema, Box<dyn Error>> {
+async fn create_credential_schema(vade: &mut Vade) -> Result<CredentialSchema, Box<dyn Error>> {
     let message_str = format!(
         r###"{{
       "issuer": "{}",
@@ -1404,7 +1394,7 @@ async fn create_three_property_credential_request(
         ISSUER_DID,
         SCHEMA_NAME,
         SCHEMA_DESCRIPTION,
-        SCHEMA_MORE_EXTENDED_PROPERTIES,
+        SCHEMA_PROPERTIES_MORE_EXTENDED,
         SCHEMA_REQUIRED_PROPERTIES,
         ISSUER_PUBLIC_KEY_DID,
         ISSUER_PRIVATE_KEY
