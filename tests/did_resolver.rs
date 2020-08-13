@@ -22,6 +22,7 @@ use std::{env, error::Error, sync::Once};
 use test_data::{
     accounts::local::{SIGNER_1_DID, SIGNER_1_PRIVATE_KEY},
     did::{EXAMPLE_DID_DOCUMENT_1, EXAMPLE_DID_DOCUMENT_2},
+    environment::DEFAULT_VADE_EVAN_SUBSTRATE_IP,
 };
 use vade::{VadePlugin, VadePluginResultValue};
 use vade_evan::{
@@ -203,6 +204,7 @@ fn get_resolver() -> SubstrateDidResolverEvan {
     let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
     SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        target: env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
     })
 }

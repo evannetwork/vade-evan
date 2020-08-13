@@ -19,7 +19,10 @@ mod test_data;
 
 use regex::Regex;
 use std::{env, error::Error, sync::Once};
-use test_data::accounts::local::{SIGNER_1_DID, SIGNER_1_PRIVATE_KEY};
+use test_data::{
+    accounts::local::{SIGNER_1_DID, SIGNER_1_PRIVATE_KEY},
+    environment::DEFAULT_VADE_EVAN_SUBSTRATE_IP,
+};
 use vade_evan::{
     signing::{LocalSigner, Signer},
     utils::substrate,
@@ -35,7 +38,8 @@ async fn substrate_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
     let (method, substrate_did) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let signer: Box<dyn Signer> = get_signer();
     substrate::whitelist_identity(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         method,
@@ -51,7 +55,8 @@ async fn substrate_can_create_a_did() -> Result<(), Box<dyn Error>> {
     let (_, substrate_did) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let signer: Box<dyn Signer> = get_signer();
     let did = substrate::create_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         hex::decode(substrate_did)?,
@@ -71,7 +76,8 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     let converted_identity_vec = hex::decode(converted_identity)?;
     let signer: Box<dyn Signer> = get_signer();
     let did = substrate::create_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         SIGNER_1_PRIVATE_KEY.to_string(),
         &signer,
         converted_identity_vec.clone(),
@@ -79,7 +85,8 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     )
     .await?;
     substrate::add_payload_to_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         "Hello_World".to_string(),
         did.clone(),
         SIGNER_1_PRIVATE_KEY.to_string(),
@@ -88,17 +95,20 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     )
     .await?;
     let _detail_count = substrate::get_payload_count_for_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         did.clone(),
     )
     .await?;
     let did_detail1 = substrate::get_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         did.clone(),
     )
     .await?;
     substrate::update_payload_in_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         0,
         "Hello_World_update".to_string(),
         did.clone(),
@@ -108,12 +118,14 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     )
     .await?;
     let did_detail2 = substrate::get_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         did.clone(),
     )
     .await?;
     substrate::update_payload_in_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         0,
         "Hello_World".to_string(),
         did.clone(),
@@ -123,7 +135,8 @@ async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     )
     .await?;
     let did_detail3 = substrate::get_did(
-        env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
         did.clone(),
     )
     .await?;

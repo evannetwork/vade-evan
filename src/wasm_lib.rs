@@ -624,8 +624,7 @@ fn get_config_values(
 
 fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
-        "signer" => "remote|https://tntkeyservices-e0ae.azurewebsites.net/api/key/sign",
-        // "signer" => "local",
+        "signer" => "remote|https://tntkeyservices-5b02.azurewebsites.net/api/key/sign",
         "target" => "13.69.59.185",
         _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
     }
