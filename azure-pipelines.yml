@@ -3,19 +3,21 @@ strategy:
   matrix:
     windows-latest:
       imageName: 'windows-latest'
+      rustup_toolchain: stable
     mac-latest:
       imageName: 'macOS-latest'
+      rustup_toolchain: stable
     linux-latest:
       imageName: 'ubuntu-latest'
+      rustup_toolchain: stable
 
 pool:
   vmImage: $(imageName)
 
 steps:
   - template: '_build/install-rust.yml'
-    inputs:
-      rustup_toolchain: stable
   - script: echo "cargo build --all"
     displayName: Cargo build
   - script: echo "cargo test --all"
     displayName: Cargo test
+  
