@@ -61,9 +61,6 @@ pub mod accounts {
         #[allow(dead_code)]
         pub const SIGNER_1_SIGNED_MESSAGE_HASH: &str =
             "0x52091d1299031b18c1099620a1786363855d9fcd91a7686c866ad64f83de13ff";
-
-        #[allow(dead_code)]
-        pub const SIGNING_URL: &str = "http://tntkeyservices-5b02.azurewebsites.net/api/key/sign";
     }
 }
 
@@ -109,6 +106,16 @@ pub mod did {
         "created": "2022-22-22T22:22:22.222Z",
         "updated": "2022-22-22T22:22:22.222Z"
     }"###;
+}
+
+#[allow(dead_code)]
+pub mod environment {
+    #[allow(dead_code)]
+    pub const DEFAULT_VADE_EVAN_SIGNING_URL: &str =
+        "http://tntkeyservices-5b02.azurewebsites.net/api/key/sign";
+
+    #[allow(dead_code)]
+    pub const DEFAULT_VADE_EVAN_SUBSTRATE_IP: &str = "13.69.59.185";
 }
 
 #[allow(dead_code)]

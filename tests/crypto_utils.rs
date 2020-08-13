@@ -26,9 +26,9 @@ use test_data::{
         remote::{
             SIGNER_1_PRIVATE_KEY as REMOTE_SIGNER_1_PRIVATE_KEY,
             SIGNER_1_SIGNED_MESSAGE_HASH as REMOTE_SIGNER_1_SIGNED_MESSAGE_HASH,
-            SIGNING_URL,
         },
     },
+    environment::DEFAULT_VADE_EVAN_SIGNING_URL,
     vc_zkp::EXAMPLE_CREDENTIAL_SCHEMA,
 };
 use vade_evan::{
@@ -113,7 +113,8 @@ async fn can_create_assertion_proof() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 async fn can_sign_messages_remotely() -> Result<(), Box<dyn Error>> {
     let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(
-        env::var("VADE_EVAN_SIGNING_URL").unwrap_or_else(|_| SIGNING_URL.to_string()),
+        env::var("VADE_EVAN_SIGNING_URL")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SIGNING_URL.to_string()),
     ));
     let (_signature, message): ([u8; 65], [u8; 32]) = signer
         .sign_message("one two three four", REMOTE_SIGNER_1_PRIVATE_KEY)
