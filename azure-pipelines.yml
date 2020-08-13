@@ -4,6 +4,9 @@ strategy:
     windows-latest:
       imageName: 'windows-latest'
       rustup_toolchain: stable
+    windows-latest-rust-nightly:
+      imageName: 'windows-latest'
+      rustup_toolchain: nightly
     mac-latest:
       imageName: 'macOS-latest'
       rustup_toolchain: stable
