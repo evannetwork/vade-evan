@@ -1,10 +1,6 @@
 # see https://nbsoftsolutions.com/blog/azure-pipelines-for-rust-projects
-parameters:
-  rustup_toolchain: ''
-
 steps:
  - bash: |
-     TOOLCHAIN="${{parameters['rustup_toolchain']}}"
      TOOLCHAIN="${TOOLCHAIN:-$RUSTUP_TOOLCHAIN}"
      TOOLCHAIN="${TOOLCHAIN:-stable}"
      echo "##vso[task.setvariable variable=TOOLCHAIN;]$TOOLCHAIN"
@@ -20,3 +16,4 @@ steps:
      echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
    displayName: Install rust
    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+   
