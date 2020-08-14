@@ -3,6 +3,7 @@ strategy:
   matrix:
     windows-latest-rust-nightly:
       imageName: 'windows-latest'
+      rust_log: 'vade_evan::utils::substrate=trace'
       rustup_toolchain: nightly
     mac-latest:
       imageName: 'macOS-latest'
