@@ -19,6 +19,6 @@ steps:
   - template: '_build/install-rust.yml'
   - script: cargo build --release
     displayName: Cargo build
-  - script: cargo test --release
+  - script: $(TEST_PREFIX) cargo test --release
     displayName: Cargo test
   
