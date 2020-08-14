@@ -1,4 +1,8 @@
 # see https://nbsoftsolutions.com/blog/azure-pipelines-for-rust-projects
+variables:
+  build_command: cargo build --release
+  test_command: cargo test --release
+
 strategy:
   matrix:
     windows-latest-rust-nightly:
@@ -17,8 +21,8 @@ pool:
 
 steps:
   - template: '_build/install-rust.yml'
-  - script: cargo build --release
+  - script: $(build_command)
     displayName: Cargo build
-  - script: $(TEST_PREFIX) cargo test --release
+  - script: $(test_command)
     displayName: Cargo test
   
