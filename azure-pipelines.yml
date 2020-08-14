@@ -5,12 +5,12 @@ strategy:
       imageName: 'windows-latest'
       rust_log: 'vade_evan::utils::substrate=trace'
       rustup_toolchain: nightly
-    mac-latest:
-      imageName: 'macOS-latest'
-      rustup_toolchain: stable
-    linux-latest:
-      imageName: 'ubuntu-latest'
-      rustup_toolchain: stable
+    # mac-latest:
+    #   imageName: 'macOS-latest'
+    #   rustup_toolchain: stable
+    # linux-latest:
+    #   imageName: 'ubuntu-latest'
+    #   rustup_toolchain: stable
 
 pool:
   vmImage: $(imageName)
