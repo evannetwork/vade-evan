@@ -40,6 +40,7 @@ use futures::{
     stream::StreamExt,
 };
 use parity_scale_codec::{Decode, Encode, Error as CodecError};
+use rand::Rng;
 use secp256k1::{Message, RecoveryId, Signature};
 use serde_json::{json, Value};
 use sha2::Digest;
@@ -510,12 +511,10 @@ pub async fn create_did(
     payload: Option<&str>,
 ) -> Result<String, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    #[cfg(target_arch = "wasm32")]
-    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
-    #[cfg(not(target_arch = "wasm32"))]
-    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+    let nonce: u64 = get_nonce();
+    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
-        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
     let (sender, receiver) = channel::<String>(100);
     subscribe_events(url.as_str(), sender).await;
@@ -530,7 +529,7 @@ pub async fn create_did(
                 signature.to_vec(),
                 signed_message.to_vec(),
                 identity.to_vec(),
-                now_timestamp
+                nonce
             )
             .hex_encode()
         }
@@ -541,7 +540,7 @@ pub async fn create_did(
             signature.to_vec(),
             signed_message.to_vec(),
             identity.to_vec(),
-            now_timestamp
+            nonce
         )
         .hex_encode(),
     };
@@ -565,7 +564,7 @@ pub async fn create_did(
                 return false;
             }
         };
-        if now_timestamp == decoded_event.nonce {
+        if nonce == decoded_event.nonce {
             return true;
         }
         false
@@ -638,12 +637,10 @@ pub async fn add_payload_to_did(
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let bytes_did_string = hex::encode(&bytes_did);
-    #[cfg(target_arch = "wasm32")]
-    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
-    #[cfg(not(target_arch = "wasm32"))]
-    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+    let nonce: u64 = get_nonce();
+    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
-        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
@@ -659,7 +656,7 @@ pub async fn add_payload_to_did(
         signature.to_vec(),
         signed_message.to_vec(),
         identity.to_vec(),
-        now_timestamp
+        nonce
     );
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock )
         .await
@@ -689,7 +686,7 @@ pub async fn add_payload_to_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&bytes_did_string, now_timestamp),
+        event_watch(&bytes_did_string, nonce),
     )
     .await
     .ok_or("could not get event for updated did")??;
@@ -718,12 +715,10 @@ pub async fn update_payload_in_did(
     let metadata = get_metadata(url.as_str()).await?;
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
-    #[cfg(target_arch = "wasm32")]
-    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
-    #[cfg(not(target_arch = "wasm32"))]
-    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+    let nonce: u64 = get_nonce();
+    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
-        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
     let payload_hex = hex::decode(hex::encode(payload.clone()))?;
 
@@ -740,7 +735,7 @@ pub async fn update_payload_in_did(
         signature.to_vec(),
         signed_message.to_vec(),
         identity.clone(),
-        now_timestamp
+        nonce
     );
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock)
         .await
@@ -771,7 +766,7 @@ pub async fn update_payload_in_did(
         "UpdatedDid",
         None,
         receiver,
-        event_watch(&hex::encode(bytes_did_arr), now_timestamp),
+        event_watch(&hex::encode(bytes_did_arr), nonce),
     )
     .await
     .ok_or("could not could not get updated did event")??;
@@ -793,12 +788,10 @@ pub async fn whitelist_identity(
     identity: Vec<u8>,
 ) -> Result<(), Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-    #[cfg(target_arch = "wasm32")]
-    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
-    #[cfg(not(target_arch = "wasm32"))]
-    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+    let nonce: u64 = get_nonce();
+    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
-        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
 
     let (sender, receiver) = channel::<String>(100);
@@ -812,7 +805,7 @@ pub async fn whitelist_identity(
         signature.to_vec(),
         signed_message.to_vec(),
         identity.clone(),
-        now_timestamp
+        nonce
     );
     let ext_error = send_extrinsic(url.as_str(), xt.hex_encode(), XtStatus::InBlock)
         .await
@@ -847,7 +840,7 @@ pub async fn whitelist_identity(
         "IdentityWhitelist",
         None,
         receiver,
-        event_watch(&identity, now_timestamp),
+        event_watch(&identity, nonce),
     )
     .await
     .ok_or("could not get whitelist identity event")??;
@@ -893,15 +886,12 @@ pub async fn is_whitelisted(
     identity: Vec<u8>,
 ) -> Result<bool, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
-
-    #[cfg(target_arch = "wasm32")]
-    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
-    #[cfg(not(target_arch = "wasm32"))]
-    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+    let nonce: u64 = get_nonce();
+    error!("timestamp_nanos: {}", &nonce);
 
     // Sign a message to use for retrieving the account ID
     let (signature, signed_message) = signer
-        .sign_message(&now_timestamp.to_string(), &private_key.to_string())
+        .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
 
     let account = recover_ethereum_account(signature, signed_message)
@@ -1063,4 +1053,14 @@ fn recover_ethereum_account(
     account_id.copy_from_slice(&hash[12..32]);
 
     Ok(account_id)
+}
+
+fn get_nonce() -> u64 {
+    let mut rng = rand::thread_rng();
+    #[cfg(target_arch = "wasm32")]
+    let now_timestamp = js_sys::Date::new_0().get_time() as u64;
+    #[cfg(not(target_arch = "wasm32"))]
+    let now_timestamp: u64 = Utc::now().timestamp_nanos() as u64;
+
+    rng.gen_range(0, 100) + now_timestamp
 }
