@@ -33,7 +33,7 @@ static INIT: Once = Once::new();
 const METHOD_REGEX: &str = r#"^(.*):0x(.*)$"#;
 
 #[tokio::test]
-async fn substrate_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
+async fn can_whitelist_identity() -> Result<(), Box<dyn Error>> {
     enable_logging();
     let (method, substrate_did) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let signer: Box<dyn Signer> = get_signer();
@@ -50,7 +50,7 @@ async fn substrate_can_whitelist_identity() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn substrate_can_create_a_did() -> Result<(), Box<dyn Error>> {
+async fn can_create_a_did() -> Result<(), Box<dyn Error>> {
     enable_logging();
     let (_, substrate_did) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let signer: Box<dyn Signer> = get_signer();
@@ -70,7 +70,7 @@ async fn substrate_can_create_a_did() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn substrate_can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
+async fn can_add_payload_to_did() -> Result<(), Box<dyn Error>> {
     enable_logging();
     let (_, converted_identity) = convert_did_to_substrate_did(&SIGNER_1_DID)?;
     let converted_identity_vec = hex::decode(converted_identity)?;
