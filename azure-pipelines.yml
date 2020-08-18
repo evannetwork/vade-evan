@@ -1,10 +1,23 @@
-jobs:
- - template: default.yml@templates
+# see https://nbsoftsolutions.com/blog/azure-pipelines-for-rust-projects
+strategy:
+  matrix:
+    windows-latest:
+      imageName: 'windows-latest'
+      rustup_toolchain: stable
+    mac-latest:
+      imageName: 'macOS-latest'
+      rustup_toolchain: stable
+    linux-latest:
+      imageName: 'ubuntu-latest'
+      rustup_toolchain: stable
 
-resources:
-  repositories:
-    - repository: templates
-      type: github
-      name: crate-ci/azure-pipelines
-      ref: refs/heads/v0.4
-      endpoint: wulfraem
+pool:
+  vmImage: $(imageName)
+
+steps:
+  - template: '_build/install-rust.yml'
+  - script: cargo build --release
+    displayName: Cargo build
+  - script: cargo test --release
+    displayName: Cargo test
+  
