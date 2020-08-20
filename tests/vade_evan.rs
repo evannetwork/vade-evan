@@ -17,7 +17,7 @@
 mod test_data;
 
 use serde_json::Value;
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, env, error::Error};
 use test_data::{
     accounts::local::{
         ISSUER_DID,
@@ -28,6 +28,7 @@ use test_data::{
         SIGNER_2_DID,
         SIGNER_2_PRIVATE_KEY,
     },
+    environment::DEFAULT_VADE_EVAN_SUBSTRATE_IP,
     vc_zkp::{
         SCHEMA_DESCRIPTION,
         SCHEMA_NAME,
@@ -1101,7 +1102,8 @@ fn get_resolver() -> SubstrateDidResolverEvan {
     let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
     SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
-        target: "127.0.0.1".to_owned(),
+        target: env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
     })
 }
 
