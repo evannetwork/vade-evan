@@ -14,40 +14,44 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    AggregatedProof,
-    Credential,
-    CredentialDefinition,
-    CredentialOffer,
-    CredentialProposal,
-    CredentialRequest,
-    CredentialSchema,
-    CredentialSubProof,
-    CredentialSubject,
-    DeltaHistory,
-    EncodedCredentialValue,
-    ProofCredential,
-    ProofPresentation,
-    ProofRequest,
-    RevocationRegistryDefinition,
-    RevocationState,
+use crate::{
+    application::datatypes::{
+        AggregatedProof,
+        Credential,
+        CredentialDefinition,
+        CredentialOffer,
+        CredentialProposal,
+        CredentialRequest,
+        CredentialSchema,
+        CredentialSubProof,
+        CredentialSubject,
+        DeltaHistory,
+        EncodedCredentialValue,
+        ProofCredential,
+        ProofPresentation,
+        ProofRequest,
+        RevocationRegistryDefinition,
+        RevocationState,
+    },
+    crypto::{crypto_datatypes::CryptoCredentialDefinition, crypto_prover::Prover as CryptoProver},
+    utils::utils::generate_uuid,
 };
-use crate::crypto::crypto_datatypes::CryptoCredentialDefinition;
-use crate::crypto::crypto_prover::Prover as CryptoProver;
-use crate::utils::utils::generate_uuid;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
-use std::convert::TryInto;
+use std::{collections::HashMap, convert::TryInto, error::Error};
+use ursa::{
+    bn::BigNumber,
+    cl::{
+        CredentialSecretsBlindingFactors,
+        MasterSecret,
+        RevocationTailsGenerator,
+        SimpleTailsAccessor,
+        Witness,
+    },
+};
+
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
-use ursa::bn::BigNumber;
-use ursa::cl::{
-    CredentialSecretsBlindingFactors,
-    MasterSecret,
-    RevocationTailsGenerator,
-    SimpleTailsAccessor,
-    Witness,
-};
+
 #[cfg(target_arch = "wasm32")]
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 
@@ -73,12 +77,12 @@ impl Prover {
         subject_did: &str,
         schema_did: &str,
     ) -> CredentialProposal {
-        return CredentialProposal {
+        CredentialProposal {
             issuer: issuer_did.to_owned(),
             subject: subject_did.to_owned(),
             schema: schema_did.to_owned(),
             r#type: "EvanZKPCredentialProposal".to_string(),
-        };
+        }
     }
 
     /// Request a new credential based on a received credential offering.
@@ -98,8 +102,7 @@ impl Prover {
         credential_schema: CredentialSchema,
         master_secret: MasterSecret,
         credential_values: HashMap<String, String>,
-    ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn std::error::Error>>
-    {
+    ) -> Result<(CredentialRequest, CredentialSecretsBlindingFactors), Box<dyn Error>> {
         for required in &credential_schema.required {
             if credential_values.get(required).is_none() {
                 let error = format!("Missing required schema property; {}", required);
@@ -159,7 +162,7 @@ impl Prover {
         revocation_registries: HashMap<String, RevocationRegistryDefinition>,
         witnesses: HashMap<String, Witness>,
         master_secret: &MasterSecret,
-    ) -> Result<ProofPresentation, Box<dyn std::error::Error>> {
+    ) -> Result<ProofPresentation, Box<dyn Error>> {
         let (vcs, aggregated_proof) = Prover::create_proof_credentials(
             proof_request,
             credentials,
@@ -187,7 +190,7 @@ impl Prover {
         revocation_registries: HashMap<String, RevocationRegistryDefinition>,
         witnesses: HashMap<String, Witness>,
         master_secret: &MasterSecret,
-    ) -> Result<(Vec<ProofCredential>, AggregatedProof), Box<dyn std::error::Error>> {
+    ) -> Result<(Vec<ProofCredential>, AggregatedProof), Box<dyn Error>> {
         let crypto_proof = CryptoProver::create_proof_with_revoc(
             &proof_request,
             &credentials,
@@ -199,8 +202,7 @@ impl Prover {
         )?;
 
         let mut proof_creds: Vec<ProofCredential> = Vec::new();
-        let mut i = 0;
-        for sub_request in proof_request.sub_proof_requests {
+        for (i, sub_request) in proof_request.sub_proof_requests.into_iter().enumerate() {
             let credential = credentials
                 .get(&sub_request.schema)
                 .ok_or("Requested credential not provided")?;
@@ -243,8 +245,6 @@ impl Prover {
             };
 
             proof_creds.push(proof_cred);
-
-            i += 1;
         }
 
         let aggregated = AggregatedProof {
@@ -274,7 +274,7 @@ impl Prover {
     /// ```
     pub fn encode_values(
         credential_values: HashMap<String, String>,
-    ) -> Result<HashMap<String, EncodedCredentialValue>, Box<dyn std::error::Error>> {
+    ) -> Result<HashMap<String, EncodedCredentialValue>, Box<dyn Error>> {
         let mut encoded_values: HashMap<String, EncodedCredentialValue> = HashMap::new();
 
         let mut encoded: String;
@@ -317,7 +317,7 @@ impl Prover {
     /// Create a new master secret to be stored privately on the prover's site.
     pub fn create_master_secret() -> MasterSecret {
         match CryptoProver::create_master_secret() {
-            Ok(secret) => return secret,
+            Ok(secret) => secret,
             Err(e) => panic!(e), // TODO how to handle error
         }
     }
@@ -341,7 +341,7 @@ impl Prover {
         master_secret: &MasterSecret,
         revocation_registry_definition: &RevocationRegistryDefinition,
         witness: &Witness,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         let rev_reg_def: RevocationRegistryDefinition =
             serde_json::from_str(&serde_json::to_string(revocation_registry_definition)?)?;
 
@@ -385,7 +385,7 @@ impl Prover {
     pub fn update_revocation_state_for_credential(
         revocation_state: RevocationState,
         rev_reg_def: RevocationRegistryDefinition,
-    ) -> Result<RevocationState, Box<dyn std::error::Error>> {
+    ) -> Result<RevocationState, Box<dyn Error>> {
         let mut witness: Witness = revocation_state.witness.clone();
 
         let mut deltas: Vec<DeltaHistory> = rev_reg_def
@@ -396,7 +396,7 @@ impl Prover {
             .collect();
         deltas.sort_by(|a, b| a.created.cmp(&b.created));
         let max_cred = rev_reg_def.maximum_credential_count;
-        let mut generator: RevocationTailsGenerator = rev_reg_def.tails.clone();
+        let mut generator: RevocationTailsGenerator = rev_reg_def.tails;
         let mut big_delta = revocation_state.delta.clone();
         for delta in deltas {
             big_delta
@@ -417,12 +417,18 @@ impl Prover {
         Ok(RevocationState {
             credential_id: revocation_state.credential_id.clone(),
             revocation_id: revocation_state.revocation_id,
-            witness: witness.clone(),
-            delta: big_delta.clone(),
+            witness,
+            delta: big_delta,
             updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_err(|_| "Error generating unix timestamp for delta history")?
                 .as_secs(),
         })
+    }
+}
+
+impl Default for Prover {
+    fn default() -> Self {
+        Self::new()
     }
 }

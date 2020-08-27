@@ -1,5 +1,7 @@
 extern crate clap;
+
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use std::error::Error;
 use ursa::cl::prover::Prover;
 use vade::Vade;
 use vade_evan::{
@@ -9,7 +11,7 @@ use vade_evan::{
 };
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn Error>> {
     let matches = get_argument_matches()?;
 
     let results = match matches.subcommand() {
@@ -155,7 +157,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn std::error::Error>> {
+fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
     Ok(App::new("vade_evan_bin")
         .version("0.0.6")
         .author("evan GmbH")
@@ -315,7 +317,7 @@ fn get_argument_value<'a>(
     }
 }
 
-fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> {
+fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn Error>> {
     Ok(match arg_name {
         "did" => Arg::with_name("did")
             .long("did")
@@ -375,7 +377,7 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
-fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn std::error::Error>> {
+fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn Error>> {
     let target = get_argument_value(&matches, "target", Some("13.69.59.185"));
     let signer = get_argument_value(&matches, "signer", Some("local"));
 
@@ -393,7 +395,7 @@ fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn std::error::E
     Ok(vade)
 }
 
-fn get_vade_evan(target: &str, signer: &str) -> Result<VadeEvan, Box<dyn std::error::Error>> {
+fn get_vade_evan(target: &str, signer: &str) -> Result<VadeEvan, Box<dyn Error>> {
     let mut internal_vade = Vade::new();
     let signer_box: Box<dyn Signer> = get_signer(signer);
     internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {

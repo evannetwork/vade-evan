@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with substrate-subxt.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, marker::PhantomData, str::FromStr};
-
-use parity_scale_codec::{Decode, Encode};
-
-//use log::*;
 use super::frame_metadata::{
     DecodeDifferent,
     RuntimeMetadata,
@@ -29,7 +24,9 @@ use super::frame_metadata::{
     META_RESERVED,
 };
 use crate::utils::substrate;
+use parity_scale_codec::{Decode, Encode};
 use sp_storage::StorageKey;
+use std::{collections::HashMap, marker::PhantomData, str::FromStr};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MetadataError {
@@ -588,10 +585,7 @@ fn convert_event(
         let arg = arg.parse::<EventArg>()?;
         arguments.push(arg);
     }
-    Ok(ModuleEventMetadata {
-        name: name.to_string(),
-        arguments,
-    })
+    Ok(ModuleEventMetadata { name, arguments })
 }
 
 fn convert_error(
@@ -599,10 +593,7 @@ fn convert_error(
 ) -> Result<ModuleEventMetadata, ConversionError> {
     let name = convert(event.name)?;
     let arguments = Vec::new();
-    Ok(ModuleEventMetadata {
-        name: name.to_string(),
-        arguments,
-    })
+    Ok(ModuleEventMetadata { name, arguments })
 }
 
 fn convert_entry(
