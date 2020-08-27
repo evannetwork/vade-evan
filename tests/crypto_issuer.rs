@@ -18,14 +18,14 @@ extern crate vade_evan;
 
 mod test_data;
 
-use std::collections::HashMap;
-use test_data::EXAMPLE_CREDENTIAL_SCHEMA;
+use std::{collections::HashMap, error::Error};
+use test_data::vc_zkp::EXAMPLE_CREDENTIAL_SCHEMA;
 use vade_evan::application::datatypes::CredentialSchema;
 use vade_evan::crypto::crypto_datatypes::CryptoCredentialDefinition;
 use vade_evan::crypto::crypto_issuer::Issuer as CryptoIssuer;
 
 #[test]
-fn can_create_credential_definition() -> Result<(), Box<dyn std::error::Error>> {
+fn can_create_credential_definition() -> Result<(), Box<dyn Error>> {
     let credential_schema: CredentialSchema =
         serde_json::from_str(EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
     let def: CryptoCredentialDefinition =

@@ -14,18 +14,13 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    CredentialRequest,
-    CredentialSchema,
-    RevocationRegistryDefinition,
+use crate::{
+    application::datatypes::{CredentialRequest, CredentialSchema, RevocationRegistryDefinition},
+    crypto::crypto_datatypes::{CryptoCredentialDefinition, CryptoRevocationRegistryDefinition},
 };
-use crate::crypto::crypto_datatypes::{
-    CryptoCredentialDefinition,
-    CryptoRevocationRegistryDefinition,
-};
-use std::collections::HashSet;
-use ursa::cl::issuer::Issuer as CryptoIssuer;
+use std::{collections::HashSet, error::Error};
 use ursa::cl::{
+    issuer::Issuer as CryptoIssuer,
     new_nonce,
     CredentialPrivateKey,
     CredentialPublicKey,
@@ -49,8 +44,7 @@ impl Issuer {
 
     pub fn create_credential_definition(
         credential_schema: &CredentialSchema,
-    ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn std::error::Error>>
-    {
+    ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn Error>> {
         let mut non_credential_schema_builder =
             CryptoIssuer::new_non_credential_schema_builder()
                 .map_err(|e| format!("could not get new non credential schema builder; {}", &e))?;
@@ -93,8 +87,7 @@ impl Issuer {
         credential_request: &CredentialRequest,
         credential_private_key: &CredentialPrivateKey,
         credential_public_key: &CredentialPublicKey,
-    ) -> Result<(CredentialSignature, SignatureCorrectnessProof, Nonce), Box<dyn std::error::Error>>
-    {
+    ) -> Result<(CredentialSignature, SignatureCorrectnessProof, Nonce), Box<dyn Error>> {
         let credential_issuance_nonce =
             new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?;
 
@@ -138,7 +131,7 @@ impl Issuer {
             Nonce,
             Witness,
         ),
-        Box<dyn std::error::Error>,
+        Box<dyn Error>,
     > {
         let credential_issuance_nonce =
             new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?;
@@ -191,10 +184,7 @@ impl Issuer {
     pub fn create_revocation_registry(
         credential_public_key: &CredentialPublicKey,
         maximum_credential_count: u32,
-    ) -> Result<
-        (CryptoRevocationRegistryDefinition, RevocationKeyPrivate),
-        Box<dyn std::error::Error>,
-    > {
+    ) -> Result<(CryptoRevocationRegistryDefinition, RevocationKeyPrivate), Box<dyn Error>> {
         let (rev_key_pub, rev_key_priv, rev_registry, rev_tails_gen) =
             CryptoIssuer::new_revocation_registry_def(
                 credential_public_key,
@@ -222,7 +212,7 @@ impl Issuer {
     pub fn revoke_credential(
         revocation_registry_definition: &RevocationRegistryDefinition,
         revocation_id: u32,
-    ) -> Result<RevocationRegistryDelta, Box<dyn std::error::Error>> {
+    ) -> Result<RevocationRegistryDelta, Box<dyn Error>> {
         let mut registry = revocation_registry_definition.registry.clone();
         let mut tails_gen = revocation_registry_definition.tails.clone();
         let max_cred_num = revocation_registry_definition.maximum_credential_count;
@@ -239,5 +229,11 @@ impl Issuer {
     ) -> RevocationRegistry {
         let new_registry = RevocationRegistry::from(revocation_registry_delta);
         return new_registry;
+    }
+}
+
+impl Default for Issuer {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -15,18 +15,20 @@
 */
 
 use serde::{Deserialize, Serialize};
-use ursa::bn::BigNumber;
-use ursa::cl::{
-    BlindedCredentialSecrets,
-    BlindedCredentialSecretsCorrectnessProof,
-    CredentialKeyCorrectnessProof,
-    CredentialPublicKey,
-    CredentialSchema as CryptoCredentialSchema,
-    RevocationKeyPublic,
-    RevocationRegistry,
-    RevocationRegistryDelta,
-    RevocationTailsGenerator,
-    SubProofRequest,
+use ursa::{
+    bn::BigNumber,
+    cl::{
+        BlindedCredentialSecrets,
+        BlindedCredentialSecretsCorrectnessProof,
+        CredentialKeyCorrectnessProof,
+        CredentialPublicKey,
+        CredentialSchema as CryptoCredentialSchema,
+        RevocationKeyPublic,
+        RevocationRegistry,
+        RevocationRegistryDelta,
+        RevocationTailsGenerator,
+        SubProofRequest,
+    },
 };
 
 pub struct CryptoCredentialRequest {

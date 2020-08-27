@@ -14,15 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with substrate-subxt.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::utils::extrinsic::node_metadata::{EventArg, Metadata, MetadataError};
+use parity_scale_codec::{Codec, Compact, Decode, Encode, Error as CodecError, Input, Output};
+pub use sp_core::H256 as Hash;
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
     marker::Send,
 };
-
-use crate::utils::extrinsic::node_metadata::{EventArg, Metadata, MetadataError};
-use parity_scale_codec::{Codec, Compact, Decode, Encode, Error as CodecError, Input, Output};
-pub use sp_core::H256 as Hash;
 
 /// Event for the System module.
 #[derive(Clone, Debug, Decode)]
@@ -30,7 +29,7 @@ pub enum SystemEvent {
     // An extrinsic completed successfully.
     ExtrinsicSuccess(DispatchInfo),
     // An extrinsic failed.
-    ExtrinsicFailed(DispatchError),
+    ExtrinsicFailed(DispatchError, DispatchInfo),
 }
 
 /// Top level Event that can be produced by a substrate runtime

@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{value::RawValue, Value};
 use sha2::{Digest, Sha256};
 use sha3::Keccak256;
-use std::convert::TryInto;
+use std::{convert::TryInto, error::Error};
 
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Utc;
@@ -48,12 +48,12 @@ pub async fn create_assertion_proof(
     issuer: &str,
     private_key: &str,
     signer: &Box<dyn Signer>,
-) -> Result<AssertionProof, Box<dyn std::error::Error>> {
+) -> Result<AssertionProof, Box<dyn Error>> {
     // create to-be-signed jwt
     let header_str = r#"{"typ":"JWT","alg":"ES256K-R"}"#;
     let padded = BASE64URL.encode(header_str.as_bytes());
     let header_encoded = padded.trim_end_matches('=');
-    debug!("header base64 url encdoded: {:?}", &header_encoded);
+    debug!("header base64 url encoded: {:?}", &header_encoded);
 
     #[cfg(target_arch = "wasm32")]
     let now: String = js_sys::Date::new_0().to_iso_string().to_string().into();
@@ -68,7 +68,7 @@ pub async fn create_assertion_proof(
     data_json["iss"] = Value::from(issuer);
     let padded = BASE64URL.encode(format!("{}", &data_json).as_bytes());
     let data_encoded = padded.trim_end_matches('=');
-    debug!("data base64 url encdoded: {:?}", &data_encoded);
+    debug!("data base64 url encoded: {:?}", &data_encoded);
 
     // create hash of data (including header)
     let header_and_data = format!("{}.{}", header_encoded, data_encoded);
@@ -87,14 +87,13 @@ pub async fn create_assertion_proof(
 
     // build proof property as serde object
     let jws: String = format!("{}.{}", &header_and_data, sig_base64url);
-    let utc_now: String = format!("{}", &now);
 
     let proof = AssertionProof {
         r#type: "EcdsaPublicKeySecp256k1".to_string(),
-        created: utc_now.to_string(),
+        created: now,
         proof_purpose: "assertionMethod".to_string(),
         verification_method: verification_method.to_string(),
-        jws: jws.to_string(),
+        jws,
     };
 
     Ok(proof)
@@ -115,7 +114,7 @@ pub async fn create_assertion_proof(
 pub fn check_assertion_proof(
     vc_document: &str,
     signer_address: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut vc: Value = serde_json::from_str(vc_document)?;
     if vc["proof"].is_null() {
         debug!("vcs without a proof are considered as valid");
@@ -178,7 +177,7 @@ pub fn check_assertion_proof(
 ///
 /// # Returns
 /// * `(String, String)` - (Address, Data) tuple
-pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn Error>> {
     // jwt text parsing
     let split: Vec<&str> = jwt.split('.').collect();
     let (header, data, signature) = (split[0], split[1], split[2]);
@@ -220,9 +219,7 @@ pub fn recover_address_and_data(jwt: &str) -> Result<(String, String), Box<dyn s
         .map_err(|_| "header_and_data hash invalid")?;
     let ctx_msg = Message::parse(&hash_arr);
     let mut signature_array = [0u8; 64];
-    for i in 0..64 {
-        signature_array[i] = signature_decoded[i];
-    }
+    signature_array[..64].clone_from_slice(&signature_decoded[..64]);
     // slice signature and recovery for recovery
     debug!("recovery id; {}", signature_decoded[64]);
     let ctx_sig = Signature::parse(&signature_array);

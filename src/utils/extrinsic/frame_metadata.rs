@@ -20,10 +20,10 @@
 //! This really doesn't belong here, but is necessary for the moment. In the future
 //! it should be removed entirely to an external module for shimming on to the
 //! codec-encoded metadata.
-use serde::Serialize;
 
 use parity_scale_codec::{Decode, Error, Input};
 use parity_scale_codec::{Encode, Output};
+use serde::Serialize;
 use sp_std::vec::Vec;
 
 type StringBuf = String;
@@ -71,7 +71,7 @@ where
     O: Decode + 'static,
 {
     fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
-        <O>::decode(input).map(|val| DecodeDifferent::Decoded(val))
+        <O>::decode(input).map(DecodeDifferent::Decoded)
     }
 }
 

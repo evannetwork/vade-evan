@@ -17,81 +17,168 @@
 extern crate regex;
 mod test_data;
 
-use std::env;
-use std::error::Error;
-use std::sync::Once;
-use vade::{VadePlugin, VadePluginResultValue};
-// use test_data::{SIGNER_IDENTITY, SIGNER_PRIVATE_KEY, SIGNING_URL};
+use regex::Regex;
+use std::{env, error::Error, sync::Once};
 use test_data::{
-    SIGNER_LOCAL_DID_DOCUMENT1,
-    SIGNER_LOCAL_DID_DOCUMENT2,
-    SIGNER_LOCAL_IDENTITY,
-    SIGNER_LOCAL_PRIVATE_KEY,
+    accounts::local::{SIGNER_1_DID, SIGNER_1_PRIVATE_KEY},
+    did::{EXAMPLE_DID_DOCUMENT_1, EXAMPLE_DID_DOCUMENT_2},
+    environment::DEFAULT_VADE_EVAN_SUBSTRATE_IP,
 };
+use vade::{VadePlugin, VadePluginResultValue};
 use vade_evan::{
     resolver::{ResolverConfig, SubstrateDidResolverEvan},
-    // signing::{RemoteSigner, Signer},
     signing::{LocalSigner, Signer},
 };
 
 static INIT: Once = Once::new();
 
 #[tokio::test]
-async fn did_resolver_can_get_did_document() -> Result<(), Box<dyn Error>> {
+async fn can_create_dids() -> Result<(), Box<dyn Error>> {
     enable_logging();
-
     let mut resolver: SubstrateDidResolverEvan = get_resolver();
-    let did_document = match resolver.did_resolve(&SIGNER_LOCAL_IDENTITY).await? {
-        VadePluginResultValue::Success(Some(value)) => value,
-        _ => return Err(Box::from("could not get DID document")),
+
+    // whitelist identity
+    resolver
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
+        .await?;
+
+    // create did
+    let did = match resolver
+        .did_create("did:evan", &get_options(""), "")
+        .await?
+    {
+        VadePluginResultValue::Success(Some(v)) => v,
+        _ => {
+            return Err(Box::from("could not get DID document"));
+        }
     };
 
-    assert!(
-        did_document == SIGNER_LOCAL_DID_DOCUMENT1 || did_document == SIGNER_LOCAL_DID_DOCUMENT2
-    );
+    let re = Regex::new(r"^(?i)did:evan:0x[0-9a-f]{64}$")?;
+    assert!(re.is_match(&did));
 
     Ok(())
 }
 
 #[tokio::test]
-async fn did_resolver_can_set_did_document() -> Result<(), Box<dyn Error>> {
+async fn can_set_did_document() -> Result<(), Box<dyn Error>> {
     enable_logging();
 
     // whitelist identity
     let mut resolver: SubstrateDidResolverEvan = get_resolver();
     resolver
-        .did_update(SIGNER_LOCAL_IDENTITY, &get_options("whitelistIdentity"), "")
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
         .await?;
 
+    // create did
+    let did = match resolver
+        .did_create("did:evan", &get_options(""), "")
+        .await?
+    {
+        VadePluginResultValue::Success(Some(v)) => v,
+        _ => {
+            return Err(Box::from("could not get DID document"));
+        }
+    };
+
+    // setting did document should not run into an error
+    resolver
+        .did_update(
+            &did,
+            &get_options("setDidDocument"),
+            &EXAMPLE_DID_DOCUMENT_1,
+        )
+        .await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_get_did_document() -> Result<(), Box<dyn Error>> {
+    enable_logging();
+
+    // whitelist identity
     let mut resolver: SubstrateDidResolverEvan = get_resolver();
+    resolver
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
+        .await?;
+
+    // create did
+    let did = match resolver
+        .did_create("did:evan", &get_options(""), "")
+        .await?
+    {
+        VadePluginResultValue::Success(Some(v)) => v,
+        _ => {
+            return Err(Box::from("could not get DID document"));
+        }
+    };
+
+    // set document
+    resolver
+        .did_update(
+            &did,
+            &get_options("setDidDocument"),
+            &EXAMPLE_DID_DOCUMENT_1,
+        )
+        .await?;
+    // fetch it
+    let did_document = match resolver.did_resolve(&did).await? {
+        VadePluginResultValue::Success(Some(value)) => value,
+        _ => return Err(Box::from("could not get DID document")),
+    };
+    assert!(did_document == EXAMPLE_DID_DOCUMENT_1);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_update_did_document() -> Result<(), Box<dyn Error>> {
+    enable_logging();
+
+    // whitelist identity
+    let mut resolver: SubstrateDidResolverEvan = get_resolver();
+    resolver
+        .did_update(SIGNER_1_DID, &get_options("whitelistIdentity"), "")
+        .await?;
+
+    // create did
+    let did = match resolver
+        .did_create("did:evan", &get_options(""), "")
+        .await?
+    {
+        VadePluginResultValue::Success(Some(v)) => v,
+        _ => {
+            return Err(Box::from("could not get DID document"));
+        }
+    };
 
     // set once to ensure we have a known DID document at the beginning
     resolver
         .did_update(
-            SIGNER_LOCAL_IDENTITY,
+            &did,
             &get_options("setDidDocument"),
-            &SIGNER_LOCAL_DID_DOCUMENT1,
+            &EXAMPLE_DID_DOCUMENT_1,
         )
         .await?;
-    let did_document = match resolver.did_resolve(&SIGNER_LOCAL_IDENTITY).await? {
+    let did_document = match resolver.did_resolve(&did).await? {
         VadePluginResultValue::Success(Some(value)) => value,
         _ => return Err(Box::from("could not get DID document")),
     };
-    assert!(did_document == SIGNER_LOCAL_DID_DOCUMENT1);
+    assert!(did_document == EXAMPLE_DID_DOCUMENT_1);
 
     // overwrite and check again
     resolver
         .did_update(
-            SIGNER_LOCAL_IDENTITY,
+            &did,
             &get_options("setDidDocument"),
-            &SIGNER_LOCAL_DID_DOCUMENT2,
+            &EXAMPLE_DID_DOCUMENT_2,
         )
         .await?;
-    let did_document = match resolver.did_resolve(&SIGNER_LOCAL_IDENTITY).await? {
+    let did_document = match resolver.did_resolve(&did).await? {
         VadePluginResultValue::Success(Some(value)) => value,
         _ => return Err(Box::from("could not get DID document")),
     };
-    assert!(did_document == SIGNER_LOCAL_DID_DOCUMENT2);
+    assert!(did_document == EXAMPLE_DID_DOCUMENT_2);
 
     Ok(())
 }
@@ -109,15 +196,15 @@ fn get_options(operation: &str) -> String {
             "identity": "{}",
             "operation": "{}"
         }}"###,
-        SIGNER_LOCAL_PRIVATE_KEY, SIGNER_LOCAL_IDENTITY, operation
+        SIGNER_1_PRIVATE_KEY, SIGNER_1_DID, operation
     )
 }
 
 fn get_resolver() -> SubstrateDidResolverEvan {
-    // let signer: Box<dyn Signer> = Box::new(RemoteSigner::new(SIGNING_URL.to_string()));
     let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
     SubstrateDidResolverEvan::new(ResolverConfig {
         signer,
-        target: env::var("VADE_EVAN_SUBSTRATE_IP").unwrap_or_else(|_| "13.69.59.185".to_string()),
+        target: env::var("VADE_EVAN_SUBSTRATE_IP")
+            .unwrap_or_else(|_| DEFAULT_VADE_EVAN_SUBSTRATE_IP.to_string()),
     })
 }

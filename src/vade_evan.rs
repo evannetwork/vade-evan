@@ -14,11 +14,6 @@
   limitations under the License.
 */
 
-use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use vade::{Vade, VadePlugin, VadePluginResultValue};
-
 use crate::{
     application::{
         datatypes::{
@@ -47,10 +42,32 @@ use crate::{
     },
     signing::Signer,
 };
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, error::Error};
 use ursa::cl::Witness;
+use vade::{Vade, VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
 const EVAN_METHOD_ZKP: &str = "did:evan:zkp";
+
+macro_rules! parse {
+    ($data:expr, $type_name:expr) => {{
+        serde_json::from_str($data)
+            .map_err(|e| format!("{} when parsing {} {}", &e, $type_name, $data))?
+    }};
+}
+
+macro_rules! get_document {
+    ($vade:expr, $did:expr, $type_name:expr) => {{
+        debug!("fetching {} with did; {}", $type_name, $did);
+        let resolve_result = $vade.did_resolve($did).await?;
+        let result_str = resolve_result[0]
+            .as_ref()
+            .ok_or_else(|| format!("could not get {} did document", $type_name))?;
+        parse!(&result_str, &$type_name)
+    }};
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -200,7 +217,7 @@ impl VadeEvan {
         &mut self,
         private_key: &str,
         identity: &str,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String, Box<dyn Error>> {
         let options = format!(
             r###"{{
             "privateKey": "{}",
@@ -232,7 +249,7 @@ impl VadeEvan {
         payload: &str,
         private_key: &str,
         identity: &str,
-    ) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<String>, Box<dyn Error>> {
         let options = format!(
             r###"{{
             "privateKey": "{}",
@@ -274,24 +291,13 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)
-            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
-        let payload: CreateCredentialDefinitionPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
-
-        let results = &self.vade.did_resolve(&payload.schema_did).await?;
-        if results.is_empty() {
-            return Err(Box::from(format!(
-                "could not get schema \"{}\"",
-                &payload.schema_did
-            )));
-        }
-        let schema: CredentialSchema =
-            serde_json::from_str(&results[0].as_ref().ok_or("could not get schema")?)?;
+        let options: AuthenticationOptions = parse!(&options, "options");
+        let payload: CreateCredentialDefinitionPayload = parse!(&payload, "payload");
+        let schema: CredentialSchema = get_document!(&mut self.vade, &payload.schema_did, "schema");
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -337,14 +343,12 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)
-            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
-        let payload: CreateCredentialSchemaPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
+        let options: AuthenticationOptions = parse!(&options, "options");
+        let payload: CreateCredentialSchemaPayload = parse!(&payload, "payload");
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -395,27 +399,17 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)
-            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
-        let payload: CreateRevocationRegistryDefinitionPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
-
-        debug!(
-            "fetching credential definition with did; {}",
-            &payload.credential_definition
+        let options: AuthenticationOptions = parse!(&options, "options");
+        let payload: CreateRevocationRegistryDefinitionPayload = parse!(&payload, "payload");
+        let definition: CredentialDefinition = get_document!(
+            &mut self.vade,
+            &payload.credential_definition,
+            "credential definition"
         );
-        let definition: CredentialDefinition = serde_json::from_str(
-            &self
-                .vade
-                .did_resolve(&payload.credential_definition)
-                .await?[0]
-                .as_ref()
-                .ok_or("could not get credential definition did document")?,
-        )?;
 
         let generated_did = self
             .generate_did(&options.private_key, &options.identity)
@@ -468,45 +462,23 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: IssueCredentialPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
-
-        debug!(
-            "fetching credential definition with did; {}",
+        let payload: IssueCredentialPayload = parse!(&payload, "payload");
+        let definition: CredentialDefinition = get_document!(
+            &mut self.vade,
             &payload.credential_request.credential_definition,
+            "credential definition"
         );
-        let definition: CredentialDefinition = serde_json::from_str(
-            &self
-                .vade
-                .did_resolve(&payload.credential_request.credential_definition)
-                .await?[0]
-                .as_ref()
-                .ok_or("could not get credential definition did document")?,
-        )?;
-
-        debug!("fetching schema with did; {}", &definition.schema);
-        let schema: CredentialSchema = serde_json::from_str(
-            &self.vade.did_resolve(&definition.schema).await?[0]
-                .as_ref()
-                .ok_or("could not get schema did document")?,
-        )?;
-
-        debug!(
-            "fetching revocation definition with did; {}",
+        let schema: CredentialSchema = get_document!(&mut self.vade, &definition.schema, "schema");
+        let mut revocation_definition: RevocationRegistryDefinition = get_document!(
+            &mut self.vade,
             &payload.credential_revocation_definition,
+            "revocation definition"
         );
-        let mut revocation_definition: RevocationRegistryDefinition = serde_json::from_str(
-            &self
-                .vade
-                .did_resolve(&payload.credential_revocation_definition)
-                .await?[0]
-                .as_ref()
-                .ok_or("could not get revocation definition did document")?,
-        )?;
+
         let schema_copy: CredentialSchema = serde_json::from_str(&serde_json::to_string(&schema)?)?;
         let request_copy: CredentialRequest =
             serde_json::from_str(&serde_json::to_string(&payload.credential_request)?)?;
@@ -561,12 +533,11 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: OfferCredentialPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
+        let payload: OfferCredentialPayload = parse!(&payload, "payload");
         let result: CredentialOffer = Issuer::offer_credential(
             &payload.issuer,
             &payload.subject,
@@ -595,12 +566,11 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: PresentProofPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
+        let payload: PresentProofPayload = parse!(&payload, "payload");
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
@@ -609,14 +579,9 @@ impl VadePlugin for VadeEvan {
             HashMap::new();
         for req in &payload.proof_request.sub_proof_requests {
             let schema_did = &req.schema;
-            debug!("fetching schema with did; {}", &schema_did);
             schemas.insert(
                 schema_did.clone(),
-                serde_json::from_str(
-                    &self.vade.did_resolve(&schema_did).await?[0]
-                        .as_ref()
-                        .ok_or("could not get schema did document")?,
-                )?,
+                get_document!(&mut self.vade, &schema_did, "schema"),
             );
 
             let definition_did = payload
@@ -626,17 +591,9 @@ impl VadePlugin for VadeEvan {
                 .signature
                 .credential_definition
                 .clone();
-            debug!(
-                "fetching credential definition with did; {}",
-                &definition_did
-            );
             definitions.insert(
                 schema_did.clone(),
-                serde_json::from_str(
-                    &self.vade.did_resolve(&definition_did).await?[0]
-                        .as_ref()
-                        .ok_or("could not get credential definition did document")?,
-                )?,
+                get_document!(&mut self.vade, &definition_did, "credential definition"),
             );
 
             // Resolve revocation definition
@@ -647,17 +604,9 @@ impl VadePlugin for VadeEvan {
                 .signature
                 .revocation_registry_definition
                 .clone();
-            debug!(
-                "fetching revocation definition with did; {}",
-                &rev_definition_did
-            );
             revocation_definitions.insert(
                 schema_did.clone(),
-                serde_json::from_str(
-                    &self.vade.did_resolve(&rev_definition_did).await?[0]
-                        .as_ref()
-                        .ok_or("could not get revocation definition did document")?,
-                )?,
+                get_document!(&mut self.vade, &rev_definition_did, "revocation definition"),
             );
         }
 
@@ -692,12 +641,11 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: CreateCredentialProposalPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
+        let payload: CreateCredentialProposalPayload = parse!(&payload, "payload");
         let result: CredentialProposal =
             Prover::propose_credential(&payload.issuer, &payload.subject, &payload.schema);
 
@@ -724,32 +672,19 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
         let payload: RequestCredentialPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
-
-        debug!(
-            "fetching credential definition with did; {}",
+            .map_err(|e| format!("{} when parsing payload {}", &e, &payload))?;
+        let definition: CredentialDefinition = get_document!(
+            &mut self.vade,
             &payload.credential_offering.credential_definition,
+            "credential definition"
         );
-        let definition: CredentialDefinition = serde_json::from_str(
-            &self
-                .vade
-                .did_resolve(&payload.credential_offering.credential_definition)
-                .await?[0]
-                .as_ref()
-                .ok_or("could not get credential definition did document")?,
-        )?;
-
-        debug!("fetching schema with did; {}", &definition.schema);
-        let schema: CredentialSchema = serde_json::from_str(
-            &self.vade.did_resolve(&payload.credential_schema).await?[0]
-                .as_ref()
-                .ok_or("could not get schema did document")?,
-        )?;
+        let schema: CredentialSchema =
+            get_document!(&mut self.vade, &payload.credential_schema, "schema");
 
         let result = Prover::request_credential(
             payload.credential_offering,
@@ -781,12 +716,11 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: RequestProofPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
+        let payload: RequestProofPayload = parse!(&payload, "payload");
         let result: ProofRequest = Verifier::request_proof(
             &payload.verifier_did,
             &payload.prover_did,
@@ -819,27 +753,17 @@ impl VadePlugin for VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let options: AuthenticationOptions = serde_json::from_str(&options)
-            .map_err(|e| format!("{} when parsing {}", &e, &options))?;
-        let payload: RevokeCredentialPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
-
-        debug!(
-            "fetching revocation definition with did; {}",
+        let options: AuthenticationOptions = parse!(&options, "options");
+        let payload: RevokeCredentialPayload = parse!(&payload, "payload");
+        let rev_def: RevocationRegistryDefinition = get_document!(
+            &mut self.vade,
             &payload.revocation_registry_definition,
+            "revocation registry definition"
         );
-        let rev_def: RevocationRegistryDefinition = serde_json::from_str(
-            &self
-                .vade
-                .did_resolve(&payload.revocation_registry_definition)
-                .await?[0]
-                .as_ref()
-                .ok_or("could not get revocation registry definition did document")?,
-        )?;
 
         let updated_registry = Issuer::revoke_credential(
             &payload.issuer,
@@ -879,12 +803,11 @@ impl VadePlugin for VadeEvan {
         method: &str,
         _options: &str,
         payload: &str,
-    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn std::error::Error>> {
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
         if method != EVAN_METHOD {
             return Ok(VadePluginResultValue::Ignored);
         }
-        let payload: ValidateProofPayload = serde_json::from_str(&payload)
-            .map_err(|e| format!("{} when parsing {}", &e, &payload))?;
+        let payload: ValidateProofPayload = parse!(&payload, "payload");
 
         // Resolve all necessary credential definitions, schemas and registries
         let mut definitions: HashMap<String, CredentialDefinition> = HashMap::new();
@@ -893,44 +816,23 @@ impl VadePlugin for VadeEvan {
         let mut schemas: HashMap<String, CredentialSchema> = HashMap::new();
         for req in &payload.proof_request.sub_proof_requests {
             let schema_did = &req.schema;
-            debug!("fetching schema with did; {}", &schema_did);
             schemas.insert(
                 schema_did.clone(),
-                serde_json::from_str(
-                    &self.vade.did_resolve(&schema_did).await?[0]
-                        .as_ref()
-                        .ok_or("could not get schema did document")?,
-                )?,
+                get_document!(&mut self.vade, &schema_did, "schema"),
             );
         }
 
         for credential in &payload.presented_proof.verifiable_credential {
             let definition_did = &credential.proof.credential_definition.clone();
-            debug!(
-                "fetching credential definition with did; {}",
-                &definition_did
-            );
             definitions.insert(
                 credential.credential_schema.id.clone(),
-                serde_json::from_str(
-                    &self.vade.did_resolve(&definition_did).await?[0]
-                        .as_ref()
-                        .ok_or("could not get credential definition did document")?,
-                )?,
+                get_document!(&mut self.vade, definition_did, "credential definition"),
             );
 
             let rev_definition_did = &credential.proof.revocation_registry_definition.clone();
-            debug!(
-                "fetching revocation definition with did; {}",
-                &rev_definition_did
-            );
             rev_definitions.insert(
                 credential.credential_schema.id.clone(),
-                Some(serde_json::from_str(
-                    &self.vade.did_resolve(&rev_definition_did).await?[0]
-                        .as_ref()
-                        .ok_or("could not get revocation definition did document")?,
-                )?),
+                get_document!(&mut self.vade, &rev_definition_did, "revocation definition"),
             );
         }
 

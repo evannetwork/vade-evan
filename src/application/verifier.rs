@@ -14,18 +14,20 @@
   limitations under the License.
 */
 
-use crate::application::datatypes::{
-    CredentialDefinition,
-    CredentialSchema,
-    ProofPresentation,
-    ProofRequest,
-    ProofVerification,
-    RevocationRegistryDefinition,
-    SubProofRequest,
+use crate::{
+    application::datatypes::{
+        CredentialDefinition,
+        CredentialSchema,
+        ProofPresentation,
+        ProofRequest,
+        ProofVerification,
+        RevocationRegistryDefinition,
+        SubProofRequest,
+    },
+    crypto::crypto_verifier::verifier::CredVerifier,
+    utils::utils::get_now_as_iso_string,
 };
-use crate::crypto::crypto_verifier::verifier::CredVerifier;
-use crate::utils::utils::get_now_as_iso_string;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 use ursa::cl::new_nonce;
 
 /// Holds the logic needed to verify proofs
@@ -49,11 +51,11 @@ impl Verifier {
         verifier_did: &str,
         prover_did: &str,
         sub_proof_requests: Vec<SubProofRequest>,
-    ) -> Result<ProofRequest, Box<dyn std::error::Error>> {
+    ) -> Result<ProofRequest, Box<dyn Error>> {
         Ok(ProofRequest {
             verifier: verifier_did.to_owned(),
             prover: prover_did.to_owned(),
-            created_at: get_now_as_iso_string().to_owned(),
+            created_at: get_now_as_iso_string(),
             nonce: new_nonce().map_err(|e| format!("could not get new nonce; {}", &e))?,
             sub_proof_requests,
         })
@@ -93,10 +95,16 @@ impl Verifier {
             }
         };
 
-        return ProofVerification {
-            presented_proof: presented_proof.id.to_owned(),
+        ProofVerification {
+            presented_proof: presented_proof.id,
             status: status.to_owned(),
             reason,
-        };
+        }
+    }
+}
+
+impl Default for Verifier {
+    fn default() -> Self {
+        Self::new()
     }
 }
