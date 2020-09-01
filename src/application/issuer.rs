@@ -71,6 +71,10 @@ impl Issuer {
     /// Creates a new credential definition for a `CredentialSchema`. The definition needs to be stored
     /// in a publicly available and temper-proof way.
     ///
+    /// Safe prime numbers can be given with `p_safe` and `q_safe` to speed up key generation.
+    /// Either both or none of them can be provided. Then can be generated with
+    /// `ursa::helpers::generate_safe_prime`.
+    ///
     /// # Arguments
     /// * `assigned_did` - DID to be used to revoke this credential definition
     /// * `issuer_did` - DID of the issuer
@@ -78,6 +82,8 @@ impl Issuer {
     /// * `issuer_public_key_did` - DID of the public key to check the assertion proof of the definition document
     /// * `issuer_proving_key` - Private key used to create the assertion proof
     /// * `signer` - `Signer` to sign with
+    /// * `p_safe` - optional `BigNumber` to speed up key generation
+    /// * `q_safe` - optional `BigNumber` to speed up key generation
     ///
     /// # Returns
     /// * `CredentialDefinition` - The definition object to be saved in a publicly available and temper-proof way
