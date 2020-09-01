@@ -226,9 +226,9 @@ impl VadeEvan {
     ///
     /// for `vc_zkp_create_credential_definition`.
     pub fn generate_safe_prime() -> Result<String, Box<dyn Error>> {
-        generate_safe_prime(LARGE_PRIME)
-            .map_err(|err| format!("could not generate safe prime number; {}", &err))?
-            .to_dec()
+        let bn = generate_safe_prime(LARGE_PRIME)
+            .map_err(|err| format!("could not generate safe prime number; {}", &err))?;
+        serde_json::to_string(&bn)
             .map_err(|err| Box::from(format!("could not serialize big number; {}", &err)))
     }
 
