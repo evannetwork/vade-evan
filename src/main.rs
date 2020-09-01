@@ -70,6 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
                     .await?
             }
+            ("generate_safe_prime", Some(_)) => vec![Some(VadeEvan::generate_safe_prime()?)],
             ("issue_credential", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let payload = get_argument_value(&sub_m, "payload", None);
@@ -204,6 +205,10 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                 .subcommand(
                     SubCommand::with_name("create_master_secret")
                         .about("Creates a new master secret.")
+                )
+                .subcommand(
+                    SubCommand::with_name("generate_safe_prime")
+                        .about("Generates a new safe prime number, that can be used in combination with `create_credential_definition` to for key pair generation.")
                 )
                 .subcommand(
                     SubCommand::with_name("create_credential_definition")

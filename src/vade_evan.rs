@@ -45,7 +45,10 @@ use crate::{
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error};
-use ursa::cl::Witness;
+use ursa::{
+    bn::BigNumber,
+    cl::{constants::LARGE_PRIME, helpers::generate_safe_prime, Witness},
+};
 use vade::{Vade, VadePlugin, VadePluginResultValue};
 
 const EVAN_METHOD: &str = "did:evan";
@@ -83,6 +86,8 @@ pub struct CreateCredentialDefinitionPayload {
     pub schema_did: String,
     pub issuer_public_key_did: String,
     pub issuer_proving_key: String,
+    pub p_safe: BigNumber,
+    pub q_safe: BigNumber,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -213,6 +218,13 @@ impl VadeEvan {
 }
 
 impl VadeEvan {
+    pub fn generate_safe_prime() -> Result<String, Box<dyn Error>> {
+        let bn = generate_safe_prime(LARGE_PRIME)
+            .map_err(|err| format!("could not generate safe prime number; {}", &err))?;
+        serde_json::to_string(&bn)
+            .map_err(|err| Box::from(format!("could not serialize big number; {}", &err)))
+    }
+
     async fn generate_did(
         &mut self,
         private_key: &str,
@@ -310,6 +322,8 @@ impl VadePlugin for VadeEvan {
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
             &self.signer,
+            &payload.p_safe,
+            &payload.q_safe,
         )
         .await?;
 
