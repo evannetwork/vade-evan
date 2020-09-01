@@ -42,13 +42,16 @@ use std::{
     collections::{HashMap, HashSet},
     error::Error,
 };
-use ursa::cl::{
-    new_nonce,
-    CredentialPrivateKey,
-    RevocationKeyPrivate,
-    RevocationRegistry,
-    RevocationRegistryDelta,
-    RevocationTailsGenerator,
+use ursa::{
+    bn::BigNumber,
+    cl::{
+        new_nonce,
+        CredentialPrivateKey,
+        RevocationKeyPrivate,
+        RevocationRegistry,
+        RevocationRegistryDelta,
+        RevocationTailsGenerator,
+    },
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -86,10 +89,12 @@ impl Issuer {
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
         signer: &Box<dyn Signer>,
+        p_safe: &BigNumber,
+        q_safe: &BigNumber,
     ) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn Error>> {
         let created_at = get_now_as_iso_string();
         let (credential_private_key, crypto_credential_def) =
-            CryptoIssuer::create_credential_definition(&schema)?;
+            CryptoIssuer::create_credential_definition(&schema, p_safe, q_safe)?;
         let mut definition = CredentialDefinition {
             id: assigned_did.to_owned(),
             r#type: "EvanZKPCredentialDefinition".to_string(),

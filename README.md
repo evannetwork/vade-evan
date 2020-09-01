@@ -124,7 +124,7 @@ wasm-pack build --release --target nodejs -- --no-default-features --features di
 browser:
 
 ```sh
-wasm-pack build --release --target nodejs -- --no-default-features --features did,vc-zkp,wasm
+wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
 ```
 
 [`did_create`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_create

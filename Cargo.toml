@@ -101,7 +101,7 @@ data-encoding = { version = "2.2.0", optional = true }
 # we need to compile ursa manually because the latest published crate (0.3.2) does not support wasm yet
 # ursa = "0.3.2"
 # ursa = { path = "./../ursa/libursa", default-features = false, optional = true }
-ursa = { git = "https://github.com/evannetwork/ursa", default-features = false, optional = true }
+ursa = { git = "https://github.com/evannetwork/ursa", branch = "feature/separate-create-safe-prime",  default-features = false, optional = true }
 rand = "0.7.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
