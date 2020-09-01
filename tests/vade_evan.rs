@@ -878,7 +878,7 @@ async fn can_create_safe_primes() -> Result<(), Box<dyn Error>> {
     assert_eq!(results.len(), 1);
     let result = results[0].as_ref().ok_or("could not get result")?;
     println!("result: {}", &result);
-    assert!(Regex::new(r"^\d+$")?.is_match(result));
+    assert!(Regex::new(r###"^"\d+"$"###)?.is_match(result));
 
     Ok(())
 }
