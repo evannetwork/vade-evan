@@ -86,8 +86,8 @@ pub struct CreateCredentialDefinitionPayload {
     pub schema_did: String,
     pub issuer_public_key_did: String,
     pub issuer_proving_key: String,
-    pub p_safe: BigNumber,
-    pub q_safe: BigNumber,
+    pub p_safe: Option<BigNumber>,
+    pub q_safe: Option<BigNumber>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -218,10 +218,17 @@ impl VadeEvan {
 }
 
 impl VadeEvan {
+    /// Generate new safe prime number with `ursa`'s configured default size.
+    /// Can be used to generate values for:
+    ///
+    /// - payload.p_safe
+    /// - payload.q_safe
+    ///
+    /// for `vc_zkp_create_credential_definition`.
     pub fn generate_safe_prime() -> Result<String, Box<dyn Error>> {
-        let bn = generate_safe_prime(LARGE_PRIME)
-            .map_err(|err| format!("could not generate safe prime number; {}", &err))?;
-        serde_json::to_string(&bn)
+        generate_safe_prime(LARGE_PRIME)
+            .map_err(|err| format!("could not generate safe prime number; {}", &err))?
+            .to_dec()
             .map_err(|err| Box::from(format!("could not serialize big number; {}", &err)))
     }
 
@@ -284,6 +291,34 @@ impl VadeEvan {
 
 #[async_trait(?Send)]
 impl VadePlugin for VadeEvan {
+    /// Runs a custom function, currently supports
+    ///
+    /// - `generate_safe_prime` to generate safe prime numbers for `vc_zkp_create_credential_definition`
+    ///
+    /// # Arguments
+    ///
+    /// * `method` - method to call a function for (e.g. "did:example")
+    /// * `function` - currently only supports `generate_safe_prime`
+    /// * `_options` - currently not used, so can be left empty
+    /// * `_payload` - currently not used, so can be left empty
+    async fn run_custom_function(
+        &mut self,
+        method: &str,
+        function: &str,
+        _options: &str,
+        _payload: &str,
+    ) -> Result<VadePluginResultValue<Option<String>>, Box<dyn Error>> {
+        if method != EVAN_METHOD {
+            return Ok(VadePluginResultValue::Ignored);
+        }
+        match function {
+            "generate_safe_prime" => Ok(VadePluginResultValue::Success(Some(
+                VadeEvan::generate_safe_prime()?,
+            ))),
+            _ => Ok(VadePluginResultValue::Ignored),
+        }
+    }
+
     /// Creates a new credential definition and stores the public part on-chain. The private part (key) needs
     /// to be stored in a safe way and must not be shared. A credential definition holds cryptographic material
     /// needed to verify proofs. Every definition is bound to one credential schema.
@@ -322,8 +357,8 @@ impl VadePlugin for VadeEvan {
             &payload.issuer_public_key_did,
             &payload.issuer_proving_key,
             &self.signer,
-            &payload.p_safe,
-            &payload.q_safe,
+            payload.p_safe.as_ref(),
+            payload.q_safe.as_ref(),
         )
         .await?;
 

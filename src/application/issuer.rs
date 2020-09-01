@@ -89,8 +89,8 @@ impl Issuer {
         issuer_public_key_did: &str,
         issuer_proving_key: &str,
         signer: &Box<dyn Signer>,
-        p_safe: &BigNumber,
-        q_safe: &BigNumber,
+        p_safe: Option<&BigNumber>,
+        q_safe: Option<&BigNumber>,
     ) -> Result<(CredentialDefinition, CredentialPrivateKey), Box<dyn Error>> {
         let created_at = get_now_as_iso_string();
         let (credential_private_key, crypto_credential_def) =

@@ -81,7 +81,7 @@ sha3 = "0.8.2"
 tokio = { version = "0.2.22", optional = true }
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 # vade = { path = "../vade", version = "0.0.7" }
-vade = { git = "https://github.com/evannetwork/vade", branch = "develop" }
+vade = { git = "https://github.com/evannetwork/vade", branch = "feature/CORE-1760-add-custom-function-support" }
 # cli
 clap = { version = "2.33.1", optional = true }
 # did
