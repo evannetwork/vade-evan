@@ -29,7 +29,7 @@ fn can_create_credential_definition() -> Result<(), Box<dyn Error>> {
     let credential_schema: CredentialSchema =
         serde_json::from_str(EXAMPLE_CREDENTIAL_SCHEMA).unwrap();
     let def: CryptoCredentialDefinition =
-        CryptoIssuer::create_credential_definition(&credential_schema)?.1;
+        CryptoIssuer::create_credential_definition(&credential_schema, None, None)?.1;
 
     // Cannot access p_key.r because it is private, therefore serialize it
     let r_component_str =
