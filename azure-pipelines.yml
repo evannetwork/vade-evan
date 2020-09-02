@@ -24,7 +24,7 @@ steps:
       cargo build --release --features cli
     displayName: Cargo build
   - script: cargo test --release
-   displayName: Cargo test
+    displayName: Cargo test
   - task: ArchiveFiles@2
     displayName: 'Archive build to zip'
     inputs:
