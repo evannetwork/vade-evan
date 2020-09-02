@@ -20,4 +20,14 @@ steps:
     displayName: Cargo build
   - script: cargo test --release
     displayName: Cargo test
+  - task: ArchiveFiles@2
+    displayName: 'Archive build to zip'
+    inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/target'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: '$(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId).zip'
+        replaceExistingArchive: true
+  - upload: $(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId).zip
+    artifact: drop2
   
