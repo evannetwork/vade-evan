@@ -2,14 +2,14 @@
 strategy:
   matrix:
     windows-latest:
-     imageName: 'windows-latest'
-     rustup_toolchain: stable
+      imageName: 'windows-latest'
+      rustup_toolchain: stable
     mac-latest:
       imageName: 'macOS-latest'
       rustup_toolchain: stable
-     linux-latest:
-       imageName: 'ubuntu-latest'
-       rustup_toolchain: stable
+    linux-latest:
+      imageName: 'ubuntu-latest'
+      rustup_toolchain: stable
 
 pool:
   vmImage: $(imageName)
