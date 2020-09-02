@@ -4,12 +4,12 @@ strategy:
     windows-latest:
      imageName: 'windows-latest'
      rustup_toolchain: stable
-    # mac-latest:
-    #   imageName: 'macOS-latest'
-    #   rustup_toolchain: stable
-    #  linux-latest:
-    #    imageName: 'ubuntu-latest'
-    #    rustup_toolchain: stable
+    mac-latest:
+      imageName: 'macOS-latest'
+      rustup_toolchain: stable
+     linux-latest:
+       imageName: 'ubuntu-latest'
+       rustup_toolchain: stable
 
 pool:
   vmImage: $(imageName)
@@ -18,17 +18,13 @@ steps:
   - template: '_build/install-rust.yml'
   - script: |
       set OPENSSL_DIR=D:\a\1\s\vcpkg\packages\openssl-windows_x64-windows
-      dir D:
-      dir D:\a
-      dir D:\a\1
-      dir D:\a\1\s
-      dir D:\a\1\s\vcpkg
-      dir D:\a\1\s\vcpkg\packages
-      dir D:\a\1\s\vcpkg\packages\openssl-windows_x64-windows
+    displayName: update Windows environment for OpenSSL
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+  - script: |
       cargo build --release --features cli
     displayName: Cargo build
-  #- script: cargo test --release
-  #  displayName: Cargo test
+  - script: cargo test --release
+   displayName: Cargo test
   - task: ArchiveFiles@2
     displayName: 'Archive build to zip'
     inputs:
