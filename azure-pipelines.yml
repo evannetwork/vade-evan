@@ -16,7 +16,9 @@ pool:
 
 steps:
   - template: '_build/install-rust.yml'
-  - script: OPENSSL_DIR="D:/a/1/s/vcpkg/packages/openssl-windows_x64-windows/share/openssl-windows" cargo build --release --features cli
+  - script: |
+      set OPENSSL_DIR="D:/a/1/s/vcpkg/packages/openssl-windows_x64-windows/share/openssl-windows"
+      cargo build --release --features cli
     displayName: Cargo build
   #- script: cargo test --release
   #  displayName: Cargo test
