@@ -1,15 +1,15 @@
 # see https://nbsoftsolutions.com/blog/azure-pipelines-for-rust-projects
 strategy:
   matrix:
-    #windows-latest:
-    #  imageName: 'windows-latest'
-    #  rustup_toolchain: stable
+    windows-latest:
+     imageName: 'windows-latest'
+     rustup_toolchain: stable
     # mac-latest:
     #   imageName: 'macOS-latest'
     #   rustup_toolchain: stable
-     linux-latest:
-       imageName: 'ubuntu-latest'
-       rustup_toolchain: stable
+    #  linux-latest:
+    #    imageName: 'ubuntu-latest'
+    #    rustup_toolchain: stable
 
 pool:
   vmImage: $(imageName)
