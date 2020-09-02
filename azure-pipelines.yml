@@ -16,10 +16,10 @@ pool:
 
 steps:
   - template: '_build/install-rust.yml'
-  - script: cargo build --release
+  - script: cargo build --release --features cli
     displayName: Cargo build
-  - script: cargo test --release
-    displayName: Cargo test
+  #- script: cargo test --release
+  #  displayName: Cargo test
   - task: ArchiveFiles@2
     displayName: 'Archive build to zip'
     inputs:
