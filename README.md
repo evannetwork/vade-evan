@@ -27,6 +27,7 @@ Implements the following [`VadePlugin`] functions:
 - [`vc_zkp_request_proof`]
 - [`vc_zkp_present_proof`]
 - [`vc_zkp_verify_proof`]
+- [`run_custom_function`]
 
 ## SubstrateDidResolverEvan
 
@@ -127,6 +128,16 @@ browser:
 wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
 ```
 
+### Feature for building
+
+| feature | default | contents |
+| ------- |:--------:| ------- |
+| did     | x        | enables DID functionalities - [`SubstrateDidResolverEvan`] |
+| vc-zkp  | x        | enables VC functionalities - [`VadeEvan`] |
+| native  | x        | build with optimizations to run natively, not compatible with `wasm` feature |
+| wasm    |          | build with optimizations to run as web assembly, not compatible with `native` |
+| cli     |          | enables command line interface |
+
 [`did_create`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_create
 [`did_resolve`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_resolve
 [`did_update`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_update
@@ -146,3 +157,4 @@ wasm-pack build --release --target web -- --no-default-features --features did,v
 [`vc_zkp_revoke_credential`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_revoke_credential
 [`vc_zkp_update_revocation_registry`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_update_revocation_registry
 [`vc_zkp_verify_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_verify_proof
+[`run_custom_function`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.run_custom_function
