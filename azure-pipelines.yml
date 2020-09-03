@@ -31,8 +31,8 @@ steps:
         rootFolderOrFile: '$(System.DefaultWorkingDirectory)/target'
         includeRootFolder: false
         archiveType: zip
-        archiveFile: '$(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId).zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId)_$(Agent.OS).zip'
         replaceExistingArchive: true
-  - upload: $(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId).zip
+  - upload: $(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId)_$(Agent.OS).zip
     artifact: drop2
   
