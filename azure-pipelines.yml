@@ -26,8 +26,8 @@ steps:
     displayName: Cargo build mac/linux
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
   - script: |
-      cargo test --release
       set OPENSSL_DIR=D:\a\1\s\vcpkg\packages\openssl-windows_x64-windows
+      cargo test --release
     displayName: Cargo test windows
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
   - script: cargo test --release
