@@ -25,16 +25,22 @@ steps:
       cargo build --release --features cli
     displayName: Cargo build mac/linux
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
+  - script: |
+      cargo test --release
+      set OPENSSL_DIR=D:\a\1\s\vcpkg\packages\openssl-windows_x64-windows
+    displayName: Cargo test windows
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
   - script: cargo test --release
-    displayName: Cargo test
+    displayName: Cargo test mac/linux
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
   - task: ArchiveFiles@2
     displayName: 'Archive build to zip'
     inputs:
       rootFolderOrFile: '$(System.DefaultWorkingDirectory)/target'
       includeRootFolder: false
       archiveType: zip
-      archiveFile: '$(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId)_$(Agent.OS).zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/VADE_$(Build.SourceVersion)_$(Agent.OS).zip'
       replaceExistingArchive: true
-  - upload: $(Build.ArtifactStagingDirectory)/VADE_$(Build.BuildId)_$(Agent.OS).zip
+  - upload: $(Build.ArtifactStagingDirectory)/VADE_$(Build.SourceVersion)_$(Agent.OS).zip
     artifact: drop2
   
