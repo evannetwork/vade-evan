@@ -224,7 +224,7 @@ impl VadeEvan {
     /// - payload.p_safe
     /// - payload.q_safe
     ///
-    /// for `vc_zkp_create_credential_definition`.
+    /// for [`vc_zkp_create_credential_definition`](https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_definition).
     pub fn generate_safe_prime() -> Result<String, Box<dyn Error>> {
         let bn = generate_safe_prime(LARGE_PRIME)
             .map_err(|err| format!("could not generate safe prime number; {}", &err))?;
@@ -293,7 +293,7 @@ impl VadeEvan {
 impl VadePlugin for VadeEvan {
     /// Runs a custom function, currently supports
     ///
-    /// - `generate_safe_prime` to generate safe prime numbers for `vc_zkp_create_credential_definition`
+    /// - `generate_safe_prime` to generate safe prime numbers for [`vc_zkp_create_credential_definition`](https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_definition)
     ///
     /// # Arguments
     ///
@@ -322,6 +322,13 @@ impl VadePlugin for VadeEvan {
     /// Creates a new credential definition and stores the public part on-chain. The private part (key) needs
     /// to be stored in a safe way and must not be shared. A credential definition holds cryptographic material
     /// needed to verify proofs. Every definition is bound to one credential schema.
+    ///
+    /// To improve performance, safe prime numbers that are used to derive keys from **can** be
+    /// pre-generated with custom function `generate_safe_prime` which can be called with
+    /// [`run_custom_function`](https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.run_custom_function).
+    /// For these numbers two calls have to be made to create two distinct numbers. They can then
+    /// be provided as [`payload.p_safe`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateCredentialDefinitionPayload.html#structfield.p_safe)
+    /// and [`payload.q_safe`](https://docs.rs/vade_evan/*/vade_evan/struct.CreateCredentialDefinitionPayload.html#structfield.q_safe).
     ///
     /// Note that `options.identity` needs to be whitelisted for this function.
     ///
