@@ -17,7 +17,7 @@
 // shared
 use crate::signing::{LocalSigner, RemoteSigner, Signer};
 use console_log;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 use vade::Vade;
 use wasm_bindgen::prelude::*;
 
