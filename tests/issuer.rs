@@ -102,6 +102,8 @@ async fn can_create_credential_definition() -> Result<(), Box<dyn Error>> {
         "did:evan:testcore:0x0f737d1478ea29df0856169f25ca9129035d6fd1#key-1",
         &ISSUER_PRIVATE_KEY,
         &signer,
+        None,
+        None,
     )
     .await?;
 

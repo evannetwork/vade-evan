@@ -512,7 +512,6 @@ pub async fn create_did(
 ) -> Result<String, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let nonce: u64 = get_nonce();
-    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
         .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
@@ -638,7 +637,6 @@ pub async fn add_payload_to_did(
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let bytes_did_string = hex::encode(&bytes_did);
     let nonce: u64 = get_nonce();
-    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
         .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
@@ -716,7 +714,6 @@ pub async fn update_payload_in_did(
     let bytes_did_arr = get_did_bytes_array(&did)?;
     let bytes_did = sp_core::H256::from(bytes_did_arr);
     let nonce: u64 = get_nonce();
-    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
         .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
@@ -789,7 +786,6 @@ pub async fn whitelist_identity(
 ) -> Result<(), Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let nonce: u64 = get_nonce();
-    error!("timestamp_nanos: {}", &nonce);
     let (signature, signed_message) = signer
         .sign_message(&nonce.to_string(), &private_key.to_string())
         .await?;
@@ -887,7 +883,6 @@ pub async fn is_whitelisted(
 ) -> Result<bool, Box<dyn Error>> {
     let metadata = get_metadata(url.as_str()).await?;
     let nonce: u64 = get_nonce();
-    error!("timestamp_nanos: {}", &nonce);
 
     // Sign a message to use for retrieving the account ID
     let (signature, signed_message) = signer

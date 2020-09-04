@@ -19,19 +19,22 @@ use crate::{
     crypto::crypto_datatypes::{CryptoCredentialDefinition, CryptoRevocationRegistryDefinition},
 };
 use std::{collections::HashSet, error::Error};
-use ursa::cl::{
-    issuer::Issuer as CryptoIssuer,
-    new_nonce,
-    CredentialPrivateKey,
-    CredentialPublicKey,
-    CredentialSignature,
-    Nonce,
-    RevocationKeyPrivate,
-    RevocationRegistry,
-    RevocationRegistryDelta,
-    SignatureCorrectnessProof,
-    SimpleTailsAccessor,
-    Witness,
+use ursa::{
+    bn::BigNumber,
+    cl::{
+        issuer::Issuer as CryptoIssuer,
+        new_nonce,
+        CredentialPrivateKey,
+        CredentialPublicKey,
+        CredentialSignature,
+        Nonce,
+        RevocationKeyPrivate,
+        RevocationRegistry,
+        RevocationRegistryDelta,
+        SignatureCorrectnessProof,
+        SimpleTailsAccessor,
+        Witness,
+    },
 };
 
 // Mediator class to broker between the high-level vade-evan application issuer and the Ursa issuer class
@@ -44,6 +47,8 @@ impl Issuer {
 
     pub fn create_credential_definition(
         credential_schema: &CredentialSchema,
+        p_safe: Option<&BigNumber>,
+        q_safe: Option<&BigNumber>,
     ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn Error>> {
         let mut non_credential_schema_builder =
             CryptoIssuer::new_non_credential_schema_builder()
@@ -72,9 +77,23 @@ impl Issuer {
         let crypto_schema = credential_schema_builder
             .finalize()
             .map_err(|e| format!("could not finalize credential schema; {}", &e))?;
-        let (public_key, credential_private_key, credential_key_correctness_proof) =
-            CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true)
-                .map_err(|e| format!("could not create credential definition; {}", &e))?;
+
+        let (public_key, credential_private_key, credential_key_correctness_proof) = {
+            if p_safe.is_none() || q_safe.is_none() {
+                CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true)
+                    .map_err(|e| format!("could not create credential definition; {}", &e))?
+            } else {
+                CryptoIssuer::new_credential_def_with_primes(
+                    &crypto_schema,
+                    &non_credential_schema,
+                    true,
+                    p_safe.ok_or("could not get prime number p_safe")?,
+                    q_safe.ok_or("could not get prime number q_safe")?,
+                )
+                .map_err(|e| format!("could not create credential definition; {}", &e))?
+            }
+        };
+
         let definition = CryptoCredentialDefinition {
             public_key,
             credential_key_correctness_proof,
