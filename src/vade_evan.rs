@@ -844,7 +844,7 @@ impl VadePlugin for VadeEvan {
         Ok(VadePluginResultValue::Success(Some(serialized)))
     }
 
-    /// Verifies a one or multiple proofs sent in a proof presentation.
+    /// Verifies one or multiple proofs sent in a proof presentation.
     ///
     /// # Arguments
     ///
