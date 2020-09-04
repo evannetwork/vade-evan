@@ -44,7 +44,7 @@ As the did resolver instance needs to sign its requests against substrate, a rem
 ```rust
 use vade_evan::resolver::{ResolverConfig, SubstrateDidResolverEvan};
 let resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-    signing_url: "http://127.0.0.1/sign".to_string(),
+    signer: "http://127.0.0.1/sign".to_string(),
     target: "127.0.0.1".to_string(),
 });
 ```
