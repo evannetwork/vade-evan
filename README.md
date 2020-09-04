@@ -27,6 +27,7 @@ Implements the following [`VadePlugin`] functions:
 - [`vc_zkp_request_proof`]
 - [`vc_zkp_present_proof`]
 - [`vc_zkp_verify_proof`]
+- [`run_custom_function`]
 
 ## SubstrateDidResolverEvan
 
@@ -41,8 +42,13 @@ Supports creating, updating and getting DIDs and DID documents on substrate, the
 As the did resolver instance needs to sign its requests against substrate, a remote endpoint for signing has to be provided. The DID resolver will sign requests for [`did_create`] and [`did_update`]. A signing endpoint has to be passed with the config argument in the constructor, e.g.:
 
 ```rust
+use vade_evan::{
+    resolver::{ResolverConfig, SubstrateDidResolverEvan},
+    signing::{LocalSigner, Signer},
+};
+let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
 let resolver = SubstrateDidResolverEvan::new(ResolverConfig {
-    signing_url: "http://127.0.0.1/sign".to_string(),
+    signer,
     target: "127.0.0.1".to_string(),
 });
 ```
@@ -124,8 +130,18 @@ wasm-pack build --release --target nodejs -- --no-default-features --features di
 browser:
 
 ```sh
-wasm-pack build --release --target nodejs -- --no-default-features --features did,vc-zkp,wasm
+wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
 ```
+
+### Feature for building
+
+| feature | default | contents |
+| ------- |:--------:| ------- |
+| did     | x        | enables DID functionalities - [`SubstrateDidResolverEvan`] |
+| vc-zkp  | x        | enables VC functionalities - [`VadeEvan`] |
+| native  | x        | build with optimizations to run natively, not compatible with `wasm` feature |
+| wasm    |          | build with optimizations to run as web assembly, not compatible with `native` |
+| cli     |          | enables command line interface |
 
 [`did_create`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_create
 [`did_resolve`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_resolve
@@ -146,3 +162,4 @@ wasm-pack build --release --target nodejs -- --no-default-features --features di
 [`vc_zkp_revoke_credential`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_revoke_credential
 [`vc_zkp_update_revocation_registry`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_update_revocation_registry
 [`vc_zkp_verify_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_verify_proof
+[`run_custom_function`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.run_custom_function

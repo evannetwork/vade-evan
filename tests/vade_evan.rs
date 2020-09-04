@@ -16,6 +16,7 @@
 
 mod test_data;
 
+use regex::Regex;
 use serde_json::Value;
 use std::{collections::HashMap, env, error::Error};
 use test_data::{
@@ -862,6 +863,22 @@ async fn can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<
 
     // check results
     assert_ne!(result.status, "rejected");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_create_safe_primes() -> Result<(), Box<dyn Error>> {
+    let mut vade = get_vade();
+
+    let results = vade
+        .run_custom_function(EVAN_METHOD, "generate_safe_prime", "", "")
+        .await?;
+
+    assert_eq!(results.len(), 1);
+    let result = results[0].as_ref().ok_or("could not get result")?;
+    println!("result: {}", &result);
+    assert!(Regex::new(r###"^"\d+"$"###)?.is_match(result));
 
     Ok(())
 }
