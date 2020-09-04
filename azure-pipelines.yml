@@ -42,5 +42,5 @@ steps:
       archiveFile: '$(Build.ArtifactStagingDirectory)/VADE_$(Build.SourceVersion)_$(Agent.OS).zip'
       replaceExistingArchive: true
   - upload: $(Build.ArtifactStagingDirectory)/VADE_$(Build.SourceVersion)_$(Agent.OS).zip
-    artifact: drop2
+    artifact: VADE_$(Build.SourceVersion)_$(Agent.OS)_$(system.JobId)
   
