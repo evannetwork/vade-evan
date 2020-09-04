@@ -22,6 +22,8 @@ use log::{debug, error, warn};
 use ws::{CloseCode, Handler, Handshake, Message, Result, Sender};
 
 #[cfg(target_arch = "wasm32")]
+use std::error::Error;
+#[cfg(target_arch = "wasm32")]
 use web_sys::WebSocket;
 
 #[derive(Debug, PartialEq)]
