@@ -2,4 +2,12 @@
 
 ## Next Version
 
-- initial version
+### Features
+
+### Fixes
+
+### Deprecations
+
+## Version 0.0.6
+
+- initial version after project renaming
