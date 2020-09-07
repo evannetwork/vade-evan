@@ -1,8 +1,8 @@
 # Vade Evan
 
-[![crates.io](https://img.shields.io/crates/v/vade.svg)](https://crates.io/crates/vade-evan)
-[![Documentation](https://docs.rs/vade/badge.svg)](https://docs.rs/vade:q)
-[![Apache-2 licensed](https://img.shields.io/crates/l/vade.svg)](./LICENSE.txt)
+[![crates.io](https://img.shields.io/crates/v/vade-evan.svg)](https://crates.io/crates/vade-evan)
+[![Documentation](https://docs.rs/vade-evan/badge.svg)](https://docs.rs/vade-evan:q)
+[![Apache-2 licensed](https://img.shields.io/crates/l/vade-evan.svg)](./LICENSE.txt)
 
 ## About
 
