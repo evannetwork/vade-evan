@@ -133,15 +133,15 @@ browser:
 wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
 ```
 
-### Feature for building
+### Features for building
 
-| feature | default | contents |
-| ------- |:--------:| ------- |
-| did     | x        | enables DID functionalities - [`SubstrateDidResolverEvan`] |
-| vc-zkp  | x        | enables VC functionalities - [`VadeEvan`] |
-| native  | x        | build with optimizations to run natively, not compatible with `wasm` feature |
-| wasm    |          | build with optimizations to run as web assembly, not compatible with `native` |
-| cli     |          | enables command line interface |
+| feature  | default | contents |
+| -------- |:-------:| -------- |
+| did      |     x   | enables DID functionalities - [`SubstrateDidResolverEvan`] |
+| vc-zkp   |     x   | enables VC functionalities - [`VadeEvan`] |
+| portable |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
+| wasm     |         | build with optimizations to run as web assembly, not compatible with `native` |
+| cli      |         | enables command line interface |
 
 [`did_create`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_create
 [`did_resolve`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_resolve
