@@ -366,7 +366,7 @@ async fn can_present_proofs_with_less_properties() -> Result<(), Box<dyn Error>>
 }
 
 #[tokio::test]
-async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_ones(
+async fn can_present_proofs_with_selective_revealed_attributes_and_omitted_optional_ones(
 ) -> Result<(), Box<dyn Error>> {
     let mut vade = get_vade();
 
@@ -432,8 +432,8 @@ async fn vade_tnt_can_present_proofs_with_selective_revealed_attributes_and_omit
 }
 
 #[tokio::test]
-async fn vade_tnt_cannot_request_credential_with_missing_required_properties(
-) -> Result<(), Box<dyn Error>> {
+async fn cannot_request_credential_with_missing_required_properties() -> Result<(), Box<dyn Error>>
+{
     let mut vade = get_vade();
 
     let schema: CredentialSchema = create_three_property_credential_request(&mut vade).await?;
