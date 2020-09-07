@@ -1,12 +1,16 @@
 [package]
 name = "vade-evan"
 version = "0.0.6"
-authors = [
-    "Sebastian Wolfram <sebastian.wolfram@evan.team>",
-    "Sebastian Dechant <sebastian.dechant@evan.team>",
-    "Philip Kaiser <philip.kaiser@evan.team>",
-]
+authors = ["evan GmbH"]
 edition = "2018"
+license = "Apache-2.0"
+license-file = "LICENSE.txt"
+description = "zero-knowledge-proof VC and TnT DID handling for vade"
+homepage = "https://github.com/evannetwork/vade-evan"
+documentation = "https://docs.rs/crate/vade-evan"
+repository = "https://github.com/evannetwork/vade-evan"
+readme = "README.md"
+keywords = ["did", "ssi", "vc", "zkp"]
 
 [lib]
 name = "vade_evan"
