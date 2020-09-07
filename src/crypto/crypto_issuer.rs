@@ -47,8 +47,8 @@ impl Issuer {
 
     pub fn create_credential_definition(
         credential_schema: &CredentialSchema,
-        p_safe: Option<&BigNumber>,
-        q_safe: Option<&BigNumber>,
+        _p_safe: Option<&BigNumber>,
+        _q_safe: Option<&BigNumber>,
     ) -> Result<(CredentialPrivateKey, CryptoCredentialDefinition), Box<dyn Error>> {
         let mut non_credential_schema_builder =
             CryptoIssuer::new_non_credential_schema_builder()
@@ -79,19 +79,19 @@ impl Issuer {
             .map_err(|e| format!("could not finalize credential schema; {}", &e))?;
 
         let (public_key, credential_private_key, credential_key_correctness_proof) = {
-            if p_safe.is_none() || q_safe.is_none() {
-                CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true)
-                    .map_err(|e| format!("could not create credential definition; {}", &e))?
-            } else {
-                CryptoIssuer::new_credential_def_with_primes(
-                    &crypto_schema,
-                    &non_credential_schema,
-                    true,
-                    p_safe.ok_or("could not get prime number p_safe")?,
-                    q_safe.ok_or("could not get prime number q_safe")?,
-                )
+            // if p_safe.is_none() || q_safe.is_none() {
+            CryptoIssuer::new_credential_def(&crypto_schema, &non_credential_schema, true)
                 .map_err(|e| format!("could not create credential definition; {}", &e))?
-            }
+            // } else {
+            //     CryptoIssuer::new_credential_def_with_primes(
+            //         &crypto_schema,
+            //         &non_credential_schema,
+            //         true,
+            //         p_safe.ok_or("could not get prime number p_safe")?,
+            //         q_safe.ok_or("could not get prime number q_safe")?,
+            //     )
+            //     .map_err(|e| format!("could not create credential definition; {}", &e))?
+            // }
         };
 
         let definition = CryptoCredentialDefinition {
