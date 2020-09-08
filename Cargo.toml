@@ -1,6 +1,6 @@
 [package]
 name = "vade-evan"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["evan GmbH"]
 edition = "2018"
 license = "Apache-2.0"
@@ -86,7 +86,8 @@ sha2 = "0.8.1"
 sha3 = "0.8.2"
 tokio = { version = "0.2.22", optional = true }
 uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
-vade = { path = "../vade", version = "0.0.8" }
+vade = "0.0.8"
+# vade = { path = "../vade" }
 # vade = { git = "https://github.com/evannetwork/vade", branch = "develop" }
 # cli
 clap = { version = "2.33.1", optional = true }
@@ -105,7 +106,8 @@ twox-hash = { version = "1.5.0", optional = true }
 # vc-zkp
 data-encoding = { version = "2.2.0", optional = true }
 # different versions here as local builds may differ from a published build
-ursa = { path = "./../ursa/libursa", version = "0.3.5",  default-features = false, optional = true }
+ursa = { version = "0.3.5",  default-features = false, optional = true }
+# ursa = { path = "./../ursa/libursa", default-features = false, optional = true }
 # ursa = { git = "https://github.com/evannetwork/ursa", branch = "portable-native",  default-features = false, optional = true }
 rand = "0.7.3"
 
