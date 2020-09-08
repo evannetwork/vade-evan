@@ -153,7 +153,7 @@
 //! | portable_native |         | same as `portable` but uses native OpenSSL implementation, requires using an [ursa fork](https://github.com/evannetwork/ursa/tree/portable-native), not compatible with `wasm` feature |
 //! | wasm            |         | build with optimizations to run as web assembly, not compatible with `native` |
 //! | cli             |         | enables command line interface |
-
+//!
 //! [`did_create`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_create
 //! [`did_resolve`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_resolve
 //! [`did_update`]: https://docs.rs/vade_evan/*/vade_evan/resolver/struct.SubstrateDidResolverEvan.html#method.did_update
@@ -173,6 +173,7 @@
 //! [`vc_zkp_revoke_credential`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_revoke_credential
 //! [`vc_zkp_update_revocation_registry`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_update_revocation_registry
 //! [`vc_zkp_verify_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_verify_proof
+//! [`run_custom_function`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.run_custom_function
 
 #[macro_use]
 pub extern crate log;
