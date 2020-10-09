@@ -184,7 +184,7 @@ impl Metadata {
             return Err(ConversionError::InvalidPrefix.into());
         }
         let meta = match metadata.1 {
-            RuntimeMetadata::V11(meta) => meta,
+            RuntimeMetadata::V12(meta) => meta,
             _ => return Err(ConversionError::InvalidVersion.into()),
         };
         let mut modules = HashMap::new();
@@ -225,7 +225,7 @@ impl Metadata {
                 modules_with_calls.insert(
                     module_name.clone().to_string(),
                     ModuleWithCalls {
-                        index: modules_with_calls.len() as u8,
+                        index: module.index,
                         name: module_name.clone().to_string(),
                         calls: call_map,
                     },
@@ -239,7 +239,7 @@ impl Metadata {
                 modules_with_events.insert(
                     module_name.clone().to_string(),
                     ModuleWithEvents {
-                        index: modules_with_events.len() as u8,
+                        index: module.index,
                         name: module_name.clone().to_string(),
                         events: event_map,
                     },
@@ -253,7 +253,7 @@ impl Metadata {
             modules_with_errors.insert(
                 module_name.clone().to_string(),
                 ModuleWithEvents {
-                    index: modules_with_errors.len() as u8,
+                    index: module.index,
                     name: module_name.clone().to_string(),
                     events: error_map,
                 },
