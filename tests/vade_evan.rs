@@ -1231,7 +1231,7 @@ async fn revoke_credential(
         }}"###,
         ISSUER_DID,
         revocation_registry_definition.id.clone(),
-        credential.signature.revocation_id.clone(),
+        credential.proof.revocation_id.clone(),
         ISSUER_PUBLIC_KEY_DID,
         ISSUER_PRIVATE_KEY
     );
