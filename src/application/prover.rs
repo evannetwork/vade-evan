@@ -226,9 +226,9 @@ impl Prover {
             };
 
             let sub_proof = CredentialSubProof {
-                credential_definition: credential.signature.credential_definition.to_owned(),
+                credential_definition: credential.proof.credential_definition.to_owned(),
                 revocation_registry_definition: credential
-                    .signature
+                    .proof
                     .revocation_registry_definition
                     .to_owned(),
                 proof: serde_json::to_string(&crypto_proof.proofs[i])?,
@@ -362,7 +362,7 @@ impl Prover {
             .extend(Prover::encode_values(null_values)?); // Add encoded null values
 
         CryptoProver::process_credential(
-            &mut credential.signature,
+            &mut credential.proof,
             &extended_credential_request,
             &credential_definition.public_key,
             &blinding_factors,

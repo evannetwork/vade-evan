@@ -186,7 +186,7 @@ pub struct Credential {
     pub issuer: String,
     pub credential_subject: CredentialSubject,
     pub credential_schema: CredentialSchemaReference,
-    pub signature: CredentialSignature,
+    pub proof: CredentialSignature,
 }
 
 /// Contains all necessary cryptographic information for credential revocation.
