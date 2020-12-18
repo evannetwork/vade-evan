@@ -232,7 +232,7 @@ impl Prover {
                     &credentials
                         .get(&sub_proof.schema)
                         .ok_or("could not get sub proof schema from credentials")?
-                        .signature
+                        .proof
                         .signature,
                     &credential_values_builder
                         .finalize()
