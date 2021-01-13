@@ -241,6 +241,7 @@ impl Prover {
                 credential_schema: credential.credential_schema.clone(),
                 credential_subject,
                 issuer: credential.issuer.to_owned(),
+                issuance_date: credential.issuance_date.to_owned(),
                 proof: sub_proof,
             };
 

@@ -284,6 +284,7 @@ pub struct ProofCredential {
     pub id: String,
     pub r#type: Vec<String>,
     pub issuer: String,
+    pub issuance_date: String,
     pub credential_subject: CredentialSubject,
     pub credential_schema: CredentialSchemaReference,
     pub proof: CredentialSubProof,
