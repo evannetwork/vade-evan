@@ -215,11 +215,56 @@ async fn can_issue_credentials() -> Result<(), Box<dyn Error>> {
         &rev_reg_def.revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
     // check results
     assert_eq!(result.issuer, ISSUER_DID);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn can_issue_credentials_with_issued_at() -> Result<(), Box<dyn Error>> {
+    let mut vade = get_vade();
+
+    let schema: CredentialSchema = create_credential_schema(&mut vade).await?;
+
+    let (definition, credential_private_key) =
+        create_credential_definition(&mut vade, &schema).await?;
+
+    let proposal: CredentialProposal = create_credential_proposal(&mut vade, &schema).await?;
+
+    let offer: CredentialOffer = create_credential_offer(&mut vade, &proposal, &definition).await?;
+
+    let master_secret = ursa::cl::prover::Prover::new_master_secret().unwrap();
+    let (request, blinding_factors) =
+        create_credential_request(&mut vade, &schema, &offer, &master_secret).await?;
+
+    let rev_reg_def: CreateRevocationRegistryDefinitionResult =
+        create_revocation_registry_definition(&mut vade, &definition, 42).await?;
+
+    let issuance_date = "2112-12-12T12:12:12.000Z";
+
+    // run test
+    let (result, _, _): (Credential, _, _) = issue_credential(
+        &mut vade,
+        &definition,
+        &credential_private_key,
+        &request,
+        &rev_reg_def.private_key,
+        &rev_reg_def.revocation_info,
+        &rev_reg_def.revocation_registry_definition,
+        &blinding_factors,
+        &master_secret,
+        Some(issuance_date.to_string()),
+    )
+    .await?;
+
+    // check results
+    assert_eq!(result.issuer, ISSUER_DID);
+    assert_eq!(result.issuance_date, issuance_date);
 
     Ok(())
 }
@@ -274,6 +319,7 @@ async fn can_present_proofs() -> Result<(), Box<dyn Error>> {
         &rev_reg_def.revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -333,6 +379,7 @@ async fn can_present_proofs_with_less_properties() -> Result<(), Box<dyn Error>>
         &rev_reg_def.revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -393,6 +440,7 @@ async fn can_present_proofs_with_selective_revealed_attributes_and_omitted_optio
         &rev_reg_def.revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -489,6 +537,7 @@ async fn can_verify_proof() -> Result<(), Box<dyn Error>> {
         &rev_reg_def.revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -556,6 +605,7 @@ async fn can_revoke_credential() -> Result<(), Box<dyn Error>> {
         &revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -633,6 +683,7 @@ async fn can_verify_proof_after_revocation_update() -> Result<(), Box<dyn Error>
         &revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -668,6 +719,7 @@ async fn can_verify_proof_after_revocation_update() -> Result<(), Box<dyn Error>
         &revocation_registry_definition,
         &other_blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -751,6 +803,7 @@ async fn can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<
         &revocation_registry_definition,
         &blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -789,6 +842,7 @@ async fn can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<
         &updated_registry,
         &other_blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -824,6 +878,7 @@ async fn can_verify_proof_after_multiple_revocation_updates() -> Result<(), Box<
         &updated_registry,
         &third_blinding_factors,
         &master_secret,
+        None,
     )
     .await?;
 
@@ -1152,6 +1207,7 @@ async fn issue_credential(
     revocation_definition: &RevocationRegistryDefinition,
     blinding_factors: &CredentialSecretsBlindingFactors,
     master_secret: &MasterSecret,
+    issuance_date: Option<String>,
 ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn Error>> {
     let payload = format!(
         r###"{{
@@ -1164,7 +1220,8 @@ async fn issue_credential(
             "revocationPrivateKey": {},
             "revocationInformation": {},
             "blindingFactors": {},
-            "masterSecret": {}
+            "masterSecret": {},
+            "issuanceDate": {}
         }}"###,
         ISSUER_DID,
         SUBJECT_DID,
@@ -1176,6 +1233,7 @@ async fn issue_credential(
         serde_json::to_string(&revocation_info).unwrap(),
         serde_json::to_string(&blinding_factors).unwrap(),
         serde_json::to_string(&master_secret).unwrap(),
+        serde_json::to_string(&issuance_date).unwrap(),
     );
     let results = vade
         .vc_zkp_issue_credential(EVAN_METHOD, "", &payload)
@@ -1184,6 +1242,8 @@ async fn issue_credential(
     // check results
     assert_eq!(results.len(), 1);
     let result: IssueCredentialResult = serde_json::from_str(results[0].as_ref().unwrap()).unwrap();
+
+    println!("{:?}", serde_json::to_string(&result.credential));
 
     Ok((
         result.credential,
