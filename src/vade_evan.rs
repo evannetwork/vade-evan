@@ -644,7 +644,7 @@ impl VadePlugin for VadeEvan {
                 .credentials
                 .get(schema_did)
                 .ok_or("invalid schema")?
-                .signature
+                .proof
                 .credential_definition
                 .clone();
             definitions.insert(
@@ -657,7 +657,7 @@ impl VadePlugin for VadeEvan {
                 .credentials
                 .get(schema_did)
                 .ok_or("invalid schema")?
-                .signature
+                .proof
                 .revocation_registry_definition
                 .clone();
             revocation_definitions.insert(

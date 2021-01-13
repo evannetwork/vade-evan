@@ -398,7 +398,7 @@ impl Issuer {
             issuer: issuer_did.to_owned(),
             credential_subject,
             credential_schema: schema_reference,
-            signature: cred_signature,
+            proof: cred_signature,
         };
         Ok((credential, revocation_state, new_rev_info))
     }
