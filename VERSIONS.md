@@ -4,6 +4,8 @@
 
 ### Features
 
+- add `issuance_date` to credentials (`Credential`, `ProofCredential` and `IssueCredentialPayload`)
+
 ### Fixes
 
 ### Deprecations

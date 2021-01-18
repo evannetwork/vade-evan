@@ -280,6 +280,7 @@ impl Issuer {
     /// * `revocation_registry_definition` - Revocation registry definition to be used for issuance
     /// * `revocation_private_key` - Private key associated to the revocation registry definition
     /// * `revocation_info` - Revocation info containing ID counter. Hold by credential definition owner
+    /// * `issuance_date` - issuance date for credential, defaults to now, must be a date in the future if provided
     ///
     /// # Returns
     /// Tuple containing
@@ -295,6 +296,7 @@ impl Issuer {
         revocation_registry_definition: &mut RevocationRegistryDefinition,
         revocation_private_key: RevocationKeyPrivate,
         revocation_info: &RevocationIdInformation,
+        issuance_date: Option<String>,
     ) -> Result<(Credential, RevocationState, RevocationIdInformation), Box<dyn Error>> {
         let mut data: HashMap<String, EncodedCredentialValue> = HashMap::new();
         //
@@ -312,7 +314,7 @@ impl Issuer {
                         return Err(Box::from(error));
                     }
                 }
-                null_values.insert(field.0.clone(), "null".to_owned()); // ommtted property is optional, encode it with 'null'
+                null_values.insert(field.0.clone(), "null".to_owned()); // omitted property is optional, encode it with 'null'
             } else {
                 // Add value to credentialSubject part of VC
                 let val = credential_request
@@ -396,6 +398,7 @@ impl Issuer {
             id: credential_id,
             r#type: vec!["VerifiableCredential".to_string()],
             issuer: issuer_did.to_owned(),
+            issuance_date: issuance_date.unwrap_or_else(get_now_as_iso_string),
             credential_subject,
             credential_schema: schema_reference,
             proof: cred_signature,
