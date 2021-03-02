@@ -175,9 +175,6 @@
 //! [`vc_zkp_verify_proof`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_verify_proof
 //! [`run_custom_function`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.run_custom_function
 
-#[macro_use]
-pub extern crate log;
-
 // wasm only
 #[cfg(target_arch = "wasm32")]
 pub mod wasm_lib;
