@@ -13,29 +13,26 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 // shared
-use crate::signing::{LocalSigner, RemoteSigner, Signer};
 use console_log;
 use std::{collections::HashMap, error::Error};
 use vade::Vade;
+use vade_evan_substrate::signing::{LocalSigner, RemoteSigner, Signer};
 use wasm_bindgen::prelude::*;
 
 // did
 #[cfg(feature = "did")]
-use crate::resolver::{ResolverConfig, SubstrateDidResolverEvan};
+use vade_evan_substrate::{ResolverConfig, VadeEvanSubstrate};
 
 // vc-zkp
 #[cfg(feature = "vc-zkp")]
-use crate::{
-    application::datatypes::{Credential, CredentialOffer, ProofRequest},
-    IssueCredentialResult,
-    VadeEvan,
-};
-#[cfg(feature = "vc-zkp")]
 use serde_json::Value;
 #[cfg(feature = "vc-zkp")]
-use ursa::cl::Witness;
+use vade_evan_cl::{
+    application::datatypes::{Credential, CredentialOffer, ProofRequest},
+    IssueCredentialResult,
+    VadeEvanCl,
+};
 
 #[cfg(feature = "vc-zkp")]
 const EVAN_METHOD: &str = "did:evan";
@@ -441,26 +438,25 @@ pub async fn present_proof(
         serde_json::from_str(&proof_request).map_err(jsify_serde)?;
     let schema_did = &proof_request_parsed.sub_proof_requests[0].schema;
     let credential_parsed: Credential = serde_json::from_str(&credential).map_err(jsify_serde)?;
-    let witness_parsed: Witness = serde_json::from_str(&witness).map_err(jsify_serde)?;
     let mut credentials: HashMap<String, Credential> = HashMap::new();
     credentials.insert(
         schema_did.clone(),
         serde_json::from_str(&credential).map_err(jsify_serde)?,
     );
 
-    let mut witnesses: HashMap<String, Witness> = HashMap::new();
-    witnesses.insert(credential_parsed.id.clone(), witness_parsed.clone());
-
     let payload = format!(
         r###"{{
             "proofRequest": {},
             "credentials": {},
-            "witnesses": {},
+            "witnesses": {{
+                "{}": {}
+            }},
             "masterSecret": {}
         }}"###,
         &proof_request,
         serde_json::to_string(&credentials).map_err(jsify_serde)?,
-        serde_json::to_string(&witnesses).map_err(jsify_serde)?,
+        credential_parsed.id.clone(),
+        &witness,
         &master_secret,
     );
     debug!("{}", &payload);
@@ -676,19 +672,19 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
     #[cfg(feature = "did")]
     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
     #[cfg(feature = "did")]
-    vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
+    vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
         signer,
         target: target.to_string(),
     })));
     #[cfg(feature = "vc-zkp")]
-    vade.register_plugin(Box::from(get_vade_evan(config)?));
+    vade.register_plugin(Box::from(get_vade_evan_cl(config)?));
 
     Ok(vade)
 }
 
 #[cfg(feature = "vc-zkp")]
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn Error>> {
+fn get_vade_evan_cl(config: Option<&JsValue>) -> Result<VadeEvanCl, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
     let (signer_config, target) = match config_values.as_slice() {
@@ -708,13 +704,13 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn Error>> {
     #[cfg(feature = "did")]
     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
     #[cfg(feature = "did")]
-    internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
+    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
         signer,
         target: target.to_string(),
     })));
     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
 
-    Ok(VadeEvan::new(internal_vade, signer))
+    Ok(VadeEvanCl::new(internal_vade, signer))
 }
 
 fn jsify(err: Box<dyn Error>) -> JsValue {

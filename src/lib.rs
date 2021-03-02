@@ -178,28 +178,6 @@
 #[macro_use]
 pub extern crate log;
 
-// --------- mod
-// shared
-pub mod signing;
-pub mod utils;
-
-// did
-#[cfg(feature = "did")]
-pub mod resolver;
-
-// vc-zkp
-#[cfg(feature = "vc-zkp")]
-pub mod application;
-#[cfg(feature = "vc-zkp")]
-pub mod crypto;
-#[cfg(feature = "vc-zkp")]
-mod vade_evan;
-
 // wasm only
 #[cfg(target_arch = "wasm32")]
 pub mod wasm_lib;
-
-// --------- use
-// vc-zkp
-#[cfg(feature = "vc-zkp")]
-pub use self::vade_evan::*;
