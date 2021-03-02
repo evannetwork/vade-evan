@@ -18,13 +18,15 @@ extern crate clap;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::error::Error;
-use ursa::cl::prover::Prover;
 use vade::Vade;
-use vade_evan::{
-    resolver::{ResolverConfig, SubstrateDidResolverEvan},
+use vade_evan_cl::VadeEvanCl;
+use vade_evan_substrate::{
     signing::{LocalSigner, RemoteSigner, Signer},
-    VadeEvan,
+    ResolverConfig,
+    VadeEvanSubstrate,
 };
+
+const EVAN_METHOD: &str = "did:evan";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -75,9 +77,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .vc_zkp_create_credential_schema(&method, &options, &payload)
                     .await?
             }
-            ("create_master_secret", Some(_)) => vec![Some(serde_json::to_string(
-                &Prover::new_master_secret().map_err(|_| "could not create master secret")?,
-            )?)],
+            ("create_master_secret", Some(sub_m)) => {
+                get_vade(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "create_master_secret", "", "")
+                    .await?
+            }
             ("create_revocation_registry_definition", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -86,7 +90,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
                     .await?
             }
-            ("generate_safe_prime", Some(_)) => vec![Some(VadeEvan::generate_safe_prime()?)],
+            ("generate_safe_prime", Some(sub_m)) => {
+                get_vade(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "generate_safe_prime", "", "")
+                    .await?
+            }
             ("issue_credential", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let payload = get_argument_value(&sub_m, "payload", None);
@@ -406,24 +414,24 @@ fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn Error>> {
 
     let signer_box: Box<dyn Signer> = get_signer(signer);
 
-    vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
+    vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
         signer: signer_box,
         target: target.to_string(),
     })));
 
-    vade.register_plugin(Box::from(get_vade_evan(target, signer)?));
+    vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
 
     Ok(vade)
 }
 
-fn get_vade_evan(target: &str, signer: &str) -> Result<VadeEvan, Box<dyn Error>> {
+fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut internal_vade = Vade::new();
     let signer_box: Box<dyn Signer> = get_signer(signer);
-    internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
+    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
         signer: signer_box,
         target: target.to_string(),
     })));
     let signer: Box<dyn Signer> = get_signer(signer);
 
-    Ok(VadeEvan::new(internal_vade, signer))
+    Ok(VadeEvanCl::new(internal_vade, signer))
 }

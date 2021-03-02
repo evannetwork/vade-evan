@@ -27,7 +27,7 @@ wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
 # default feature set
-default = ["did", "portable", "vc-zkp"]
+default = ["cli", "did", "portable", "vc-zkp"]
 
 # add command line interface; not compatible with `wasm` feature
 cli = [
@@ -52,12 +52,14 @@ did = [
     "twox-hash",
     "ws",
     "web-sys",
+    "vade-evan-substrate",
 ]
 
 # default ursa setup
 portable = [
     "ursa/portable",
     # "ursa/portable_native",
+    "vade-evan-cl/portable",
 ]
 
 # enables zero knowledge VC support
@@ -70,6 +72,7 @@ vc-zkp = [
 # build to run as wasm file; not compatible with `native` feature
 wasm = [
     "ursa/portable_wasm",
+    "vade-evan-cl/wasm",
 ]
 
 [dependencies]
@@ -89,6 +92,10 @@ uuid = { version = "0.8.1", features = ["serde", "v4", "wasm-bindgen"] }
 vade = "0.0.8"
 # vade = { path = "../vade" }
 # vade = { git = "https://github.com/evannetwork/vade", branch = "develop" }
+# vade-evan-cl = "0.0.1"
+vade-evan-cl = { path = "../vade-evan-cl", default-feature = false, features = ["wasm"], optional = true }
+# vade-evan-substrate = "0.0.1"
+vade-evan-substrate = { path = "../vade-evan-substrate", optional = true }
 # cli
 clap = { version = "2.33.1", optional = true }
 # did

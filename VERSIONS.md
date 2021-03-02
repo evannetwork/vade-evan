@@ -8,6 +8,10 @@
 
 ### Deprecations
 
+- split off substrate logic from original `vade-evan` project into separate projects
+  - did related components and signing went to `vade-evan-substrate`
+  - cl vc related components went to `vade-evan-cl`
+
 ## Version 0.0.8
 
 ### Fixes
