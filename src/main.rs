@@ -26,6 +26,17 @@ use vade_evan_substrate::{
     VadeEvanSubstrate,
 };
 
+macro_rules! wrap_vade3 {
+    ($func_name:ident, $sub_m:ident) => {{
+        let method = get_argument_value($sub_m, "method", None);
+        let options = get_argument_value($sub_m, "options", None);
+        let payload = get_argument_value($sub_m, "payload", None);
+        get_vade($sub_m)?
+            .$func_name(&method, &options, &payload)
+            .await?
+    }};
+}
+
 const EVAN_METHOD: &str = "did:evan";
 
 #[tokio::main]
@@ -46,12 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 get_vade(&sub_m)?.did_resolve(&did).await?
             }
             ("update", Some(sub_m)) => {
-                let did = get_argument_value(&sub_m, "did", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .did_update(&did, &options, &payload)
-                    .await?
+                wrap_vade3!(did_update, sub_m)
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
@@ -62,20 +68,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         },
         ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
             ("create_credential_definition", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_definition(&method, &options, &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_definition, sub_m)
             }
             ("create_credential_schema", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_schema(&method, &options, &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
             }
             ("create_master_secret", Some(sub_m)) => {
                 get_vade(&sub_m)?
@@ -83,12 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await?
             }
             ("create_revocation_registry_definition", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_revocation_registry_definition, sub_m)
             }
             ("generate_safe_prime", Some(sub_m)) => {
                 get_vade(&sub_m)?
@@ -96,61 +87,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await?
             }
             ("issue_credential", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_issue_credential(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_issue_credential, sub_m)
             }
             ("create_credential_offer", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_offer(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_offer, sub_m)
             }
             ("present_proof", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_present_proof(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_present_proof, sub_m)
             }
             ("create_credential_proposal", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_proposal(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_proposal, sub_m)
             }
             ("request_credential", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_request_credential(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
             ("request_proof", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_request_proof(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
             ("revoke_credential", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_revoke_credential(&method, &options, &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_revoke_credential, sub_m)
             }
             ("verify_proof", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_verify_proof(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_verify_proof, sub_m)
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
