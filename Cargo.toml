@@ -8,7 +8,7 @@ license-file = "LICENSE.txt"
 description = "zero-knowledge-proof VC and TnT DID handling for vade"
 homepage = "https://github.com/evannetwork/vade-evan"
 documentation = "https://docs.rs/crate/vade-evan"
-repository = "https://github.com/evannetwork/vade-evan"
+repository = "https://github.com/evannetwork/vade-evan/deprecated-crate"
 readme = "README.md"
 keywords = ["did", "ssi", "vc", "zkp"]
 
