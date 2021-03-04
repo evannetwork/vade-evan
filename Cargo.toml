@@ -3,7 +3,6 @@ name = "vade-evan"
 version = "0.0.8"
 authors = ["evan GmbH"]
 edition = "2018"
-license = "Apache-2.0"
 license-file = "LICENSE.txt"
 description = "zero-knowledge-proof VC and TnT DID handling for vade"
 homepage = "https://github.com/evannetwork/vade-evan"
