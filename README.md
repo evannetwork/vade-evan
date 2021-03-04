@@ -4,7 +4,15 @@
 [![Documentation](https://docs.rs/vade-evan/badge.svg)](https://docs.rs/vade-evan:q)
 [![Apache-2 licensed](https://img.shields.io/crates/l/vade-evan.svg)](./LICENSE.txt)
 
-## About
+## ⚠️ Structural Updates ⚠️
+
+This project has been **heavily restructured** and split into separate projects. The project state as provided here **will not be updated**, you can use it as is but it is strongly recommended to use the updated projects:
+
+- [`vade-evan-cl`] contains VC related components as [`VadePlugin`]
+- [`vade-evan-substrate`] contains substrate and DID related components as [`VadePlugin`]
+- [`vade-evan`] (the updated version of this project) contains a command line interface and a wasm pack to work with VCs and DIDs via the plugins from [`vade-evan-cl`] and [`vade-evan-substrate`]
+
+## About ️
 
 This crate allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace.
 For this purpose two [`VadePlugin`] implementations are exported: [`VadeEvan`] and [`SubstrateDidResolverEvan`].
@@ -150,6 +158,9 @@ wasm-pack build --release --target web -- --no-default-features --features did,v
 [`Vade`]: https://docs.rs/vade_evan/*/vade/struct.Vade.html
 [`VadePlugin`]: https://docs.rs/vade_evan/*/vade/trait.VadePlugin.html
 [`VadeEvan`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html
+[`vade-evan`]: https://github.com/evannetwork/vade-evan
+[`vade-evan-cl`]: https://docs.rs/vade_evan_cl
+[`vade-evan-substrate`]: https://docs.rs/vade_evan_substrate
 [`vc_zkp_create_credential_definition`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_definition
 [`vc_zkp_create_credential_offer`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_offer
 [`vc_zkp_create_credential_proposal`]: https://docs.rs/vade_evan/*/vade_evan/struct.VadeEvan.html#method.vc_zkp_create_credential_proposal
