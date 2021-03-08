@@ -89,6 +89,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ("issue_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_issue_credential, sub_m)
             }
+            ("finish_credential", Some(sub_m)) => {
+                wrap_vade3!(vc_zkp_finish_credential, sub_m)
+            }
             ("create_credential_offer", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_offer, sub_m)
             }
@@ -221,6 +224,14 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                 )
                 .subcommand(
                     SubCommand::with_name("issue_credential")
+                        .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
+                        .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("payload")?)
+                        .arg(get_clap_argument("target")?)
+                        .arg(get_clap_argument("signer")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("finish_credential")
                         .about("Issues a new credential. This requires an issued schema, credential definition, an active revocation registry and a credential request message.")
                         .arg(get_clap_argument("method")?)
                         .arg(get_clap_argument("payload")?)
