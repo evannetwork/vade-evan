@@ -38,6 +38,7 @@ macro_rules! wrap_vade3 {
 }
 
 const EVAN_METHOD: &str = "did:evan";
+const TYPE_OPTIONS_CL: &str = r###"{ "type": "cl" }"###;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -75,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             ("create_master_secret", Some(sub_m)) => {
                 get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "create_master_secret", "", "")
+                    .run_custom_function(EVAN_METHOD, "create_master_secret", TYPE_OPTIONS_CL, "")
                     .await?
             }
             ("create_revocation_registry_definition", Some(sub_m)) => {
@@ -83,7 +84,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             ("generate_safe_prime", Some(sub_m)) => {
                 get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "generate_safe_prime", "", "")
+                    .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
                     .await?
             }
             ("issue_credential", Some(sub_m)) => {
@@ -226,6 +227,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("issue_credential")
                         .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -234,6 +236,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("finish_credential")
                         .about("Issues a new credential. This requires an issued schema, credential definition, an active revocation registry and a credential request message.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -242,6 +245,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("create_credential_offer")
                         .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema and definition the issuer is capable and willing to use for credential issuance.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -250,6 +254,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("present_proof")
                         .about("Presents a proof for one or more credentials. A proof presentation is the response to a proof request. The proof needs to incorporate all required fields from all required schemas requested in the proof request.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -258,6 +263,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("create_credential_proposal")
                         .about("Creates a new zero-knowledge proof credential proposal. This message is the first in the credential issuance flow and is sent by the potential credential holder to the credential issuer.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -266,6 +272,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("request_credential")
                         .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -274,6 +281,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("request_proof")
                         .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
@@ -291,6 +299,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                     SubCommand::with_name("verify_proof")
                         .about("Verifies a one or multiple proofs sent in a proof presentation.")
                         .arg(get_clap_argument("method")?)
+                        .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
