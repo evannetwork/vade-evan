@@ -57,7 +57,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 get_vade(&sub_m)?.did_resolve(&did).await?
             }
             ("update", Some(sub_m)) => {
-                wrap_vade3!(did_update, sub_m)
+                let did = get_argument_value(&sub_m, "did", None);
+                let options = get_argument_value(&sub_m, "options", None);
+                let payload = get_argument_value(&sub_m, "payload", None);
+                get_vade(&sub_m)?
+                    .did_update(&did, &options, &payload)
+                    .await?
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
