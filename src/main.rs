@@ -18,13 +18,26 @@ extern crate clap;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::error::Error;
-use ursa::cl::prover::Prover;
 use vade::Vade;
-use vade_evan::{
-    resolver::{ResolverConfig, SubstrateDidResolverEvan},
+use vade_evan_cl::VadeEvanCl;
+use vade_evan_substrate::{
     signing::{LocalSigner, RemoteSigner, Signer},
-    VadeEvan,
+    ResolverConfig,
+    VadeEvanSubstrate,
 };
+
+macro_rules! wrap_vade3 {
+    ($func_name:ident, $sub_m:ident) => {{
+        let method = get_argument_value($sub_m, "method", None);
+        let options = get_argument_value($sub_m, "options", None);
+        let payload = get_argument_value($sub_m, "payload", None);
+        get_vade($sub_m)?
+            .$func_name(&method, &options, &payload)
+            .await?
+    }};
+}
+
+const EVAN_METHOD: &str = "did:evan";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -60,89 +73,47 @@ async fn main() -> Result<(), Box<dyn Error>> {
         },
         ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
             ("create_credential_definition", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_definition(&method, &options, &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_definition, sub_m)
             }
             ("create_credential_schema", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
+                wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
+            }
+            ("create_master_secret", Some(sub_m)) => {
                 get_vade(&sub_m)?
-                    .vc_zkp_create_credential_schema(&method, &options, &payload)
+                    .run_custom_function(EVAN_METHOD, "create_master_secret", "", "")
                     .await?
             }
-            ("create_master_secret", Some(_)) => vec![Some(serde_json::to_string(
-                &Prover::new_master_secret().map_err(|_| "could not create master secret")?,
-            )?)],
             ("create_revocation_registry_definition", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
+                wrap_vade3!(vc_zkp_create_revocation_registry_definition, sub_m)
+            }
+            ("generate_safe_prime", Some(sub_m)) => {
                 get_vade(&sub_m)?
-                    .vc_zkp_create_revocation_registry_definition(&method, &options, &payload)
+                    .run_custom_function(EVAN_METHOD, "generate_safe_prime", "", "")
                     .await?
             }
-            ("generate_safe_prime", Some(_)) => vec![Some(VadeEvan::generate_safe_prime()?)],
             ("issue_credential", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_issue_credential(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_issue_credential, sub_m)
             }
             ("create_credential_offer", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_offer(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_offer, sub_m)
             }
             ("present_proof", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_present_proof(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_present_proof, sub_m)
             }
             ("create_credential_proposal", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_create_credential_proposal(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_create_credential_proposal, sub_m)
             }
             ("request_credential", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_request_credential(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
             ("request_proof", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_request_proof(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
             ("revoke_credential", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let options = get_argument_value(&sub_m, "options", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_revoke_credential(&method, &options, &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_revoke_credential, sub_m)
             }
             ("verify_proof", Some(sub_m)) => {
-                let method = get_argument_value(&sub_m, "method", None);
-                let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .vc_zkp_verify_proof(&method, "", &payload)
-                    .await?
+                wrap_vade3!(vc_zkp_verify_proof, sub_m)
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
@@ -406,24 +377,24 @@ fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn Error>> {
 
     let signer_box: Box<dyn Signer> = get_signer(signer);
 
-    vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
+    vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
         signer: signer_box,
         target: target.to_string(),
     })));
 
-    vade.register_plugin(Box::from(get_vade_evan(target, signer)?));
+    vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
 
     Ok(vade)
 }
 
-fn get_vade_evan(target: &str, signer: &str) -> Result<VadeEvan, Box<dyn Error>> {
+fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut internal_vade = Vade::new();
     let signer_box: Box<dyn Signer> = get_signer(signer);
-    internal_vade.register_plugin(Box::from(SubstrateDidResolverEvan::new(ResolverConfig {
+    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
         signer: signer_box,
         target: target.to_string(),
     })));
     let signer: Box<dyn Signer> = get_signer(signer);
 
-    Ok(VadeEvan::new(internal_vade, signer))
+    Ok(VadeEvanCl::new(internal_vade, signer))
 }
