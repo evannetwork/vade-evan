@@ -19,6 +19,7 @@ extern crate clap;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::error::Error;
 use vade::Vade;
+use vade_evan_bbs::VadeEvanBbs;
 use vade_evan_cl::VadeEvanCl;
 use vade_evan_substrate::{
     signing::{LocalSigner, RemoteSigner, Signer},
@@ -395,26 +396,32 @@ fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn Error>> {
 
     let mut vade = Vade::new();
 
-    let signer_box: Box<dyn Signer> = get_signer(signer);
-
-    vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer: signer_box,
-        target: target.to_string(),
-    })));
-
+    vade.register_plugin(Box::from(get_resolver(target, signer)?));
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
+    vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
 
     Ok(vade)
 }
 
 fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut internal_vade = Vade::new();
-    let signer_box: Box<dyn Signer> = get_signer(signer);
-    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer: signer_box,
-        target: target.to_string(),
-    })));
+    internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
     let signer: Box<dyn Signer> = get_signer(signer);
 
     Ok(VadeEvanCl::new(internal_vade, signer))
+}
+
+fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
+    let mut internal_vade = Vade::new();
+    internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
+
+    let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
+    Ok(VadeEvanBbs::new(internal_vade, signer))
+}
+
+fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn Error>> {
+    Ok(VadeEvanSubstrate::new(ResolverConfig {
+        signer: get_signer(signer),
+        target: target.to_string(),
+    }))
 }

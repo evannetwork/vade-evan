@@ -16,4 +16,6 @@
 
 // wasm only
 #[cfg(target_arch = "wasm32")]
+pub extern crate log;
+#[cfg(target_arch = "wasm32")]
 pub mod wasm_lib;
