@@ -415,7 +415,7 @@ fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn 
     let mut internal_vade = Vade::new();
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
 
-    let signer: Box<dyn Signer> = Box::new(LocalSigner::new());
+    let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanBbs::new(internal_vade, signer))
 }
 
