@@ -81,8 +81,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
             }
             ("create_master_secret", Some(sub_m)) => {
+                let options = get_argument_value(sub_m, "options", None);
                 get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "create_master_secret", TYPE_OPTIONS_CL, "")
+                    .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
             ("create_revocation_registry_definition", Some(sub_m)) => {
@@ -91,6 +92,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ("generate_safe_prime", Some(sub_m)) => {
                 get_vade(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
+                    .await?
+            }
+            ("create_new_keys", Some(sub_m)) => {
+                let payload = get_argument_value(sub_m, "payload", None);
+                let options = get_argument_value(sub_m, "options", None);
+                get_vade(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
             ("issue_credential", Some(sub_m)) => {
@@ -197,6 +205,13 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                 .subcommand(
                     SubCommand::with_name("create_master_secret")
                         .about("Creates a new master secret.")
+                        .arg(get_clap_argument("options")?)
+                )
+                .subcommand(
+                    SubCommand::with_name("create_new_keys")
+                        .about("Creates a new key pair and stores it in the DID document.")
+                        .arg(get_clap_argument("options")?)
+                        .arg(get_clap_argument("payload")?)
                 )
                 .subcommand(
                     SubCommand::with_name("generate_safe_prime")
