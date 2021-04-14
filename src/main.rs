@@ -212,6 +212,7 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                         .about("Creates a new key pair and stores it in the DID document.")
                         .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?)
+                        .arg(get_clap_argument("signer")?),
                 )
                 .subcommand(
                     SubCommand::with_name("generate_safe_prime")
