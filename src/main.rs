@@ -19,6 +19,7 @@ extern crate clap;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::error::Error;
 use vade::Vade;
+use vade_evan_bbs::VadeEvanBbs;
 use vade_evan_cl::VadeEvanCl;
 use vade_evan_substrate::{
     signing::{LocalSigner, RemoteSigner, Signer},
@@ -80,8 +81,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
             }
             ("create_master_secret", Some(sub_m)) => {
+                let options = get_argument_value(sub_m, "options", None);
                 get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "create_master_secret", TYPE_OPTIONS_CL, "")
+                    .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
             ("create_revocation_registry_definition", Some(sub_m)) => {
@@ -90,6 +92,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ("generate_safe_prime", Some(sub_m)) => {
                 get_vade(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
+                    .await?
+            }
+            ("create_new_keys", Some(sub_m)) => {
+                let payload = get_argument_value(sub_m, "payload", None);
+                let options = get_argument_value(sub_m, "options", None);
+                get_vade(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
             ("issue_credential", Some(sub_m)) => {
@@ -196,6 +205,13 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                 .subcommand(
                     SubCommand::with_name("create_master_secret")
                         .about("Creates a new master secret.")
+                        .arg(get_clap_argument("options")?)
+                )
+                .subcommand(
+                    SubCommand::with_name("create_new_keys")
+                        .about("Creates a new key pair and stores it in the DID document.")
+                        .arg(get_clap_argument("options")?)
+                        .arg(get_clap_argument("payload")?)
                 )
                 .subcommand(
                     SubCommand::with_name("generate_safe_prime")
@@ -395,26 +411,32 @@ fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn Error>> {
 
     let mut vade = Vade::new();
 
-    let signer_box: Box<dyn Signer> = get_signer(signer);
-
-    vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer: signer_box,
-        target: target.to_string(),
-    })));
-
+    vade.register_plugin(Box::from(get_resolver(target, signer)?));
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
+    vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
 
     Ok(vade)
 }
 
 fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut internal_vade = Vade::new();
-    let signer_box: Box<dyn Signer> = get_signer(signer);
-    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer: signer_box,
-        target: target.to_string(),
-    })));
+    internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
     let signer: Box<dyn Signer> = get_signer(signer);
 
     Ok(VadeEvanCl::new(internal_vade, signer))
+}
+
+fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
+    let mut internal_vade = Vade::new();
+    internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
+
+    let signer: Box<dyn Signer> = get_signer(signer);
+    Ok(VadeEvanBbs::new(internal_vade, signer))
+}
+
+fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn Error>> {
+    Ok(VadeEvanSubstrate::new(ResolverConfig {
+        signer: get_signer(signer),
+        target: target.to_string(),
+    }))
 }

@@ -200,6 +200,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
+name = "bbs"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e24ff98879bedb7fe7b3ce0c86268baca8468e8ce405d44459dbaf0b26ac9ca"
+dependencies = [
+ "arrayref",
+ "blake2",
+ "failure",
+ "ff-zeroize",
+ "hex",
+ "hkdf",
+ "pairing-plus",
+ "rand 0.7.3",
+ "rayon",
+ "serde",
+ "zeroize",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -445,6 +464,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcb25d077389e53838a8158c8e99174c5a9d902dee4904320db714f3c653ffba"
 
 [[package]]
+name = "crc32fast"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81156fece84ab6a9f2afdb109ce3ae577e42b1228441eded99bd77f627953b1a"
+dependencies = [
+ "cfg-if 1.0.0",
+]
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -613,12 +641,50 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
+name = "ff-zeroize"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c02169a2e8515aa316ce516eaaf6318a76617839fbf904073284bc2576b029ee"
+dependencies = [
+ "byteorder",
+ "ff_derive-zeroize",
+ "rand_core 0.5.1",
+ "zeroize",
+]
+
+[[package]]
+name = "ff_derive-zeroize"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b24d4059bc0d0a0bf26b740aa21af1f96a984f0ab7a21356d00b32475388b53a"
+dependencies = [
+ "num-bigint 0.2.6",
+ "num-integer",
+ "num-traits",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "fixed-hash"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11498d382790b7a8f2fd211780bec78619bba81cdad3a283997c0c41f836759c"
 dependencies = [
  "static_assertions",
+]
+
+[[package]]
+name = "flate2"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd3aec53de10fe96d7d8c565eb17f2c687bb5518a2ec453b5b1252964526abe0"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crc32fast",
+ "libc",
+ "miniz_oxide",
 ]
 
 [[package]]
@@ -819,7 +885,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5eac7b86325ee905c72e2cb43a80b1ebe6ea82d7f0854d669190bcdc4b927762"
 dependencies = [
  "lazy_static",
- "num-bigint",
+ "num-bigint 0.3.1",
  "num-integer",
  "num-traits",
  "rand 0.7.3",
@@ -1274,6 +1340,17 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 
 [[package]]
 name = "num-bigint"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "090c7f9998ee0ff65aa5b723e4009f7b217707f1fb5ea551329cc4d6231fb304"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-bigint"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e9a41747ae4633fce5adffb4d2e81ffc5e89593cb19917f8fb2cc5ff76507bf"
@@ -1336,6 +1413,21 @@ name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
+
+[[package]]
+name = "pairing-plus"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58cda4f22e8e6720f3c254049960c8cc4f93cb82b5ade43bddd2622b5f39ea62"
+dependencies = [
+ "byteorder",
+ "digest",
+ "ff-zeroize",
+ "rand 0.4.6",
+ "rand_core 0.5.1",
+ "rand_xorshift",
+ "zeroize",
+]
 
 [[package]]
 name = "parity-scale-codec"
@@ -1615,6 +1707,15 @@ name = "rand_hc"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
+dependencies = [
+ "rand_core 0.5.1",
+]
+
+[[package]]
+name = "rand_xorshift"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77d416b86801d23dde1aa643023b775c3a462efc0ed96443add11546cdf1dca8"
 dependencies = [
  "rand_core 0.5.1",
 ]
@@ -2413,7 +2514,7 @@ dependencies = [
  "lazy_static",
  "libsecp256k1",
  "log",
- "num-bigint",
+ "num-bigint 0.3.1",
  "num-integer",
  "num-traits",
  "rand 0.7.3",
@@ -2458,16 +2559,42 @@ dependencies = [
  "clap",
  "console_error_panic_hook",
  "console_log",
+ "log",
  "serde",
  "serde_derive",
  "serde_json",
  "tokio",
  "vade",
+ "vade-evan-bbs",
  "vade-evan-cl",
  "vade-evan-substrate",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
+]
+
+[[package]]
+name = "vade-evan-bbs"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "base64 0.13.0",
+ "bbs",
+ "chrono",
+ "env_logger",
+ "flate2",
+ "hex",
+ "js-sys",
+ "libsecp256k1",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sha3",
+ "uuid",
+ "vade",
+ "vade-evan-substrate",
 ]
 
 [[package]]
