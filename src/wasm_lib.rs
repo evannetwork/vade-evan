@@ -17,16 +17,16 @@
 use console_log;
 use std::{collections::HashMap, error::Error};
 use vade::Vade;
-use vade_evan_substrate::signing::{LocalSigner, RemoteSigner, Signer};
+// use vade_evan_substrate::signing::{LocalSigner, RemoteSigner, Signer};
 use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "did")]
-use vade_evan_substrate::{ResolverConfig, VadeEvanSubstrate};
+// #[cfg(feature = "did")]
+// use vade_evan_substrate::{ResolverConfig, VadeEvanSubstrate};
 
-#[cfg(feature = "vc-zkp")]
-use vade_evan_cl::VadeEvanCl;
-#[cfg(feature = "vc-zkp")]
-use vade_evan_bbs::VadeEvanBbs;
+// #[cfg(feature = "vc-zkp")]
+// use vade_evan_cl::VadeEvanCl;
+// #[cfg(feature = "vc-zkp")]
+// use vade_evan_bbs::VadeEvanBbs;
 
 macro_rules! handle_results {
     ($func_name:expr, $did_or_method:expr, $results:expr) => {
@@ -43,18 +43,18 @@ macro_rules! handle_results {
 macro_rules! create_function {
     ($func_name:ident, $did_or_method:ident, $config:ident) => {
         #[wasm_bindgen]
-        pub async fn $func_name(
+        pub fn $func_name(
             did_or_method: String,
             config: JsValue,
         ) -> Result<Option<String>, JsValue> {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade.$func_name(&did_or_method).await.map_err(jsify)?;
+            let results = vade.$func_name(&did_or_method).map_err(jsify)?;
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
         #[wasm_bindgen]
-        pub async fn $func_name(
+        pub fn $func_name(
             did_or_method: String,
             options: String,
             payload: String,
@@ -63,14 +63,13 @@ macro_rules! create_function {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade
                 .$func_name(&did_or_method, &options, &payload)
-                .await
                 .map_err(jsify)?;
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
     ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
         #[wasm_bindgen]
-        pub async fn $func_name(
+        pub fn $func_name(
             did_or_method: String,
             function: String,
             options: String,
@@ -80,7 +79,6 @@ macro_rules! create_function {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade
                 .$func_name(&did_or_method, &function, &options, &payload)
-                .await
                 .map_err(jsify)?;
                 handle_results!(format!("{}: {}", stringify!($func_name), &function), did_or_method, results);
         }
@@ -191,23 +189,23 @@ fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     .to_string())
 }
 
-fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn Error>> {
-    if signer_config == "local" {
-        Ok(Box::new(LocalSigner::new()))
-    } else if signer_config.starts_with("remote|") {
-        Ok(Box::new(RemoteSigner::new(
-            signer_config
-                .strip_prefix("remote|")
-                .ok_or("invalid signer_config")?
-                .to_string(),
-        )))
-    } else {
-        Err(Box::from(format!(
-            "invalid signer config {}",
-            &signer_config
-        )))
-    }
-}
+// fn get_signer(signer_config: String) -> Result<Box<dyn Signer>, Box<dyn Error>> {
+//     if signer_config == "local" {
+//         Ok(Box::new(LocalSigner::new()))
+//     } else if signer_config.starts_with("remote|") {
+//         Ok(Box::new(RemoteSigner::new(
+//             signer_config
+//                 .strip_prefix("remote|")
+//                 .ok_or("invalid signer_config")?
+//                 .to_string(),
+//         )))
+//     } else {
+//         Err(Box::from(format!(
+//             "invalid signer config {}",
+//             &signer_config
+//         )))
+//     }
+// }
 
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
@@ -222,82 +220,82 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
 
     let mut vade = Vade::new();
 
-    #[cfg(feature = "did")]
-    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
-    #[cfg(feature = "did")]
-    vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer,
-        target: target.to_string(),
-    })));
-    #[cfg(feature = "vc-zkp")]
-    vade.register_plugin(Box::from(get_vade_evan_cl(config)?));
-    #[cfg(feature = "vc-zkp")]
-    vade.register_plugin(Box::from(get_vade_evan_bbs(config)?));
+    // #[cfg(feature = "did")]
+    // let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
+    // #[cfg(feature = "did")]
+    // vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
+    //     signer,
+    //     target: target.to_string(),
+    // })));
+    // #[cfg(feature = "vc-zkp")]
+    // vade.register_plugin(Box::from(get_vade_evan_cl(config)?));
+    // #[cfg(feature = "vc-zkp")]
+    // vade.register_plugin(Box::from(get_vade_evan_bbs(config)?));
 
     Ok(vade)
 }
 
-#[cfg(feature = "vc-zkp")]
-#[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade_evan_cl(config: Option<&JsValue>) -> Result<VadeEvanCl, Box<dyn Error>> {
-    let config_values =
-        get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
-    let (signer_config, target) = match config_values.as_slice() {
-        [signer_config, target, ..] => (signer_config, target),
-        _ => {
-            return Err(Box::from("invalid vade config"));
-        }
-    };
+// #[cfg(feature = "vc-zkp")]
+// #[allow(unused_variables)] // allow possibly unused variables due to feature mix
+// fn get_vade_evan_cl(config: Option<&JsValue>) -> Result<VadeEvanCl, Box<dyn Error>> {
+//     let config_values =
+//         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
+//     let (signer_config, target) = match config_values.as_slice() {
+//         [signer_config, target, ..] => (signer_config, target),
+//         _ => {
+//             return Err(Box::from("invalid vade config"));
+//         }
+//     };
 
-    #[cfg(not(feature = "did"))]
-    let internal_vade = Vade::new();
-    #[cfg(not(feature = "did"))]
-    let signer = "";
+//     #[cfg(not(feature = "did"))]
+//     let internal_vade = Vade::new();
+//     #[cfg(not(feature = "did"))]
+//     let signer = "";
 
-    #[cfg(feature = "did")]
-    let mut internal_vade = Vade::new();
-    #[cfg(feature = "did")]
-    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
-    #[cfg(feature = "did")]
-    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer,
-        target: target.to_string(),
-    })));
-    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
+//     #[cfg(feature = "did")]
+//     let mut internal_vade = Vade::new();
+//     #[cfg(feature = "did")]
+//     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
+//     #[cfg(feature = "did")]
+//     internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
+//         signer,
+//         target: target.to_string(),
+//     })));
+//     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
 
-    Ok(VadeEvanCl::new(internal_vade, signer))
-}
+//     Ok(VadeEvanCl::new(internal_vade, signer))
+// }
 
-#[cfg(feature = "vc-zkp")]
-#[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade_evan_bbs(config: Option<&JsValue>) -> Result<VadeEvanBbs, Box<dyn Error>> {
-    let config_values =
-        get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
-    let (signer_config, target) = match config_values.as_slice() {
-        [signer_config, target, ..] => (signer_config, target),
-        _ => {
-            return Err(Box::from("invalid vade config"));
-        }
-    };
+// #[cfg(feature = "vc-zkp")]
+// #[allow(unused_variables)] // allow possibly unused variables due to feature mix
+// fn get_vade_evan_bbs(config: Option<&JsValue>) -> Result<VadeEvanBbs, Box<dyn Error>> {
+//     let config_values =
+//         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
+//     let (signer_config, target) = match config_values.as_slice() {
+//         [signer_config, target, ..] => (signer_config, target),
+//         _ => {
+//             return Err(Box::from("invalid vade config"));
+//         }
+//     };
 
-    #[cfg(not(feature = "did"))]
-    let internal_vade = Vade::new();
-    #[cfg(not(feature = "did"))]
-    let signer = "";
+//     #[cfg(not(feature = "did"))]
+//     let internal_vade = Vade::new();
+//     #[cfg(not(feature = "did"))]
+//     let signer = "";
 
-    #[cfg(feature = "did")]
-    let mut internal_vade = Vade::new();
-    #[cfg(feature = "did")]
-    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
-    #[cfg(feature = "did")]
-    internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
-        signer,
-        target: target.to_string(),
-    })));
-    let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
+//     #[cfg(feature = "did")]
+//     let mut internal_vade = Vade::new();
+//     #[cfg(feature = "did")]
+//     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
+//     #[cfg(feature = "did")]
+//     internal_vade.register_plugin(Box::from(VadeEvanSubstrate::new(ResolverConfig {
+//         signer,
+//         target: target.to_string(),
+//     })));
+//     let signer: Box<dyn Signer> = get_signer(signer_config.to_string())?;
 
-    Ok(VadeEvanBbs::new(internal_vade, signer))
-}
+//     Ok(VadeEvanBbs::new(internal_vade, signer))
+// }
 
 fn jsify(err: Box<dyn Error>) -> JsValue {
     JsValue::from(format!("{}", err))

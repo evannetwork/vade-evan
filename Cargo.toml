@@ -31,57 +31,45 @@ default = ["cli", "did", "portable", "vc-zkp"]
 cli = [
     "clap",
     "did",
-    "tokio",
     "vc-zkp",
 ]
 
 # enables using DIDs, also required for some vc-zkp functions
 did = [
-    "vade-evan-substrate",
+    # "vade-evan-substrate",
 ]
 
 # default ursa setup
 portable = [
-    "vade-evan-cl/portable",
+    # "vade-evan-cl/portable",
 ]
 
 # enables zero knowledge VC support
 vc-zkp = [
-    "vade-evan-bbs",
-    "vade-evan-cl",
+    # "vade-evan-bbs",
+    # "vade-evan-cl",
 ]
 
 # build to run as wasm file; not compatible with `native` feature
 wasm = [
-    "vade-evan-cl/wasm",
+    # "vade-evan-cl/wasm",
 ]
 
 [dependencies]
-async-trait = "0.1.31"
 cfg-if = "0.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = { path = "../vade", version = "0.0.8" }
 ###################################################################### feature specific dependencies
 # feature "vc-zkp"
-vade-evan-bbs = { path = "../vade-evan-bbs", version = "0.0.1", optional = true, default-features = false }
-vade-evan-cl = { path = "../vade-evan-cl", version = "0.0.1", optional = true, default-features = false }
+# vade-evan-bbs = { path = "../vade-evan-bbs", version = "0.0.1", optional = true, default-features = false }
+# vade-evan-cl = { path = "../vade-evan-cl", version = "0.0.1", optional = true, default-features = false }
 # feature "cli"
 clap = { version = "2.33.1", optional = true }
-tokio = { version = "0.2.22", optional = true }
-# feature "did"
-vade-evan-substrate = { path = "../vade-evan-substrate", version = "0.0.1", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
 console_log = { version = "0.2", features = ["color"] }
 log = "0.4.8"
-serde_derive = "1.0.114"
 wasm-bindgen = { version = "0.2",features = ["serde-serialize"] }
-wasm-bindgen-futures = "0.4.5"
-
-[dev-dependencies]
-tokio = { version = "0.2.22", features = ["macros", "rt-threaded"] }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.12"

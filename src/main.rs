@@ -19,7 +19,7 @@ extern crate clap;
 mod vade_utils;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use vade::{AsyncResult, ResultAsyncifier, Vade};
+use vade::{Vade, VadeResult};
 use vade_utils::get_vade as get_vade_from_utils;
 
 macro_rules! wrap_vade3 {
@@ -27,17 +27,14 @@ macro_rules! wrap_vade3 {
         let method = get_argument_value($sub_m, "method", None);
         let options = get_argument_value($sub_m, "options", None);
         let payload = get_argument_value($sub_m, "payload", None);
-        get_vade($sub_m)?
-            .$func_name(&method, &options, &payload)
-            .await?
+        get_vade($sub_m)?.$func_name(&method, &options, &payload)?
     }};
 }
 
 const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS_CL: &str = r###"{ "type": "cl" }"###;
 
-#[tokio::main]
-async fn main() -> AsyncResult<()> {
+fn main() -> VadeResult<()> {
     let matches = get_argument_matches()?;
 
     let results = match matches.subcommand() {
@@ -45,21 +42,17 @@ async fn main() -> AsyncResult<()> {
             ("create", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
-                get_vade(&sub_m)?
-                    .did_create(&did, &options, &String::new())
-                    .await?
+                get_vade(&sub_m)?.did_create(&did, &options, &String::new())?
             }
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
-                get_vade(&sub_m)?.did_resolve(&did).await?
+                get_vade(&sub_m)?.did_resolve(&did)?
             }
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
                 let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
-                    .did_update(&did, &options, &payload)
-                    .await?
+                get_vade(&sub_m)?.did_update(&did, &options, &payload)?
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
@@ -77,24 +70,31 @@ async fn main() -> AsyncResult<()> {
             }
             ("create_master_secret", Some(sub_m)) => {
                 let options = get_argument_value(sub_m, "options", None);
-                get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
-                    .await?
+                get_vade(&sub_m)?.run_custom_function(
+                    EVAN_METHOD,
+                    "create_master_secret",
+                    options,
+                    "",
+                )?
             }
             ("create_revocation_registry_definition", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_revocation_registry_definition, sub_m)
             }
-            ("generate_safe_prime", Some(sub_m)) => {
-                get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
-                    .await?
-            }
+            ("generate_safe_prime", Some(sub_m)) => get_vade(&sub_m)?.run_custom_function(
+                EVAN_METHOD,
+                "generate_safe_prime",
+                TYPE_OPTIONS_CL,
+                "",
+            )?,
             ("create_new_keys", Some(sub_m)) => {
                 let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
-                get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
-                    .await?
+                get_vade(&sub_m)?.run_custom_function(
+                    EVAN_METHOD,
+                    "create_new_keys",
+                    options,
+                    payload,
+                )?
             }
             ("issue_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_issue_credential, sub_m)
@@ -153,7 +153,7 @@ async fn main() -> AsyncResult<()> {
     Ok(())
 }
 
-pub fn get_app<'a>() -> AsyncResult<App<'a, 'a>> {
+pub fn get_app<'a>() -> VadeResult<App<'a, 'a>> {
     Ok(App::new("vade_evan_bin")
         .version("0.0.6")
         .author("evan GmbH")
@@ -325,7 +325,7 @@ pub fn get_app<'a>() -> AsyncResult<App<'a, 'a>> {
     )
 }
 
-fn get_argument_matches<'a>() -> AsyncResult<ArgMatches<'a>> {
+fn get_argument_matches<'a>() -> VadeResult<ArgMatches<'a>> {
     Ok(get_app()?.get_matches())
 }
 
@@ -345,13 +345,13 @@ fn get_argument_value<'a>(
     }
 }
 
-fn get_vade(matches: &ArgMatches) -> AsyncResult<Vade> {
+fn get_vade(matches: &ArgMatches) -> VadeResult<Vade> {
     let target = get_argument_value(&matches, "target", Some("13.69.59.185"));
     let signer = get_argument_value(&matches, "signer", Some("local"));
-    return get_vade_from_utils(target, signer).asyncify();
+    return get_vade_from_utils(target, signer);
 }
 
-fn get_clap_argument(arg_name: &str) -> AsyncResult<Arg> {
+fn get_clap_argument(arg_name: &str) -> VadeResult<Arg> {
     Ok(match arg_name {
         "did" => Arg::with_name("did")
             .long("did")
