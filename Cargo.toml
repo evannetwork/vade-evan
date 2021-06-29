@@ -63,7 +63,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = { path = "../vade", version = "0.0.8" }
 ###################################################################### feature specific dependencies
-# feature "cl"
+# feature "vc-zkp"
 vade-evan-bbs = { path = "../vade-evan-bbs", version = "0.0.1", optional = true, default-features = false }
 vade-evan-cl = { path = "../vade-evan-cl", version = "0.0.1", optional = true, default-features = false }
 # feature "cli"

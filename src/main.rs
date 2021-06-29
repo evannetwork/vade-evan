@@ -16,16 +16,11 @@
 
 extern crate clap;
 
+mod vade_utils;
+
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use std::error::Error;
-use vade::Vade;
-use vade_evan_bbs::VadeEvanBbs;
-use vade_evan_cl::VadeEvanCl;
-use vade_evan_substrate::{
-    signing::{LocalSigner, RemoteSigner, Signer},
-    ResolverConfig,
-    VadeEvanSubstrate,
-};
+use vade::{AsyncResult, ResultAsyncifier, Vade};
+use vade_utils::get_vade as get_vade_from_utils;
 
 macro_rules! wrap_vade3 {
     ($func_name:ident, $sub_m:ident) => {{
@@ -42,7 +37,7 @@ const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS_CL: &str = r###"{ "type": "cl" }"###;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> AsyncResult<()> {
     let matches = get_argument_matches()?;
 
     let results = match matches.subcommand() {
@@ -158,7 +153,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
+pub fn get_app<'a>() -> AsyncResult<App<'a, 'a>> {
     Ok(App::new("vade_evan_bin")
         .version("0.0.6")
         .author("evan GmbH")
@@ -327,7 +322,11 @@ fn get_argument_matches() -> Result<ArgMatches<'static>, Box<dyn Error>> {
                         .arg(get_clap_argument("signer")?),
                 )
         )
-        .get_matches())
+    )
+}
+
+fn get_argument_matches<'a>() -> AsyncResult<ArgMatches<'a>> {
+    Ok(get_app()?.get_matches())
 }
 
 fn get_argument_value<'a>(
@@ -346,7 +345,13 @@ fn get_argument_value<'a>(
     }
 }
 
-fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn Error>> {
+fn get_vade(matches: &ArgMatches) -> AsyncResult<Vade> {
+    let target = get_argument_value(&matches, "target", Some("13.69.59.185"));
+    let signer = get_argument_value(&matches, "signer", Some("local"));
+    return get_vade_from_utils(target, signer).asyncify();
+}
+
+fn get_clap_argument(arg_name: &str) -> AsyncResult<Arg> {
     Ok(match arg_name {
         "did" => Arg::with_name("did")
             .long("did")
@@ -392,52 +397,4 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn Error>> {
             return Err(Box::from(format!("invalid arg_name: '{}'", &arg_name)));
         },
     })
-}
-
-fn get_signer(signer: &str) -> Box<dyn Signer> {
-    if signer.starts_with("remote") {
-        Box::new(RemoteSigner::new(
-            signer.trim_start_matches("remote|").to_string(),
-        ))
-    } else if signer.starts_with("local") {
-        Box::new(LocalSigner::new())
-    } else {
-        panic!("invalid signer config")
-    }
-}
-
-fn get_vade(matches: &ArgMatches<'static>) -> Result<Vade, Box<dyn Error>> {
-    let target = get_argument_value(&matches, "target", Some("13.69.59.185"));
-    let signer = get_argument_value(&matches, "signer", Some("local"));
-
-    let mut vade = Vade::new();
-
-    vade.register_plugin(Box::from(get_resolver(target, signer)?));
-    vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
-    vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
-
-    Ok(vade)
-}
-
-fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
-    let mut internal_vade = Vade::new();
-    internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
-    let signer: Box<dyn Signer> = get_signer(signer);
-
-    Ok(VadeEvanCl::new(internal_vade, signer))
-}
-
-fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
-    let mut internal_vade = Vade::new();
-    internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
-
-    let signer: Box<dyn Signer> = get_signer(signer);
-    Ok(VadeEvanBbs::new(internal_vade, signer))
-}
-
-fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn Error>> {
-    Ok(VadeEvanSubstrate::new(ResolverConfig {
-        signer: get_signer(signer),
-        target: target.to_string(),
-    }))
 }
