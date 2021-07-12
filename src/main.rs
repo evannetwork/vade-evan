@@ -48,10 +48,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let results = match matches.subcommand() {
         ("did", Some(sub_m)) => match sub_m.subcommand() {
             ("create", Some(sub_m)) => {
-                let did = get_argument_value(&sub_m, "method", None);
+                let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
                 get_vade(&sub_m)?
-                    .did_create(&did, &options, &String::new())
+                    .did_create(&method, &options, &String::new())
                     .await?
             }
             ("resolve", Some(sub_m)) => {
