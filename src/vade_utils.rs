@@ -33,7 +33,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(get_resolver(target, signer)?));
     #[cfg(feature = "did")]
-    internal_vade.register_plugin(Box::from(get_universal_resolver()?));
+    vade.register_plugin(Box::from(get_universal_resolver()?));
     #[cfg(feature = "vc-zkp")]
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
     #[cfg(feature = "vc-zkp")]
