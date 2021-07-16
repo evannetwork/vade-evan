@@ -28,7 +28,8 @@ macro_rules! handle_results {
         );
         ensure($results.len() > 0, || (&err_msg).to_string())?;
 
-        return Ok(Some($results[0].as_ref().ok_or(err_msg)?.to_string()))
+        let empty_result = &String::new();
+        return Ok(Some($results[0].as_ref().unwrap_or(empty_result).to_string()))
     };
 }
 
@@ -127,6 +128,7 @@ cfg_if::cfg_if! {
         create_function!(vc_zkp_create_revocation_registry_definition, did_or_method, options, payload, config);
         create_function!(vc_zkp_update_revocation_registry, did_or_method, options, payload, config);
         create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
+        create_function!(vc_zkp_finish_credential, did_or_method, options, payload, config);
         create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
         create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
         create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);

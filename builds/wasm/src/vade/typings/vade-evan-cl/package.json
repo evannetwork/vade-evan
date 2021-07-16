@@ -1,0 +1,6 @@
+{
+  "name": "vade-evan-cl-typings",
+  "version": "0.0.1",
+  "description": "typescript types for vade-evan-cl",
+  "types": "./index.d.ts"
+}
