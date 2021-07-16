@@ -10,6 +10,10 @@ use vade_evan_substrate::{
     ResolverConfig,
     VadeEvanSubstrate,
 };
+#[cfg(feature = "did")]
+use vade_universal_resolver::{
+    VadeUniversalResolver,
+};
 
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
@@ -28,6 +32,8 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
 
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(get_resolver(target, signer)?));
+    #[cfg(feature = "did")]
+    internal_vade.register_plugin(Box::from(get_universal_resolver()?));
     #[cfg(feature = "vc-zkp")]
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
     #[cfg(feature = "vc-zkp")]
@@ -41,8 +47,10 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
     let mut internal_vade = Vade::new();
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
-    let signer: Box<dyn Signer> = get_signer(signer);
+    #[cfg(feature = "did")]
+    internal_vade.register_plugin(Box::from(get_universal_resolver()?));
 
+    let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanCl::new(internal_vade, signer))
 }
 
@@ -51,6 +59,8 @@ fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn 
     let mut internal_vade = Vade::new();
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
+    #[cfg(feature = "did")]
+    internal_vade.register_plugin(Box::from(get_universal_resolver()?));
 
     let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanBbs::new(internal_vade, signer))
@@ -62,4 +72,9 @@ fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn
         signer: get_signer(signer),
         target: target.to_string(),
     }))
+}
+
+#[cfg(feature = "did")]
+fn get_universal_resolver() -> Result<VadeUniversalResolver, Box<dyn Error>> {
+    Ok(VadeUniversalResolver::new())
 }
