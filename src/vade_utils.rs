@@ -76,5 +76,5 @@ fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn
 
 #[cfg(feature = "did")]
 fn get_universal_resolver() -> Result<VadeUniversalResolver, Box<dyn Error>> {
-    Ok(VadeUniversalResolver::new())
+    Ok(VadeUniversalResolver::new(std::env::var("RESOLVER_URL").ok()))
 }
