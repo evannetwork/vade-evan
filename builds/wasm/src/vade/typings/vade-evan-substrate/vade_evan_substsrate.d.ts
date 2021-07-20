@@ -14,10 +14,13 @@
   limitations under the License.
 */
 
-// wasm only
-#[cfg(target_arch = "wasm32")]
-pub extern crate log;
-#[cfg(target_arch = "wasm32")]
-mod vade_utils;
-#[cfg(target_arch = "wasm32")]
-mod wasm_lib;
+export interface DidUpdateArguments {
+  privateKey: string;
+  identity: string;
+  operation: string;
+}
+
+export interface IdentityArguments {
+  privateKey: string;
+  identity: string;
+}

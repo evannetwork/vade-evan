@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+  },
+  "exclude": [
+    "node_modules",
+  ],
+  "extends": "./tsconfig.json",
+  "include": [
+    ".eslintrc.js",
+    "**/*.spec.ts",
+    "dist",
+    "jest.config.js",
+    "package-scripts.js",
+    "src/**/*.ts",
+    "babel.config.js",
+  ]
+}
