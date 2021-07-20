@@ -6,6 +6,7 @@ import * as wasm from './wasm';
 if (!global.Window) {
   const fetch = require('node-fetch');
   const ws = require('ws');
+  const { LocalStorage } = require('node-localstorage');
   global.Headers = fetch.Headers;
   global.Request = fetch.Request;
   global.Response = fetch.Response;
@@ -13,6 +14,7 @@ if (!global.Window) {
   global.Window = Object as any;
   global.fetch = fetch;
   global.WebSocket = ws;
+  global.localStorage = new LocalStorage('.local-storage');
 }
 
 wasm.set_panic_hook();

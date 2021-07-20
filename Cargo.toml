@@ -31,6 +31,7 @@ default = ["cli", "did", "portable", "vc-zkp"]
 cli = [
     "clap",
     "did",
+    "didcomm",
     "tokio",
     "vc-zkp",
 ]
@@ -38,6 +39,11 @@ cli = [
 # enables using DIDs, also required for some vc-zkp functions
 did = [
     "vade-evan-substrate",
+]
+
+# enables didcomm message features
+didcomm = [
+    "vade-didcomm",
 ]
 
 # default ursa setup
@@ -53,6 +59,7 @@ vc-zkp = [
 
 # build to run as wasm file; not compatible with `native` feature
 wasm = [
+    "vade-didcomm/wasm",
     "vade-evan-cl/wasm",
     "vade-evan-bbs/wasm",
 ]
@@ -72,6 +79,8 @@ clap = { version = "2.33.1", optional = true }
 tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
 # feature "did"
 vade-evan-substrate = { path = "../vade-evan-substrate", version = "0.0.1", optional = true }
+# feature "didcomm"
+vade-didcomm = { path = "../vade-didcomm", version = "0.0.1", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"

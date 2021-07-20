@@ -24,7 +24,7 @@ const jest = ({
 ].join(' '));
 const tsProject = '-p ./tsconfig.build.json';
 const tscPaths = `tscpaths ${tsProject} -s ./src -o ./dist/src > /dev/null && tscpaths ${tsProject} -s ./functions -o ./dist/functions > /dev/null`;
-const copyVadeFiles = `cp -r ${VADE_WASM_FOLDER} dist/${VADE_WASM_FOLDER}`;
+const copyVadeFiles = `mkdir -p dist/${VADE_WASM_FOLDER} && cp ${VADE_WASM_FOLDER}/* dist/${VADE_WASM_FOLDER}/`;
 const buildTypescript = `tsc ${tsProject} && ${tscPaths} && ${copyVadeFiles}`;
 const fixFunctionArgName = [
   'vade_evan.js',
@@ -41,7 +41,7 @@ const buildWasm = (buildForBrowser) => [
   `--out-dir ${__dirname}/${VADE_WASM_FOLDER}`,
   '--',
   '--no-default-features',
-  '--features did,vc-zkp,wasm',
+  '--features did,didcomm,vc-zkp,wasm',
   '&&',
   fixFunctionArgName,
 ].join(' ');

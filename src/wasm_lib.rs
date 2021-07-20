@@ -45,6 +45,19 @@ macro_rules! create_function {
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
+    ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
+        #[wasm_bindgen]
+        pub async fn $func_name(
+            options: String,
+            payload: String,
+            config: JsValue,
+        ) -> Result<Option<String>, JsValue> {
+            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
+            let results = vade.$func_name(&options, &payload).await.map_err(jsify)?;
+            let name = stringify!($func_name);
+            handle_results!(&name, &name, results);
+        }
+    };
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
         #[wasm_bindgen]
         pub async fn $func_name(
@@ -114,6 +127,14 @@ cfg_if::cfg_if! {
         create_function!(did_create, did_or_method, options, payload, config);
         create_function!(did_resolve, did_or_method, config);
         create_function!(did_update, did_or_method, options, payload, config);
+    } else {
+    }
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "didcomm")] {
+        create_function!(didcomm_receive, options, payload, config);
+        create_function!(didcomm_send, options, payload, config);
     } else {
     }
 }

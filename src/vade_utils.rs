@@ -1,5 +1,7 @@
 use std::error::Error;
 use vade::Vade;
+#[cfg(feature = "didcomm")]
+use vade_didcomm::VadeDIDComm;
 #[cfg(feature = "vc-zkp")]
 use vade_evan_bbs::VadeEvanBbs;
 #[cfg(feature = "vc-zkp")]
@@ -32,6 +34,8 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
     #[cfg(feature = "vc-zkp")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
+    #[cfg(feature = "didcomm")]
+    vade.register_plugin(Box::from(VadeDIDComm::new()?));
 
     Ok(vade)
 }
