@@ -71,4 +71,5 @@ yarn-error.log
 .dev-users
 /.nyc_output
 statics
+src/vade/typings/**/*
 

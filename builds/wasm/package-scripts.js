@@ -24,7 +24,7 @@ const jest = ({
 ].join(' '));
 const tsProject = '-p ./tsconfig.build.json';
 const tscPaths = `tscpaths ${tsProject} -s ./src -o ./dist/src > /dev/null && tscpaths ${tsProject} -s ./functions -o ./dist/functions > /dev/null`;
-const copyVadeFiles = `mkdir -p dist/${VADE_WASM_FOLDER} && cp ${VADE_WASM_FOLDER}/* dist/${VADE_WASM_FOLDER}/`;
+const copyVadeFiles = `rm -rf dist/${VADE_WASM_FOLDER} && cp ${VADE_WASM_FOLDER}/* dist/${VADE_WASM_FOLDER}/`;
 const buildTypescript = `tsc ${tsProject} && ${tscPaths} && ${copyVadeFiles}`;
 const fixFunctionArgName = [
   'vade_evan.js',
