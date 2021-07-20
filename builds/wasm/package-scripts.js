@@ -24,7 +24,7 @@ const jest = ({
 ].join(' '));
 const tsProject = '-p ./tsconfig.build.json';
 const tscPaths = `tscpaths ${tsProject} -s ./src -o ./dist/src > /dev/null && tscpaths ${tsProject} -s ./functions -o ./dist/functions > /dev/null`;
-const copyVadeFiles = `mkdir -p dist/${VADE_WASM_FOLDER} && cp ${VADE_WASM_FOLDER}/* dist/${VADE_WASM_FOLDER}/`;
+const copyVadeFiles = `rm -rf dist/${VADE_WASM_FOLDER} && cp ${VADE_WASM_FOLDER}/* dist/${VADE_WASM_FOLDER}/`;
 const buildTypescript = `tsc ${tsProject} && ${tscPaths} && ${copyVadeFiles}`;
 const fixFunctionArgName = [
   'vade_evan.js',
@@ -48,7 +48,8 @@ const buildWasm = (buildForBrowser) => [
 const buildTypings = VADE_PLUGINS
   .map((plugin) => {
     const typings = `${__dirname}/../../../${plugin}/typings`;
-    return `cp -r ${typings} ./src/vade/typings/${plugin}`;
+    const typingsDest = `./src/vade/typings/${plugin}`;
+    return `rm -rf ${typingsDest} && cp -r ${typings} ${typingsDest}`;
   })
   .join(' && ');
 
