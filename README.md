@@ -19,7 +19,7 @@ cargo build --release
 
 ### Default Features
 
-By default features `cli`, `did`, `portable`, and `vc-zkp` are used. So everything included and available for usage in command line interface.
+By default features `cli`, `did`, `didcomm`, `portable`, and `vc-zkp` are used. So everything included and available for usage in command line interface.
 
 Features can be omitted. So for example `vc-zkp` or `did` could be skipped.
 
@@ -67,6 +67,7 @@ To build it, you need to have checked out next to your `vade-evan` project:
 
 - `vade-evan-cl`
 - `vade-evan-bbs`
+- `vade-evan-didcomm`
 - `vade-evan-substrate`
 
 Then it can be build by navigating to `builds/wasm` and calling
@@ -89,6 +90,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | -------- |:-------:| -------- |
 | cli      |     x   | enables command line interface |
 | did      |     x   | enables DID functionalities |
+| didcomm  |     x   | enables DIDComm message handling |
 | vc-zkp   |     x   | enables VC functionalities |
 | portable |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
 | wasm     |         | build with optimizations to run as web assembly, not compatible with `portable` |
