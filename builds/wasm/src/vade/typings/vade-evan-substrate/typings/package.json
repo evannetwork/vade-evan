@@ -1,0 +1,6 @@
+{
+  "name": "vade-evan-substrate-typings",
+  "version": "0.0.1",
+  "description": "typescript types for vade-evan-substrate",
+  "types": "./dist/src/index.d.ts"
+}

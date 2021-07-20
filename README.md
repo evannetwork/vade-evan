@@ -39,6 +39,8 @@ You can now use the `vade-evan` cli. Get started by having a look at the help sh
 
 ### WASM
 
+#### WASM pack
+
 To compile `vade-evan` for wasm, use wasm pack.
 
 You can specify to use only `did` feature or to use `did` and `vc-zkp`. The following examples will use both features.
@@ -56,6 +58,30 @@ browser:
 ```sh
 wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
 ```
+
+#### Wrapper for WASM pack
+
+A project that wraps calls against the WASM file has been added and placed at `builds/wasm`.
+
+To build it, you need to have checked out next to your `vade-evan` project:
+
+- `vade-evan-cl`
+- `vade-evan-bbs`
+- `vade-evan-substrate`
+
+Then it can be build by navigating to `builds/wasm` and calling
+
+```sh
+yarn && yarn build
+```
+
+If you want to try it out, navigate to `builds/wasm/example` and run
+
+```sh
+yarn && node index.js
+```
+
+This example will generate a new DID, assign a document to it and update it afterwards.
 
 ### Features for building
 

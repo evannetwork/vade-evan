@@ -55,6 +55,7 @@ vc-zkp = [
 # build to run as wasm file; not compatible with `native` feature
 wasm = [
     "vade-evan-cl/wasm",
+    "vade-evan-bbs/wasm",
 ]
 
 [dependencies]

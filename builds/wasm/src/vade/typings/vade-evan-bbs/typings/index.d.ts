@@ -14,10 +14,5 @@
   limitations under the License.
 */
 
-// wasm only
-#[cfg(target_arch = "wasm32")]
-pub extern crate log;
-#[cfg(target_arch = "wasm32")]
-mod vade_utils;
-#[cfg(target_arch = "wasm32")]
-mod wasm_lib;
+export * from './application/datatypes';
+export * from './vade_evan_bbs';

@@ -1,0 +1,74 @@
+{
+  "dependencies": {
+    "node-fetch": "2.6.1"
+  },
+  "description": "Mono repo for tnt azure function apps.",
+  "devDependencies": {
+    "@babel/core": "^7.9.6",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-decorators": "^7.8.3",
+    "@babel/preset-env": "^7.9.6",
+    "@babel/preset-typescript": "^7.9.0",
+    "@types/jest": "^23.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.17.0",
+    "@typescript-eslint/parser": "^4.5.0",
+    "babel-jest": "^26.0.1",
+    "babel-plugin-transform-typescript-metadata": "^0.3.0",
+    "eslint": "^7.0.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-config-airbnb-typescript": "12",
+    "eslint-import-resolver-typescript": "^2.3.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^23.18.0",
+    "fs-extra": "^9.0.1",
+    "glob": "^7.1.6",
+    "husky": "^4.3.0",
+    "jest": "^26.0.1",
+    "lint-staged": "^10.4.2",
+    "sinon": "^9.2.1",
+    "ts-jest": "^26.1.0",
+    "tsc-watch": "^4.2.9",
+    "tsconfig-paths": "^3.9.0",
+    "tscpaths": "^0.0.9",
+    "typescript": "4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "license": "UNLICENSED",
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint"
+    ]
+  },
+  "main": "dist/src/index.js",
+  "name": "@equs/vade-wasm",
+  "nyc": {
+    "all": true,
+    "exclude": [
+      "**/.deploy/**",
+      "**/coverage/**",
+      "**/functions/**",
+      "**/scripts/**",
+      "*.js",
+      "**/migration/**",
+      "**/tests/**"
+    ],
+    "reporter": [
+      "html"
+    ]
+  },
+  "scripts": {
+    "build": "node ./package-scripts.js",
+    "build:typescript": "node ./package-scripts.js",
+    "build:typings": "node ./package-scripts.js",
+    "build:wasm-browser": "node ./package-scripts.js",
+    "build:wasm-node": "node ./package-scripts.js",
+    "lint": "node ./package-scripts.js",
+    "start": "node ./package-scripts.js",
+    "test": "node ./package-scripts.js"
+  },
+  "version": "1.2.0"
+}
