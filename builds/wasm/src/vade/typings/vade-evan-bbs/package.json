@@ -1,6 +1,0 @@
-{
-  "name": "vade-evan-bbs-typings",
-  "version": "0.0.1",
-  "description": "typescript types for vade-evan-bbs",
-  "types": "./index.d.ts"
-}
