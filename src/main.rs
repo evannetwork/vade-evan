@@ -22,6 +22,14 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use vade::Vade;
 use vade_utils::get_vade as get_vade_from_utils;
 
+macro_rules! wrap_vade2 {
+    ($func_name:ident, $sub_m:ident) => {{
+        let options = get_argument_value($sub_m, "options", None);
+        let payload = get_argument_value($sub_m, "payload", None);
+        get_vade($sub_m)?.$func_name(&options, &payload).await?
+    }};
+}
+
 macro_rules! wrap_vade3 {
     ($func_name:ident, $sub_m:ident) => {{
         let method = get_argument_value($sub_m, "method", None);
@@ -60,6 +68,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 get_vade(&sub_m)?
                     .did_update(&did, &options, &payload)
                     .await?
+            }
+            _ => {
+                return Err(Box::from(clap::Error::with_description(
+                    "invalid subcommand",
+                    clap::ErrorKind::InvalidSubcommand,
+                )));
+            }
+        },
+        ("didcomm", Some(sub_m)) => match sub_m.subcommand() {
+            ("send", Some(sub_m)) => {
+                wrap_vade2!(didcomm_send, sub_m)
+            }
+            ("receive", Some(sub_m)) => {
+                wrap_vade2!(didcomm_receive, sub_m)
             }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
@@ -155,7 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
     Ok(App::new("vade_evan_bin")
-        .version("0.0.6")
+        .version("0.0.8")
         .author("evan GmbH")
         .about("Allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace")
         .setting(AppSettings::DeriveDisplayOrder)
@@ -190,6 +212,28 @@ fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
                         .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
+                )
+        )
+        .subcommand(
+            SubCommand::with_name("didcomm")
+                .about("Processes DIDComm message")
+                .setting(AppSettings::DeriveDisplayOrder)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("send")
+                        .about(r###"Prepare a plain DIDComm json message to be sent, including encryption and protocol specific message enhancement.
+The DIDComm options can include a shared secret to encrypt the message with a specific key.
+If no key was given and the message should be encrypted (depends on protocol implementation), the DIDComm keypair from a db provider will be used."###)
+                        .arg(get_clap_argument("options")?)
+                        .arg(get_clap_argument("payload")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("receive")
+                        .about(r###"Receive a plain DIDComm json message, including decryption and protocol specific message parsing.
+The DIDComm options can include a shared secret to encrypt the message with a specific key.
+If no key was given and the message is encrypted the DIDComm keypair from a db will be used."###)
+                        .arg(get_clap_argument("options")?)
+                        .arg(get_clap_argument("payload")?),
                 )
         )
         .subcommand(
