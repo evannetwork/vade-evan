@@ -1,0 +1,75 @@
+bin
+obj
+csx
+.vs
+edge
+Publish
+
+*.user
+*.cscfg
+*.Cache
+project.lock.json
+
+/packages
+/TestResults
+
+/tools/NuGet.exe
+/App_Data
+/secrets
+/data
+.secrets
+appsettings.json
+local.settings.json
+remote.settings.json
+
+/samples/keyexchange/index.js
+
+node_modules
+dist
+
+# Local python packages
+.python_packages/
+
+# Python Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+.run
+.DS_Store
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# VScode
+.vscode-test
+.vscode
+
+# custom
+azure-functions-core-tools
+swagger-auth-build.yaml
+swagger-build.yaml
+.temp.tsconfig.json
+coverage/
+.deploy*/
+yarn-error.log
+.dev-users
+/.nyc_output
+statics
+src/vade/typings/**/*
+

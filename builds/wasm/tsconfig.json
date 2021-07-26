@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "baseUrl": ".",
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "lib": [
+      "dom",
+      "es6",
+      "es2019"
+    ],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "outDir": "dist",
+    "paths": {
+      "@utils/*": [
+        "src/_utils/*"
+      ],
+      "@/*": [
+        "src/*"
+      ],
+      "@vade/*": ["lib/vade/*"]
+    },
+    "preserveConstEnums": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": false,
+    "strictPropertyInitialization": false,
+    "target": "es6",
+    "types": [
+      "jest", "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}
