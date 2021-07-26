@@ -14,11 +14,14 @@
   limitations under the License.
 */
 
-use console_log;
+use std::ffi::{CStr,CString};
 use std::{collections::HashMap, error::Error};
-use vade::Vade;
-use wasm_bindgen::prelude::*;
+use std::os::raw::c_char;
+use vade::{Vade, VadePluginResultValue};
 use crate::vade_utils::{get_vade as get_vade_from_utils, get_config_default};
+use std::slice;
+use futures::executor::block_on;
+
 
 macro_rules! handle_results {
     ($func_name:expr, $did_or_method:expr, $results:expr) => {
@@ -35,37 +38,36 @@ macro_rules! handle_results {
 
 macro_rules! create_function {
     ($func_name:ident, $did_or_method:ident, $config:ident) => {
-        #[wasm_bindgen]
         pub async fn $func_name(
             did_or_method: String,
-            config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+            config: String,
+        ) -> Result<Option<String>, String> {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade.$func_name(&did_or_method).await.map_err(jsify)?;
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
+
     ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
-        #[wasm_bindgen]
         pub async fn $func_name(
             options: String,
             payload: String,
-            config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+            config: String,
+        ) -> Result<Option<String>, String> {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade.$func_name(&options, &payload).await.map_err(jsify)?;
             let name = stringify!($func_name);
             handle_results!(&name, &name, results);
         }
     };
+
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
-        #[wasm_bindgen]
         pub async fn $func_name(
             did_or_method: String,
             options: String,
             payload: String,
-            config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+            config: String,
+        ) -> Result<Option<String>, String> {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade
                 .$func_name(&did_or_method, &options, &payload)
@@ -74,15 +76,15 @@ macro_rules! create_function {
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
+
     ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
-        #[wasm_bindgen]
         pub async fn $func_name(
             did_or_method: String,
             function: String,
             options: String,
             payload: String,
-            config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+            config: String,
+        ) -> Result<Option<String>, String> {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade
                 .$func_name(&did_or_method, &function, &options, &payload)
@@ -93,34 +95,7 @@ macro_rules! create_function {
     };
 }
 
-/// small drop-in replacement for asserts
-/// if condition is false, will evaluate `create_msg` function and return an Err with it
-fn ensure<F>(condition: bool, create_msg: F) -> Result<(), JsValue>
-where
-    F: FnOnce() -> String,
-{
-    if condition {
-        Ok(())
-    } else {
-        Err(JsValue::from(&create_msg().to_string()))
-    }
-}
 
-#[wasm_bindgen]
-pub fn set_panic_hook() {
-    console_error_panic_hook::set_once();
-}
-
-#[wasm_bindgen]
-pub fn set_log_level(log_level: String) {
-    let _ = match log_level.as_str() {
-        "trace" => console_log::init_with_level(log::Level::Trace),
-        "debug" => console_log::init_with_level(log::Level::Debug),
-        "info" => console_log::init_with_level(log::Level::Info),
-        "error" => console_log::init_with_level(log::Level::Error),
-        _ => console_log::init_with_level(log::Level::Error),
-    };
-}
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "did")] {
@@ -159,22 +134,56 @@ cfg_if::cfg_if! {
     }
 }
 
+fn ensure<F>(condition: bool, create_msg: F) -> Result<(), String>
+where
+    F: FnOnce() -> String,
+{
+    if condition {
+        Ok(())
+    } else {
+        Err(create_msg().to_string())
+    }
+}
+
+fn jsify(err: Box<dyn Error>) -> String {
+    format!("{}", err)
+}
+
+#[allow(unused_variables)] // allow possibly unused variables due to feature mix
+pub fn get_vade(config: Option<&String>) -> Result<Vade, Box<dyn Error>> {
+    let config_values =
+        get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
+    let (signer_config, target) = match config_values.as_slice() {
+        [signer_config, target, ..] => (signer_config, target),
+        _ => {
+            return Err(Box::from("invalid vade config"));
+        }
+    };
+
+    return get_vade_from_utils(target, signer_config);
+}
+
+
 fn get_config_values(
-    config: Option<&JsValue>,
+    config: Option<&String>,
     keys: Vec<String>,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     let mut vec = Vec::new();
     let mut config_undefined = true;
 
-    let config_hash_map: HashMap<String, String>;
+    let config_hash_map: HashMap<String, String> ;
+    // let config_values = 
+
     match config {
         Some(value) => {
-            if !value.is_undefined() {
-                config_hash_map = value.into_serde()?;
+            if !value.is_empty() {
+               
+                config_hash_map = serde_json::from_str(&value)?;
                 config_undefined = false;
-            } else {
+            }else{
                 config_hash_map = HashMap::<String, String>::new();
-            }
+
+            } 
         }
         None => {
             config_hash_map = HashMap::<String, String>::new();
@@ -199,20 +208,47 @@ fn get_config_values(
 
 
 
-#[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
-    let config_values =
-        get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
-    let (signer_config, target) = match config_values.as_slice() {
-        [signer_config, target, ..] => (signer_config, target),
-        _ => {
-            return Err(Box::from("invalid vade config"));
-        }
+#[no_mangle]
+pub extern "C" fn execute_vade(func_name: *const c_char, arguments: *const *const c_char,  num_of_args: usize, config: *const *const c_char)-> *const c_char{
+    let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
+    let args_array: &[*const c_char] = unsafe { slice::from_raw_parts(arguments, num_of_args as usize) };
+
+    // convert each element to a Rust string
+    let arguments_vec: Vec<_> = args_array
+        .iter()
+        .map(|&v| unsafe { CStr::from_ptr(v).to_string_lossy().into_owned() })
+        .collect();
+    println!("function {}",func);
+    // println!()
+    let no_args  = String::from("");
+ 
+    let result = match func.as_str() {
+        "did_resolve" => block_on(did_resolve(arguments_vec.get(0).unwrap_or_else( || &no_args).to_owned(), "".to_string())),
+        _ => Err("No match found".to_string())
+        // "did_create" => did_create(did_or_method, options, payload, config),
+        // "did_update" => did_update(did_or_method, options, payload, config),
+        // "didcomm_receive" => didcomm_receive(options, payload, config),
+        // "didcomm_send" => didcomm_send(options, payload, config),
+        // "vc_zkp_create_credential_definition" => vc_zkp_create_credential_definition(did_or_method, options, payload, config),
+        // "vc_zkp_create_credential_offer" => vc_zkp_create_credential_offer(did_or_method, options, payload, config),
+        // "vc_zkp_create_credential_proposal" => vc_zkp_create_credential_proposal(did_or_method, options, payload, config),
+        // "vc_zkp_create_credential_schema" => vc_zkp_create_credential_schema(did_or_method, options, payload, config),
+        // "vc_zkp_create_revocation_registry_definition" => vc_zkp_create_revocation_registry_definition(did_or_method, options, payload, config),
+        // "vc_zkp_update_revocation_registry" => vc_zkp_update_revocation_registry(did_or_method, options, payload, config),
+        // "vc_zkp_issue_credential" => vc_zkp_issue_credential(did_or_method, options, payload, config),
+        // "vc_zkp_finish_credential" => vc_zkp_finish_credential(did_or_method, options, payload, config),
+        // "vc_zkp_present_proof" => vc_zkp_present_proof(did_or_method, options, payload, config),
+        // "vc_zkp_request_credential" => vc_zkp_request_credential(did_or_method, options, payload, config),
+        // "vc_zkp_request_proof" => vc_zkp_request_proof(did_or_method, options, payload, config),
+        // "vc_zkp_revoke_credential" => vc_zkp_revoke_credential(did_or_method, options, payload, config),
+        // "vc_zkp_verify_proof" => vc_zkp_verify_proof(did_or_method, options, payload, config),
     };
-
-    return get_vade_from_utils(target, signer_config);
-}
-
-fn jsify(err: Box<dyn Error>) -> JsValue {
-    JsValue::from(format!("{}", err))
+    
+    let response = match result
+     {
+        Ok(Some(value)) => value.to_string(),
+        Ok(_) => "Unknown Result".to_string(),
+        Err(e) => e.to_string(),
+    };
+    return  CString::new(response).unwrap().into_raw();
 }
