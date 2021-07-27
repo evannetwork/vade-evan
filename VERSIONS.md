@@ -6,6 +6,15 @@
 
 ### Fixes
 
+### Deprecation
+
+## Version 0.1.0
+
+### Features
+
+- add support for `didcomm_send`, `didcomm_receive`, `vc_zkp_finish_credential`
+- add WASM complied project with sample javascript library
+
 ### Deprecations
 
 - split off substrate logic from original `vade-evan` project into separate projects
