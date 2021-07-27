@@ -6,5 +6,5 @@ stages:
 test_unit:
   stage: test_unit
   script:
-    - cargo build --verbose
-    - cargo test --verbose --release
+    - cargo build --release --verbose
+    - cargo test --release --verbose
