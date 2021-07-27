@@ -43,8 +43,8 @@ macro_rules! create_function {
             did_or_method: String,
             config: String,
         ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade.$func_name(&did_or_method).await.map_err(jsify)?;
+            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
+            let results = vade.$func_name(&did_or_method).await.map_err(to_err_str)?;
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
@@ -55,8 +55,11 @@ macro_rules! create_function {
             payload: String,
             config: String,
         ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade.$func_name(&options, &payload).await.map_err(jsify)?;
+            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
+            let results = vade
+                .$func_name(&options, &payload)
+                .await
+                .map_err(to_err_str)?;
             let name = stringify!($func_name);
             handle_results!(&name, &name, results);
         }
@@ -69,11 +72,11 @@ macro_rules! create_function {
             payload: String,
             config: String,
         ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
+            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
             let results = vade
                 .$func_name(&did_or_method, &options, &payload)
                 .await
-                .map_err(jsify)?;
+                .map_err(to_err_str)?;
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
@@ -86,11 +89,11 @@ macro_rules! create_function {
             payload: String,
             config: String,
         ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
+            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
             let results = vade
                 .$func_name(&did_or_method, &function, &options, &payload)
                 .await
-                .map_err(jsify)?;
+                .map_err(to_err_str)?;
             handle_results!(
                 format!("{}: {}", stringify!($func_name), &function),
                 did_or_method,
@@ -148,29 +151,20 @@ where
     }
 }
 
-fn jsify(err: Box<dyn Error>) -> String {
+fn to_err_str(err: Box<dyn Error>) -> String {
     format!("{}", err)
 }
 
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 pub fn get_vade(config: Option<&String>) -> Result<Vade, Box<dyn Error>> {
-    println!("get_vade");
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
-
-    println!(
-        "config {}",
-        config_values.clone().into_iter().collect::<String>()
-    );
-
     let (signer_config, target) = match config_values.as_slice() {
         [signer_config, target, ..] => (signer_config, target),
         _ => {
             return Err(Box::from("invalid vade config"));
         }
     };
-
-    println!("(target {} signer_config {}", target, signer_config);
     return get_vade_from_utils(target, signer_config);
 }
 
@@ -231,14 +225,16 @@ pub extern "C" fn execute_vade(
         .map(|&v| unsafe { CStr::from_ptr(v).to_string_lossy().into_owned() })
         .collect();
 
-    let options = unsafe { CStr::from_ptr(options).to_string_lossy().into_owned() };
-    let config = unsafe { CStr::from_ptr(config).to_string_lossy().into_owned() };
+    let mut str_options = String::new();
+    let mut str_config = String::new();
 
-    println!("function {}", func);
-    println!(
-        "args {}",
-        arguments_vec.clone().into_iter().collect::<String>()
-    );
+    if !options.is_null() {
+        str_options = unsafe { CStr::from_ptr(options).to_string_lossy().into_owned() };
+    }
+
+    if !config.is_null() {
+        str_config = unsafe { CStr::from_ptr(config).to_string_lossy().into_owned() };
+    }
 
     let no_args = String::from("");
 
@@ -250,118 +246,118 @@ pub extern "C" fn execute_vade(
     let result = match func.as_str() {
         "did_resolve" => runtime.block_on(did_resolve(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "did_create" => runtime.block_on(did_create(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "did_update" => runtime.block_on(did_update(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "didcomm_receive" => runtime.block_on(didcomm_receive(
-            options,
+            str_options,
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "didcomm_send" => runtime.block_on(didcomm_send(
-            options,
+            str_options,
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_create_credential_definition" => {
             runtime.block_on(vc_zkp_create_credential_definition(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-                options,
+                str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-                config,
+                str_config,
             ))
         }
         "vc_zkp_create_credential_offer" => runtime.block_on(vc_zkp_create_credential_offer(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_create_credential_proposal" => runtime.block_on(vc_zkp_create_credential_proposal(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_create_credential_schema" => runtime.block_on(vc_zkp_create_credential_schema(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_create_revocation_registry_definition" => {
             runtime.block_on(vc_zkp_create_revocation_registry_definition(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-                options,
+                str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-                config,
+                str_config,
             ))
         }
         "vc_zkp_update_revocation_registry" => runtime.block_on(vc_zkp_update_revocation_registry(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_issue_credential" => runtime.block_on(vc_zkp_issue_credential(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_finish_credential" => runtime.block_on(vc_zkp_finish_credential(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_present_proof" => runtime.block_on(vc_zkp_present_proof(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_request_credential" => runtime.block_on(vc_zkp_request_credential(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_request_proof" => runtime.block_on(vc_zkp_request_proof(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_revoke_credential" => runtime.block_on(vc_zkp_revoke_credential(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "vc_zkp_verify_proof" => runtime.block_on(vc_zkp_verify_proof(
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
         "run_custom_function" => runtime.block_on(run_custom_function(
             arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
             arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            options,
+            str_options,
             arguments_vec.get(2).unwrap_or_else(|| &no_args).to_owned(),
-            config,
+            str_config,
         )),
 
         _ => Err("Function Not Supported By Vade".to_string()),
