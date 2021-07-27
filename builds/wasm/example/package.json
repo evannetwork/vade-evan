@@ -1,0 +1,14 @@
+{
+  "name": "vade-wasm-example",
+  "version": "0.0.1",
+  "description": "small vade example",
+  "main": "index.js",
+  "scripts": {
+    "run": ""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@equs/vade-wasm": "file:.."
+  }
+}

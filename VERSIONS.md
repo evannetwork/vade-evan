@@ -4,11 +4,22 @@
 
 ### Features
 
-- add `issuance_date` to credentials (`Credential`, `ProofCredential` and `IssueCredentialPayload`)
-
 ### Fixes
 
+### Deprecation
+
+## Version 0.1.0
+
+### Features
+
+- add support for `didcomm_send`, `didcomm_receive`, `vc_zkp_finish_credential`
+- add WASM complied project with sample javascript library
+
 ### Deprecations
+
+- split off substrate logic from original `vade-evan` project into separate projects
+  - did related components and signing went to `vade-evan-substrate`
+  - cl vc related components went to `vade-evan-cl`
 
 ## Version 0.0.8
 
