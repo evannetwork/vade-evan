@@ -31,8 +31,8 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
 
 pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
-        "signer" => "remote|https://tntkeyservices-5b02.azurewebsites.net/api/key/sign",
-        "target" => "13.69.59.185",
+        "signer" => "local",
+        "target" => "substrate-dev.trust-trace.com",
         _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
     }
     .to_string())

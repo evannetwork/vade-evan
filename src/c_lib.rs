@@ -367,8 +367,6 @@ pub extern "C" fn execute_vade(
         Err(e) => e.to_string(),
     };
 
-    println!("response {}", response);
-
     return CString::new(response)
         .expect("CString::new failed to convert response")
         .into_raw();
