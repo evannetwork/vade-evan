@@ -37,27 +37,20 @@ macro_rules! handle_results {
     };
 }
 
-macro_rules! create_function {
-    ($func_name:ident, $did_or_method:ident, $config:ident) => {
-        pub async fn $func_name(
-            did_or_method: String,
-            config: String,
-        ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
-            let results = vade.$func_name(&did_or_method).await.map_err(to_err_str)?;
-            handle_results!(stringify!($func_name), did_or_method, results);
+macro_rules! execute_vade_function {
+    ($func_name:ident, $did_or_method:expr, $config:expr) => {
+        async {
+            let mut vade = get_vade(Some(&$config.to_string())).map_err(to_err_str)?;
+            let results = vade.$func_name($did_or_method).await.map_err(to_err_str)?;
+            handle_results!(stringify!($func_name), stringify!($did_or_method), results);
         }
     };
 
-    ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
-        pub async fn $func_name(
-            options: String,
-            payload: String,
-            config: String,
-        ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
+    ($func_name:ident, $options:expr, $payload:expr, $config:expr) => {
+        async {
+            let mut vade = get_vade(Some(&$config)).map_err(to_err_str)?;
             let results = vade
-                .$func_name(&options, &payload)
+                .$func_name(&$options, &$payload)
                 .await
                 .map_err(to_err_str)?;
             let name = stringify!($func_name);
@@ -65,79 +58,31 @@ macro_rules! create_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
-        pub async fn $func_name(
-            did_or_method: String,
-            options: String,
-            payload: String,
-            config: String,
-        ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
+    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr) => {
+        async {
+            let mut vade = get_vade(Some(&$config)).map_err(to_err_str)?;
             let results = vade
-                .$func_name(&did_or_method, &options, &payload)
+                .$func_name($did_or_method, $options, $payload)
                 .await
                 .map_err(to_err_str)?;
-            handle_results!(stringify!($func_name), did_or_method, results);
+            handle_results!(stringify!($func_name), stringify!($did_or_method), results);
         }
     };
 
-    ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
-        pub async fn $func_name(
-            did_or_method: String,
-            function: String,
-            options: String,
-            payload: String,
-            config: String,
-        ) -> Result<Option<String>, String> {
-            let mut vade = get_vade(Some(&config)).map_err(to_err_str)?;
+    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr) => {
+        async {
+            let mut vade = get_vade(Some(&$config)).map_err(to_err_str)?;
             let results = vade
-                .$func_name(&did_or_method, &function, &options, &payload)
+                .$func_name($did_or_method, $function, $options, $payload)
                 .await
                 .map_err(to_err_str)?;
             handle_results!(
-                format!("{}: {}", stringify!($func_name), &function),
-                did_or_method,
+                format!("{}: {}", stringify!($func_name), $function),
+                $did_or_method,
                 results
             );
         }
     };
-}
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "did")] {
-        create_function!(did_create, did_or_method, options, payload, config);
-        create_function!(did_resolve, did_or_method, config);
-        create_function!(did_update, did_or_method, options, payload, config);
-    } else {
-    }
-}
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "didcomm")] {
-        create_function!(didcomm_receive, options, payload, config);
-        create_function!(didcomm_send, options, payload, config);
-    } else {
-    }
-}
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "vc-zkp")] {
-        create_function!(run_custom_function, did_or_method, function, options, payload, config);
-        create_function!(vc_zkp_create_credential_definition, did_or_method, options, payload, config);
-        create_function!(vc_zkp_create_credential_offer, did_or_method, options, payload, config);
-        create_function!(vc_zkp_create_credential_proposal, did_or_method, options, payload, config);
-        create_function!(vc_zkp_create_credential_schema, did_or_method, options, payload, config);
-        create_function!(vc_zkp_create_revocation_registry_definition, did_or_method, options, payload, config);
-        create_function!(vc_zkp_update_revocation_registry, did_or_method, options, payload, config);
-        create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_finish_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
-        create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
-        create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
-    } else {
-    }
 }
 
 fn ensure<F>(condition: bool, create_msg: F) -> Result<(), String>
@@ -244,122 +189,175 @@ pub extern "C" fn execute_vade(
         .expect("Failed to create runtime");
 
     let result = match func.as_str() {
-        "did_resolve" => runtime.block_on(did_resolve(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "did_create" => runtime.block_on(did_create(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "did_update" => runtime.block_on(did_update(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "didcomm_receive" => runtime.block_on(didcomm_receive(
-            str_options,
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "didcomm_send" => runtime.block_on(didcomm_send(
-            str_options,
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_create_credential_definition" => {
-            runtime.block_on(vc_zkp_create_credential_definition(
+        "did_resolve" => runtime.block_on({
+            execute_vade_function!(
+                did_resolve,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "did_create" => runtime.block_on({
+            execute_vade_function!(
+                did_create,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "did_update" => runtime.block_on({
+            execute_vade_function!(
+                did_update,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "didcomm_receive" => runtime.block_on({
+            execute_vade_function!(
+                didcomm_receive,
+                &str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
+                str_config
+            )
+        }),
+        "didcomm_send" => runtime.block_on({
+            execute_vade_function!(
+                didcomm_send,
                 str_options,
-                arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-                str_config,
-            ))
-        }
-        "vc_zkp_create_credential_offer" => runtime.block_on(vc_zkp_create_credential_offer(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_create_credential_proposal" => runtime.block_on(vc_zkp_create_credential_proposal(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_create_credential_schema" => runtime.block_on(vc_zkp_create_credential_schema(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_create_revocation_registry_definition" => {
-            runtime.block_on(vc_zkp_create_revocation_registry_definition(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-                str_options,
-                arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-                str_config,
-            ))
-        }
-        "vc_zkp_update_revocation_registry" => runtime.block_on(vc_zkp_update_revocation_registry(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_issue_credential" => runtime.block_on(vc_zkp_issue_credential(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_finish_credential" => runtime.block_on(vc_zkp_finish_credential(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_present_proof" => runtime.block_on(vc_zkp_present_proof(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_request_credential" => runtime.block_on(vc_zkp_request_credential(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_request_proof" => runtime.block_on(vc_zkp_request_proof(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_revoke_credential" => runtime.block_on(vc_zkp_revoke_credential(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "vc_zkp_verify_proof" => runtime.block_on(vc_zkp_verify_proof(
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
-        "run_custom_function" => runtime.block_on(run_custom_function(
-            arguments_vec.get(1).unwrap_or_else(|| &no_args).to_owned(),
-            arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
-            str_options,
-            arguments_vec.get(2).unwrap_or_else(|| &no_args).to_owned(),
-            str_config,
-        )),
+                str_config
+            )
+        }),
+        "vc_zkp_create_credential_definition" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_create_credential_definition,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_create_credential_offer" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_create_credential_offer,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_create_credential_proposal" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_create_credential_proposal,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_create_credential_schema" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_create_credential_schema,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_create_revocation_registry_definition" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_create_revocation_registry_definition,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
 
+        "vc_zkp_update_revocation_registry" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_update_revocation_registry,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_issue_credential" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_issue_credential,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_finish_credential" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_finish_credential,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_present_proof" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_present_proof,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_request_credential" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_request_credential,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_request_proof" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_request_proof,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_revoke_credential" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_revoke_credential,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "vc_zkp_verify_proof" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_verify_proof,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
+        "run_custom_function" => runtime.block_on({
+            execute_vade_function!(
+                run_custom_function,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                str_config
+            )
+        }),
         _ => Err("Function Not Supported By Vade".to_string()),
     };
 
@@ -369,5 +367,9 @@ pub extern "C" fn execute_vade(
         Err(e) => e.to_string(),
     };
 
-    return CString::new(response).expect("CString::new failed to convert response").into_raw();
+    println!("response {}", response);
+
+    return CString::new(response)
+        .expect("CString::new failed to convert response")
+        .into_raw();
 }
