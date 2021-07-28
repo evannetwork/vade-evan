@@ -390,7 +390,7 @@ fn get_argument_value<'a>(
 }
 
 fn get_vade(matches: &ArgMatches) -> Result<Vade, Box<dyn std::error::Error>> {
-    let target = get_argument_value(&matches, "target", Some("13.69.59.185"));
+    let target = get_argument_value(&matches, "target", Some("substrate-dev.trust-trace.com"));
     let signer = get_argument_value(&matches, "signer", Some("local"));
     return get_vade_from_utils(target, signer);
 }

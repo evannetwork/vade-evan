@@ -1,7 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import type { DIDDocument } from './interfaces';
-import { DidUpdateArguments as SubstrateDidUpdateOptions } from './typings/vade-evan-substrate';
-import { IdentityArguments } from './typings/vade-evan-substrate/typings';
+import { DidUpdateArguments as SubstrateDidUpdateOptions, IdentityArguments } from './typings/vade-evan-substrate';
 import { checkRequiredProperties, VadeOptions, VadeApiShared } from './vade-api-shared';
 
 class VadeApiSubstrate extends VadeApiShared {
