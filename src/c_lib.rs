@@ -184,6 +184,7 @@ pub extern "C" fn execute_vade(
     let no_args = String::from("");
 
     let runtime = Builder::new_current_thread()
+        .enable_time()
         .enable_io()
         .build()
         .expect("Failed to create runtime");
