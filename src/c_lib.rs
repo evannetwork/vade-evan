@@ -121,8 +121,6 @@ fn get_config_values(
     let mut config_undefined = true;
 
     let config_hash_map: HashMap<String, String>;
-    // let config_values =
-
     match config {
         Some(value) => {
             if !value.is_empty() {
