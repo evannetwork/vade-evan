@@ -359,7 +359,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        _ => Err("Function Not Supported By Vade".to_string()),
+        _ => Err("Function not supported by Vade".to_string()),
     };
 
     let response = match result.as_ref() {
