@@ -364,7 +364,7 @@ pub extern "C" fn execute_vade(
 
     let response = match result.as_ref() {
         Ok(Some(value)) => value.to_string(),
-        Ok(_) => "Unknown Result".to_string(),
+        Ok(_) => "Unknown result".to_string(),
         Err(e) => e.to_string(),
     };
 
