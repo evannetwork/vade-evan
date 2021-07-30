@@ -21,7 +21,9 @@ int main() {
 
 
     response = execute_vade("did_create", did_create_args, 1, options, NULL); // calling did_create
-    printf("\nrespnse %s  \n", response);
+    printf("
+response %s  
+", response);
 
     return 0;
 }
