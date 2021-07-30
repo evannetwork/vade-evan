@@ -1,10 +1,52 @@
 image: rust:latest
 
 stages:
+  - pull_dependent_projects
+  - build
   - test_unit
+
+pull_vade:
+  stage: pull_dependent_projects
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it:equs/interop/vade/vade.git
+
+pull_vade_evan_bbs:
+  stage: pull_dependent_projects
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it:equs/interop/vade/vade-evan-bbs.git
+
+pull_vade_evan_substrate:
+  stage: pull_dependent_projects
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it:equs/interop/vade/vade-evan-substrate.git
+
+pull_vade_evan_cl:
+  stage: pull_dependent_projects
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it:equs/interop/vade/vade-evan-cl.git
+
+pull_vade_universal_resolver:
+  stage: pull_dependent_projects
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_UNIVERSAL_RESOLVER}@git.slock.it:equs/interop/vade/vade-universal-resolver.git
+
+pull_vade_evan_substrate:
+  stage: pull_dependent_projects
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_SUBSTRATE}@git.slock.it:equs/interop/vade/vade-evan-substrate.git
+
+build:
+  stage: build
+  script:
+    - cargo build --release --verbose
 
 test_unit:
   stage: test_unit
   script:
-    - cargo build --release --verbose
     - cargo test --release --verbose
