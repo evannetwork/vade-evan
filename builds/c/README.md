@@ -13,7 +13,7 @@ gcc -g ./src/rust_sample.c -o rust_sample -lvade_evan -L../vade-evan/target/debu
 
 ### Execute the binary
 
-once compiled run the binary 
+once compiled run the binary
 
 ```sh
 ./rust_sample
