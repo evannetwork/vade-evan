@@ -17,15 +17,11 @@ int main() {
     char *options = "{ \"identity\": \"did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906\", \"privateKey\": \"dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106\" }";
 
     char * response = execute_vade("did_resolve", did_resolve_args, 1, NULL, NULL); // calling did_resolve
-    printf("
-response %s  
-", response);
+    printf("response %s \n", response);
 
 
     response = execute_vade("did_create", did_create_args, 1, options, NULL); // calling did_create
-    printf("
-response %s  
-", response);
+    printf("response %s \n", response);
 
     return 0;
 }

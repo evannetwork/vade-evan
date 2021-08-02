@@ -89,6 +89,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | feature  | default | contents |
 | -------- |:-------:| -------- |
 | cli      |     x   | enables command line interface |
+| c-lib    |     x   | expose C interface for C applications to use vade |
 | did      |     x   | enables DID functionalities |
 | didcomm  |     x   | enables DIDComm message handling |
 | vc-zkp   |     x   | enables VC functionalities |

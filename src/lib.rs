@@ -15,8 +15,8 @@
 */
 
 mod vade_utils;
+#[cfg(feature = "c-lib")]
 mod c_lib;
-
 // wasm only
 #[cfg(target_arch = "wasm32")]
 pub extern crate log;
