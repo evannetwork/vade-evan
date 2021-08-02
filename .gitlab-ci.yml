@@ -1,71 +1,28 @@
 image: rust:latest
 
 stages:
-  - pull_dependent_projects
   - build
   - test_unit
-
-pull_vade:
-  stage: pull_dependent_projects
-  script:
-    - rm -rf ../vade
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it/equs/interop/vade/vade.git --branch develop
-  artifacts:
-    paths:
-      - ../vade
-    expire_in: 1 hour
-
-pull_vade_evan_bbs:
-  stage: pull_dependent_projects
-  script:
-    - rm -rf ../vade-evan-bbs
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it/equs/interop/vade/vade-evan-bbs.git --branch develop
-  artifacts:
-    paths:
-      - ../vade-evan-bbs
-    expire_in: 1 hour
-
-pull_vade_evan_cl:
-  stage: pull_dependent_projects
-  script:
-    - rm -rf ../vade-evan-cl
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
-  artifacts:
-    paths:
-      - ../vade-evan-cl
-    expire_in: 1 hour
-
-pull_vade_evan_substrate:
-  stage: pull_dependent_projects
-  script:
-    - rm -rf ../vade-evan-substrate
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
-  artifacts:
-    paths:
-      - ../vade-evan-substrate
-    expire_in: 1 hour
-
-pull_vade_didcomm:
-  stage: pull_dependent_projects
-  script:
-    - rm -rf ../vade-didcomm
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_DIDCOMM}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
-  artifacts:
-    paths:
-      - ../vade-didcomm
-    expire_in: 1 hour
 
 build:
   stage: build
   script:
+    - mkdir vade-evan
+    - mv !(vade-evan) vade-evan
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_DIDCOMM}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it/equs/interop/vade/vade-evan-bbs.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it/equs/interop/vade/vade.git --branch develop
+    - cd vade-evan
     - cargo build --release --verbose
+  artifacts:
+    paths:
+      - ./
+    expire_in: 1 hour
 
 test_unit:
   stage: test_unit
   script:
+    - cd vade-evan
     - cargo test --release --verbose
