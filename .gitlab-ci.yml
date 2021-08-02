@@ -15,31 +15,19 @@ pull_vade_evan_bbs:
   stage: pull_dependent_projects
   script:
     - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it:equs/interop/vade/vade-evan-bbs.git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it/equs/interop/vade/vade-evan-bbs.git --branch develop
 
 pull_vade_evan_substrate:
   stage: pull_dependent_projects
   script:
     - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it:equs/interop/vade/vade-evan-substrate.git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
 
-pull_vade_evan_cl:
+pull_vade_didcomm:
   stage: pull_dependent_projects
   script:
     - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it:equs/interop/vade/vade-evan-cl.git
-
-pull_vade_universal_resolver:
-  stage: pull_dependent_projects
-  script:
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_UNIVERSAL_RESOLVER}@git.slock.it:equs/interop/vade/vade-universal-resolver.git
-
-pull_vade_evan_substrate:
-  stage: pull_dependent_projects
-  script:
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_SUBSTRATE}@git.slock.it:equs/interop/vade/vade-evan-substrate.git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_DIDCOMM}@git.slock.it/equs/interop/vade/vade-didcomm.git  --branch develop
 
 build:
   stage: build
