@@ -14,10 +14,12 @@
   limitations under the License.
 */
 
+mod vade_utils;
+#[cfg(feature = "c-lib")]
+mod c_lib;
 // wasm only
 #[cfg(target_arch = "wasm32")]
 pub extern crate log;
 #[cfg(target_arch = "wasm32")]
-mod vade_utils;
-#[cfg(target_arch = "wasm32")]
 mod wasm_lib;
+

@@ -18,7 +18,7 @@ use console_log;
 use std::{collections::HashMap, error::Error};
 use vade::Vade;
 use wasm_bindgen::prelude::*;
-use crate::vade_utils::get_vade as get_vade_from_utils;
+use crate::vade_utils::{get_vade as get_vade_from_utils, get_config_default};
 
 macro_rules! handle_results {
     ($func_name:expr, $did_or_method:expr, $results:expr) => {
@@ -197,14 +197,7 @@ fn get_config_values(
     Ok(vec)
 }
 
-fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
-    Ok(match key {
-        "signer" => "remote|https://tntkeyservices-5b02.azurewebsites.net/api/key/sign",
-        "target" => "13.69.59.185",
-        _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
-    }
-    .to_string())
-}
+
 
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
