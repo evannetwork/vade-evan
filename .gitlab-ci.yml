@@ -9,7 +9,7 @@ pull_vade:
   stage: pull_dependent_projects
   script:
     - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it:equs/interop/vade/vade.git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it/equs/interop/vade/vade.git#develop
 
 pull_vade_evan_bbs:
   stage: pull_dependent_projects
