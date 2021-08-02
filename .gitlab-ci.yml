@@ -14,6 +14,7 @@ build:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it/equs/interop/vade/vade-evan-bbs.git --branch develop
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it/equs/interop/vade/vade.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_UNIVERSAL_RESOLVER}@git.slock.it/equs/interop/vade/vade-universal-resolver.git --branch develop
     - cd vade-evan
     - cargo build --release --verbose
   artifacts:
