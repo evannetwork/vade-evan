@@ -8,7 +8,7 @@ build:
   stage: build
   script:
     - mkdir vade-evan
-    - mv !(vade-evan) vade-evan
+    - mv * vade-evan
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_DIDCOMM}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
