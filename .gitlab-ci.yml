@@ -7,7 +7,7 @@ stages:
 build:
   stage: build
   script:
-    - sudo apt-get install -y clang
+    - apt-get install -y clang
     - cd ..
     - rm -rf vade vade-didcomm vade-evan-substrate vade-evan-cl vade-evan-bbs
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_DIDCOMM}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
