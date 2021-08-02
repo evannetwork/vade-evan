@@ -1,0 +1,32 @@
+image: rust:latest
+
+stages:
+  - build
+  - test_unit
+
+build:
+  stage: build
+  script:
+    - apt-get update
+    - apt-get install -y clang
+    - cd ..
+    - rm -rf vade vade-didcomm vade-evan-substrate vade-evan-cl vade-evan-bbs vade-universal-resolver
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_DIDCOMM}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_EVAN_SUBSTRATE}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_CL}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_EVAN_BBS}@git.slock.it/equs/interop/vade/vade-evan-bbs.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE}@git.slock.it/equs/interop/vade/vade.git --branch develop
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN_VADE_UNIVERSAL_RESOLVER}@git.slock.it/equs/interop/vade/vade-universal-resolver.git --branch develop
+    - cd vade-evan
+    - cargo build --release --verbose
+  artifacts:
+    paths:
+      - ./target
+    expire_in: 1 hour
+
+test_unit:
+  stage: test_unit
+  script:
+    - apt-get update
+    - apt-get install -y clang
+    - cargo test --release --verbose
