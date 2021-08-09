@@ -1,7 +1,7 @@
 use std::error::Error;
 use vade::Vade;
 #[cfg(feature = "didcomm")]
-use vade_didcomm::VadeDIDComm;
+use vade_didcomm::VadeDidComm;
 #[cfg(feature = "vc-zkp")]
 use vade_evan_bbs::VadeEvanBbs;
 #[cfg(feature = "vc-zkp")]
@@ -13,9 +13,7 @@ use vade_evan_substrate::{
     VadeEvanSubstrate,
 };
 #[cfg(feature = "did")]
-use vade_universal_resolver::{
-    VadeUniversalResolver,
-};
+use vade_universal_resolver::VadeUniversalResolver;
 
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
@@ -50,7 +48,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     #[cfg(feature = "vc-zkp")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
     #[cfg(feature = "didcomm")]
-    vade.register_plugin(Box::from(VadeDIDComm::new()?));
+    vade.register_plugin(Box::from(VadeDidComm::new()?));
 
     Ok(vade)
 }
@@ -89,5 +87,7 @@ fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn
 
 #[cfg(feature = "did")]
 fn get_universal_resolver() -> Result<VadeUniversalResolver, Box<dyn Error>> {
-    Ok(VadeUniversalResolver::new(std::env::var("RESOLVER_URL").ok()))
+    Ok(VadeUniversalResolver::new(
+        std::env::var("RESOLVER_URL").ok(),
+    ))
 }
