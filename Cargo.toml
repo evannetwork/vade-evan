@@ -91,6 +91,7 @@ vade-evan-substrate = { path = "../vade-evan-substrate", version = "0.1.0", opti
 vade-universal-resolver = { path = "../vade-universal-resolver", version = "0.0.1", optional = true }
 # feature "didcomm"
 vade-didcomm = { path = "../vade-didcomm", version = "0.0.1", optional = true }
+cargo2junit = "0.1.7"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
