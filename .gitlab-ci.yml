@@ -30,6 +30,6 @@ test_unit:
     - apt-get update
     - apt-get install -y clang
     - cargo test --release --verbose -- -Z unstable-options --format json | cargo2junit > results.xml
-    - export token=$(curl -H "Content-Type: application/json" -X POST --data "{ \"client_id\"':' \"$client_id\", \"client_secret\"':' \"$client_secret\" }" https://xray.cloud.xpand-it.com/api/v2/authenticate | tr -d '"')
+    - 'export token=$("curl -X POST -H "Content-Type: application/json" -d "{ \"client_id\": \"$client_id\", \"client_secret\": \"$client_secret\" }" "https://xray.cloud.xpand-it.com/api/v2/authenticate"")'
     - echo $token
-    - curl -H "Content-Type: text/xml" -X POST -H "Authorization':' Bearer ${token}" --data @results.xml "https://xray.cloud.xpand-it.com/api/v2/import/execution/junit?projectKey=DID&testPlanKey=${TESTPLAN}"
+    - 'curl -X POST -H "Content-Type: text/xml" -H "Authorization: Bearer ${token}" -d "@results.xml" "https://xray.cloud.xpand-it.com/api/v2/import/execution/junit?projectKey=DID&testPlanKey=${TESTPLAN}"'
