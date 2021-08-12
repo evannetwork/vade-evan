@@ -29,7 +29,7 @@ test_unit:
   script:
     - apt-get update
     - apt-get install -y clang
-    - cargo test --release --verbose -- -Z unstable-options --format=json | cargo2junit > results.xml
+    - cargo test --release --verbose -- -Z unstable-options --message-format json | cargo2junit > results.xml
     - 'export token=$("curl -X POST -H "Content-Type: application/json" -d "{ \"client_id\": \"${client_id}\", \"client_secret\": \"${client_secret}\" }" "https://xray.cloud.xpand-it.com/api/v2/authenticate"")'
     - echo $token
     - 'curl -X POST -H "Content-Type: text/xml" -H "Authorization: Bearer ${token}" -d "@results.xml" "https://xray.cloud.xpand-it.com/api/v2/import/execution/junit?projectKey=DID&testPlanKey=DID-74"'
