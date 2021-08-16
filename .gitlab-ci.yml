@@ -29,4 +29,8 @@ test_unit:
   script:
     - apt-get update
     - apt-get install -y clang
-    - cargo test --release --verbose
+    - cargo install cargo2junit
+    - cargo test --release --verbose -- -Z unstable-options --format json --report-time | cargo2junit > results.xml
+    - cat results.xml
+    - 'export AUTHTOKEN=$(curl -X POST -H "Content-Type: application/json" -d "{ \"client_id\": \"${id_client}\", \"client_secret\": \"${id_secret}\" }" "https://xray.cloud.xpand-it.com/api/v2/authenticate" | sed -e "s/\"//g")'
+    - 'curl -X POST -H "Content-Type: text/xml" -H "Authorization: Bearer ${AUTHTOKEN}" -d "@results.xml" "https://xray.cloud.xpand-it.com/api/v2/import/execution/junit?projectKey=DID&testPlanKey=${test_plan}&testExecKey=${test_execution}"'
