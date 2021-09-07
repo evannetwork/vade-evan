@@ -3494,6 +3494,7 @@ dependencies = [
 [[package]]
 name = "vade"
 version = "0.1.0"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade.git#9e76511acb74834bf4558c8e27748e5866d5d591"
 dependencies = [
  "async-trait",
  "env_logger",
@@ -3504,6 +3505,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.0.1"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-didcomm.git?branch=hotfix/adjust-local-references-to-git-urls#4473fa43f4c82bde06c2865816783e664ca455a0"
 dependencies = [
  "async-trait",
  "didcomm-rs",
@@ -3556,6 +3558,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.1.0"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-bbs.git?branch=hotfix/DID-504-adjust-local-references-to-git-urls#19e779808066a81d369e635892d2bb3065234dfe"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -3581,6 +3584,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-cl"
 version = "0.1.0"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=hotfix/DID-504-adjust-local-references-to-git-urls#33717f0a9a939443656beb589d7767f10248b2bd"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3611,6 +3615,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-substrate"
 version = "0.1.0"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=hotfix/DID-504-adjust-local-references-to-git-urls#b5f7c16b997f4892e8bd2a40ea560de2ec3717c1"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -3650,6 +3655,7 @@ dependencies = [
 [[package]]
 name = "vade-universal-resolver"
 version = "0.0.1"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=hotfix/DID-504-adjust-local-references-to-git-urls#a388fea4e8bd7d5f0e501ef1d9a66645d598457e"
 dependencies = [
  "async-trait",
  "env_logger",
