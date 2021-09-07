@@ -78,19 +78,19 @@ async-trait = "0.1.31"
 cfg-if = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
-vade = { path = "../vade", version = "0.1.0" }
+vade = { git = "ssh://git@git.slock.it/equs/interop/vade/vade.git" }
 ###################################################################### feature specific dependencies
 # feature "cl"
-vade-evan-bbs = { path = "../vade-evan-bbs", version = "0.1.0", optional = true, default-features = false }
-vade-evan-cl = { path = "../vade-evan-cl", version = "0.1.0", optional = true, default-features = false }
+vade-evan-bbs = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-evan-bbs.git", branch = "hotfix/DID-504-adjust-local-references-to-git-urls", optional = true, default-features = false }
+vade-evan-cl = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-evan-cl.git", branch = "hotfix/DID-504-adjust-local-references-to-git-urls", optional = true, default-features = false }
 # feature "cli"
 clap = { version = "2.33.1", optional = true }
 tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
 # feature "did"
-vade-evan-substrate = { path = "../vade-evan-substrate", version = "0.1.0", optional = true }
-vade-universal-resolver = { path = "../vade-universal-resolver", version = "0.0.1", optional = true }
+vade-evan-substrate = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-evan-substrate.git", branch = "hotfix/DID-504-adjust-local-references-to-git-urls", optional = true }
+vade-universal-resolver = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "hotfix/DID-504-adjust-local-references-to-git-urls", optional = true }
 # feature "didcomm"
-vade-didcomm = { path = "../vade-didcomm", version = "0.0.1", optional = true }
+vade-didcomm = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "hotfix/adjust-local-references-to-git-urls", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
