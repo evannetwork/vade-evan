@@ -386,7 +386,7 @@ pub extern "C" fn execute_vade(
     let serialized_response = serde_json::to_string(&response);
     let string_response = match serialized_response {
         Ok(string_result) => string_result,
-        _ => "{\"error\": \"Failed to seralized response\",\"response\": \"None\"}".to_string(),
+        _ => "{\"error\": \"Failed to seralized response\",\"response\": null}".to_string(),
     };
 
     return CString::new(string_response)
