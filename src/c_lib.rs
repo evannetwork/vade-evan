@@ -15,7 +15,7 @@
 */
 
 use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::slice;
@@ -23,10 +23,12 @@ use std::{collections::HashMap, error::Error};
 use tokio::runtime::Builder;
 use vade::Vade;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub response: Option<String>,
 }
 
@@ -386,7 +388,7 @@ pub extern "C" fn execute_vade(
     let serialized_response = serde_json::to_string(&response);
     let string_response = match serialized_response {
         Ok(string_result) => string_result,
-        _ => "{\"error\": \"Failed to seralized response\",\"response\": null}".to_string(),
+        _ => "{\"error\": \"Failed to serialize response\"}".to_string(),
     };
 
     return CString::new(string_response)
