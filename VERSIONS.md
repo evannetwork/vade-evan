@@ -8,6 +8,10 @@
 
 ### Deprecation
 
+## Version 0.1.1
+### Fixes
+
+- add git urls as dependencies
 ## Version 0.1.0
 
 ### Features

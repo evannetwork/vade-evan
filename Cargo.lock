@@ -3504,8 +3504,8 @@ dependencies = [
 
 [[package]]
 name = "vade-didcomm"
-version = "0.0.1"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#e42386a184fadfaa1e06a7b55543596a89d8bcf2"
+version = "0.0.2"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#3de6f71f0a78ed86fe46d1072919df05798da1fc"
 dependencies = [
  "async-trait",
  "didcomm-rs",
@@ -3531,7 +3531,7 @@ dependencies = [
 
 [[package]]
 name = "vade-evan"
-version = "0.0.8"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "cfg-if 0.1.10",
@@ -3557,8 +3557,8 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-bbs"
-version = "0.1.0"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-bbs.git?branch=develop#3bf17e44905441aff83481d5f037052eea9fd761"
+version = "0.1.1"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-bbs.git?branch=develop#a8e88434701944f438717822798f2f3c5eb62122"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -3583,8 +3583,8 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-cl"
-version = "0.1.0"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#e5aaa8d42d4287a6b66fd61b0257e2af2b43d4b4"
+version = "0.1.1"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#34ea1f4f7a68e4ee67fae9d80cbe5b38afd84279"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3614,8 +3614,8 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-substrate"
-version = "0.1.0"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=develop#66892148cc9d2618bf2771d749882fe94962f2f3"
+version = "0.1.1"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=develop#a1a9cfa2ba1a12e8fe8d32034e5c092ab001d846"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -3654,8 +3654,8 @@ dependencies = [
 
 [[package]]
 name = "vade-universal-resolver"
-version = "0.0.1"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=develop#c00f7118687a0621933f946174efff810b9e0a2c"
+version = "0.0.2"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=develop#62523cc594fb051b77a8f2e56599e2704bd8f534"
 dependencies = [
  "async-trait",
  "env_logger",
