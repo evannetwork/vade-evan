@@ -15,12 +15,22 @@
 */
 
 use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
+use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::slice;
 use std::{collections::HashMap, error::Error};
 use tokio::runtime::Builder;
 use vade::Vade;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Response {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response: Option<String>,
+}
 
 macro_rules! handle_results {
     ($func_name:expr, $did_or_method:expr, $results:expr) => {
@@ -361,12 +371,27 @@ pub extern "C" fn execute_vade(
     };
 
     let response = match result.as_ref() {
-        Ok(Some(value)) => value.to_string(),
-        Ok(_) => "Unknown result".to_string(),
-        Err(e) => e.to_string(),
+        Ok(Some(value)) => Response {
+            response: Some(value.to_string()),
+            error: None,
+        },
+        Err(e) => Response {
+            response: None,
+            error: Some(e.to_string()),
+        },
+        _ => Response {
+            response: None,
+            error: Some("Unknown error".to_string()),
+        }
     };
 
-    return CString::new(response)
+    let serialized_response = serde_json::to_string(&response);
+    let string_response = match serialized_response {
+        Ok(string_result) => string_result,
+        _ => "{\"error\": \"Failed to serialize response\"}".to_string(),
+    };
+
+    return CString::new(string_response)
         .expect("CString::new failed to convert response")
         .into_raw();
 }
