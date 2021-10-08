@@ -5,23 +5,13 @@ stages:
   - test_unit
 
 before_script:
-  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/".insteadOf 'ssh://git@git.slock.it/'
-  - echo -e "machine git.slock.it\nlogin gitlab-ci-token\npassword ${CI_JOB_TOKEN}" > ~/.netrc
+  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/".insteadOf 'https://git@git.slock.it/'
   
 build:
   stage: build
   script:
     - apt-get update
     - apt-get install -y clang
-    - cd ..
-    - rm -rf vade vade-didcomm vade-evan-substrate vade-evan-cl vade-evan-bbs vade-universal-resolver
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-evan-bbs.git --branch develop
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade.git --branch develop
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-universal-resolver.git --branch develop
-    - cd vade-evan
     - cargo build --release --verbose
   artifacts:
     paths:
