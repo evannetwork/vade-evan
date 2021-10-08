@@ -27,6 +27,7 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
         "signer" => "local",
