@@ -14,6 +14,8 @@ use vade_evan_substrate::{
 };
 #[cfg(feature = "did")]
 use vade_universal_resolver::VadeUniversalResolver;
+#[cfg(feature = "did")]
+use vade_sidetree::VadeSidetree;
 
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
@@ -43,6 +45,8 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     vade.register_plugin(Box::from(get_resolver(target, signer)?));
     #[cfg(feature = "did")]
     vade.register_plugin(Box::from(get_universal_resolver()?));
+    #[cfg(feature = "did")]
+    vade.register_plugin(Box::from(get_vade_sidetree()?));
     #[cfg(feature = "vc-zkp")]
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
     #[cfg(feature = "vc-zkp")]
@@ -59,6 +63,8 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
     #[cfg(feature = "did")]
+    vade.register_plugin(Box::from(get_vade_sidetree()?));
+    #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_universal_resolver()?));
 
     let signer: Box<dyn Signer> = get_signer(signer);
@@ -70,6 +76,8 @@ fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn 
     let mut internal_vade = Vade::new();
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
+    #[cfg(feature = "did")]
+    vade.register_plugin(Box::from(get_vade_sidetree()?));
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_universal_resolver()?));
 
@@ -89,5 +97,12 @@ fn get_resolver(target: &str, signer: &str) -> Result<VadeEvanSubstrate, Box<dyn
 fn get_universal_resolver() -> Result<VadeUniversalResolver, Box<dyn Error>> {
     Ok(VadeUniversalResolver::new(
         std::env::var("RESOLVER_URL").ok(),
+    ))
+}
+
+#[cfg(feature = "did")]
+fn get_vade_sidetree() -> Result<VadeSidetree, Box<dyn Error>> {
+    Ok(VadeSidetree::new(
+        std::env::var("SIDETREE_API_URL").ok(),
     ))
 }
