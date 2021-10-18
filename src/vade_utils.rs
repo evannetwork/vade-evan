@@ -63,7 +63,7 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
     #[cfg(feature = "did")]
-    vade.register_plugin(Box::from(get_vade_sidetree()?));
+    internal_vade.register_plugin(Box::from(get_vade_sidetree()?));
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_universal_resolver()?));
 
@@ -77,7 +77,7 @@ fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn 
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_resolver(target, signer)?));
     #[cfg(feature = "did")]
-    vade.register_plugin(Box::from(get_vade_sidetree()?));
+    internal_vade.register_plugin(Box::from(get_vade_sidetree()?));
     #[cfg(feature = "did")]
     internal_vade.register_plugin(Box::from(get_universal_resolver()?));
 
