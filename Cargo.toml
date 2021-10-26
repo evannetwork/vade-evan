@@ -45,11 +45,18 @@ c-lib = [
 ]
 
 # enables using DIDs, also required for some vc-zkp functions
-did = [
-    "vade-evan-substrate",
-    "vade-universal-resolver",
-    "vade-sidetree",
-]
+did = [ "did-substrate", "did-universal-resolver" ]
+
+# enables did_resolve related functions and commands
+did-read = []
+
+# enables did_create, did_update related functions and commands
+did-write = []
+
+# dedicated did resolvers 
+did-sidetree = [ "vade-sidetree", "did-read", "did-write" ]
+did-substrate = [ "vade-evan-substrate", "did-read", "did-write" ]
+did-universal-resolver = [ "vade-universal-resolver", "did-read" ]
 
 # enables didcomm message features
 didcomm = [
@@ -87,10 +94,12 @@ vade-evan-cl = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-evan-cl.gi
 # feature "cli"
 clap = { version = "2.33.1", optional = true }
 tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
-# feature "did"
+# feature "did-substrate"
 vade-evan-substrate = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-evan-substrate.git", branch = "develop", version = "0.1.1", optional = true }
-vade-sidetree = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "feature/DID-518-implement-sidetree-based-did-handling-create-update-delete", version = "0.0.1", optional = true }
+# feature "did-universal-resolver"
 vade-universal-resolver = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "develop", version = "0.0.2", optional = true }
+# feature "did-sidetree"
+vade-sidetree = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "feature/DID-518-implement-sidetree-based-did-handling-create-update-delete", version = "0.0.1", optional = true }
 # feature "didcomm"
 vade-didcomm = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "develop", version = "0.0.2", optional = true }
 

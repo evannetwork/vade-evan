@@ -123,9 +123,15 @@ pub fn set_log_level(log_level: String) {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "did")] {
-        create_function!(did_create, did_or_method, options, payload, config);
+    if #[cfg(feature = "did-read")] {
         create_function!(did_resolve, did_or_method, config);
+    } else {
+    }
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "did-write")] {
+        create_function!(did_create, did_or_method, options, payload, config);
         create_function!(did_update, did_or_method, options, payload, config);
     } else {
     }
