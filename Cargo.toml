@@ -99,7 +99,7 @@ vade-evan-substrate = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-eva
 # feature "did-universal-resolver"
 vade-universal-resolver = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "develop", version = "0.0.2", optional = true }
 # feature "did-sidetree"
-vade-sidetree = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "feature/DID-518-implement-sidetree-based-did-handling-create-update-delete", version = "0.0.1", optional = true }
+vade-sidetree = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "develop", version = "0.0.1", optional = true }
 # feature "didcomm"
 vade-didcomm = { git = "ssh://git@git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "develop", version = "0.0.2", optional = true }
 
