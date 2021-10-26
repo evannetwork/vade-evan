@@ -30,7 +30,7 @@ By default the feature `did` enables did related operations => `did-resolve`, `d
 We also support did operations for sidetree based implementation which can be enabled if you are using non-default features , to enable it add the feature `did-sidetree` to the features set.
 
 ```sh
-cargo build --release --features did-sidetree
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,did-write,portable,vc-zkp
 ```
 
 In a similar manner if you want to use either `vade-evan-substrate` or `vade-universal-resolver`, you have to add them to features set.

@@ -13,7 +13,7 @@ build:
     - apt-get update
     - apt-get install -y clang
     - cd ..
-    - rm -rf vade vade-didcomm vade-evan-substrate vade-evan-cl vade-evan-bbs vade-universal-resolver
+    - rm -rf vade vade-didcomm vade-evan-substrate vade-evan-cl vade-evan-bbs vade-universal-resolver vade-sidetree
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-didcomm.git --branch develop
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-evan-substrate.git  --branch develop
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/equs/interop/vade/vade-evan-cl.git --branch develop
