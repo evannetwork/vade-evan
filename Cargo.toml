@@ -45,7 +45,12 @@ c-lib = [
 ]
 
 # enables using DIDs, also required for some vc-zkp functions
-did = [ "did-substrate", "did-universal-resolver" ]
+did = [
+    "did-substrate",
+    "did-universal-resolver",
+    "did-read",
+    "did-write",
+]
 
 # enables did_resolve related functions and commands
 did-read = []
@@ -54,9 +59,9 @@ did-read = []
 did-write = []
 
 # dedicated did resolvers 
-did-sidetree = [ "vade-sidetree", "did-read", "did-write" ]
-did-substrate = [ "vade-evan-substrate", "did-read", "did-write" ]
-did-universal-resolver = [ "vade-universal-resolver", "did-read" ]
+did-sidetree = [ "vade-sidetree" ]
+did-substrate = [ "vade-evan-substrate" ]
+did-universal-resolver = [ "vade-universal-resolver" ]
 
 # enables didcomm message features
 didcomm = [

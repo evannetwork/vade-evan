@@ -32,24 +32,25 @@ We also support did operations for sidetree based implementation which can be en
 ```sh
 cargo build --release --features did-sidetree
 ```
+
 In a similar manner if you want to use either `vade-evan-substrate` or `vade-universal-resolver`, you have to add them to features set.
 
 ```sh
-cargo build --release --features did-substrate
+cargo build --release --no-default-features --features cli,did-substrate,did-read,did-write,portable,vc-zkp
 ```
 
 ```sh
-cargo build --release --features did-universal-resolver
+cargo build --release --no-default-features --features cli,did-universal-resolver,did-read,portable,vc-zkp
 ```
 
-Features can be adjusted for specific need if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations to DIDs
+Features can be adjusted for specific need if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations to DIDs.
 
 ```sh
-cargo build --release --features did-sidetree,did-write
+cargo build --release --no-default-features --features cli,did-sidetree,did-write,portable,vc-zkp
 ```
 
 ```sh
-cargo build --release --features did-sidetree,did-read
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,portable,vc-zkp
 ```
 
 ### Command Line Interface
@@ -124,7 +125,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | did-write              |     x   | enables did_create and did_update methods for DID related operations |
 | did-substrate          |     x   | enables DID functionalities (did_resolve, did_create, did_update ) using vade-evan-substrate plugin |
 | did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
-| did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin|
+| did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
 | didcomm                |     x   | enables DIDComm message handling |
 | vc-zkp                 |     x   | enables VC functionalities |
 | portable               |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
