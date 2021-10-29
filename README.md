@@ -27,7 +27,7 @@ Features can be omitted. So for example `vc-zkp` or `did` could be skipped.
 
 By default the feature `did` enables did related operations => `did-resolve`, `did-create`, `did-update` using `vade-evan-substrate` and `did-resolve` using `vade-universal-resolver` plugins.
 
-We also support did operations for sidetree based implementation which can be enabled if you are using non-default features , to enable it add the feature `did-sidetree` to the features set.
+We also support did operations for sidetree based implementation which can be enabled if you are using non-default features, to enable it add the feature `did-sidetree` to the features set.
 
 ```sh
 cargo build --release --no-default-features --features cli,did-sidetree,did-read,did-write,portable,vc-zkp
@@ -43,7 +43,7 @@ cargo build --release --no-default-features --features cli,did-substrate,did-rea
 cargo build --release --no-default-features --features cli,did-universal-resolver,did-read,portable,vc-zkp
 ```
 
-Features can be adjusted for specific need if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations to DIDs.
+Features can be adjusted for specific needs, if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations for DIDs.
 
 ```sh
 cargo build --release --no-default-features --features cli,did-sidetree,did-write,portable,vc-zkp
