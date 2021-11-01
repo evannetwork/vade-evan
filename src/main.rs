@@ -50,6 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let results = match matches.subcommand() {
         ("did", Some(sub_m)) => match sub_m.subcommand() {
+            #[cfg(feature = "did-write")]
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -57,10 +58,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .did_create(&method, &options, &String::new())
                     .await?
             }
+            #[cfg(feature = "did-read")]
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 get_vade(&sub_m)?.did_resolve(&did).await?
             }
+            #[cfg(feature = "did-write")]
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
