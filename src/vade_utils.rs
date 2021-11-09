@@ -54,7 +54,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     #[cfg(feature = "vc-zkp")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
     #[cfg(feature = "vc-jwt")]
-    vade.register_plugin(Box::from(get_vade_jwt_vc(signer)?));
+    vade.register_plugin(Box::from(get_vade_jwt_vc()?));
     #[cfg(feature = "didcomm")]
     vade.register_plugin(Box::from(VadeDidComm::new()?));
 
