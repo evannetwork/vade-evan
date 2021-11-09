@@ -3550,7 +3550,7 @@ checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 [[package]]
 name = "sidetree-client"
 version = "0.1.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#22095e13d42109d4cc5197c0d05bfad89cfeba25"
+source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#52ffc4565387dcd2de548b36858a209c7bf7a42e"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
