@@ -165,6 +165,14 @@ cfg_if::cfg_if! {
     }
 }
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "vc-jwt")] {
+        create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
+        create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
+    } else {
+    }
+}
+
 fn get_config_values(
     config: Option<&JsValue>,
     keys: Vec<String>,

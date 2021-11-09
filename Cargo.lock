@@ -3719,6 +3719,7 @@ dependencies = [
  "vade-evan-bbs",
  "vade-evan-cl",
  "vade-evan-substrate",
+ "vade-jwt-vc",
  "vade-sidetree",
  "vade-universal-resolver",
  "wasm-bindgen",
@@ -3821,6 +3822,28 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "ws",
+]
+
+[[package]]
+name = "vade-jwt-vc"
+version = "0.0.1"
+source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-608-create-vade-jwt-vc-plugin#e1ee21be457489e4ce52c6c0888231b401fe38dd"
+dependencies = [
+ "async-trait",
+ "base64 0.13.0",
+ "chrono",
+ "env_logger",
+ "futures",
+ "hex",
+ "js-sys",
+ "libsecp256k1",
+ "log",
+ "reqwest 0.11.4",
+ "serde",
+ "serde_json",
+ "sha2 0.8.2",
+ "sha3 0.8.2",
+ "vade",
 ]
 
 [[package]]
