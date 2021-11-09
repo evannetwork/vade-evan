@@ -30,27 +30,27 @@ By default the feature `did` enables did related operations => `did-resolve`, `d
 We also support did operations for sidetree based implementation which can be enabled if you are using non-default features, to enable it add the feature `did-sidetree` to the features set.
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-read,did-write,portable,vc-zkp
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,did-write,didcomm,portable,vc-zkp
 ```
 
 In a similar manner if you want to use either `vade-evan-substrate` or `vade-universal-resolver`, you have to add them to features set.
 
 ```sh
-cargo build --release --no-default-features --features cli,did-substrate,did-read,did-write,portable,vc-zkp
+cargo build --release --no-default-features --features cli,did-substrate,did-read,did-write,didcomm,portable,vc-zkp
 ```
 
 ```sh
-cargo build --release --no-default-features --features cli,did-universal-resolver,did-read,portable,vc-zkp
+cargo build --release --no-default-features --features cli,did-universal-resolver,did-read,didcomm,portable,vc-zkp
 ```
 
 Features can be adjusted for specific needs, if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations for DIDs.
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-write,portable,vc-zkp
+cargo build --release --no-default-features --features cli,did-sidetree,did-write,didcomm,portable,vc-zkp
 ```
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-read,portable,vc-zkp
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,didcommportable,vc-zkp
 ```
 
 ### Command Line Interface
@@ -80,13 +80,13 @@ Also you have to specify whether to build a browser or a nodejs environment.
 nodejs:
 
 ```sh
-wasm-pack build --release --target nodejs -- --no-default-features --features did,vc-zkp,wasm
+wasm-pack build --release --target nodejs -- --no-default-features --features did,didcomm,vc-zkp,wasm
 ```
 
 browser:
 
 ```sh
-wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
+wasm-pack build --release --target web -- --no-default-features --features did,didcomm,vc-zkp,wasm
 ```
 
 #### Wrapper for WASM pack
@@ -97,7 +97,7 @@ To build it, you need to have checked out next to your `vade-evan` project:
 
 - `vade-evan-cl`
 - `vade-evan-bbs`
-- `vade-evan-didcomm`
+- `vade-didcomm`
 - `vade-evan-substrate`
 
 Then it can be build by navigating to `builds/wasm` and calling
