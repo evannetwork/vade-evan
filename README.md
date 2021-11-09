@@ -50,7 +50,7 @@ cargo build --release --no-default-features --features cli,did-sidetree,did-writ
 ```
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-read,didcommportable,vc-zkp
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,didcomm,portable,vc-zkp
 ```
 
 ### Command Line Interface
