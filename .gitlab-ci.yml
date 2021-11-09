@@ -5,8 +5,8 @@ stages:
   - test_unit
 
 before_script:
-  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/".insteadOf 'ssh://git@git.slock.it/'
-  
+  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.slock.it/".insteadOf 'https://git.slock.it/'
+
 build:
   stage: build
   script:
