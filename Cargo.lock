@@ -4427,7 +4427,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#22095e13d42109d4cc5197c0d05bfad89cfeba25"
+source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#52ffc4565387dcd2de548b36858a209c7bf7a42e"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
