@@ -4260,17 +4260,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "vade"
-version = "0.1.0"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade.git?branch=develop#9e76511acb74834bf4558c8e27748e5866d5d591"
-dependencies = [
- "async-trait",
- "env_logger 0.7.1",
- "futures",
- "log",
-]
-
-[[package]]
 name = "vade-didcomm"
 version = "0.0.2"
 source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#948c41b1569037c6771f84171a96d1162e76e4f7"
@@ -4295,7 +4284,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "uuid",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
  "web-sys",
  "x25519-dalek 1.1.1",
 ]
@@ -4315,7 +4304,7 @@ dependencies = [
  "serde_json",
  "tokio 0.2.25",
  "tokio 1.7.1",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
  "vade-didcomm",
  "vade-evan-bbs",
  "vade-evan-cl",
@@ -4350,7 +4339,7 @@ dependencies = [
  "sha2 0.8.2",
  "sha3 0.8.2",
  "uuid",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
  "vade-evan-substrate",
 ]
 
@@ -4378,7 +4367,7 @@ dependencies = [
  "sha3 0.8.2",
  "ursa 0.3.5 (git+https://github.com/evannetwork/ursa?branch=portable-native-0.3.2)",
  "uuid",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
  "vade-evan-substrate",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -4418,7 +4407,7 @@ dependencies = [
  "sp-storage",
  "thiserror",
  "twox-hash",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -4428,7 +4417,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.0.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-608-create-vade-jwt-vc-plugin#00df19cfaf0339ea9484e140dc27d39010a3c92a"
+source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-608-create-vade-jwt-vc-plugin#1645e028316109f65f61aa34049bbc843899202f"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4439,12 +4428,11 @@ dependencies = [
  "js-sys",
  "libsecp256k1",
  "log",
- "reqwest 0.11.4",
  "serde",
  "serde_json",
  "sha2 0.8.2",
  "sha3 0.8.2",
- "vade 0.1.0 (git+ssh://git@git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
 ]
 
 [[package]]
@@ -4460,7 +4448,7 @@ dependencies = [
  "serde_json",
  "sha2 0.9.5",
  "sidetree-client",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
 ]
 
 [[package]]
@@ -4473,7 +4461,7 @@ dependencies = [
  "reqwest 0.11.4",
  "serde",
  "serde_json",
- "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade",
 ]
 
 [[package]]
