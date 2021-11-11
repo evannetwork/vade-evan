@@ -4428,12 +4428,12 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.0.1"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-608-create-vade-jwt-vc-plugin#e1ee21be457489e4ce52c6c0888231b401fe38dd"
+source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-608-create-vade-jwt-vc-plugin#00df19cfaf0339ea9484e140dc27d39010a3c92a"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
  "chrono",
- "env_logger",
+ "env_logger 0.7.1",
  "futures",
  "hex",
  "js-sys",
@@ -4444,7 +4444,7 @@ dependencies = [
  "serde_json",
  "sha2 0.8.2",
  "sha3 0.8.2",
- "vade",
+ "vade 0.1.0 (git+ssh://git@git.slock.it/equs/interop/vade/vade.git?branch=develop)",
 ]
 
 [[package]]
@@ -4460,7 +4460,7 @@ dependencies = [
  "serde_json",
  "sha2 0.9.5",
  "sidetree-client",
- "vade 0.1.0 (git+ssh://git@git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
 ]
 
 [[package]]
