@@ -4262,7 +4262,7 @@ dependencies = [
 [[package]]
 name = "vade"
 version = "0.1.0"
-source = "git+ssh://git@git.slock.it/equs/interop/vade/vade.git?branch=develop#9e76511acb74834bf4558c8e27748e5866d5d591"
+source = "git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop#9e76511acb74834bf4558c8e27748e5866d5d591"
 dependencies = [
  "async-trait",
  "env_logger 0.7.1",
@@ -4444,7 +4444,7 @@ dependencies = [
  "serde_json",
  "sha2 0.8.2",
  "sha3 0.8.2",
- "vade 0.1.0 (git+ssh://git@git.slock.it/equs/interop/vade/vade.git?branch=develop)",
+ "vade 0.1.0 (git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop)",
 ]
 
 [[package]]
