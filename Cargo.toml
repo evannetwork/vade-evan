@@ -108,7 +108,7 @@ tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "m
 # feature "did-substrate"
 vade-evan-substrate = { git = "https://git.slock.it/equs/interop/vade/vade-evan-substrate.git", branch = "develop", version = "0.1.1", optional = true }
 # feature "vc-jwt"
-vade-jwt-vc = { git = "https://git.slock.it/equs/interop/vade/vade-jwt-vc.git", branch = "feature/DID-608-create-vade-jwt-vc-plugin", version = "0.0.1", optional = true }
+vade-jwt-vc = { git = "https://git.slock.it/equs/interop/vade/vade-jwt-vc.git", branch = "develop", version = "0.0.1", optional = true }
 # feature "did-universal-resolver"
 vade-universal-resolver = { git = "https://git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "develop", version = "0.0.3", optional = true }
 # feature "did-sidetree"

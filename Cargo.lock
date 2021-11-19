@@ -4417,7 +4417,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.0.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-608-create-vade-jwt-vc-plugin#1645e028316109f65f61aa34049bbc843899202f"
+source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=develop#89da7db15621d5ef8a72841e0dac09f5ad325a8e"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
