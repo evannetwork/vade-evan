@@ -303,7 +303,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")] || #[cfg(feature = "vc-jwt")]
+        #[cfg(any(feature = "vc-zkp", feature = "vc-jwt"))]
         "vc_zkp_issue_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_issue_credential,
@@ -363,7 +363,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")] || #[cfg(feature = "vc-jwt")]
+        #[cfg(any(feature = "vc-zkp", feature = "vc-jwt"))]
         "vc_zkp_verify_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_verify_proof,
