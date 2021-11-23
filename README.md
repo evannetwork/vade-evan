@@ -28,6 +28,7 @@ Instead of using `vade-evan-bbs` and `vade-evan-cl`, features can be adjusted to
 ```sh
 cargo build --release --no-default-features --features cli,did-sidetree,did-read,portable,vc-jwt
 ```
+
 ### DID Features
 
 By default the feature `did` enables did related operations => `did-resolve`, `did-create`, `did-update` using `vade-evan-substrate` and `did-resolve` using `vade-universal-resolver` plugins.
@@ -133,7 +134,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
 | didcomm                |     x   | enables DIDComm message handling |
 | vc-zkp                 |     x   | enables VC functionalities |
-| vc-jwt                 |     x   | currently supports vc_zkp_issue_credential and vc_zkp_verify_proof with JWT signatures |
+| vc-jwt                 |     x   | currently supports `vc_zkp_issue_credential` and `vc_zkp_verify_proof` with JWT signatures |
 | portable               |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
 | wasm                   |         | build with optimizations to run as web assembly, not compatible with `portable` |
 
