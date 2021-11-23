@@ -146,8 +146,9 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "vc-zkp")] {
+    if #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))] {
         create_function!(run_custom_function, did_or_method, function, options, payload, config);
+        #[cfg(feature = "vc-zkp-cl")]
         create_function!(vc_zkp_create_credential_definition, did_or_method, options, payload, config);
         create_function!(vc_zkp_create_credential_offer, did_or_method, options, payload, config);
         create_function!(vc_zkp_create_credential_proposal, did_or_method, options, payload, config);

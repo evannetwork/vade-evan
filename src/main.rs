@@ -94,32 +94,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
         ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(feature = "vc-zkp-cl")]
             ("create_credential_definition", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_definition, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_credential_schema", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_master_secret", Some(sub_m)) => {
                 let options = get_argument_value(sub_m, "options", None);
                 get_vade(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_revocation_registry_definition", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_revocation_registry_definition, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(feature = "vc-zkp-cl")]
             ("generate_safe_prime", Some(sub_m)) => {
                 get_vade(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
                     .await?
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_new_keys", Some(sub_m)) => {
                 let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
@@ -127,39 +127,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
-            #[cfg(any(feature = "vc-zkp", feature = "vc-jwt"))]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
             ("issue_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_issue_credential, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("finish_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_finish_credential, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_credential_offer", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_offer, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("present_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_present_proof, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_credential_proposal", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_proposal, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("request_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("request_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
-            #[cfg(feature = "vc-zkp")]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("revoke_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_revoke_credential, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp", feature = "vc-jwt"))]
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
             ("verify_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_verify_proof, sub_m)
             }

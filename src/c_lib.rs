@@ -244,7 +244,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_definition" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_definition,
@@ -254,7 +254,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_offer" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_offer,
@@ -264,7 +264,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_proposal" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_proposal,
@@ -274,7 +274,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_schema" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_schema,
@@ -284,6 +284,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_create_revocation_registry_definition" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_revocation_registry_definition,
@@ -293,7 +294,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_update_revocation_registry" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_update_revocation_registry,
@@ -303,7 +304,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(any(feature = "vc-zkp", feature = "vc-jwt"))]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
         "vc_zkp_issue_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_issue_credential,
@@ -313,7 +314,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_finish_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_finish_credential,
@@ -323,7 +324,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_present_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_present_proof,
@@ -333,7 +334,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_request_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_credential,
@@ -343,7 +344,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_request_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_proof,
@@ -353,7 +354,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "vc_zkp_revoke_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_revoke_credential,
@@ -363,7 +364,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(any(feature = "vc-zkp", feature = "vc-jwt"))]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
         "vc_zkp_verify_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_verify_proof,
@@ -373,7 +374,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(feature = "vc-zkp")]
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "run_custom_function" => runtime.block_on({
             execute_vade_function!(
                 run_custom_function,

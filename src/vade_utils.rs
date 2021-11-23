@@ -2,9 +2,9 @@ use std::error::Error;
 use vade::Vade;
 #[cfg(feature = "didcomm")]
 use vade_didcomm::VadeDidComm;
-#[cfg(feature = "vc-zkp")]
+#[cfg(feature = "vc-zkp-bbs")]
 use vade_evan_bbs::VadeEvanBbs;
-#[cfg(feature = "vc-zkp")]
+#[cfg(feature = "vc-zkp-cl")]
 use vade_evan_cl::VadeEvanCl;
 #[cfg(feature = "did-substrate")]
 use vade_evan_substrate::{
@@ -49,9 +49,9 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     vade.register_plugin(Box::from(get_vade_universal_resolver()?));
     #[cfg(feature = "did-sidetree")]
     vade.register_plugin(Box::from(get_vade_sidetree()?));
-    #[cfg(feature = "vc-zkp")]
+    #[cfg(feature = "vc-zkp-cl")]
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
-    #[cfg(feature = "vc-zkp")]
+    #[cfg(feature = "vc-zkp-bbs")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
     #[cfg(feature = "vc-jwt")]
     vade.register_plugin(Box::from(get_vade_jwt_vc()?));
@@ -61,7 +61,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     Ok(vade)
 }
 
-#[cfg(feature = "vc-zkp")]
+#[cfg(feature = "vc-zkp-cl")]
 fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -76,7 +76,7 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
     Ok(VadeEvanCl::new(vade, signer))
 }
 
-#[cfg(feature = "vc-zkp")]
+#[cfg(feature = "vc-zkp-bbs")]
 fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
     let mut vade = Vade::new();
 
