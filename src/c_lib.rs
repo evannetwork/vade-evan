@@ -244,7 +244,7 @@ pub extern "C" fn execute_vade(
                 str_config
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-cl")]
         "vc_zkp_create_credential_definition" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_definition,

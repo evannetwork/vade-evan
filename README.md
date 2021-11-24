@@ -133,7 +133,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
 | did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
 | didcomm                |     x   | enables DIDComm message handling |
-| vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl features by default|
+| vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl, vc-jwt features by default|
 | vc-zkp-bbs             |     x   | enables VC functionalities using vade-evan-bbs plugin|
 | vc-zkp-cl              |     x   | enables VC functionalities using vade-evan-cl plugin|
 | vc-jwt                 |     x   | currently supports `vc_zkp_issue_credential` and `vc_zkp_verify_proof` with JWT signatures |
