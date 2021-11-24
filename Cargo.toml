@@ -56,7 +56,7 @@ did = [
 vc-zkp = [
     "vc-zkp-bbs",
     "vc-zkp-cl",
-    "vc-jwt"
+    "vc-jwt",
 ]
 
 # dedicated vc handlers
