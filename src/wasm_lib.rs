@@ -146,29 +146,35 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))] {
+    if #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))] {
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         create_function!(run_custom_function, did_or_method, function, options, payload, config);
         #[cfg(feature = "vc-zkp-cl")]
         create_function!(vc_zkp_create_credential_definition, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         create_function!(vc_zkp_create_credential_offer, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         create_function!(vc_zkp_create_credential_proposal, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         create_function!(vc_zkp_create_credential_schema, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         create_function!(vc_zkp_create_revocation_registry_definition, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         create_function!(vc_zkp_update_revocation_registry, did_or_method, options, payload, config);
-        create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_finish_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
-        create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
-        create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
-        create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
-    } else {
-    }
-}
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "vc-jwt")] {
         create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
+
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        create_function!(vc_zkp_finish_credential, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
+        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
+
         create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
     } else {
     }
