@@ -23,6 +23,42 @@ By default features `cli`, `did`, `didcomm`, `portable`, and `vc-zkp` are used. 
 
 Features can be omitted. So for example `vc-zkp` or `did` could be skipped.
 
+Instead of using `vade-evan-bbs` and `vade-evan-cl`, features can be adjusted to use simple JWT signing for the creation and verification of VC.
+
+```sh
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,portable,vc-jwt
+```
+
+### DID Features
+
+By default the feature `did` enables did related operations => `did-resolve`, `did-create`, `did-update` using `vade-evan-substrate` and `did-resolve` using `vade-universal-resolver` plugins.
+
+We also support did operations for sidetree based implementation which can be enabled if you are using non-default features, to enable it add the feature `did-sidetree` to the features set.
+
+```sh
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,did-write,didcomm,portable,vc-zkp
+```
+
+In a similar manner if you want to use either `vade-evan-substrate` or `vade-universal-resolver`, you have to add them to features set.
+
+```sh
+cargo build --release --no-default-features --features cli,did-substrate,did-read,did-write,didcomm,portable,vc-zkp
+```
+
+```sh
+cargo build --release --no-default-features --features cli,did-universal-resolver,did-read,didcomm,portable,vc-zkp
+```
+
+Features can be adjusted for specific needs, if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations for DIDs.
+
+```sh
+cargo build --release --no-default-features --features cli,did-sidetree,did-write,didcomm,portable,vc-zkp
+```
+
+```sh
+cargo build --release --no-default-features --features cli,did-sidetree,did-read,didcomm,portable,vc-zkp
+```
+
 ### Command Line Interface
 
 If you are using non-default features, enable the cli just add the feature `cli` to the feature set:
@@ -50,13 +86,13 @@ Also you have to specify whether to build a browser or a nodejs environment.
 nodejs:
 
 ```sh
-wasm-pack build --release --target nodejs -- --no-default-features --features did,vc-zkp,wasm
+wasm-pack build --release --target nodejs -- --no-default-features --features did,didcomm,vc-zkp,wasm
 ```
 
 browser:
 
 ```sh
-wasm-pack build --release --target web -- --no-default-features --features did,vc-zkp,wasm
+wasm-pack build --release --target web -- --no-default-features --features did,didcomm,vc-zkp,wasm
 ```
 
 #### Wrapper for WASM pack
@@ -67,7 +103,7 @@ To build it, you need to have checked out next to your `vade-evan` project:
 
 - `vade-evan-cl`
 - `vade-evan-bbs`
-- `vade-evan-didcomm`
+- `vade-didcomm`
 - `vade-evan-substrate`
 
 Then it can be build by navigating to `builds/wasm` and calling
@@ -86,14 +122,22 @@ This example will generate a new DID, assign a document to it and update it afte
 
 ### Features for building
 
-| feature  | default | contents |
-| -------- |:-------:| -------- |
-| cli      |     x   | enables command line interface |
-| c-lib    |         | expose C interface for C applications to use vade |
-| did      |     x   | enables DID functionalities |
-| didcomm  |     x   | enables DIDComm message handling |
-| vc-zkp   |     x   | enables VC functionalities |
-| portable |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
-| wasm     |         | build with optimizations to run as web assembly, not compatible with `portable` |
+| feature                | default | contents |
+| ---------------------- |:-------:| -------- |
+| cli                    |     x   | enables command line interface |
+| c-lib                  |         | expose C interface for C applications to use vade |
+| did                    |     x   | enables DID functionalities |
+| did-read               |     x   | enables did_resolve method for DID related operations |
+| did-write              |     x   | enables did_create and did_update methods for DID related operations |
+| did-substrate          |     x   | enables DID functionalities (did_resolve, did_create, did_update ) using vade-evan-substrate plugin |
+| did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
+| did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
+| didcomm                |     x   | enables DIDComm message handling |
+| vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl, vc-jwt features by default|
+| vc-zkp-bbs             |     x   | enables VC functionalities using vade-evan-bbs plugin|
+| vc-zkp-cl              |     x   | enables VC functionalities using vade-evan-cl plugin|
+| vc-jwt                 |     x   | currently supports `vc_zkp_issue_credential` and `vc_zkp_verify_proof` with JWT signatures |
+| portable               |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
+| wasm                   |         | build with optimizations to run as web assembly, not compatible with `portable` |
 
 [`Vade`]: https://docs.rs/vade_evan/*/vade/struct.Vade.html

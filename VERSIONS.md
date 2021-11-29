@@ -8,10 +8,19 @@
 
 ### Deprecation
 
+## Version 0.1.2
+### Fixes
+
+- fix Linux and WASM build
+- increase version for vade-didcomm vade-sidetree and added vade-jwt-vc features
+
+
 ## Version 0.1.1
+
 ### Fixes
 
 - add git urls as dependencies
+
 ## Version 0.1.0
 
 ### Features

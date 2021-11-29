@@ -1,6 +1,6 @@
 [package]
 name = "vade-evan"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["evan GmbH"]
 edition = "2018"
 license-file = "LICENSE.txt"
@@ -25,7 +25,7 @@ required-features = ["cli"]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["cli", "did", "portable", "vc-zkp"]
+default = ["cli", "did", "didcomm", "portable", "vc-zkp"]
 
 # add command line interface; not compatible with `wasm` feature
 cli = [
@@ -46,24 +46,48 @@ c-lib = [
 
 # enables using DIDs, also required for some vc-zkp functions
 did = [
-    "vade-evan-substrate",
-    "vade-universal-resolver",
+    "did-substrate",
+    "did-universal-resolver",
+    "did-read",
+    "did-write",
 ]
+
+# enables zkp plugins, required for zkp plugins
+vc-zkp = [
+    "vc-zkp-bbs",
+    "vc-zkp-cl",
+    "vc-jwt",
+]
+
+# dedicated vc handlers
+vc-zkp-bbs = [ "vade-evan-bbs" ]
+vc-zkp-cl = [ "vade-evan-cl" ]
+
+# enables did_resolve related functions and commands
+did-read = []
+
+# enables did_create, did_update related functions and commands
+did-write = []
+
+# dedicated did resolvers
+did-sidetree = [ "vade-sidetree" ]
+did-substrate = [ "vade-evan-substrate" ]
+did-universal-resolver = [ "vade-universal-resolver" ]
 
 # enables didcomm message features
 didcomm = [
     "vade-didcomm",
 ]
 
-# default ursa setup
+# default native setup
 portable = [
+    "vade-didcomm/portable",
     "vade-evan-cl/portable",
 ]
 
-# enables zero knowledge VC support
-vc-zkp = [
-    "vade-evan-bbs",
-    "vade-evan-cl",
+# enables JWT signature based VC support
+vc-jwt = [
+   "vade-jwt-vc",
 ]
 
 # build to run as wasm file; not compatible with `native` feature
@@ -80,17 +104,23 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = { git = "https://git.slock.it/equs/interop/vade/vade.git", branch = "develop", version = "0.1.0" }
 ###################################################################### feature specific dependencies
-# feature "cl"
-vade-evan-bbs = { git = "https://git.slock.it/equs/interop/vade/vade-evan-bbs.git", branch = "develop", version = "0.1.1", optional = true, default-features = false }
+# feature "vc-zkp-bbs"
+vade-evan-bbs = { path = "../vade-evan-bbs", version = "0.1.1", optional = true, default-features = false }
+# feature "vc-zkp-cl"
 vade-evan-cl = { git = "https://git.slock.it/equs/interop/vade/vade-evan-cl.git", branch = "develop", version = "0.1.1", optional = true, default-features = false }
 # feature "cli"
 clap = { version = "2.33.1", optional = true }
 tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
-# feature "did"
+# feature "did-substrate"
 vade-evan-substrate = { git = "https://git.slock.it/equs/interop/vade/vade-evan-substrate.git", branch = "develop", version = "0.1.1", optional = true }
+# feature "vc-jwt"
+vade-jwt-vc = { git = "https://git.slock.it/equs/interop/vade/vade-jwt-vc.git", branch = "develop", version = "0.0.1", optional = true }
+# feature "did-universal-resolver"
 vade-universal-resolver = { git = "https://git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "develop", version = "0.0.3", optional = true }
+# feature "did-sidetree"
+vade-sidetree = { git = "https://git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "develop", version = "0.0.1", optional = true }
 # feature "didcomm"
-vade-didcomm = { git = "https://git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "develop", version = "0.0.2", optional = true }
+vade-didcomm = { git = "https://git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "develop", version = "0.1.0", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
