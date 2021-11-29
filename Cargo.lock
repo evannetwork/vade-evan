@@ -4320,7 +4320,6 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.1.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-bbs.git?branch=develop#89e3a3c8ebbd2e27e0ab8800a6272be9ebf3ff8e"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
