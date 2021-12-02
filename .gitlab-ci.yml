@@ -18,7 +18,7 @@ build:
       - ./target
     expire_in: 1 hour
 
-test_unit:
+run_unit_tests:
   stage: test_unit
   script:
     - apt-get update
