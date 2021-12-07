@@ -4251,7 +4251,7 @@ dependencies = [
 [[package]]
 name = "vade"
 version = "0.1.0"
-source = "git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop#9e76511acb74834bf4558c8e27748e5866d5d591"
+source = "git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop#33b453acc56552951dc8ce5df5bcfceb2b50913a"
 dependencies = [
  "async-trait",
  "env_logger 0.7.1",
@@ -4453,10 +4453,11 @@ dependencies = [
 
 [[package]]
 name = "vade-universal-resolver"
-version = "0.0.3"
-source = "git+https://git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=develop#7f5e9adebd966c552b6574f8a995ff2030484542"
+version = "0.0.4"
+source = "git+https://git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=feature/DID-506-evaluate-dynamic-http-websocket-requests-in-vade#386c8742552ac58302ef32929d6d1c91f3006436"
 dependencies = [
  "async-trait",
+ "cfg-if 0.1.10",
  "env_logger 0.7.1",
  "reqwest 0.11.4",
  "serde",
