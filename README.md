@@ -59,6 +59,12 @@ cargo build --release --no-default-features --features cli,did-sidetree,did-writ
 cargo build --release --no-default-features --features cli,did-sidetree,did-read,didcomm,portable,vc-zkp
 ```
 
+Features can be adjusted to support integration with IN3 SDK by enabling `sdk` feature, by enabling this feature `HTTP` request/response are managed via IN3 SDK
+
+```sh
+cargo build --release --no-default-features --features cli,did-sidetree,did-write,didcomm,portable,vc-zkp,c-lib,sdk
+```
+
 ### Command Line Interface
 
 If you are using non-default features, enable the cli just add the feature `cli` to the feature set:
@@ -133,6 +139,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
 | did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
 | didcomm                |     x   | enables DIDComm message handling |
+| sdk                    |         | enables sdk integration via managing http requests/response via IN3 SDK|
 | vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl, vc-jwt features by default|
 | vc-zkp-bbs             |     x   | enables VC functionalities using vade-evan-bbs plugin|
 | vc-zkp-cl              |     x   | enables VC functionalities using vade-evan-cl plugin|
