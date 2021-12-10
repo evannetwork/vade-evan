@@ -4051,7 +4051,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.4.6",
  "static_assertions",
 ]
 
@@ -4251,7 +4251,7 @@ dependencies = [
 [[package]]
 name = "vade"
 version = "0.1.0"
-source = "git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop#9e76511acb74834bf4558c8e27748e5866d5d591"
+source = "git+https://git.slock.it/equs/interop/vade/vade.git?branch=develop#33b453acc56552951dc8ce5df5bcfceb2b50913a"
 dependencies = [
  "async-trait",
  "env_logger 0.7.1",
@@ -4261,11 +4261,12 @@ dependencies = [
 
 [[package]]
 name = "vade-didcomm"
-version = "0.0.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#948c41b1569037c6771f84171a96d1162e76e4f7"
+version = "0.1.0"
+source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#036dd819dbcc5dfb2fb4701ace47bf11d9f2d086"
 dependencies = [
  "async-trait",
  "bs58 0.4.0",
+ "cfg-if 1.0.0",
  "data-encoding",
  "didcomm-rs",
  "ed25519-dalek",
@@ -4320,7 +4321,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.1.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-bbs.git?branch=develop#89e3a3c8ebbd2e27e0ab8800a6272be9ebf3ff8e"
+source = "git+https://git.slock.it/equs/interop/vade/vade-evan-bbs.git?branch=develop#946eba8a18a6592a78d099b4aa613c24716d2503"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4346,7 +4347,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-cl"
 version = "0.1.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#10279071ef4bdace5fb0150c91b21b934899de34"
+source = "git+https://git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#2cca5e688f0a09703fca67afc5774870c5a12933"
 dependencies = [
  "async-trait",
  "chrono",
@@ -4377,7 +4378,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-substrate"
 version = "0.1.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=develop#1f52bd0a757721bba8d4a30cb86505e116475e20"
+source = "git+https://git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=develop#15340e2adfecb919d757b2fabba352022b260baf"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -4417,7 +4418,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.0.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=develop#89da7db15621d5ef8a72841e0dac09f5ad325a8e"
+source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=develop#5f1e94ef26fc147dd94269aee0906ca6fe16ef20"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4454,7 +4455,7 @@ dependencies = [
 [[package]]
 name = "vade-universal-resolver"
 version = "0.0.3"
-source = "git+https://git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=develop#7f5e9adebd966c552b6574f8a995ff2030484542"
+source = "git+https://git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=develop#cde2574d12d7a5fc4b71f94d376ca0e3fdc63564"
 dependencies = [
  "async-trait",
  "env_logger 0.7.1",
