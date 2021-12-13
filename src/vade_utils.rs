@@ -89,7 +89,7 @@ fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn 
     vade.register_plugin(Box::from(get_vade_sidetree()?));
 
     let signer: Box<dyn Signer> = get_signer(signer);
-    Ok(VadeEvanBbs::new(vade, signer))
+    Ok(VadeEvanBbs::new(signer))
 }
 
 #[cfg(feature = "vc-jwt")]

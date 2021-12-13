@@ -47,6 +47,7 @@ c-lib = [
 # enables using DIDs, also required for some vc-zkp functions
 did = [
     "did-substrate",
+    "did-sidetree",
     "did-universal-resolver",
     "did-read",
     "did-write",
