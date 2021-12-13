@@ -4416,8 +4416,8 @@ dependencies = [
 
 [[package]]
 name = "vade-jwt-vc"
-version = "0.0.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=feature/DID-755-implement-external-signer-in-vade-jwt-vc#a16917c8f3dd1a4aba8cbc1bf798ba6dc0e136b4"
+version = "0.0.1"
+source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=develop#5f1e94ef26fc147dd94269aee0906ca6fe16ef20"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4433,7 +4433,6 @@ dependencies = [
  "sha2 0.8.2",
  "sha3 0.8.2",
  "vade",
- "vade-evan-substrate",
 ]
 
 [[package]]
