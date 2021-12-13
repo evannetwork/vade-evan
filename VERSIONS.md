@@ -22,6 +22,7 @@
 
 - add support for `didcomm_send`, `didcomm_receive`, `vc_zkp_finish_credential`
 - add WASM complied project with sample javascript library
+- made changes to pass external signer to vade-jwt-vc plugin
 
 ### Deprecations
 
