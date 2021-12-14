@@ -62,7 +62,7 @@ vc-zkp = [
 
 # dedicated vc handlers
 vc-zkp-bbs = [ "vade-evan-bbs" ]
-vc-zkp-cl = [ "vade-evan-cl" ]
+vc-zkp-cl = [ "ring", "vade-evan-cl" ]
 
 # enables did_resolve related functions and commands
 did-read = []
@@ -101,6 +101,7 @@ wasm = [
 [dependencies]
 async-trait = "0.1.31"
 cfg-if = "0.1"
+ring = { version = "0.16.19", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = { git = "https://git.slock.it/equs/interop/vade/vade.git", branch = "develop", version = "0.1.0" }
