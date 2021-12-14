@@ -163,9 +163,9 @@ dependencies = [
 
 [[package]]
 name = "aho-corasick"
-version = "0.7.18"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e37cfd5e7657ada45f742d6e99ca5788580b5c529dc78faf11ece6dc702656f"
+checksum = "7404febffaa47dac81aa44dba71523c9d069b1bdc50a77db41195149e17f68e5"
 dependencies = [
  "memchr",
 ]
@@ -334,9 +334,9 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-version = "0.59.2"
+version = "0.59.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bd2a9a458e8f4304c52c43ebb0cfbd520289f8379a52e329a38afda99bf8eb8"
+checksum = "453c49e5950bb0eb63bb3df640e31618846c89d5b7faa54040d76e98e0134375"
 dependencies = [
  "bitflags",
  "cexpr",
@@ -364,7 +364,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41262f11d771fd4a61aa3ce019fca363b4b6c282fca9da2a31186d3965a47a5c"
 dependencies = [
  "either",
- "radium",
+ "radium 0.3.0",
 ]
 
 [[package]]
@@ -374,7 +374,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98fcd36dda4e17b7d7abc64cb549bf0201f4ab71e00700c798ca7e62ed3761fa"
 dependencies = [
  "funty",
- "radium",
+ "radium 0.3.0",
+ "wyz",
+]
+
+[[package]]
+name = "bitvec"
+version = "0.19.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8942c8d352ae1838c9dda0b0ca2ab657696ef2232a20147cf1b30ae1a9cb4321"
+dependencies = [
+ "funty",
+ "radium 0.5.3",
+ "tap",
  "wyz",
 ]
 
@@ -592,11 +604,11 @@ dependencies = [
 
 [[package]]
 name = "cexpr"
-version = "0.6.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
+checksum = "db507a7679252d2276ed0dd8113c6875ec56d3089f9225b2b42c30cc1f8e5c89"
 dependencies = [
- "nom 7.1.0",
+ "nom 6.2.1",
 ]
 
 [[package]]
@@ -2074,9 +2086,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.108"
+version = "0.2.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
+checksum = "fbe5e23404da5b4f555ef85ebed98fb4083e55a00c317800bc2a50ede9f3d219"
 
 [[package]]
 name = "libloading"
@@ -2171,9 +2183,9 @@ checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 
 [[package]]
 name = "memchr"
-version = "2.4.0"
+version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b16bd47d9e329435e309c58469fe0791c2d0d1ba96ec0954152a5ae2b04387dc"
+checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
 name = "memoffset"
@@ -2199,12 +2211,6 @@ dependencies = [
  "mime",
  "unicase",
 ]
-
-[[package]]
-name = "minimal-lexical"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "miniz_oxide"
@@ -2366,12 +2372,13 @@ dependencies = [
 
 [[package]]
 name = "nom"
-version = "7.1.0"
+version = "6.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b1d11e1ef389c76fe5b81bcaf2ea32cf88b62bc494e19f493d0b30e7a930109"
+checksum = "9c5c51b9083a3c620fa67a2a635d1ce7d95b897e957d6b28ff9a5da960a103a6"
 dependencies = [
+ "bitvec 0.19.5",
+ "funty",
  "memchr",
- "minimal-lexical",
  "version_check",
 ]
 
@@ -2848,6 +2855,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "def50a86306165861203e7f84ecffbbdfdea79f0e51039b33de1e952358c47ac"
 
 [[package]]
+name = "radium"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "941ba9d78d8e2f7ce474c015eea4d9c6d25b6a3327f9832ee29a4de27f91bbb8"
+
+[[package]]
 name = "rand"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3045,9 +3058,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.5.4"
+version = "1.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d07a8629359eb56f1e2fb1652bb04212c072a87ba68546a04065d525673ac461"
+checksum = "2a26af418b574bd56588335b3a3659a65725d4e636eb1016c2f9e3b38c7cc759"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3546,7 +3559,7 @@ checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 [[package]]
 name = "sidetree-client"
 version = "0.1.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#52ffc4565387dcd2de548b36858a209c7bf7a42e"
+source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#86b048b2303b84463d5690f6e880a19ea29a4d16"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
@@ -3785,6 +3798,12 @@ dependencies = [
  "syn",
  "unicode-xid",
 ]
+
+[[package]]
+name = "tap"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "tempfile"
@@ -4041,7 +4060,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.4.6",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -4252,7 +4271,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.1.0"
-source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#e849a7fe34820b16adda0450d4f1b104c56f9247"
+source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#036dd819dbcc5dfb2fb4701ace47bf11d9f2d086"
 dependencies = [
  "async-trait",
  "bs58 0.4.0",
@@ -4336,7 +4355,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-cl"
 version = "0.1.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#2cca5e688f0a09703fca67afc5774870c5a12933"
+source = "git+https://git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#f24a5fbbec84d74e4c4255a92caba126f73fffd8"
 dependencies = [
  "async-trait",
  "chrono",
@@ -4350,6 +4369,7 @@ dependencies = [
  "log",
  "rand 0.7.3",
  "reqwest 0.10.10",
+ "ring",
  "serde",
  "serde_derive",
  "serde_json",
@@ -4367,7 +4387,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-substrate"
 version = "0.1.2"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=develop#15340e2adfecb919d757b2fabba352022b260baf"
+source = "git+https://git.slock.it/equs/interop/vade/vade-evan-substrate.git?branch=develop#ac61376c6c88448b74dc047ec6afd8cbd8970cd2"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -4407,7 +4427,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.0.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=develop#abfd1997c63e492c09535763959f956707be2c5e"
+source = "git+https://git.slock.it/equs/interop/vade/vade-jwt-vc.git?branch=develop#a79f874e6a8677c787f7be8b3f5a3ef7a77a4d1e"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4423,16 +4443,18 @@ dependencies = [
  "sha2 0.8.2",
  "sha3 0.8.2",
  "vade",
+ "vade-evan-substrate",
 ]
 
 [[package]]
 name = "vade-sidetree"
 version = "0.0.1"
-source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#52ffc4565387dcd2de548b36858a209c7bf7a42e"
+source = "git+https://git.slock.it/equs/interop/vade/vade-sidetree.git?branch=develop#86b048b2303b84463d5690f6e880a19ea29a4d16"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
  "env_logger 0.7.1",
+ "regex",
  "reqwest 0.11.4",
  "serde",
  "serde_json",

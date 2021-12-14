@@ -107,7 +107,7 @@ serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = { git = "https://git.slock.it/equs/interop/vade/vade.git", branch = "develop", version = "0.1.0" }
 ###################################################################### feature specific dependencies
 # feature "vc-zkp-bbs"
-vade-evan-bbs = { git = "https://git.slock.it/equs/interop/vade/vade-evan-bbs.git", branch = "develop", version = "0.1.1", optional = true, default-features = false }
+vade-evan-bbs = { git = "https://git.slock.it/equs/interop/vade/vade-evan-bbs.git", branch = "develop", version = "0.1.2", optional = true, default-features = false }
 # feature "vc-zkp-cl"
 vade-evan-cl = { git = "https://git.slock.it/equs/interop/vade/vade-evan-cl.git", branch = "develop", version = "0.1.1", optional = true, default-features = false }
 # feature "cli"
