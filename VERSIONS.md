@@ -4,6 +4,8 @@
 
 ### Features
 
+- add helper script for updating git based dependencies
+
 ### Fixes
 
 ### Deprecation
