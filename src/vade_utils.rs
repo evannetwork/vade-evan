@@ -31,6 +31,7 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
         "signer" => "local",
@@ -78,17 +79,8 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
 
 #[cfg(feature = "vc-zkp-bbs")]
 fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
-    let mut vade = Vade::new();
-
-    #[cfg(feature = "did-substrate")]
-    vade.register_plugin(Box::from(get_vade_evan_substrate(target, signer)?));
-    #[cfg(feature = "did-universal-resolver")]
-    vade.register_plugin(Box::from(get_vade_universal_resolver()?));
-    #[cfg(feature = "did-sidetree")]
-    vade.register_plugin(Box::from(get_vade_sidetree()?));
-
     let signer: Box<dyn Signer> = get_signer(signer);
-    Ok(VadeEvanBbs::new(vade, signer))
+    Ok(VadeEvanBbs::new(signer))
 }
 
 #[cfg(feature = "vc-jwt")]
