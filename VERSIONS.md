@@ -4,11 +4,18 @@
 
 ### Features
 
+- add helper script for updating git based dependencies
+
+### Fixes
+
+### Deprecation
+
+## Version 0.1.2
 ### Fixes
 
 - fix Linux and WASM build
+- increase version for vade-didcomm vade-sidetree and added vade-jwt-vc features
 
-### Deprecation
 
 ## Version 0.1.1
 
