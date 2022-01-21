@@ -86,7 +86,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("receive", Some(sub_m)) => {
                 wrap_vade2!(didcomm_receive, sub_m)
             }
-            #[cfg(feature = "vc-zkp-bbs")]
             ("create_keys", Some(sub_m)) => {
                 get_vade(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_keys", "{}", "{}")
