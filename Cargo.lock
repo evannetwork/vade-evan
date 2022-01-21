@@ -4271,7 +4271,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.1.0"
-source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#036dd819dbcc5dfb2fb4701ace47bf11d9f2d086"
+source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=feature/ID-145-add-createkeys-function-to-vade-didcomm#445691056b2d3270c8f565f9ea05d4e7349c548b"
 dependencies = [
  "async-trait",
  "bs58 0.4.0",

@@ -86,6 +86,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("receive", Some(sub_m)) => {
                 wrap_vade2!(didcomm_receive, sub_m)
             }
+            #[cfg(feature = "vc-zkp-bbs")]
+            ("create_keys", Some(sub_m)) => {
+                get_vade(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "create_keys", "{}", "{}")
+                    .await?
+            }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
                     "invalid subcommand",
@@ -252,6 +258,10 @@ The DIDComm options can include a shared secret to encrypt the message with a sp
 If no key was given and the message is encrypted the DIDComm keypair from a db will be used."###)
                         .arg(get_clap_argument("options")?)
                         .arg(get_clap_argument("payload")?),
+                )
+                .subcommand(
+                    SubCommand::with_name("create_keys")
+                        .about(r###"Create X25519 secret/public keys, which can be used in options while sending and receiving DIDComm message."###)
                 )
         )
         .subcommand(
