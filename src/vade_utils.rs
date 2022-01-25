@@ -41,6 +41,7 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     .to_string())
 }
 
+#[allow(dead_code)]
 pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -53,7 +54,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     #[cfg(feature = "vc-zkp-cl")]
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
     #[cfg(feature = "vc-zkp-bbs")]
-    vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
+    vade.register_plugin(Box::from(get_vade_evan_bbs(signer)?));
     #[cfg(feature = "vc-jwt")]
     vade.register_plugin(Box::from(get_vade_jwt_vc(signer)?));
     #[cfg(feature = "didcomm")]
@@ -62,6 +63,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     Ok(vade)
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "vc-zkp-cl")]
 fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut vade = Vade::new();
@@ -77,17 +79,20 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
     Ok(VadeEvanCl::new(vade, signer))
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "vc-zkp-bbs")]
-fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
+fn get_vade_evan_bbs(signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
     let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanBbs::new(signer))
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "vc-jwt")]
 fn get_vade_jwt_vc(signer: &str) -> Result<VadeJwtVC, Box<dyn Error>> {
     Ok(VadeJwtVC::new(get_signer(signer)))
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "did-substrate")]
 fn get_vade_evan_substrate(
     target: &str,
@@ -99,6 +104,7 @@ fn get_vade_evan_substrate(
     }))
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "did-universal-resolver")]
 fn get_vade_universal_resolver() -> Result<VadeUniversalResolver, Box<dyn Error>> {
     Ok(VadeUniversalResolver::new(
@@ -106,6 +112,7 @@ fn get_vade_universal_resolver() -> Result<VadeUniversalResolver, Box<dyn Error>
     ))
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "did-sidetree")]
 fn get_vade_sidetree() -> Result<VadeSidetree, Box<dyn Error>> {
     Ok(VadeSidetree::new(std::env::var("SIDETREE_API_URL").ok()))
