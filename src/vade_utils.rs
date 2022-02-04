@@ -40,8 +40,7 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     }
     .to_string())
 }
-
-#[allow(dead_code)] // due to feature mix get_vade is interpreted as never used function during compilation 
+ 
 pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
