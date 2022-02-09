@@ -40,7 +40,6 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     }
     .to_string())
 }
- 
 pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
