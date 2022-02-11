@@ -31,7 +31,7 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
-#[allow(dead_code)]
+#[cfg(any(feature = "c-lib", target_arch = "wasm32"))]
 pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
         "signer" => "local",
@@ -40,7 +40,6 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     }
     .to_string())
 }
-
 pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -53,7 +52,7 @@ pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     #[cfg(feature = "vc-zkp-cl")]
     vade.register_plugin(Box::from(get_vade_evan_cl(target, signer)?));
     #[cfg(feature = "vc-zkp-bbs")]
-    vade.register_plugin(Box::from(get_vade_evan_bbs(target, signer)?));
+    vade.register_plugin(Box::from(get_vade_evan_bbs(signer)?));
     #[cfg(feature = "vc-jwt")]
     vade.register_plugin(Box::from(get_vade_jwt_vc(signer)?));
     #[cfg(feature = "didcomm")]
@@ -78,7 +77,7 @@ fn get_vade_evan_cl(target: &str, signer: &str) -> Result<VadeEvanCl, Box<dyn Er
 }
 
 #[cfg(feature = "vc-zkp-bbs")]
-fn get_vade_evan_bbs(target: &str, signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
+fn get_vade_evan_bbs(signer: &str) -> Result<VadeEvanBbs, Box<dyn Error>> {
     let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanBbs::new(signer))
 }

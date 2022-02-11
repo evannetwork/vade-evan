@@ -14,6 +14,7 @@
   limitations under the License.
 */
 
+#[cfg(any(target_arch = "wasm32", feature = "c-lib"))]
 mod vade_utils;
 #[cfg(feature = "c-lib")]
 mod c_lib;
