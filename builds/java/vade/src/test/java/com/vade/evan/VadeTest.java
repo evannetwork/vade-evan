@@ -13,16 +13,18 @@ class VadeTest {
     @Test
     void testApp() {
         String[] didCreateArgs = {"did:evan:testcore"};
-        String options = "{ \"identity\": \"did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906\","
+        String options = "{ \"identity\": \"did:evan:testcore:0xc88d707c2436fa3ce4a1e52d751469acae689fdb\","
                          +
-                         " \"privateKey\": \"dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106\" }";
+                         " \"privateKey\": \"16bd56948ba09a626551b3f39093da305b347ef4ef2182b2e667dfa5aaa0d4cd\" }";
         String createResult = Vade.executeVade("did_create", didCreateArgs, options, null);
         String result = JsonPath.read(createResult, "$.response");
         assertNotNull(result);
 
-        String[] didResolveArgs = {"did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906"};
+        String[] didResolveArgs = {"did:evan:testcore:0xc88d707c2436fa3ce4a1e52d751469acae689fdb"};
         String resolveResult = Vade.executeVade("did_resolve", didResolveArgs, null, null);
         result = JsonPath.read(resolveResult, "$.response");
         assertNotNull(result);
+
+        System.out.println(result);
     }
 }

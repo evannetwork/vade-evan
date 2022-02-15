@@ -25,7 +25,7 @@ required-features = ["cli"]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["cli", "did", "didcomm", "portable", "vc-zkp", "java-lib"]
+default = ["cli", "did", "didcomm", "portable", "vc-zkp"]
 
 # add command line interface; not compatible with `wasm` feature
 cli = [
