@@ -11,5 +11,5 @@ public final class Vade {
         System.loadLibrary("vade_evan");
     }
 
-    public static native String ExecuteVade(String funcName, String[] arguments, String options, String config);
+    public static native String executeVade(String funcName, String[] arguments, String options, String config);
 }

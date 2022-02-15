@@ -25,7 +25,7 @@ required-features = ["cli"]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["cli", "did", "didcomm", "portable", "vc-zkp"]
+default = ["cli", "did", "didcomm", "portable", "vc-zkp", "java-lib"]
 
 # add command line interface; not compatible with `wasm` feature
 cli = [
@@ -43,6 +43,9 @@ c-lib = [
     "tokio",
     "vc-zkp",
 ]
+
+# expose C interface for C applications to use vade
+java-lib = ["c-lib"]
 
 # enables using DIDs, also required for some vc-zkp functions
 did = [

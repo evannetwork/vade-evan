@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     com_vade_evan_Vade
- * Method:    ExecuteVade
+ * Method:    executeVade
  * Signature: (Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_vade_evan_Vade_ExecuteVade
+JNIEXPORT jstring JNICALL Java_com_vade_evan_Vade_executeVade
   (JNIEnv *, jclass, jstring, jobjectArray, jstring, jstring);
 
 #ifdef __cplusplus
