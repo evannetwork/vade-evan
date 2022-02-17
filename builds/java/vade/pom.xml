@@ -47,7 +47,7 @@
        <configuration>
         <compilerArgs>
           <arg>-h</arg>                           
-          <arg>/headers</arg>               
+          <arg>target/headers</arg>               
         </compilerArgs>
         <source>11</source>
         <target>11</target>
