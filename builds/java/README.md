@@ -12,27 +12,31 @@ This is Java wrapper project which lets Java Applications use VADE SDK.
 ## How to build and test
 
 ### Go inside vade folder.
+
 ```sh
 cd vade/
 ```
 
 ### Build lib with Cargo.
 
-To build rust library for java wrapper , cargo build should be compiled with java-lib feature :-
+To build rust library for java wrapper, cargo build should be compiled with java-lib feature:
+
 ```sh
 cargo build --release --no-default-features --features did-sidetree,did-read,did-write,didcomm,portable,vc-zkp,java-lib
 ```
 
 ### Build Java project with Maven.
 
-Go to builds/java/vade folder and run following command :-
+Go to builds/java/vade folder and run following command:
+
 ```sh
 mvn install
 ```
 
 ### Run JUNIT tests
 
-Junit tests are added to demonstrate VADE functionality and the same code can be taken as a reference, to run junit test execute following command :-
+Junit tests are added to demonstrate VADE functionality and the same code can be taken as a reference, to run junit test execute following command:
+
 ```sh
 mvn test
 ```

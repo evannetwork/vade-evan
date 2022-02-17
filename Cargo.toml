@@ -44,7 +44,7 @@ c-lib = [
     "vc-zkp",
 ]
 
-# expose C interface for C applications to use vade
+# expose Java interface for Java applications to use vade
 java-lib = ["c-lib"]
 
 # enables using DIDs, also required for some vc-zkp functions
