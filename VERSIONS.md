@@ -6,6 +6,7 @@
 
 - add helper script for updating git based dependencies
 - add create_keys subcommand to didcomm in cli 
+- added java jni wrapper code
 
 ### Fixes
 
