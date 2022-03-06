@@ -33,6 +33,7 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
+#[cfg(any(feature = "c-lib", target_arch = "wasm32"))]
 pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
     Ok(match key {
         "signer" => "local",
@@ -47,6 +48,7 @@ pub fn get_vade(
     signer: &str,
     #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<Vade, Box<dyn Error>> {
+pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
     #[cfg(feature = "did-substrate")]
@@ -74,17 +76,15 @@ pub fn get_vade(
         request_id,
     )?));
     #[cfg(feature = "vc-zkp-bbs")]
-    vade.register_plugin(Box::from(get_vade_evan_bbs(
-        target,
-        signer,
-        #[cfg(feature = "sdk")]
-        request_id,
-    )?));
+    vade.register_plugin(Box::from(get_vade_evan_bbs(signer,
+         #[cfg(feature = "sdk")]
+         request_id)?));
+
     #[cfg(feature = "vc-jwt")]
-    vade.register_plugin(Box::from(get_vade_jwt_vc(
+    vade.register_plugin(Box::from(get_vade_jwt_vc(signer,
         #[cfg(feature = "sdk")]
-        request_id,
-    )?));
+        request_id)?));
+
     #[cfg(feature = "didcomm")]
     vade.register_plugin(Box::from(VadeDidComm::new()?));
 
@@ -115,7 +115,6 @@ fn get_vade_evan_cl(
 
 #[cfg(feature = "vc-zkp-bbs")]
 fn get_vade_evan_bbs(
-    target: &str,
     signer: &str,
     #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<VadeEvanBbs, Box<dyn Error>> {
@@ -132,12 +131,12 @@ fn get_vade_evan_bbs(
     vade.register_plugin(Box::from(get_vade_sidetree()?));
 
     let signer: Box<dyn Signer> = get_signer(signer);
-    Ok(VadeEvanBbs::new(vade, signer))
+    Ok(VadeEvanBbs::new(signer))
 }
 
 #[cfg(feature = "vc-jwt")]
-fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: *const c_void) -> Result<VadeJwtVC, Box<dyn Error>> {
-    Ok(VadeJwtVC::new())
+fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: *const c_void, signer: &str) -> Result<VadeJwtVC, Box<dyn Error>> {
+    Ok(VadeJwtVC::new(get_signer(signer)))
 }
 
 #[cfg(feature = "did-substrate")]
