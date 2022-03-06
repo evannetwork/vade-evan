@@ -18,6 +18,8 @@ use vade_jwt_vc::VadeJwtVC;
 use vade_sidetree::VadeSidetree;
 #[cfg(feature = "did-universal-resolver")]
 use vade_universal_resolver::VadeUniversalResolver;
+#[cfg(feature = "sdk")]
+use std::os::raw::c_void;
 
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
@@ -43,7 +45,7 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
 pub fn get_vade(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -93,7 +95,7 @@ pub fn get_vade(
 fn get_vade_evan_cl(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -115,7 +117,7 @@ fn get_vade_evan_cl(
 fn get_vade_evan_bbs(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<VadeEvanBbs, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -134,7 +136,7 @@ fn get_vade_evan_bbs(
 }
 
 #[cfg(feature = "vc-jwt")]
-fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: u32) -> Result<VadeJwtVC, Box<dyn Error>> {
+fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: *const c_void) -> Result<VadeJwtVC, Box<dyn Error>> {
     Ok(VadeJwtVC::new())
 }
 
@@ -142,7 +144,7 @@ fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: u32) -> Result<VadeJwtVC,
 fn get_vade_evan_substrate(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<VadeEvanSubstrate, Box<dyn Error>> {
     Ok(VadeEvanSubstrate::new(ResolverConfig {
         signer: get_signer(signer),
@@ -152,7 +154,7 @@ fn get_vade_evan_substrate(
 
 #[cfg(feature = "did-universal-resolver")]
 fn get_vade_universal_resolver(
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<VadeUniversalResolver, Box<dyn Error>> {
     Ok(VadeUniversalResolver::new(
         std::env::var("RESOLVER_URL").ok(),
@@ -163,7 +165,7 @@ fn get_vade_universal_resolver(
 
 #[cfg(feature = "did-sidetree")]
 fn get_vade_sidetree(
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<VadeSidetree, Box<dyn Error>> {
     Ok(VadeSidetree::new(std::env::var("SIDETREE_API_URL").ok()))
 }

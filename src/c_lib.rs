@@ -18,6 +18,8 @@ use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
 use serde::{Deserialize, Serialize};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+#[cfg(feature = "sdk")]
+use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
 use tokio::runtime::Builder;
@@ -35,7 +37,7 @@ pub struct Response {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RequestID {
-    pub request_id: u32,
+    pub request_id: *const c_void,
 }
 
 macro_rules! handle_results {
@@ -119,7 +121,8 @@ fn to_err_str(err: Box<dyn Error>) -> String {
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 pub fn get_vade(
     config: Option<&String>,
-    #[cfg(feature = "sdk")] request_id: u32,
+    #[cfg(feature = "sdk")] 
+    request_id: *const c_void,
 ) -> Result<Vade, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
