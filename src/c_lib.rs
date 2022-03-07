@@ -15,7 +15,7 @@
 */
 
 use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 #[cfg(feature = "sdk")]
@@ -32,12 +32,6 @@ pub struct Response {
     pub error: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub response: Option<String>,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RequestID {
-    pub request_id: *const c_void,
 }
 
 macro_rules! handle_results {
@@ -197,26 +191,23 @@ pub extern "C" fn execute_vade(
         .collect();
 
     let mut str_options = String::new();
+    
+    #[cfg(not(feature = "sdk"))]
     let mut str_config = String::new();
+    #[cfg(feature = "sdk")]
+    let str_config = String::new();
 
     if !options.is_null() {
         str_options = unsafe { CStr::from_ptr(options).to_string_lossy().into_owned() };
     }
 
+    #[cfg(not(feature = "sdk"))]
     if !config.is_null() {
         str_config = unsafe { CStr::from_ptr(config).to_string_lossy().into_owned() };
     }
 
     #[cfg(feature = "sdk")]
-    let request_id: RequestID = match serde_json::from_str(&str_config) {
-        Ok(value) => value,
-        _ => {
-            let response = "{\"error\": \"Failed to parse request_id\"}".to_string();
-            return CString::new(response)
-                .expect("CString::new failed to convert response")
-                .into_raw();
-        }
-    };
+    let ptr_request_list = config as *mut c_void;
 
     let no_args = String::from("");
 
@@ -234,7 +225,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(feature = "did-write")]
@@ -246,7 +237,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(feature = "did-write")]
@@ -258,7 +249,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(feature = "didcomm")]
@@ -269,7 +260,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(feature = "didcomm")]
@@ -280,7 +271,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(feature = "vc-zkp-cl")]
@@ -292,7 +283,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -304,7 +295,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -316,7 +307,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -328,7 +319,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -340,7 +331,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -352,7 +343,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
@@ -364,7 +355,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -376,7 +367,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -388,7 +379,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -400,7 +391,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -412,7 +403,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -424,7 +415,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
@@ -436,7 +427,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -449,7 +440,7 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(2).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                request_id.request_id
+                ptr_request_list
             )
         }),
         _ => Err("Function not supported by Vade".to_string()),

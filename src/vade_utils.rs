@@ -48,7 +48,6 @@ pub fn get_vade(
     signer: &str,
     #[cfg(feature = "sdk")] request_id: *const c_void,
 ) -> Result<Vade, Box<dyn Error>> {
-pub fn get_vade(target: &str, signer: &str) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
     #[cfg(feature = "did-substrate")]
@@ -107,7 +106,7 @@ fn get_vade_evan_cl(
         request_id,
     )?));
     #[cfg(feature = "did-sidetree")]
-    vade.register_plugin(Box::from(get_vade_sidetree()?));
+    vade.register_plugin(Box::from(get_vade_sidetree(#[cfg(feature = "sdk")] request_id)?));
 
     let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanCl::new(vade, signer))
@@ -116,26 +115,14 @@ fn get_vade_evan_cl(
 #[cfg(feature = "vc-zkp-bbs")]
 fn get_vade_evan_bbs(
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] _request_id: *const c_void,
 ) -> Result<VadeEvanBbs, Box<dyn Error>> {
-    let mut vade = Vade::new();
-
-    #[cfg(feature = "did-substrate")]
-    vade.register_plugin(Box::from(get_vade_evan_substrate(target, signer, #[cfg(feature = "sdk")] request_id)?));
-    #[cfg(feature = "did-universal-resolver")]
-    vade.register_plugin(Box::from(get_vade_universal_resolver(
-        #[cfg(feature = "sdk")]
-        request_id,
-    )?));
-    #[cfg(feature = "did-sidetree")]
-    vade.register_plugin(Box::from(get_vade_sidetree()?));
-
     let signer: Box<dyn Signer> = get_signer(signer);
     Ok(VadeEvanBbs::new(signer))
 }
 
 #[cfg(feature = "vc-jwt")]
-fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: *const c_void, signer: &str) -> Result<VadeJwtVC, Box<dyn Error>> {
+fn get_vade_jwt_vc(signer: &str, #[cfg(feature = "sdk")] _request_id: *const c_void) -> Result<VadeJwtVC, Box<dyn Error>> {
     Ok(VadeJwtVC::new(get_signer(signer)))
 }
 
@@ -143,7 +130,8 @@ fn get_vade_jwt_vc(#[cfg(feature = "sdk")] request_id: *const c_void, signer: &s
 fn get_vade_evan_substrate(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] 
+    _request_id: *const c_void
 ) -> Result<VadeEvanSubstrate, Box<dyn Error>> {
     Ok(VadeEvanSubstrate::new(ResolverConfig {
         signer: get_signer(signer),
@@ -153,7 +141,8 @@ fn get_vade_evan_substrate(
 
 #[cfg(feature = "did-universal-resolver")]
 fn get_vade_universal_resolver(
-    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] 
+    request_id: *const c_void
 ) -> Result<VadeUniversalResolver, Box<dyn Error>> {
     Ok(VadeUniversalResolver::new(
         std::env::var("RESOLVER_URL").ok(),
@@ -164,7 +153,8 @@ fn get_vade_universal_resolver(
 
 #[cfg(feature = "did-sidetree")]
 fn get_vade_sidetree(
-    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] 
+    _request_id: *const c_void
 ) -> Result<VadeSidetree, Box<dyn Error>> {
     Ok(VadeSidetree::new(std::env::var("SIDETREE_API_URL").ok()))
 }
