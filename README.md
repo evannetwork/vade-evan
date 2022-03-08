@@ -62,8 +62,10 @@ cargo build --release --no-default-features --features cli,did-sidetree,did-read
 Features can be adjusted to support integration with IN3 SDK by enabling `sdk` feature, by enabling this feature `HTTP` request/response are managed via IN3 SDK
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-write,didcomm,portable,vc-zkp,c-lib,sdk
+cargo build --release --no-default-features --features did-sidetree,did-write,didcomm,portable,vc-zkp,c-lib,sdk 
 ```
+For `sdk` feature the `request_list` lib has to be provided and the path should be adjusted in `build.rs` file before running cargo build, to compile and get a dummy lib for request-lib library please 
+check the `builds/c/README.md`.
 
 ### Command Line Interface
 
