@@ -178,7 +178,10 @@ pub extern "C" fn execute_vade(
     arguments: *const *const c_char,
     num_of_args: usize,
     options: *const c_char,
+    #[cfg(not(feature = "sdk"))]
     config: *const c_char,
+    #[cfg(feature = "sdk")]
+    config: *const c_void,
 ) -> *const c_char {
     let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
     let args_array: &[*const c_char] =
