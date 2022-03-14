@@ -91,6 +91,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .run_custom_function(EVAN_METHOD, "create_keys", "{}", "{}")
                     .await?
             }
+            ("query_didcomm_messages", Some(sub_m)) => {
+                get_vade(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "query_didcomm_messages", "{}", "payload")
+                    .await?
+            }
             _ => {
                 return Err(Box::from(clap::Error::with_description(
                     "invalid subcommand",
@@ -261,6 +266,10 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
                 .subcommand(
                     SubCommand::with_name("create_keys")
                         .about(r###"Create X25519 secret/public keys, which can be used in options while sending and receiving DIDComm message."###)
+                )
+                .subcommand(
+                    SubCommand::with_name("query_didcomm_messages")
+                        .about(r###"Query stored DIDComm messages by thid and messageid."###)
                 )
         )
         .subcommand(
