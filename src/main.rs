@@ -92,8 +92,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .await?
             }
             ("query_didcomm_messages", Some(sub_m)) => {
+                let payload = get_argument_value(&sub_m, "payload", None);
                 get_vade(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "query_didcomm_messages", "{}", "payload")
+                    .run_custom_function(EVAN_METHOD, "query_didcomm_messages", "{}", &payload)
                     .await?
             }
             _ => {
@@ -270,6 +271,7 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
                 .subcommand(
                     SubCommand::with_name("query_didcomm_messages")
                         .about(r###"Query stored DIDComm messages by thid and messageid."###)
+                        .arg(get_clap_argument("payload")?),
                 )
         )
         .subcommand(
