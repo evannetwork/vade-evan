@@ -4,16 +4,21 @@
 
 ### Features
 
-- add helper script for updating git based dependencies
-- add create_keys subcommand to didcomm in cli 
-- add java jni wrapper code
-- add query_didcomm_message subcommd to didcomm command in cli
-
 ### Fixes
 
 ### Deprecation
 
+## v0.2.0
+
+### Features
+
+- add helper script for updating git based dependencies
+- add create_keys subcommand to didcomm in cli
+- add java jni wrapper code
+- add query_didcomm_message subcommand to didcomm command in cli
+
 ## Version 0.1.2
+
 ### Fixes
 
 - fix Linux and WASM build
