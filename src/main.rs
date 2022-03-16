@@ -270,7 +270,7 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
                 )
                 .subcommand(
                     SubCommand::with_name("query_didcomm_messages")
-                        .about(r###"Query stored DIDComm messages by thid and messageid."###)
+                        .about(r###"Query stored DIDComm messages by prefix (message_{thid}_*) or messageid (message_{thid}_{msgid})."###)
                         .arg(get_clap_argument("payload")?),
                 )
         )
