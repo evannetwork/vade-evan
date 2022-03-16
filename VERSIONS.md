@@ -8,7 +8,17 @@
 
 ### Deprecation
 
+## v0.2.0
+
+### Features
+
+- add helper script for updating git based dependencies
+- add create_keys subcommand to didcomm in cli
+- add java jni wrapper code
+- add query_didcomm_message subcommand to didcomm command in cli
+
 ## Version 0.1.2
+
 ### Fixes
 
 - fix Linux and WASM build
@@ -27,6 +37,7 @@
 
 - add support for `didcomm_send`, `didcomm_receive`, `vc_zkp_finish_credential`
 - add WASM complied project with sample javascript library
+- made changes to pass external signer to vade-jwt-vc plugin
 
 ### Deprecations
 

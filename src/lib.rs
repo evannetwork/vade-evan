@@ -14,9 +14,12 @@
   limitations under the License.
 */
 
+#[cfg(any(target_arch = "wasm32", feature = "c-lib"))]
 mod vade_utils;
 #[cfg(feature = "c-lib")]
 mod c_lib;
+#[cfg(feature = "java-lib")]
+mod java_lib;
 // wasm only
 #[cfg(target_arch = "wasm32")]
 pub extern crate log;

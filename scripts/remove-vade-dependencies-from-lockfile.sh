@@ -1,0 +1,10 @@
+#!/bin/sh
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-didcomm)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-evan-bbs)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-evan-cl)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-evan-substrate)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-jwt-vc)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-jwt-vc)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-sidetree)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade-universal-resolver)'
+dasel delete -p toml -f Cargo.lock '.package.(name=vade)'

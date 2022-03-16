@@ -1,6 +1,6 @@
 [package]
 name = "vade-evan"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["evan GmbH"]
 edition = "2018"
 license-file = "LICENSE.txt"
@@ -44,9 +44,13 @@ c-lib = [
     "vc-zkp",
 ]
 
+# expose Java interface for Java applications to use vade
+java-lib = ["c-lib"]
+
 # enables using DIDs, also required for some vc-zkp functions
 did = [
     "did-substrate",
+    "did-sidetree",
     "did-universal-resolver",
     "did-read",
     "did-write",
@@ -61,7 +65,7 @@ vc-zkp = [
 
 # dedicated vc handlers
 vc-zkp-bbs = [ "vade-evan-bbs" ]
-vc-zkp-cl = [ "vade-evan-cl" ]
+vc-zkp-cl = [ "ring", "vade-evan-cl" ]
 
 # enables did_resolve related functions and commands
 did-read = []
@@ -100,27 +104,29 @@ wasm = [
 [dependencies]
 async-trait = "0.1.31"
 cfg-if = "0.1"
+jni = "0.19.0"
+ring = { version = "0.16.19", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = { git = "https://git.slock.it/equs/interop/vade/vade.git", branch = "develop", version = "0.1.0" }
 ###################################################################### feature specific dependencies
 # feature "vc-zkp-bbs"
-vade-evan-bbs = { path = "../vade-evan-bbs", version = "0.1.1", optional = true, default-features = false }
+vade-evan-bbs = { git = "https://git.slock.it/equs/interop/vade/vade-evan-bbs.git", branch = "develop", version = "0.2.0", optional = true, default-features = false }
 # feature "vc-zkp-cl"
-vade-evan-cl = { git = "https://git.slock.it/equs/interop/vade/vade-evan-cl.git", branch = "develop", version = "0.1.1", optional = true, default-features = false }
+vade-evan-cl = { git = "https://git.slock.it/equs/interop/vade/vade-evan-cl.git", branch = "develop", version = "0.1.3", optional = true, default-features = false }
 # feature "cli"
 clap = { version = "2.33.1", optional = true }
 tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
 # feature "did-substrate"
-vade-evan-substrate = { git = "https://git.slock.it/equs/interop/vade/vade-evan-substrate.git", branch = "develop", version = "0.1.1", optional = true }
+vade-evan-substrate = { git = "https://git.slock.it/equs/interop/vade/vade-evan-substrate.git", branch = "develop", version = "0.1.3", optional = true }
 # feature "vc-jwt"
-vade-jwt-vc = { git = "https://git.slock.it/equs/interop/vade/vade-jwt-vc.git", branch = "develop", version = "0.0.1", optional = true }
+vade-jwt-vc = { git = "https://git.slock.it/equs/interop/vade/vade-jwt-vc.git", branch = "develop", version = "0.1.0", optional = true }
 # feature "did-universal-resolver"
 vade-universal-resolver = { git = "https://git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "develop", version = "0.0.3", optional = true }
 # feature "did-sidetree"
-vade-sidetree = { git = "https://git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "develop", version = "0.0.1", optional = true }
+vade-sidetree = { git = "https://git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "develop", version = "0.0.2", optional = true }
 # feature "didcomm"
-vade-didcomm = { git = "https://git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "develop", version = "0.1.0", default-features = false, optional = true }
+vade-didcomm = { git = "https://git.slock.it/equs/interop/vade/vade-didcomm.git", branch = "develop", version = "0.2.0", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"

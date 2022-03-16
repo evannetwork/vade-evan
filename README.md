@@ -125,7 +125,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | feature                | default | contents |
 | ---------------------- |:-------:| -------- |
 | cli                    |     x   | enables command line interface |
-| c-lib                  |         | expose C interface for C applications to use vade |
+| c-lib                  |         | exposes C interface for C applications to use vade |
 | did                    |     x   | enables DID functionalities |
 | did-read               |     x   | enables did_resolve method for DID related operations |
 | did-write              |     x   | enables did_create and did_update methods for DID related operations |
@@ -133,6 +133,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
 | did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
 | didcomm                |     x   | enables DIDComm message handling |
+| java-lib               |         | exposes Java interface for Java applications to use vade |
 | vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl, vc-jwt features by default|
 | vc-zkp-bbs             |     x   | enables VC functionalities using vade-evan-bbs plugin|
 | vc-zkp-cl              |     x   | enables VC functionalities using vade-evan-cl plugin|
@@ -140,4 +141,11 @@ This example will generate a new DID, assign a document to it and update it afte
 | portable               |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
 | wasm                   |         | build with optimizations to run as web assembly, not compatible with `portable` |
 
+## Dependencies
+
+At the moment all vade related dependencies (vade itself and its plugins) are supposed to be pulled from the latest commit of the `develop` branch. As the dependency handling stores the hash of this commit in the lock file, updates on `develop` branch are not used by default.
+
+If those updates should be pulled, the entry in the `Cargo.lock` file has to be deleted and `cargo build` has to be run again to update these hashes. If wanting to update specific dependencies, those can be deleted from the `Cargo.lock` by hand. If wanting to update all of the vade related dependencies, a script (`scripts/remove-vade-dependencies-from-lockfile.sh`) can be used. Note that this script relies on [dasel] so this must be installed locally, e.g. with homebrew.
+
+[dasel]: https://github.com/TomWright/dasel
 [`Vade`]: https://docs.rs/vade_evan/*/vade/struct.Vade.html
