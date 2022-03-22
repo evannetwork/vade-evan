@@ -96,7 +96,7 @@ vc-jwt = [
 
 # build to run as wasm file; not compatible with `native` feature
 wasm = [
-    "vade-didcomm/wasm",
+    #"vade-didcomm/wasm",
     "vade-evan-cl/wasm",
     "vade-evan-bbs/wasm",
 ]
