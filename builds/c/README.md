@@ -18,10 +18,3 @@ once compiled run the binary
 ```sh
 ./rust_sample
 ```
-
-### Building dummy request list function
-
-```sh
-gcc ./builds/c/request_list_dummy.c -c -o request_list.o
-ar rcs librequest_list.dylib request_list.o
-```
