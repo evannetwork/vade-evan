@@ -14,6 +14,8 @@
   limitations under the License.
 */
 
+#[cfg(feature = "sdk")]
+use crate::in3_request_list::ResolveHttpRequest;
 use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
 use serde::Serialize;
 use std::ffi::{CStr, CString};
@@ -23,6 +25,7 @@ use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
 use tokio::runtime::Builder;
+
 use vade::Vade;
 
 #[derive(Serialize)]
@@ -50,17 +53,17 @@ macro_rules! handle_results {
 }
 
 macro_rules! execute_vade_function {
-    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr) => {
+    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config.to_string()), #[cfg(feature = "sdk")] $request_id).map_err(to_err_str)?;
+            let mut vade = get_vade(Some(&$config.to_string()), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
             let results = vade.$func_name($did_or_method).await.map_err(to_err_str)?;
             handle_results!(stringify!($func_name), stringify!($did_or_method), results);
         }
     };
 
-    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr) => {
+    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id).map_err(to_err_str)?;
+            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
             let results = vade
                 .$func_name(&$options, &$payload)
                 .await
@@ -70,9 +73,9 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr) => {
+    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id).map_err(to_err_str)?;
+            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
             let results = vade
                 .$func_name($did_or_method, $options, $payload)
                 .await
@@ -81,9 +84,9 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr) => {
+    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id).map_err(to_err_str)?;
+            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
             let results = vade
                 .$func_name($did_or_method, $function, $options, $payload)
                 .await
@@ -115,8 +118,8 @@ fn to_err_str(err: Box<dyn Error>) -> String {
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 pub fn get_vade(
     config: Option<&String>,
-    #[cfg(feature = "sdk")] 
-    request_id: *const c_void,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
 ) -> Result<Vade, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
@@ -131,6 +134,8 @@ pub fn get_vade(
         signer_config,
         #[cfg(feature = "sdk")]
         request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback,
     );
 }
 
@@ -178,10 +183,9 @@ pub extern "C" fn execute_vade(
     arguments: *const *const c_char,
     num_of_args: usize,
     options: *const c_char,
-    #[cfg(not(feature = "sdk"))]
-    config: *const c_char,
-    #[cfg(feature = "sdk")]
-    config: *const c_void,
+    #[cfg(not(feature = "sdk"))] config: *const c_char,
+    #[cfg(feature = "sdk")] config: *const c_void,
+    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
 ) -> *const c_char {
     let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
     let args_array: &[*const c_char] =
@@ -194,7 +198,7 @@ pub extern "C" fn execute_vade(
         .collect();
 
     let mut str_options = String::new();
-    
+
     #[cfg(not(feature = "sdk"))]
     let mut str_config = String::new();
     #[cfg(feature = "sdk")]
@@ -228,7 +232,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(feature = "did-write")]
@@ -240,7 +246,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(feature = "did-write")]
@@ -252,7 +260,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(feature = "didcomm")]
@@ -263,7 +273,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(feature = "didcomm")]
@@ -274,7 +286,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(feature = "vc-zkp-cl")]
@@ -286,7 +300,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -298,7 +314,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -310,7 +328,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -322,7 +342,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -334,7 +356,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -346,7 +370,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
@@ -358,7 +384,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -370,7 +398,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -382,7 +412,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -394,7 +426,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -406,7 +440,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -418,7 +454,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
@@ -430,7 +468,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
@@ -443,7 +483,9 @@ pub extern "C" fn execute_vade(
                 arguments_vec.get(2).unwrap_or_else(|| &no_args),
                 str_config,
                 #[cfg(feature = "sdk")]
-                ptr_request_list
+                ptr_request_list,
+                #[cfg(feature = "sdk")]
+                request_function_callback
             )
         }),
         _ => Err("Function not supported by Vade".to_string()),

@@ -21,6 +21,9 @@ use vade_universal_resolver::VadeUniversalResolver;
 #[cfg(feature = "sdk")]
 use std::os::raw::c_void;
 
+#[cfg(feature = "sdk")]
+use crate::in3_request_list::ResolveHttpRequest;
+
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
         Box::new(RemoteSigner::new(
@@ -46,7 +49,10 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
 pub fn get_vade(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] 
+    request_id: *const c_void,
+    #[cfg(feature = "sdk")]
+    request_function_callback: ResolveHttpRequest
 ) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -61,6 +67,8 @@ pub fn get_vade(
     vade.register_plugin(Box::from(get_vade_universal_resolver(
         #[cfg(feature = "sdk")]
         request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback
     )?));
     #[cfg(feature = "did-sidetree")]
     vade.register_plugin(Box::from(get_vade_sidetree(
@@ -73,6 +81,8 @@ pub fn get_vade(
         signer,
         #[cfg(feature = "sdk")]
         request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback
     )?));
     #[cfg(feature = "vc-zkp-bbs")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(signer,
@@ -95,6 +105,8 @@ fn get_vade_evan_cl(
     target: &str,
     signer: &str,
     #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")]
+    request_function_callback: ResolveHttpRequest
 ) -> Result<VadeEvanCl, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -104,6 +116,8 @@ fn get_vade_evan_cl(
     vade.register_plugin(Box::from(get_vade_universal_resolver(
         #[cfg(feature = "sdk")]
         request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback
     )?));
     #[cfg(feature = "did-sidetree")]
     vade.register_plugin(Box::from(get_vade_sidetree(#[cfg(feature = "sdk")] request_id)?));
@@ -142,12 +156,16 @@ fn get_vade_evan_substrate(
 #[cfg(feature = "did-universal-resolver")]
 fn get_vade_universal_resolver(
     #[cfg(feature = "sdk")] 
-    request_id: *const c_void
+    request_id: *const c_void,
+    #[cfg(feature = "sdk")]
+    request_function_callback: ResolveHttpRequest
 ) -> Result<VadeUniversalResolver, Box<dyn Error>> {
     Ok(VadeUniversalResolver::new(
         std::env::var("RESOLVER_URL").ok(),
         #[cfg(feature = "sdk")]
         request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback,
     ))
 }
 
