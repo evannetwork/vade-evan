@@ -17,7 +17,7 @@
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 #[cfg(feature = "sdk")]
@@ -28,7 +28,7 @@ use tokio::runtime::Builder;
 
 use vade::Vade;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -492,20 +492,9 @@ pub extern "C" fn execute_vade(
     };
 
     let response = match result.as_ref() {
-        Ok(Some(value)) => { 
-            let result = serde_json::from_str(&value);
-
-            let response =  match result{
-                Ok(value) => {
-                    println!("{:?}",value);
-                    value
-                },
-                _ => Response {
-                    response: None,
-                    error: Some("Unknown error".to_string()),
-                }
-            };
-            response
+        Ok(Some(value)) => Response {
+            response: Some(value.to_string()),
+            error: None,
         },
         Err(e) => Response {
             response: None,
@@ -523,7 +512,6 @@ pub extern "C" fn execute_vade(
         _ => "{\"error\": \"Failed to serialize response\"}".to_string(),
     };
 
-    println!("plugin response : {}",string_response);
     return CString::new(string_response)
         .expect("CString::new failed to convert response")
         .into_raw();
