@@ -28,7 +28,7 @@ use tokio::runtime::Builder;
 
 use vade::Vade;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -493,9 +493,13 @@ pub extern "C" fn execute_vade(
 
     let response = match result.as_ref() {
         Ok(Some(value)) => { 
-            let result = serde_json::from_str(&value); 
+            let result = serde_json::from_str(&value);
+
             let response =  match result{
-                Ok(Some(value)) => value,
+                Ok(value) => {
+                    println!("{:?}",value);
+                    value
+                },
                 _ => Response {
                     response: None,
                     error: Some("Unknown error".to_string()),
