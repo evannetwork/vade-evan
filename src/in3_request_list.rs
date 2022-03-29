@@ -6,4 +6,4 @@ pub type ResolveHttpRequest = extern "C"  fn (
     method: *const c_char, 
     path: *const c_char, 
     payload: *const c_char, 
-    res: *const c_char) -> i32;
+    res: *mut *mut c_char) -> i32;
