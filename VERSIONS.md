@@ -4,20 +4,31 @@
 
 ### Features
 
-- add helper script for updating git based dependencies
-- add create_keys subcommand to didcomm in cli 
-- added java jni wrapper code
-
 ### Fixes
 
 ### Deprecation
 
+## v0.3.0
+
+### Features
+
+- bump dependency versions
+
+## v0.2.0
+
+### Features
+
+- add helper script for updating git based dependencies
+- add create_keys subcommand to didcomm in cli
+- add java jni wrapper code
+- add query_didcomm_message subcommand to didcomm command in cli
+
 ## Version 0.1.2
+
 ### Fixes
 
 - fix Linux and WASM build
 - increase version for vade-didcomm vade-sidetree and added vade-jwt-vc features
-
 
 ## Version 0.1.1
 
