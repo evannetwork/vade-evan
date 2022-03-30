@@ -4482,7 +4482,7 @@ dependencies = [
 [[package]]
 name = "vade-universal-resolver"
 version = "0.0.4"
-source = "git+https://git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=feature/DID-506-evaluate-dynamic-http-websocket-requests-in-vade#87bf9e3afeadc5396c0bd5dceb24cb911de4b1e8"
+source = "git+https://git.slock.it/equs/interop/vade/vade-universal-resolver.git?branch=feature/DID-506-evaluate-dynamic-http-websocket-requests-in-vade#5658064cd4f1e494e707fb3cc2fe71cbd383ad55"
 dependencies = [
  "async-trait",
  "cfg-if 0.1.10",
