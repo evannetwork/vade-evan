@@ -139,7 +139,7 @@ This example will generate a new DID, assign a document to it and update it afte
 | did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
 | did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
 | didcomm                |     x   | enables DIDComm message handling |
-| sdk                    |         | enables sdk integration via managing http requests/response via IN3 SDK|
+| sdk                    |         | enables sdk integration via managing http requests/response via IN3 SDK |
 | java-lib               |         | exposes Java interface for Java applications to use vade |
 | vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl, vc-jwt features by default|
 | vc-zkp-bbs             |     x   | enables VC functionalities using vade-evan-bbs plugin|

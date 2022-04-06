@@ -104,7 +104,8 @@ pub fn get_vade(
 fn get_vade_evan_cl(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")]
+    request_id: *const c_void,
     #[cfg(feature = "sdk")]
     request_function_callback: ResolveHttpRequest
 ) -> Result<VadeEvanCl, Box<dyn Error>> {
