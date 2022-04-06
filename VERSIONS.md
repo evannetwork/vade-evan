@@ -2,6 +2,8 @@
 
 ## Next Version
 
+- add sdk feature for in3 integration and request_list usage to resolve http requests
+
 ### Features
 
 ### Fixes
@@ -22,7 +24,6 @@
 - add create_keys subcommand to didcomm in cli
 - add java jni wrapper code
 - add query_didcomm_message subcommand to didcomm command in cli
-- add sdk feature for in3 integration and request_list usage to resolve http requests
 
 ## Version 0.1.2
 
