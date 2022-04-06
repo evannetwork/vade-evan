@@ -14,6 +14,9 @@
   limitations under the License.
 */
 
+#[cfg(feature = "sdk")]
+mod in3_request_list;
+
 #[cfg(any(target_arch = "wasm32", feature = "c-lib"))]
 mod vade_utils;
 #[cfg(feature = "c-lib")]

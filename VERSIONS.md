@@ -2,6 +2,8 @@
 
 ## Next Version
 
+- add sdk feature for in3 integration and request_list usage to resolve http requests
+
 ### Features
 
 ### Fixes
