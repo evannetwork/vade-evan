@@ -125,7 +125,7 @@ vade-evan-substrate = { git = "https://git.slock.it/equs/interop/vade/vade-evan-
 # feature "vc-jwt"
 vade-jwt-vc = { git = "https://git.slock.it/equs/interop/vade/vade-jwt-vc.git", branch = "develop", version = "0.1.0", optional = true }
 # feature "did-universal-resolver"
-vade-universal-resolver = { git = "https://git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "feature/DID-506-evaluate-dynamic-http-websocket-requests-in-vade", version = "0.0.4", optional = true }
+vade-universal-resolver = { git = "https://git.slock.it/equs/interop/vade/vade-universal-resolver.git", branch = "develop", version = "0.0.4", optional = true }
 # feature "did-sidetree"
 vade-sidetree = { git = "https://git.slock.it/equs/interop/vade/vade-sidetree.git", branch = "develop", version = "0.0.3", optional = true }
 # feature "didcomm"
