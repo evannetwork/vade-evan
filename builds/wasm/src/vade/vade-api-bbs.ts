@@ -51,6 +51,7 @@ class VadeApiBbs extends VadeApiShared {
    */
   public async createSchema(
     params: {
+      credentialDid: string,
       identity: string,
       name: string,
       properties: Record<string, SchemaProperty>,
@@ -63,6 +64,7 @@ class VadeApiBbs extends VadeApiShared {
     checkRequiredProperties(
       params,
       [
+        'credentialDid',
         'identity',
         'name',
         'properties',
@@ -100,6 +102,7 @@ class VadeApiBbs extends VadeApiShared {
           allowAdditionalProperties: false,
           issuerPublicKeyDid: params.publicKeyDidId,
           issuerProvingKey: params.publicKeyDidId,
+          credentialDid: params.credentialDid,
         },
       },
     );

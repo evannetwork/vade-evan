@@ -41,6 +41,7 @@ type VadeFunction =
 interface VadeOptions {
   identity: string;
   privateKey: string;
+  type: string;
 }
 
 /**

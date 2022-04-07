@@ -13,6 +13,7 @@ import {
   UnfinishedBbsCredential as UnfinishedCredentialBbs,
   UnsignedCredential as UnsignedCredentialBbs,
 } from './vade-evan-bbs';
+
 import {
   BigNumber,
   CreateRevocationRegistryDefinitionResult,

@@ -9,10 +9,12 @@ class VadeApiSubstrate extends VadeApiShared {
    *
    * @param identity identity to whitelist
    * @param privateKey reference to private key to sign with
+   * @param type type of DID layer (usually 'substrate' or 'sidetree`)
    */
   public async whitelistIdentity(
     identity: string,
     privateKey: string,
+    type = 'substrate',
   ): Promise<void> {
     if (!identity.startsWith('did')) {
       throw new Error('identity should start with did:evan:...');
@@ -25,6 +27,7 @@ class VadeApiSubstrate extends VadeApiShared {
           privateKey,
           operation: 'whitelistIdentity',
           identity,
+          type,
         },
       },
     );
@@ -56,6 +59,7 @@ class VadeApiSubstrate extends VadeApiShared {
           identity: options.identity,
           operation: 'setDidDocument',
           privateKey: options.privateKey,
+          type: options.type,
         },
         payload: params.didDocument,
       },
@@ -97,6 +101,7 @@ class VadeApiSubstrate extends VadeApiShared {
         options: {
           identity: options.identity,
           privateKey: options.privateKey,
+          type: options.type,
         },
       },
     );

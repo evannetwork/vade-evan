@@ -186,8 +186,6 @@ class VadeApiCl extends VadeApiShared {
           issuerDid: params.issuerDid,
           issuerPublicKeyDid: params.publicKeyDidId,
           issuerProvingKey: options.privateKey,
-          pSafe: params.pSafe,
-          qSafe: params.qSafe,
         },
       },
     );
