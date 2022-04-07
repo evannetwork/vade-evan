@@ -272,8 +272,8 @@ pub async fn execute_vade(
         "didcomm_receive" =>
             didcomm_receive(options, payload, config).await,
         #[cfg(feature = "didcomm")]
-        "didcomm_update" =>
-            didcomm_update(options, payload, config).await,
+        "didcomm_send" =>
+            didcomm_send(options, payload, config).await,
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "run_custom_function" =>
             run_custom_function(did_or_method, custom_func_name, options, payload, config).await,
