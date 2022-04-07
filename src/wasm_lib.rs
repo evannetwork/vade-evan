@@ -79,17 +79,17 @@ macro_rules! create_function {
         #[wasm_bindgen]
         pub async fn $func_name(
             did_or_method: String,
-            functio: String,
+            custom_func_name: String,
             options: String,
             payload: String,
             config: JsValue,
         ) -> Result<Option<String>, JsValue> {
             let mut vade = get_vade(Some(&config)).map_err(jsify)?;
             let results = vade
-                .$func_name(&did_or_method, &functio, &options, &payload)
+                .$func_name(&did_or_method, &custom_func_name, &options, &payload)
                 .await
                 .map_err(jsify)?;
-                handle_results!(format!("{}: {}", stringify!($func_name), &functio), did_or_method, results);
+                handle_results!(format!("{}: {}", stringify!($func_name), &custom_func_name), did_or_method, results);
         }
     };
 }
@@ -149,7 +149,7 @@ cfg_if::cfg_if! {
 cfg_if::cfg_if! {
     if #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))] {
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        create_function!(run_custom_function, did_or_method, functio, options, payload, config);
+        create_function!(run_custom_function, did_or_method, custom_func_name, options, payload, config);
         #[cfg(feature = "vc-zkp-cl")]
         create_function!(vc_zkp_create_credential_definition, did_or_method, options, payload, config);
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
