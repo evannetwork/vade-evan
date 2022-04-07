@@ -322,19 +322,19 @@ pub async fn execute_vade(
         }
     };
 
-    let response = match result.as_ref() {
+    let response = match result {
         Ok(Some(value)) => Response {
             response: Some(value.to_string()),
             error: None,
         },
-        // Err(e) => Response {
-        //     response: None,
-        //     error: Some(e.to_string()),
-        // },
-        _ => Response {
+        Ok(None) => Response {
             response: None,
-            error: Some("Unknown error".to_string()),
-        }
+            error: Some("Got no result".to_string()),
+        },
+        Err(e) => Response {
+            response: None,
+            error: Some(e.as_string().unwrap_or_default()),
+        },
     };
 
     let serialized_response = serde_json::to_string(&response);
