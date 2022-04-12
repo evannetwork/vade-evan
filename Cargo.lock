@@ -4231,7 +4231,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#255db479065d47f5fb68ce813b545fbc77544c95"
+source = "git+https://git.slock.it/equs/interop/vade/vade-didcomm.git?branch=develop#ec5ba22169d3682c7e10017285c73afd570e15bb"
 dependencies = [
  "async-trait",
  "bs58",
@@ -4317,7 +4317,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-cl"
 version = "0.1.3"
-source = "git+https://git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#7029433d46454e4e035eb444304eb3c917e6e77e"
+source = "git+https://git.slock.it/equs/interop/vade/vade-evan-cl.git?branch=develop#66dbbfcf41d1589d27b70f65b3b6cb67f7ff7549"
 dependencies = [
  "async-trait",
  "chrono",
