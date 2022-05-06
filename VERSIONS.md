@@ -25,6 +25,7 @@
 - add create_keys subcommand to didcomm in cli
 - add java jni wrapper code
 - add query_didcomm_message subcommand to didcomm command in cli
+- disable vade-evan-cl as dependency
 
 ## Version 0.1.2
 
