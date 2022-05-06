@@ -4,8 +4,9 @@ use vade::Vade;
 use vade_didcomm::VadeDidComm;
 #[cfg(feature = "vc-zkp-bbs")]
 use vade_evan_bbs::VadeEvanBbs;
-#[cfg(feature = "vc-zkp-cl")]
-use vade_evan_cl::VadeEvanCl;
+// TODO: vade_evan_cl will be enabled when it is published to crates.io
+//#[cfg(feature = "vc-zkp-cl")]
+//use vade_evan_cl::VadeEvanCl;
 #[cfg(feature = "did-substrate")]
 use vade_evan_substrate::{
     signing::{LocalSigner, RemoteSigner, Signer},
@@ -75,15 +76,15 @@ pub fn get_vade(
         #[cfg(feature = "sdk")]
         request_id,
     )?));
-    #[cfg(feature = "vc-zkp-cl")]
-    vade.register_plugin(Box::from(get_vade_evan_cl(
-        target,
-        signer,
-        #[cfg(feature = "sdk")]
-        request_id,
-        #[cfg(feature = "sdk")]
-        request_function_callback
-    )?));
+    // #[cfg(feature = "vc-zkp-cl")]
+    // vade.register_plugin(Box::from(get_vade_evan_cl(
+    //     target,
+    //     signer,
+    //     #[cfg(feature = "sdk")]
+    //     request_id,
+    //     #[cfg(feature = "sdk")]
+    //     request_function_callback
+    // )?));
     #[cfg(feature = "vc-zkp-bbs")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(signer,
          #[cfg(feature = "sdk")]
@@ -100,32 +101,32 @@ pub fn get_vade(
     Ok(vade)
 }
 
-#[cfg(feature = "vc-zkp-cl")]
-fn get_vade_evan_cl(
-    target: &str,
-    signer: &str,
-    #[cfg(feature = "sdk")]
-    request_id: *const c_void,
-    #[cfg(feature = "sdk")]
-    request_function_callback: ResolveHttpRequest
-) -> Result<VadeEvanCl, Box<dyn Error>> {
-    let mut vade = Vade::new();
+// #[cfg(feature = "vc-zkp-cl")]
+// fn get_vade_evan_cl(
+//     target: &str,
+//     signer: &str,
+//     #[cfg(feature = "sdk")]
+//     request_id: *const c_void,
+//     #[cfg(feature = "sdk")]
+//     request_function_callback: ResolveHttpRequest
+// ) -> Result<VadeEvanCl, Box<dyn Error>> {
+//     let mut vade = Vade::new();
 
-    #[cfg(feature = "did-substrate")]
-    vade.register_plugin(Box::from(get_vade_evan_substrate(target, signer, #[cfg(feature = "sdk")] request_id)?));
-    #[cfg(feature = "did-universal-resolver")]
-    vade.register_plugin(Box::from(get_vade_universal_resolver(
-        #[cfg(feature = "sdk")]
-        request_id,
-        #[cfg(feature = "sdk")]
-        request_function_callback
-    )?));
-    #[cfg(feature = "did-sidetree")]
-    vade.register_plugin(Box::from(get_vade_sidetree(#[cfg(feature = "sdk")] request_id)?));
+//     #[cfg(feature = "did-substrate")]
+//     vade.register_plugin(Box::from(get_vade_evan_substrate(target, signer, #[cfg(feature = "sdk")] request_id)?));
+//     #[cfg(feature = "did-universal-resolver")]
+//     vade.register_plugin(Box::from(get_vade_universal_resolver(
+//         #[cfg(feature = "sdk")]
+//         request_id,
+//         #[cfg(feature = "sdk")]
+//         request_function_callback
+//     )?));
+//     #[cfg(feature = "did-sidetree")]
+//     vade.register_plugin(Box::from(get_vade_sidetree(#[cfg(feature = "sdk")] request_id)?));
 
-    let signer: Box<dyn Signer> = get_signer(signer);
-    Ok(VadeEvanCl::new(vade, signer))
-}
+//     let signer: Box<dyn Signer> = get_signer(signer);
+//     Ok(VadeEvanCl::new(vade, signer))
+// }
 
 #[cfg(feature = "vc-zkp-bbs")]
 fn get_vade_evan_bbs(
