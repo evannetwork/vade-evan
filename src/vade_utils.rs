@@ -5,8 +5,8 @@ use vade_didcomm::VadeDidComm;
 #[cfg(feature = "vc-zkp-bbs")]
 use vade_evan_bbs::VadeEvanBbs;
 // TODO: vade_evan_cl will be enabled when it is published to crates.io
-//#[cfg(feature = "vc-zkp-cl")]
-//use vade_evan_cl::VadeEvanCl;
+// #[cfg(feature = "vc-zkp-cl")]
+// use vade_evan_cl::VadeEvanCl;
 #[cfg(feature = "did-substrate")]
 use vade_evan_substrate::{
     signing::{LocalSigner, RemoteSigner, Signer},
