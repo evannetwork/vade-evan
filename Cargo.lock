@@ -284,6 +284,7 @@ dependencies = [
  "hkdf 0.8.0",
  "pairing-plus",
  "rand 0.7.3",
+ "rayon",
  "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",
@@ -980,8 +981,9 @@ dependencies = [
 
 [[package]]
 name = "didcomm-rs"
-version = "0.7.1"
-source = "git+https://github.com/decentralized-identity/didcomm-rs.git?branch=main#b57234e981f0040f592fc92d8e162cb0e4a03bf7"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d871ba34cbd28673062395a90964147db64e620d7df16cd57f4c3eac9188962"
 dependencies = [
  "aes-gcm 0.9.4",
  "arrayref",
@@ -3539,22 +3541,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 
 [[package]]
-name = "sidetree-client"
-version = "0.1.2"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#39f1bf7c59d869300896b29ec95c11e7e2d86f8c"
-dependencies = [
- "base64 0.13.0",
- "bitflags",
- "getrandom 0.2.3",
- "libsecp256k1 0.3.5",
- "multihash",
- "serde",
- "serde_jcs",
- "serde_json",
- "sha2 0.9.5",
-]
-
-[[package]]
 name = "signature"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4220,7 +4206,8 @@ dependencies = [
 [[package]]
 name = "vade"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade.git?branch=develop#b97a4f5be3273b9867b34a9132fdda5cec822310"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28c510deb9534df9da15a2dce4602d1601a5ec9cf231293adffc0b39bfe877dc"
 dependencies = [
  "async-trait",
  "env_logger 0.7.1",
@@ -4231,7 +4218,8 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#ec5ba22169d3682c7e10017285c73afd570e15bb"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "042cc586b63e743bccaa24d0ca10875747034abca4eb6f0ebd790407a8fb0b0f"
 dependencies = [
  "async-trait",
  "bs58",
@@ -4293,7 +4281,8 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.2.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#bc5fce95060d8cbcb1bfc3a49d06938c5a7d7e5a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df74bbed06c03833155f8d66a0dc05caedba409bdfec6bd31b35e05621cbe32d"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4317,7 +4306,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-cl"
 version = "0.1.3"
-source = "git+https://github.com/evannetwork/vade-evan-cl.git?branch=develop#66dbbfcf41d1589d27b70f65b3b6cb67f7ff7549"
+source = "git+https://github.com/evannetwork/vade-evan-cl.git?branch=develop#1f8e4ff23198b3f05880b4d8335e926b1a535eef"
 dependencies = [
  "async-trait",
  "chrono",
@@ -4349,7 +4338,8 @@ dependencies = [
 [[package]]
 name = "vade-evan-substrate"
 version = "0.1.3"
-source = "git+https://github.com/evannetwork/vade-evan-substrate.git?branch=develop#5ea9c513d11609276b2cdeb2d4094ac9db0227a3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92dac1bc6ef3c8903774ff2bea7025b28d2706901afc2a05cb8b12a43548cead"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -4389,7 +4379,8 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=develop#22fb35410c5fb375032eace1f6e8467b99f48288"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da32f1b870f9409b00683dda203f86b02a9742984c6ceadcc60194868660da86"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4412,7 +4403,8 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#39f1bf7c59d869300896b29ec95c11e7e2d86f8c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb172d99227b406aee4b2aad239ac06b6a4347c53d7ca188e1e36eef6f7cdf7a"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4422,14 +4414,32 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.9.5",
- "sidetree-client",
  "vade",
+ "vade-sidetree-client",
+]
+
+[[package]]
+name = "vade-sidetree-client"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413004bad0d190be624f4339cde70bf3e6724323ee38f275048826e504c3ddc6"
+dependencies = [
+ "base64 0.13.0",
+ "bitflags",
+ "getrandom 0.2.3",
+ "libsecp256k1 0.3.5",
+ "multihash",
+ "serde",
+ "serde_jcs",
+ "serde_json",
+ "sha2 0.9.5",
 ]
 
 [[package]]
 name = "vade-universal-resolver"
 version = "0.0.4"
-source = "git+https://github.com/evannetwork/vade-universal-resolver.git?branch=develop#d2e56f6724c277d93f7346df3cfe2f1cf42c6422"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ff38811350d0df1958fd0418c9f01a1ec077393d69950aae5c4a39cb24062f28"
 dependencies = [
  "async-trait",
  "cfg-if 0.1.10",
