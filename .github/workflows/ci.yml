@@ -9,16 +9,21 @@ env:
 
 jobs:
   build_and_test:
-    name: Rust project - latest
+    name: vade-evan - ubuntu
     runs-on: ubuntu-latest
     strategy:
       matrix:
         toolchain:
           - stable
-          - beta
-          - nightly
     steps:
       - uses: actions/checkout@v2
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: cargo install -f cross
       - run: cargo build --verbose
-      - run: cargo test --verbose
+      - run: cargo test  --verbose
+      - run: cross build --target x86_64-unknown-linux-gnu
+      - run: cross build --target x86_64-apple-darwin
+      - run: cross build --target aarch64-apple-darwin
+      - run: cross build --target wasm32-unknown-unknown
+      - run: cross build --target x86_64-pc-windows-msvc
+
