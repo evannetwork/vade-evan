@@ -44,7 +44,7 @@ jobs:
         components: rustfmt, clippy
         target: ${{ matrix.target }}
         override: true
-    - run: rustup update ${{ matrix.target }} && rustup default ${{ matrix.target }}     
+    - run: rustup update ${{ matrix.target }}
     - name: install cross
       run: cargo install -f cross
     - name: Build
