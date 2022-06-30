@@ -111,6 +111,7 @@ sdk = ["vade-universal-resolver/sdk"]
 async-trait = "0.1.31"
 cfg-if = "0.1"
 jni = "0.19.0"
+openssl = { version = "*", features = ["vendored"] }
 ring = { version = "0.16.19", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
