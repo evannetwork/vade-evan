@@ -51,9 +51,10 @@ jobs:
               sudo apt install -y clang
          fi
       shell: bash
-    - name: install cross
-      run: cargo install -f cross
+#    - name: install cross
+#      run: cargo install -f cross
     - name: Build
-      run: cross build --target ${{ matrix.target }}
+      run: cargo build --target=${{ matrix.target }}
+#      run: cross build --target ${{ matrix.target }}
     - name: Run tests
       run: cargo test --verbose
