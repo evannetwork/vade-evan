@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, aarch64-apple-darwin, x86_64-pc-windows-msvc]
-        toolchain: [stable, nightly]
+        toolchain: [stable]
         exclude:
         # Don't test linux/windows targets on macos
         - os: macos-latest
