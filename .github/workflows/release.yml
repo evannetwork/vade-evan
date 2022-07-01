@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - '*'
+#    tags:
+#      - '*'
 
 env: 
   CARGO_TERM_COLOR: always
@@ -61,7 +61,7 @@ jobs:
     - name: compress build files
       run: zip -r ./target/${{ matrix.target }}.zip ./target/${{ matrix.target }}/release/
     - name: version
-      run: echo "::set-output name=version::$(cargo pkgid | cut -d# -f2 | cut -d: -f2)"
+      run: echo "::set-output name=version::$(cargo pkgid | cut -d# -f2)"
       id: version
     - name: release
       uses: actions/create-release@v1
