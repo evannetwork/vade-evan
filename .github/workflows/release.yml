@@ -54,8 +54,6 @@ jobs:
       shell: bash
     - name: Build
       run: cargo build --release --target=${{ matrix.target }}
-    - name: Build
-      run: cargo build --release --target=${{ matrix.target }}
     - name: Run tests
       run: cargo test --verbose
     - name: compress files
