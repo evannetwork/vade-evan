@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-#    tags:
-#      - '*'
+    tags:
+      - '*'
 
 env: 
   CARGO_TERM_COLOR: always
@@ -58,7 +58,7 @@ jobs:
       run: cargo build --release --target=${{ matrix.target }}
     - name: Run tests
       run: cargo test --verbose
-    - name: compress build files
+    - name: compress files
       run: zip -r ./target/${{ matrix.target }}.zip ./target/${{ matrix.target }}/release/
     - name: version
       run: echo "::set-output name=version::$(cargo pkgid | cut -d# -f2)"
