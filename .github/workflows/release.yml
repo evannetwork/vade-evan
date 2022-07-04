@@ -61,23 +61,10 @@ jobs:
     - name: version
       run: echo "::set-output name=version::$(cargo pkgid | cut -d# -f2)"
       id: version
-    - name: release
-      uses: actions/create-release@v1
-      id: create_release
+    - name: Create Github Release
+      uses: ncipollo/release-action@v1
       with:
-        draft: false
-        prerelease: false
-        release_name: ${{ steps.version.outputs.version }}
-        tag_name: ${{ github.ref }}
-        body_path: VERSIONS.md
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-    - name: Upload artifacts
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/${{ matrix.target }}.zip
-        asset_name: ${{ matrix.target }}.zip
-        asset_content_type: application/zip
+        artifacts: "./target/${{ matrix.target }}.zip"
+        replacesArtifacts: false
+        token: ${{ secrets.TOKEN }}
+        allowUpdates: true
