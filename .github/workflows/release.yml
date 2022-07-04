@@ -58,9 +58,9 @@ jobs:
       run: cargo test --verbose
     - name: Compress files
       uses: vimtor/action-zip@v1
-        with:
-          files: ./target/${{ matrix.target }}/release/vade_evan_cli
-          dest: ./target/${{ matrix.target }}.zip
+      with:
+        files: ./target/${{ matrix.target }}/release/vade_evan_cli
+        dest: ./target/${{ matrix.target }}.zip
     - name: Create Github Release
       uses: ncipollo/release-action@v1
       with:
