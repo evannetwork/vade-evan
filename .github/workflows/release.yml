@@ -56,12 +56,11 @@ jobs:
       run: cargo build --release --target=${{ matrix.target }}
     - name: Run tests
       run: cargo test --verbose
-    - name: Compress files
-      run: zip -r ./target/${{ matrix.target }}.zip ./target/${{ matrix.target }}/release/vade_evan_cli
     - name: Create Github Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "./target/${{ matrix.target }}.zip"
+        artifacts: "./target/${{ matrix.target }}/release/vade_evan_cli"
+        bodyFile: "VERSIONS.md"
         replacesArtifacts: false
         token: ${{ github.token }}
         allowUpdates: true
