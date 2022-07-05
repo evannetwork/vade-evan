@@ -56,10 +56,16 @@ jobs:
       run: cargo build --release --target-dir=target/ --target=${{ matrix.target }}
     - name: Run tests
       run: cargo test --verbose
+    - uses: haya14busa/action-cond@v1
+      id: files
+      with:
+        cond: ${{ "$RUNNER_OS" == "Windows" }}
+        if_true: "vade_evan_cli.exe"
+        if_false: "vade_evan_cli"
     - name: Compress files
       uses: vimtor/action-zip@v1
       with:
-        files: target/${{ matrix.target }}/release/vade_evan_cli
+        files: target/${{ matrix.target }}/release/${{ steps.files.outputs.value }}
         dest: target/${{ matrix.target }}.zip
     - name: Create Github Release
       uses: ncipollo/release-action@v1
