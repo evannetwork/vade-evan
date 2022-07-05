@@ -59,7 +59,7 @@ jobs:
     - uses: haya14busa/action-cond@v1
       id: files
       with:
-        cond: ${{ "$RUNNER_OS" == "Windows" }}
+        cond: ${{ matrix.os == 'windows-latest' }}
         if_true: "vade_evan_cli.exe"
         if_false: "vade_evan_cli"
     - name: Compress files
