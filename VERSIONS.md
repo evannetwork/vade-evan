@@ -4,6 +4,7 @@
 
 - add sdk feature for in3 integration and request_list usage to resolve http requests
 - create javascript wrapper for vade-evan
+- setup pipeline for different targets
 
 ### Features
 
