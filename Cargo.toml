@@ -51,7 +51,7 @@ java-lib = ["c-lib"]
 did = [
     "did-substrate",
     "did-sidetree",
-    "did-universal-resolver",
+    # "did-universal-resolver",
     "did-read",
     "did-write",
 ]
