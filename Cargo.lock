@@ -4043,11 +4043,11 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb172d99227b406aee4b2aad239ac06b6a4347c53d7ca188e1e36eef6f7cdf7a"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/implement-sdk-request-handling#0517ff7edf03669f0f9e968e076f6ff528e8314d"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
+ "cfg-if 0.1.10",
  "env_logger 0.7.1",
  "regex",
  "reqwest 0.11.4",
@@ -4061,8 +4061,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "413004bad0d190be624f4339cde70bf3e6724323ee38f275048826e504c3ddc6"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/implement-sdk-request-handling#0517ff7edf03669f0f9e968e076f6ff528e8314d"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
