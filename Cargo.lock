@@ -3764,7 +3764,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.4.6",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -3953,8 +3953,9 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-bbs"
-version = "0.2.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/use-vade-signer-from-separate-crate#84808949d1393821df71d88d39671de51448e6b0"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f3204cf8f36618e82ed9607d14529c58332448a8c310274bb8341589333227a"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -3978,8 +3979,9 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-substrate"
-version = "0.1.3"
-source = "git+https://github.com/evannetwork/vade-evan-substrate.git?branch=feature/move-signing-into-separate-crate#95322f8acde793e4d6fb46c9a45b0f55c075f04e"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cc4b84f68dbdaa8cb0aa0aad215b72f7a7cff99d8abd0e13413de7173555773"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -4019,8 +4021,9 @@ dependencies = [
 
 [[package]]
 name = "vade-jwt-vc"
-version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=feature/use-vade-signer-from-separate-crate#8e48e473803b715255dec67352b6588c2b849426"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99b7be7d18bc796039530baad8b901316e2a4142df853946dba09fdb51bbd2be"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4078,7 +4081,8 @@ dependencies = [
 [[package]]
 name = "vade-signer"
 version = "0.0.1"
-source = "git+https://github.com/evannetwork/vade-signer.git?branch=feature/add-initial-structure#449396bf9f30e87f2092217a289fd970080099ff"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "321884ca81c3ab83d696899142b55892c5e1072b1f457af7883a9b16ddeb2a9c"
 dependencies = [
  "async-trait",
  "byteorder",
