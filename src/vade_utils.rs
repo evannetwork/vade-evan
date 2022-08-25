@@ -7,20 +7,23 @@ use vade_evan_bbs::VadeEvanBbs;
 // TODO: vade_evan_cl will be enabled when it is published to crates.io
 // #[cfg(feature = "vc-zkp-cl")]
 // use vade_evan_cl::VadeEvanCl;
+#[cfg(feature = "sdk")]
+use std::os::raw::c_void;
 #[cfg(feature = "did-substrate")]
-use vade_evan_substrate::{
-    signing::{LocalSigner, RemoteSigner, Signer},
-    ResolverConfig,
-    VadeEvanSubstrate,
-};
+use vade_evan_substrate::{ResolverConfig, VadeEvanSubstrate};
 #[cfg(feature = "vc-jwt")]
 use vade_jwt_vc::VadeJwtVC;
 #[cfg(feature = "did-sidetree")]
 use vade_sidetree::VadeSidetree;
+#[cfg(any(
+    feature = "did-substrate",
+    feature = "vc-zkp-bbs",
+    feature = "vc-zkp-cl",
+    feature = "vc-jwt"
+))]
+use vade_signer::{LocalSigner, RemoteSigner, Signer};
 #[cfg(feature = "did-universal-resolver")]
 use vade_universal_resolver::VadeUniversalResolver;
-#[cfg(feature = "sdk")]
-use std::os::raw::c_void;
 
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
@@ -50,10 +53,8 @@ pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
 pub fn get_vade(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] 
-    request_id: *const c_void,
-    #[cfg(feature = "sdk")]
-    request_function_callback: ResolveHttpRequest
+    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
 ) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -69,7 +70,7 @@ pub fn get_vade(
         #[cfg(feature = "sdk")]
         request_id,
         #[cfg(feature = "sdk")]
-        request_function_callback
+        request_function_callback,
     )?));
     #[cfg(feature = "did-sidetree")]
     vade.register_plugin(Box::from(get_vade_sidetree(
@@ -86,14 +87,18 @@ pub fn get_vade(
     //     request_function_callback
     // )?));
     #[cfg(feature = "vc-zkp-bbs")]
-    vade.register_plugin(Box::from(get_vade_evan_bbs(signer,
-         #[cfg(feature = "sdk")]
-         request_id)?));
+    vade.register_plugin(Box::from(get_vade_evan_bbs(
+        signer,
+        #[cfg(feature = "sdk")]
+        request_id,
+    )?));
 
     #[cfg(feature = "vc-jwt")]
-    vade.register_plugin(Box::from(get_vade_jwt_vc(signer,
+    vade.register_plugin(Box::from(get_vade_jwt_vc(
+        signer,
         #[cfg(feature = "sdk")]
-        request_id)?));
+        request_id,
+    )?));
 
     #[cfg(feature = "didcomm")]
     vade.register_plugin(Box::from(VadeDidComm::new()?));
@@ -138,7 +143,10 @@ fn get_vade_evan_bbs(
 }
 
 #[cfg(feature = "vc-jwt")]
-fn get_vade_jwt_vc(signer: &str, #[cfg(feature = "sdk")] _request_id: *const c_void) -> Result<VadeJwtVC, Box<dyn Error>> {
+fn get_vade_jwt_vc(
+    signer: &str,
+    #[cfg(feature = "sdk")] _request_id: *const c_void,
+) -> Result<VadeJwtVC, Box<dyn Error>> {
     Ok(VadeJwtVC::new(get_signer(signer)))
 }
 
@@ -146,8 +154,7 @@ fn get_vade_jwt_vc(signer: &str, #[cfg(feature = "sdk")] _request_id: *const c_v
 fn get_vade_evan_substrate(
     target: &str,
     signer: &str,
-    #[cfg(feature = "sdk")] 
-    _request_id: *const c_void
+    #[cfg(feature = "sdk")] _request_id: *const c_void,
 ) -> Result<VadeEvanSubstrate, Box<dyn Error>> {
     Ok(VadeEvanSubstrate::new(ResolverConfig {
         signer: get_signer(signer),
@@ -157,10 +164,8 @@ fn get_vade_evan_substrate(
 
 #[cfg(feature = "did-universal-resolver")]
 fn get_vade_universal_resolver(
-    #[cfg(feature = "sdk")] 
-    request_id: *const c_void,
-    #[cfg(feature = "sdk")]
-    request_function_callback: ResolveHttpRequest
+    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
 ) -> Result<VadeUniversalResolver, Box<dyn Error>> {
     Ok(VadeUniversalResolver::new(
         std::env::var("RESOLVER_URL").ok(),
@@ -173,8 +178,7 @@ fn get_vade_universal_resolver(
 
 #[cfg(feature = "did-sidetree")]
 fn get_vade_sidetree(
-    #[cfg(feature = "sdk")] 
-    _request_id: *const c_void
+    #[cfg(feature = "sdk")] _request_id: *const c_void,
 ) -> Result<VadeSidetree, Box<dyn Error>> {
     Ok(VadeSidetree::new(std::env::var("SIDETREE_API_URL").ok()))
 }
