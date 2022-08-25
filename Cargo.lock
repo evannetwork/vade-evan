@@ -205,7 +205,6 @@ dependencies = [
  "hkdf 0.8.0",
  "pairing-plus",
  "rand 0.7.3",
- "rayon",
  "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",
@@ -636,27 +635,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81156fece84ab6a9f2afdb109ce3ae577e42b1228441eded99bd77f627953b1a"
 dependencies = [
  "cfg-if 1.0.0",
-]
-
-[[package]]
-name = "crossbeam-channel"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06ed27e177f16d65f0f0c22a213e17c696ace5dd64b14258b52f9417ccb52db4"
-dependencies = [
- "cfg-if 1.0.0",
- "crossbeam-utils",
-]
-
-[[package]]
-name = "crossbeam-deque"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94af6efb46fef72616855b036a624cf27ba656ffc9be1b9a3c931cfc7749a9a9"
-dependencies = [
- "cfg-if 1.0.0",
- "crossbeam-epoch",
- "crossbeam-utils",
 ]
 
 [[package]]
@@ -2322,6 +2300,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28988d872ab76095a6e6ac88d99b54fd267702734fd7ffe610ca27f533ddb95a"
 
 [[package]]
+name = "openssl-src"
+version = "111.21.0+1.1.1p"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d0a8313729211913936f1b95ca47a5fc7f2e04cd658c115388287f8a8361008"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "openssl-sys"
 version = "0.9.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2330,6 +2317,7 @@ dependencies = [
  "autocfg",
  "cc",
  "libc",
+ "openssl-src",
  "pkg-config",
  "vcpkg",
 ]
@@ -2756,31 +2744,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77d416b86801d23dde1aa643023b775c3a462efc0ed96443add11546cdf1dca8"
 dependencies = [
  "rand_core 0.5.1",
-]
-
-[[package]]
-name = "rayon"
-version = "1.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06aca804d41dbc8ba42dfd964f0d01334eceb64314b9ecf7c5fad5188a06d90"
-dependencies = [
- "autocfg",
- "crossbeam-deque",
- "either",
- "rayon-core",
-]
-
-[[package]]
-name = "rayon-core"
-version = "1.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d78120e2c850279833f1dd3582f730c4ab53ed95aeaaaa862a2a5c71b1656d8e"
-dependencies = [
- "crossbeam-channel",
- "crossbeam-deque",
- "crossbeam-utils",
- "lazy_static",
- "num_cpus",
 ]
 
 [[package]]
@@ -3801,7 +3764,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.4.6",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -3959,7 +3922,7 @@ dependencies = [
 
 [[package]]
 name = "vade-evan"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "async-trait",
  "cfg-if 0.1.10",
@@ -3968,6 +3931,7 @@ dependencies = [
  "console_log",
  "jni",
  "log",
+ "openssl",
  "ring",
  "serde",
  "serde_derive",
@@ -3980,6 +3944,7 @@ dependencies = [
  "vade-evan-substrate",
  "vade-jwt-vc",
  "vade-sidetree",
+ "vade-signer",
  "vade-universal-resolver",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3988,9 +3953,9 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-bbs"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df74bbed06c03833155f8d66a0dc05caedba409bdfec6bd31b35e05621cbe32d"
+checksum = "9f3204cf8f36618e82ed9607d14529c58332448a8c310274bb8341589333227a"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4009,13 +3974,14 @@ dependencies = [
  "uuid",
  "vade",
  "vade-evan-substrate",
+ "vade-signer",
 ]
 
 [[package]]
 name = "vade-evan-substrate"
-version = "0.1.3"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92dac1bc6ef3c8903774ff2bea7025b28d2706901afc2a05cb8b12a43548cead"
+checksum = "4cc4b84f68dbdaa8cb0aa0aad215b72f7a7cff99d8abd0e13413de7173555773"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -4046,6 +4012,7 @@ dependencies = [
  "thiserror",
  "twox-hash",
  "vade",
+ "vade-signer",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -4054,9 +4021,9 @@ dependencies = [
 
 [[package]]
 name = "vade-jwt-vc"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da32f1b870f9409b00683dda203f86b02a9742984c6ceadcc60194868660da86"
+checksum = "99b7be7d18bc796039530baad8b901316e2a4142df853946dba09fdb51bbd2be"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4073,7 +4040,7 @@ dependencies = [
  "sha2 0.8.2",
  "sha3 0.8.2",
  "vade",
- "vade-evan-substrate",
+ "vade-signer",
 ]
 
 [[package]]
@@ -4109,6 +4076,25 @@ dependencies = [
  "serde_jcs",
  "serde_json",
  "sha2 0.9.5",
+]
+
+[[package]]
+name = "vade-signer"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "321884ca81c3ab83d696899142b55892c5e1072b1f457af7883a9b16ddeb2a9c"
+dependencies = [
+ "async-trait",
+ "byteorder",
+ "hex",
+ "libsecp256k1 0.3.5",
+ "log",
+ "rand 0.7.3",
+ "reqwest 0.11.4",
+ "serde",
+ "serde_json",
+ "sha2 0.8.2",
+ "sha3 0.8.2",
 ]
 
 [[package]]
