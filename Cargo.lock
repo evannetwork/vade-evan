@@ -3943,7 +3943,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/add-sdk-build-setup#d5f2173a064e1b68c6bd4cb2cb74a09d623bfe81"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/add-sdk-build-setup#0c0b822f62d26215366e0a14b8f7835a76532e47"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
