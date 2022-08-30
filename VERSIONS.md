@@ -2,16 +2,22 @@
 
 ## Next Version
 
-- add sdk feature for in3 integration and request_list usage to resolve http requests
-- create javascript wrapper for vade-evan
-- setup pipeline for different targets
-- add sdk feature support for vade-sidetree
-
 ### Features
+
+- add sdk feature support for vade-sidetree
 
 ### Fixes
 
 ### Deprecation
+
+## v0.4.0
+
+### Features
+
+- add sdk feature for in3 integration and request_list usage to resolve http requests
+- create javascript wrapper for vade-evan
+- setup pipeline for different targets
+- use signing logic from `vade-signer` instead of `vade-evan-substrate`
 
 ## v0.3.0
 
