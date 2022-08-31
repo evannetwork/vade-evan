@@ -4034,7 +4034,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/remove-reqwest-dependency-from-sdk-build#363246716f6a4f830eaabdf8ca6ce4a8b144bcc2"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/remove-reqwest-dependency-from-sdk-build#ae87d87357709881adc3507cd5572ce3561742c3"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4052,7 +4052,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/remove-reqwest-dependency-from-sdk-build#363246716f6a4f830eaabdf8ca6ce4a8b144bcc2"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/remove-reqwest-dependency-from-sdk-build#ae87d87357709881adc3507cd5572ce3561742c3"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
