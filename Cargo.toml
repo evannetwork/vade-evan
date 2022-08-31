@@ -45,7 +45,6 @@ cli = [
 # expose C interface for C applications to use vade
 c-lib = [
     "did",
-    "didcomm",
     "tokio",
 ]
 
@@ -126,7 +125,6 @@ sdk = [
     "c-lib",
     "vc-zkp-bbs",
     "portable",
-    "didcomm",
     "did-read",
     "did-write",
     "did-sidetree",
