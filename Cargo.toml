@@ -127,6 +127,8 @@ sdk = [
     "vc-zkp-bbs",
     "portable",
     "didcomm",
+    "did-read",
+    "did-write",
     "did-sidetree",
     "vade-evan-bbs/sdk",
     "vade-sidetree/sdk",
