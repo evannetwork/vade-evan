@@ -76,6 +76,8 @@ pub fn get_vade(
     vade.register_plugin(Box::from(get_vade_sidetree(
         #[cfg(feature = "sdk")]
         request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback,
     )?));
     // #[cfg(feature = "vc-zkp-cl")]
     // vade.register_plugin(Box::from(get_vade_evan_cl(
@@ -178,7 +180,14 @@ fn get_vade_universal_resolver(
 
 #[cfg(feature = "did-sidetree")]
 fn get_vade_sidetree(
-    #[cfg(feature = "sdk")] _request_id: *const c_void,
+    #[cfg(feature = "sdk")] request_id: *const c_void,
+    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
 ) -> Result<VadeSidetree, Box<dyn Error>> {
-    Ok(VadeSidetree::new(std::env::var("SIDETREE_API_URL").ok()))
+    Ok(VadeSidetree::new(
+        #[cfg(feature = "sdk")]
+        request_id,
+        #[cfg(feature = "sdk")]
+        request_function_callback,
+        std::env::var("SIDETREE_API_URL").ok(),
+    ))
 }
