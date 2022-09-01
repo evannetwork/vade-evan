@@ -4,8 +4,6 @@
 
 ### Features
 
-- add sdk feature support for vade-sidetree
-
 ### Fixes
 
 ### Deprecation
