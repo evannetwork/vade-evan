@@ -17,7 +17,6 @@
 - setup pipeline for different targets
 - use signing logic from `vade-signer` instead of `vade-evan-substrate`
 
-
 ## v0.3.0
 
 ### Features

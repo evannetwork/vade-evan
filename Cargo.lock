@@ -454,7 +454,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
 dependencies = [
- "nom 7.1.0",
+ "nom 7.1.1",
 ]
 
 [[package]]
@@ -521,9 +521,9 @@ dependencies = [
 
 [[package]]
 name = "clang-sys"
-version = "1.2.0"
+version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "853eda514c284c2287f4bf20ae614f8781f40a81d32ecda6e91449304dfe077c"
+checksum = "5a050e2153c5be08febd6734e29298e844fdb0fa21aeddd63b4eb7baa106c69b"
 dependencies = [
  "glob",
  "libc",
@@ -1842,9 +1842,9 @@ checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
 
 [[package]]
 name = "libloading"
-version = "0.7.0"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f84d96438c15fcd6c3f244c8fce01d1e2b9c6b5623e9c711dc9286d8fc92d6a"
+checksum = "efbc0f03f9a775e9f6aed295c6a1ba2253c5757a9e03d55c6caa46a681abcddd"
 dependencies = [
  "cfg-if 1.0.0",
  "winapi 0.3.9",
@@ -2147,13 +2147,12 @@ dependencies = [
 
 [[package]]
 name = "nom"
-version = "7.1.0"
+version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b1d11e1ef389c76fe5b81bcaf2ea32cf88b62bc494e19f493d0b30e7a930109"
+checksum = "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
 dependencies = [
  "memchr",
  "minimal-lexical",
- "version_check",
 ]
 
 [[package]]
@@ -2300,15 +2299,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28988d872ab76095a6e6ac88d99b54fd267702734fd7ffe610ca27f533ddb95a"
 
 [[package]]
-name = "openssl-src"
-version = "111.21.0+1.1.1p"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d0a8313729211913936f1b95ca47a5fc7f2e04cd658c115388287f8a8361008"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "openssl-sys"
 version = "0.9.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2317,7 +2307,6 @@ dependencies = [
  "autocfg",
  "cc",
  "libc",
- "openssl-src",
  "pkg-config",
  "vcpkg",
 ]
@@ -3931,7 +3920,6 @@ dependencies = [
  "console_log",
  "jni",
  "log",
- "openssl",
  "ring",
  "serde",
  "serde_derive",
@@ -3944,7 +3932,7 @@ dependencies = [
  "vade-evan-substrate",
  "vade-jwt-vc",
  "vade-sidetree",
- "vade-signer",
+ "vade-signer 0.0.1 (git+https://github.com/evannetwork/vade-signer.git?branch=develop)",
  "vade-universal-resolver",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3954,8 +3942,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f3204cf8f36618e82ed9607d14529c58332448a8c310274bb8341589333227a"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=sdk#5bd27d91d5852aa911100ca5f5f2ef3d8e249668"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -3973,8 +3960,8 @@ dependencies = [
  "sha3 0.8.2",
  "uuid",
  "vade",
- "vade-evan-substrate",
- "vade-signer",
+ "vade-sidetree",
+ "vade-signer 0.0.1 (git+https://github.com/evannetwork/vade-signer.git?branch=develop)",
 ]
 
 [[package]]
@@ -4012,7 +3999,7 @@ dependencies = [
  "thiserror",
  "twox-hash",
  "vade",
- "vade-signer",
+ "vade-signer 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -4040,13 +4027,13 @@ dependencies = [
  "sha2 0.8.2",
  "sha3 0.8.2",
  "vade",
- "vade-signer",
+ "vade-signer 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/implement-sdk-request-handling#0517ff7edf03669f0f9e968e076f6ff528e8314d"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=sdk#642a4c39c04eb0923b47ebe7441b9e7f9c46f785"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4064,7 +4051,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/implement-sdk-request-handling#0517ff7edf03669f0f9e968e076f6ff528e8314d"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=sdk#642a4c39c04eb0923b47ebe7441b9e7f9c46f785"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
@@ -4082,6 +4069,24 @@ name = "vade-signer"
 version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "321884ca81c3ab83d696899142b55892c5e1072b1f457af7883a9b16ddeb2a9c"
+dependencies = [
+ "async-trait",
+ "byteorder",
+ "hex",
+ "libsecp256k1 0.3.5",
+ "log",
+ "rand 0.7.3",
+ "reqwest 0.11.4",
+ "serde",
+ "serde_json",
+ "sha2 0.8.2",
+ "sha3 0.8.2",
+]
+
+[[package]]
+name = "vade-signer"
+version = "0.0.1"
+source = "git+https://github.com/evannetwork/vade-signer.git?branch=develop#2c2eaa4e71618c610c648c0937a387c57d567854"
 dependencies = [
  "async-trait",
  "byteorder",
