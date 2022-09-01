@@ -3932,7 +3932,7 @@ dependencies = [
  "vade-evan-substrate",
  "vade-jwt-vc",
  "vade-sidetree",
- "vade-signer 0.0.1 (git+https://github.com/evannetwork/vade-signer.git?branch=feature/use-rusttls-for-reqwest)",
+ "vade-signer 0.0.1 (git+https://github.com/evannetwork/vade-signer.git?branch=develop)",
  "vade-universal-resolver",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3942,7 +3942,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/add-sdk-build-setup#0c0b822f62d26215366e0a14b8f7835a76532e47"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=sdk#5bd27d91d5852aa911100ca5f5f2ef3d8e249668"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -3961,7 +3961,7 @@ dependencies = [
  "uuid",
  "vade",
  "vade-sidetree",
- "vade-signer 0.0.1 (git+https://github.com/evannetwork/vade-signer.git?branch=feature/use-rusttls-for-reqwest)",
+ "vade-signer 0.0.1 (git+https://github.com/evannetwork/vade-signer.git?branch=develop)",
 ]
 
 [[package]]
@@ -4033,7 +4033,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/remove-reqwest-dependency-from-sdk-build#ae87d87357709881adc3507cd5572ce3561742c3"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=sdk#642a4c39c04eb0923b47ebe7441b9e7f9c46f785"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -4051,7 +4051,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/remove-reqwest-dependency-from-sdk-build#ae87d87357709881adc3507cd5572ce3561742c3"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=sdk#642a4c39c04eb0923b47ebe7441b9e7f9c46f785"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
@@ -4086,7 +4086,7 @@ dependencies = [
 [[package]]
 name = "vade-signer"
 version = "0.0.1"
-source = "git+https://github.com/evannetwork/vade-signer.git?branch=feature/use-rusttls-for-reqwest#89ad479f20d4a169cd16ad0595ab5a28c0eeef14"
+source = "git+https://github.com/evannetwork/vade-signer.git?branch=develop#2c2eaa4e71618c610c648c0937a387c57d567854"
 dependencies = [
  "async-trait",
  "byteorder",
