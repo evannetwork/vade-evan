@@ -1,6 +1,6 @@
 [package]
 name = "vade-evan"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["evan GmbH"]
 edition = "2018"
 license-file = "LICENSE.txt"
@@ -64,8 +64,15 @@ vc-zkp = [
 ]
 
 # dedicated vc handlers
-vc-zkp-bbs = [ "vade-evan-bbs" ]
-vc-zkp-cl = [ "ring", "vade-evan-cl" ]
+vc-zkp-bbs = [
+    "vade-signer",
+    "vade-evan-bbs",
+]
+vc-zkp-cl = [
+    "ring",
+    "vade-signer",
+    "vade-evan-cl",
+]
 
 # dummy feature to support vade-evan-cl
 vade-evan-cl = []
@@ -77,9 +84,16 @@ did-read = []
 did-write = []
 
 # dedicated did resolvers
-did-sidetree = [ "vade-sidetree" ]
-did-substrate = [ "vade-evan-substrate" ]
-did-universal-resolver = [ "vade-universal-resolver" ]
+did-sidetree = [
+    "vade-sidetree",
+]
+did-substrate = [
+    "vade-signer",
+    "vade-evan-substrate",
+]
+did-universal-resolver = [
+    "vade-universal-resolver",
+]
 
 # enables didcomm message features
 didcomm = [
@@ -94,7 +108,8 @@ portable = [
 
 # enables JWT signature based VC support
 vc-jwt = [
-   "vade-jwt-vc",
+    "vade-signer",
+    "vade-jwt-vc",
 ]
 
 # build to run as wasm file; not compatible with `native` feature, vade-evan-cl is disabled currently
@@ -119,7 +134,7 @@ serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = "0.1.0"
 ###################################################################### feature specific dependencies
 # feature "vc-zkp-bbs"
-vade-evan-bbs = { version = "0.2.0", optional = true, default-features = false }
+vade-evan-bbs = { version = "0.3.0", optional = true, default-features = false }
 
 # feature "vc-zkp-cl", it will be enabled when vade-evan-cl is published to crates.io
 # vade-evan-cl = { git = "https://github.com/evannetwork/vade-evan-cl.git", branch = "develop", version = "0.1.3", default-features = false }
@@ -128,9 +143,10 @@ vade-evan-bbs = { version = "0.2.0", optional = true, default-features = false }
 clap = { version = "2.33.1", optional = true }
 tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
 # feature "did-substrate"
-vade-evan-substrate = { version = "0.1.3", optional = true }
+vade-evan-substrate = { version = "0.2.0", optional = true }
+vade-signer = { version = "0.0.1", optional = true }
 # feature "vc-jwt"
-vade-jwt-vc = { version = "0.1.0", optional = true }
+vade-jwt-vc = { version = "0.2.0", optional = true }
 # feature "did-universal-resolver"
 vade-universal-resolver = { version = "0.0.4", optional = true }
 # feature "did-sidetree"

@@ -10,15 +10,18 @@ use vade_evan_bbs::VadeEvanBbs;
 #[cfg(feature = "sdk")]
 use std::os::raw::c_void;
 #[cfg(feature = "did-substrate")]
-use vade_evan_substrate::{
-    signing::{LocalSigner, RemoteSigner, Signer},
-    ResolverConfig,
-    VadeEvanSubstrate,
-};
+use vade_evan_substrate::{ResolverConfig, VadeEvanSubstrate};
 #[cfg(feature = "vc-jwt")]
 use vade_jwt_vc::VadeJwtVC;
 #[cfg(feature = "did-sidetree")]
 use vade_sidetree::VadeSidetree;
+#[cfg(any(
+    feature = "did-substrate",
+    feature = "vc-zkp-bbs",
+    feature = "vc-zkp-cl",
+    feature = "vc-jwt"
+))]
+use vade_signer::{LocalSigner, RemoteSigner, Signer};
 #[cfg(feature = "did-universal-resolver")]
 use vade_universal_resolver::VadeUniversalResolver;
 
