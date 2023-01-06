@@ -17,15 +17,18 @@
 #[cfg(feature = "sdk")]
 mod in3_request_list;
 
-#[cfg(any(target_arch = "wasm32", feature = "c-lib"))]
-mod vade_utils;
 #[cfg(feature = "c-lib")]
 mod c_lib;
 #[cfg(feature = "java-lib")]
 mod java_lib;
+#[cfg(any(target_arch = "wasm32", feature = "c-lib"))]
+mod vade_utils;
 // wasm only
 #[cfg(target_arch = "wasm32")]
 pub extern crate log;
 #[cfg(target_arch = "wasm32")]
 mod wasm_lib;
 
+mod api;
+
+pub use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError};

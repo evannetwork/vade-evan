@@ -16,11 +16,12 @@
 
 extern crate clap;
 
-mod vade_utils;
+mod api;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use vade::Vade;
-use vade_utils::get_vade as get_vade_from_utils;
+
+use crate::api::get_vade as get_vade_from_utils;
 
 macro_rules! wrap_vade2 {
     ($func_name:ident, $sub_m:ident) => {{
@@ -431,7 +432,9 @@ fn get_vade(matches: &ArgMatches) -> Result<Vade, Box<dyn std::error::Error>> {
     let target = get_argument_value(&matches, "target", Some("substrate-dev.trust-trace.com"));
     let signer = get_argument_value(&matches, "signer", Some("local"));
     #[cfg(feature = "sdk")]
-    let request_id = get_argument_value(&matches, "request_id", Some("local")).parse().expect("Request id should be Unsigned Integer");
+    let request_id = get_argument_value(&matches, "request_id", Some("local"))
+        .parse()
+        .expect("Request id should be Unsigned Integer");
     return get_vade_from_utils(
         target,
         signer,
