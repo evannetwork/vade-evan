@@ -34,16 +34,13 @@ pub struct VadeEvanConfig<'a> {
     pub request_function_callback: ResolveHttpRequest,
 }
 
-/// TODOs:
-///
-/// - [ ] fix names in function docu (but keep most of the the text)
-/// A [`Vade`] instance is your single point of contact for interacting with DIDs and VCs.
+/// A [`VadeEvan`] instance is your single point of contact for interacting with DIDs and VCs.
 pub struct VadeEvan {
     vade: Vade,
 }
 
 impl VadeEvan {
-    /// Creates new Vade instance, vectors are initialized as empty.
+    /// Creates new VadeEvan instance, vectors are initialized as empty.
     pub fn new(config: VadeEvanConfig) -> Result<Self, VadeEvanError> {
         match get_vade(
             &config.target,
@@ -71,14 +68,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.did_create("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.did_create("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created new did: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created new did: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -101,14 +98,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.did_resolve("did:example:123").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.did_resolve("did:example:123").await?;
     ///     if !results.is_empty() {
-    ///         println!("got did: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("got did: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -128,14 +125,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.did_update("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.did_update("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("did successfully updated: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("did successfully updated: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -162,14 +159,14 @@ impl VadeEvan {
     ///
     /// # Example
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.didcomm_receive("", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.didcomm_receive("", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("received DIDComm message: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("received DIDComm message: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -194,14 +191,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.didcomm_send("", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.didcomm_send("", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("prepared DIDComm message: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("prepared DIDComm message: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -214,6 +211,23 @@ impl VadeEvan {
         Ok(self.vade.didcomm_send(options, payload).await?)
     }
 
+    /// Gets information about version of `vade_evan` and dependencies prefixed with `evan-`.
+    ///
+    /// This can be useful to determine which versions of plugins are used to resolve vade calls.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let result = vade_evan.get_version_info()?;
+    ///     println!("vade_evan version info: \n{}", &result);
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn get_version_info(&self) -> Result<String, VadeEvanError> {
         VersionInfo::get_version_info()
     }
@@ -231,14 +245,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.run_custom_function("did:example", "test connection", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.run_custom_function("did:example", "test connection", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("connection status is: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("connection status is: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -269,14 +283,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_create_credential_definition("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_create_credential_definition("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created a credential definition: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created a credential definition: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -304,14 +318,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_create_credential_offer("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_create_credential_offer("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created a credential offer: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created a credential offer: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -340,14 +354,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_create_credential_proposal("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_create_credential_proposal("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created a credential proposal: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created a credential proposal: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -376,14 +390,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_create_credential_schema("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_create_credential_schema("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created a credential schema: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created a credential schema: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -413,14 +427,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_create_revocation_registry_definition("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_create_revocation_registry_definition("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created a revocation registry definition: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created a revocation registry definition: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -449,14 +463,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_update_revocation_registry("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_update_revocation_registry("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("updated revocation registry: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("updated revocation registry: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -485,14 +499,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_issue_credential("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_issue_credential("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("issued credential: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("issued credential: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -520,14 +534,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_finish_credential("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_finish_credential("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("issued credential: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("issued credential: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -556,14 +570,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_present_proof("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_present_proof("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created a proof presentation: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created a proof presentation: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -591,14 +605,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_request_credential("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_request_credential("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created credential request: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created credential request: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -626,14 +640,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_request_proof("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_request_proof("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("created proof request: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("created proof request: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -662,14 +676,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_revoke_credential("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_revoke_credential("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("revoked credential: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("revoked credential: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
@@ -697,14 +711,14 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use vade::Vade;
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut vade = Vade::new();
-    ///     // // register example plugin e.g. with
-    ///     // vade.register_plugin(example_plugin);
-    ///     let results = vade.vc_zkp_verify_proof("did:example", "", "").await?;
+    /// use anyhow::{anyhow, Result};
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let results = vade_evan.vc_zkp_verify_proof("did:example", "", "").await?;
     ///     if !results.is_empty() {
-    ///         println!("verified proof: {}", results[0].as_ref().ok_or("result not found")?);
+    ///         println!("verified proof: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
     ///     }
     ///     Ok(())
     /// }
