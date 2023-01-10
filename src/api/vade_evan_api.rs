@@ -14,15 +14,13 @@
   limitations under the License.
 */
 
-/// TODOs:
-///
-/// - [ ] fix names in function docu (but keep most of the the text)
+#[cfg(feature = "sdk")]
+use std::os::raw::c_void;
 use vade::Vade;
 
+use super::{vade_bundle::get_vade, vade_evan_error::VadeEvanError, VersionInfo};
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
-
-use super::{vade_bundle::get_vade, vade_evan_error::VadeEvanError, VersionInfo};
 
 pub const DEFAULT_TARGET: &str = "local";
 pub const DEFAULT_SIGNER: &str = "substrate-dev.trust-trace.com";
@@ -36,6 +34,9 @@ pub struct VadeEvanConfig<'a> {
     pub request_function_callback: ResolveHttpRequest,
 }
 
+/// TODOs:
+///
+/// - [ ] fix names in function docu (but keep most of the the text)
 /// A [`Vade`] instance is your single point of contact for interacting with DIDs and VCs.
 pub struct VadeEvan {
     vade: Vade,

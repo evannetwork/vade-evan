@@ -14,9 +14,9 @@
   limitations under the License.
 */
 
+use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
-use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -25,8 +25,6 @@ use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
 use tokio::runtime::Builder;
-
-use vade::Vade;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -55,19 +53,36 @@ macro_rules! handle_results {
 macro_rules! execute_vade_function {
     ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config.to_string()), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
-            let results = vade.$func_name($did_or_method).await.map_err(to_err_str)?;
+            let mut vade = get_vade(
+                Some(&$config.to_string()),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
+            let results = vade
+                .$func_name($did_or_method)
+                .await
+                .map_err(stringify_vade_evan_error)?;
             handle_results!(stringify!($func_name), stringify!($did_or_method), results);
         }
     };
 
     ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
+            let mut vade = get_vade(
+                Some(&$config),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
             let results = vade
                 .$func_name(&$options, &$payload)
                 .await
-                .map_err(to_err_str)?;
+                .map_err(stringify_vade_evan_error)?;
             let name = stringify!($func_name);
             handle_results!(&name, &name, results);
         }
@@ -75,22 +90,36 @@ macro_rules! execute_vade_function {
 
     ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
+            let mut vade = get_vade(
+                Some(&$config),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
             let results = vade
                 .$func_name($did_or_method, $options, $payload)
                 .await
-                .map_err(to_err_str)?;
+                .map_err(stringify_vade_evan_error)?;
             handle_results!(stringify!($func_name), stringify!($did_or_method), results);
         }
     };
 
     ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
+            let mut vade = get_vade(
+                Some(&$config),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
             let results = vade
                 .$func_name($did_or_method, $function, $options, $payload)
                 .await
-                .map_err(to_err_str)?;
+                .map_err(stringify_vade_evan_error)?;
             handle_results!(
                 format!("{}: {}", stringify!($func_name), $function),
                 $did_or_method,
@@ -111,7 +140,11 @@ where
     }
 }
 
-fn to_err_str(err: Box<dyn Error>) -> String {
+fn stringify_generic_error(err: Box<dyn Error>) -> String {
+    format!("{}", err)
+}
+
+fn stringify_vade_evan_error(err: VadeEvanError) -> String {
     format!("{}", err)
 }
 
@@ -120,7 +153,7 @@ pub fn get_vade(
     config: Option<&String>,
     #[cfg(feature = "sdk")] request_id: *const c_void,
     #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
-) -> Result<Vade, Box<dyn Error>> {
+) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
     let (signer_config, target) = match config_values.as_slice() {
@@ -129,14 +162,16 @@ pub fn get_vade(
             return Err(Box::from("invalid vade config"));
         }
     };
-    return get_vade_from_utils(
+
+    return VadeEvan::new(VadeEvanConfig {
         target,
-        signer_config,
+        signer: signer_config,
         #[cfg(feature = "sdk")]
         request_id,
         #[cfg(feature = "sdk")]
         request_function_callback,
-    );
+    })
+    .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
 }
 
 fn get_config_values(
@@ -163,7 +198,12 @@ fn get_config_values(
 
     for key in keys {
         if config_undefined || !config_hash_map.contains_key(&key) {
-            vec.push(get_config_default(&key)?);
+            let value = match &key[..] {
+                "signer" => DEFAULT_TARGET,
+                "target" => DEFAULT_SIGNER,
+                _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
+            };
+            vec.push(value.to_string());
         } else {
             vec.push(
                 config_hash_map
