@@ -40,16 +40,6 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     }
 }
 
-#[cfg(any(feature = "c-lib", target_arch = "wasm32"))]
-pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
-    Ok(match key {
-        "signer" => "local",
-        "target" => "substrate-dev.trust-trace.com",
-        _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
-    }
-    .to_string())
-}
-
 pub fn get_vade(
     target: &str,
     signer: &str,

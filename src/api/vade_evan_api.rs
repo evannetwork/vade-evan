@@ -24,9 +24,12 @@ use crate::in3_request_list::ResolveHttpRequest;
 
 use super::{vade_bundle::get_vade, vade_evan_error::VadeEvanError, VersionInfo};
 
-pub struct VadeEvanConfig {
-    pub target: String,
-    pub signer: String,
+pub const DEFAULT_TARGET: &str = "local";
+pub const DEFAULT_SIGNER: &str = "substrate-dev.trust-trace.com";
+
+pub struct VadeEvanConfig<'a> {
+    pub target: &'a str,
+    pub signer: &'a str,
     #[cfg(feature = "sdk")]
     pub request_id: *const c_void,
     #[cfg(feature = "sdk")]
@@ -727,8 +730,8 @@ mod tests {
     #[test]
     fn can_get_version_info() -> Result<()> {
         let vade_evan = VadeEvan::new(VadeEvanConfig {
-            target: "test".to_string(),
-            signer: "remote|http://127.0.0.1:7070/key/sign".to_string(),
+            target: "test",
+            signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let version_info = vade_evan.get_version_info()?;
 

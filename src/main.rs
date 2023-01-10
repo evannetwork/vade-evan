@@ -19,15 +19,16 @@ extern crate clap;
 mod api;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use vade::Vade;
 
-use crate::api::get_vade as get_vade_from_utils;
+use crate::api::{VadeEvan, VadeEvanConfig, DEFAULT_SIGNER, DEFAULT_TARGET};
 
 macro_rules! wrap_vade2 {
     ($func_name:ident, $sub_m:ident) => {{
         let options = get_argument_value($sub_m, "options", None);
         let payload = get_argument_value($sub_m, "payload", None);
-        get_vade($sub_m)?.$func_name(&options, &payload).await?
+        get_vade_evan($sub_m)?
+            .$func_name(&options, &payload)
+            .await?
     }};
 }
 
@@ -36,7 +37,7 @@ macro_rules! wrap_vade3 {
         let method = get_argument_value($sub_m, "method", None);
         let options = get_argument_value($sub_m, "options", None);
         let payload = get_argument_value($sub_m, "payload", None);
-        get_vade($sub_m)?
+        get_vade_evan($sub_m)?
             .$func_name(&method, &options, &payload)
             .await?
     }};
@@ -55,21 +56,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .did_create(&method, &options, &String::new())
                     .await?
             }
             #[cfg(feature = "did-read")]
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
-                get_vade(&sub_m)?.did_resolve(&did).await?
+                get_vade_evan(&sub_m)?.did_resolve(&did).await?
             }
             #[cfg(feature = "did-write")]
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
                 let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .did_update(&did, &options, &payload)
                     .await?
             }
@@ -88,13 +89,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 wrap_vade2!(didcomm_receive, sub_m)
             }
             ("create_keys", Some(sub_m)) => {
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_keys", "{}", "{}")
                     .await?
             }
             ("query_didcomm_messages", Some(sub_m)) => {
                 let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "query_didcomm_messages", "{}", &payload)
                     .await?
             }
@@ -117,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_master_secret", Some(sub_m)) => {
                 let options = get_argument_value(sub_m, "options", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
@@ -127,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             #[cfg(feature = "vc-zkp-cl")]
             ("generate_safe_prime", Some(sub_m)) => {
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
                     .await?
             }
@@ -135,7 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("create_new_keys", Some(sub_m)) => {
                 let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
@@ -428,19 +429,14 @@ fn get_argument_value<'a>(
     }
 }
 
-fn get_vade(matches: &ArgMatches) -> Result<Vade, Box<dyn std::error::Error>> {
-    let target = get_argument_value(&matches, "target", Some("substrate-dev.trust-trace.com"));
-    let signer = get_argument_value(&matches, "signer", Some("local"));
+fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan, Box<dyn std::error::Error>> {
+    let target = get_argument_value(&matches, "target", Some(DEFAULT_TARGET));
+    let signer = get_argument_value(&matches, "signer", Some(DEFAULT_SIGNER));
     #[cfg(feature = "sdk")]
     let request_id = get_argument_value(&matches, "request_id", Some("local"))
         .parse()
         .expect("Request id should be Unsigned Integer");
-    return get_vade_from_utils(
-        target,
-        signer,
-        #[cfg(feature = "sdk")]
-        request_id,
-    );
+    return Ok(VadeEvan::new(VadeEvanConfig { target, signer })?);
 }
 
 fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> {
