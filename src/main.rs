@@ -16,11 +16,9 @@
 
 extern crate clap;
 
-mod api;
-
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
-use crate::api::{VadeEvan, VadeEvanConfig, DEFAULT_SIGNER, DEFAULT_TARGET};
+use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_SIGNER, DEFAULT_TARGET};
 
 macro_rules! wrap_vade2 {
     ($func_name:ident, $sub_m:ident) => {{

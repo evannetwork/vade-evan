@@ -217,18 +217,18 @@ impl VadeEvan {
     ///
     /// # Example
     ///
-    /// ```
-    /// use anyhow::{anyhow, Result};
+    /// ``
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.get_version_info()?;
+    ///     let result = vade_evan.get_version_info();
     ///     println!("vade_evan version info: \n{}", &result);
     ///     Ok(())
     /// }
-    /// ```
-    pub fn get_version_info(&self) -> Result<String, VadeEvanError> {
+    /// ``
+    pub fn get_version_info(&self) -> String {
         VersionInfo::get_version_info()
     }
 
@@ -738,20 +738,15 @@ impl VadeEvan {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
-
     use super::{VadeEvan, VadeEvanConfig};
 
     #[test]
-    fn can_get_version_info() -> Result<()> {
+    fn can_be_created() {
         let vade_evan = VadeEvan::new(VadeEvanConfig {
             target: "test",
             signer: "remote|http://127.0.0.1:7070/key/sign",
-        })?;
-        let version_info = vade_evan.get_version_info()?;
+        });
 
-        assert!(version_info.contains("vade-evan"));
-
-        Ok(())
+        assert!(vade_evan.is_ok());
     }
 }

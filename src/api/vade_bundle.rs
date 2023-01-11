@@ -44,7 +44,7 @@ pub fn get_vade(
     target: &str,
     signer: &str,
     #[cfg(feature = "sdk")] request_id: *const c_void,
-    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(feature = "sdk")] _request_function_callback: ResolveHttpRequest,
 ) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
