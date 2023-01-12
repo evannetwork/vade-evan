@@ -22,8 +22,8 @@ use super::{vade_bundle::get_vade, vade_evan_error::VadeEvanError, VersionInfo};
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
 
-pub const DEFAULT_TARGET: &str = "local";
-pub const DEFAULT_SIGNER: &str = "substrate-dev.trust-trace.com";
+pub const DEFAULT_TARGET: &str = "substrate-dev.trust-trace.com";
+pub const DEFAULT_SIGNER: &str = "local";
 
 pub struct VadeEvanConfig<'a> {
     pub target: &'a str,
