@@ -181,6 +181,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )));
             }
         },
+        ("build_version", Some(sub_m)) => {
+            vec![Some(get_vade_evan(sub_m)?.get_version_info())]
+        }
         _ => {
             return Err(Box::from(clap::Error::with_description(
                 "invalid subcommand",
@@ -205,15 +208,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
-    Ok(App::new("vade_evan_bin")
-        .version("0.0.8")
-        .author("evan GmbH")
-        .about("Allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace")
+    Ok(App::new("vade_evan_cli")
+        .version(env!("CARGO_PKG_VERSION"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .about("Allows you to use to work with DIDs and zero knowledge proof VCs")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
             SubCommand::with_name("did")
-                .about("Works with DIDs on TRUST & TRACE.")
+                .about("Works with DIDs.")
                 .setting(AppSettings::DeriveDisplayOrder)
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -276,7 +279,7 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
         )
         .subcommand(
             SubCommand::with_name("vc_zkp")
-                .about("Works with zero knowledge proof VCs on TRUST & TRACE.")
+                .about("Works with zero knowledge proof VCs.")
                 .setting(AppSettings::DeriveDisplayOrder)
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -403,6 +406,11 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
                 )
+        )
+        .subcommand(
+            SubCommand::with_name("build_version")
+                .about("shows version of vade_evan_cli build and its vade dependencies")
+                .setting(AppSettings::DeriveDisplayOrder)
         )
     )
 }
