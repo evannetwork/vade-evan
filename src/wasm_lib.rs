@@ -40,8 +40,8 @@ macro_rules! create_function {
             did_or_method: String,
             config: JsValue,
         ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)?;
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            let results = vade_evan.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)?;
             handle_results!(stringify!($func_name), did_or_method, results);
         }
     };
@@ -52,8 +52,8 @@ macro_rules! create_function {
             payload: String,
             config: JsValue,
         ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)?;
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            let results = vade_evan.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)?;
             let name = stringify!($func_name);
             handle_results!(&name, &name, results);
         }
@@ -66,8 +66,8 @@ macro_rules! create_function {
             payload: String,
             config: JsValue,
         ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            let results = vade_evan
                 .$func_name(&did_or_method, &options, &payload)
                 .await
                 .map_err(jsify_vade_evan_error)?;
@@ -83,8 +83,8 @@ macro_rules! create_function {
             payload: String,
             config: JsValue,
         ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            let results = vade_evan
                 .$func_name(&did_or_method, &custom_func_name, &options, &payload)
                 .await
                 .map_err(jsify_vade_evan_error)?;
@@ -176,6 +176,13 @@ cfg_if::cfg_if! {
         create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
 
         create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
+
+        #[wasm_bindgen]
+        pub async fn get_version_info() -> Result<Option<String>, JsValue> {
+            let vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let version_info = vade_evan.get_version_info();
+            Ok(Some(version_info))
+        }
     } else {
     }
 }
