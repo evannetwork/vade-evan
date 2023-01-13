@@ -39,10 +39,9 @@ macro_rules! create_function {
         pub async fn $func_name(
             did_or_method: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+        ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade_evan.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)?;
-            handle_results!(stringify!($func_name), did_or_method, results);
+            vade_evan.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -51,11 +50,9 @@ macro_rules! create_function {
             options: String,
             payload: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+        ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade_evan.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)?;
-            let name = stringify!($func_name);
-            handle_results!(&name, &name, results);
+            vade_evan.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -65,13 +62,9 @@ macro_rules! create_function {
             options: String,
             payload: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+        ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade_evan
-                .$func_name(&did_or_method, &options, &payload)
-                .await
-                .map_err(jsify_vade_evan_error)?;
-            handle_results!(stringify!($func_name), did_or_method, results);
+            vade_evan.$func_name(&did_or_method, &options, &payload).await.map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -82,13 +75,12 @@ macro_rules! create_function {
             options: String,
             payload: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
+        ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            let results = vade_evan
+            vade_evan
                 .$func_name(&did_or_method, &custom_func_name, &options, &payload)
                 .await
-                .map_err(jsify_vade_evan_error)?;
-                handle_results!(format!("{}: {}", stringify!($func_name), &custom_func_name), did_or_method, results);
+                .map_err(jsify_vade_evan_error)
         }
     };
 }
@@ -212,8 +204,8 @@ fn get_config_values(
     for key in keys {
         if config_undefined || !config_hash_map.contains_key(&key) {
             let value = match &key[..] {
-                "signer" => DEFAULT_TARGET,
-                "target" => DEFAULT_SIGNER,
+                "signer" => DEFAULT_SIGNER,
+                "target" => DEFAULT_TARGET,
                 _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
             };
             vec.push(value.to_string());
@@ -336,13 +328,9 @@ pub async fn execute_vade(
     };
 
     let response = match result {
-        Ok(Some(value)) => Response {
+        Ok(value) => Response {
             response: Some(value.to_string()),
             error: None,
-        },
-        Ok(None) => Response {
-            response: None,
-            error: Some("Got no result".to_string()),
         },
         Err(e) => Response {
             response: None,
