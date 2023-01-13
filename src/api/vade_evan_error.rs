@@ -6,6 +6,8 @@ pub enum VadeEvanError {
     InitializationFailed { source_message: String },
     #[error("vade call failed with: {source_message}")]
     InternalError { source_message: String },
+    #[error("vade call returned no results")]
+    NoResults,
 }
 impl From<Box<dyn std::error::Error>> for VadeEvanError {
     fn from(vade_error: Box<dyn std::error::Error>) -> VadeEvanError {

@@ -25,6 +25,16 @@ use crate::in3_request_list::ResolveHttpRequest;
 pub const DEFAULT_TARGET: &str = "substrate-dev.trust-trace.com";
 pub const DEFAULT_SIGNER: &str = "local";
 
+fn get_first_result(results: Vec<Option<String>>) -> Result<String, VadeEvanError> {
+    if results.is_empty() {
+        return Err(VadeEvanError::NoResults);
+    }
+    let empty_result = String::new();
+    let result = results[0].as_ref().unwrap_or(&empty_result);
+
+    Ok(result.to_string())
+}
+
 pub struct VadeEvanConfig<'a> {
     pub target: &'a str,
     pub signer: &'a str,
@@ -68,15 +78,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.did_create("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created new did: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.did_create("did:example", "", "").await?;
+    ///     println!("created new did: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -85,8 +93,8 @@ impl VadeEvan {
         did_method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self.vade.did_create(did_method, options, payload).await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(self.vade.did_create(did_method, options, payload).await?)
     }
 
     /// Fetch data about a DID. This usually returns a DID document.
@@ -98,20 +106,18 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.did_resolve("did:example:123").await?;
-    ///     if !results.is_empty() {
-    ///         println!("got did: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.did_resolve("did:example:123").await?;
+    ///     println!("got did: {}", result);
     ///     Ok(())
     /// }
     /// ```
-    pub async fn did_resolve(&mut self, did: &str) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self.vade.did_resolve(did).await?)
+    pub async fn did_resolve(&mut self, did: &str) -> Result<String, VadeEvanError> {
+        get_first_result(self.vade.did_resolve(did).await?)
     }
 
     /// Updates data related to a DID. May also persist a DID document for it, depending on plugin implementation.
@@ -125,15 +131,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.did_update("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("did successfully updated: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.did_update("did:example", "", "").await?;
+    ///     println!("did successfully updated: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -142,8 +146,8 @@ impl VadeEvan {
         did: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self.vade.did_update(did, options, payload).await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(self.vade.did_update(did, options, payload).await?)
     }
 
     /// Processes a DIDComm message as received, this may prepare a matching response for it
@@ -159,15 +163,13 @@ impl VadeEvan {
     ///
     /// # Example
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.didcomm_receive("", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("received DIDComm message: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.didcomm_receive("", "").await?;
+    ///     println!("received DIDComm message: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -175,8 +177,8 @@ impl VadeEvan {
         &mut self,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self.vade.didcomm_receive(options, payload).await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(self.vade.didcomm_receive(options, payload).await?)
     }
 
     /// Processes a DIDComm message and prepares it for sending.
@@ -191,15 +193,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.didcomm_send("", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("prepared DIDComm message: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.didcomm_send("", "").await?;
+    ///     println!("prepared DIDComm message: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -207,8 +207,8 @@ impl VadeEvan {
         &mut self,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self.vade.didcomm_send(options, payload).await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(self.vade.didcomm_send(options, payload).await?)
     }
 
     /// Gets information about version of `vade_evan` and dependencies prefixed with `evan-`.
@@ -245,15 +245,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.run_custom_function("did:example", "test connection", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("connection status is: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.run_custom_function("did:example", "test connection", "", "").await?;
+    ///     println!("connection status is: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -263,11 +261,12 @@ impl VadeEvan {
         function: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .run_custom_function(method, function, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .run_custom_function(method, function, options, payload)
+                .await?,
+        )
     }
 
     /// Creates a new zero-knowledge proof credential definition. A credential definition holds cryptographic key material
@@ -283,15 +282,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_create_credential_definition("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created a credential definition: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_create_credential_definition("did:example", "", "").await?;
+    ///     println!("created a credential definition: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -300,11 +297,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_create_credential_definition(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_create_credential_definition(method, options, payload)
+                .await?,
+        )
     }
 
     /// Creates a new zero-knowledge proof credential offer. This message is the response to a credential proposal.
@@ -318,15 +316,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_create_credential_offer("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created a credential offer: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_create_credential_offer("did:example", "", "").await?;
+    ///     println!("created a credential offer: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -335,11 +331,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_create_credential_offer(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_create_credential_offer(method, options, payload)
+                .await?,
+        )
     }
 
     /// Creates a new zero-knowledge proof credential proposal. This message is the first in the
@@ -354,15 +351,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_create_credential_proposal("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created a credential proposal: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_create_credential_proposal("did:example", "", "").await?;
+    ///     println!("created a credential proposal: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -371,11 +366,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_create_credential_proposal(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_create_credential_proposal(method, options, payload)
+                .await?,
+        )
     }
 
     /// Creates a new zero-knowledge proof credential schema. The schema specifies properties a credential
@@ -390,15 +386,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_create_credential_schema("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created a credential schema: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_create_credential_schema("did:example", "", "").await?;
+    ///     println!("created a credential schema: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -407,11 +401,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_create_credential_schema(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_create_credential_schema(method, options, payload)
+                .await?,
+        )
     }
 
     /// Creates a new revocation registry definition. The definition consists of a public and a private part.
@@ -427,15 +422,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_create_revocation_registry_definition("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created a revocation registry definition: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_create_revocation_registry_definition("did:example", "", "").await?;
+    ///     println!("created a revocation registry definition: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -444,11 +437,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_create_revocation_registry_definition(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_create_revocation_registry_definition(method, options, payload)
+                .await?,
+        )
     }
 
     /// Updates a revocation registry for a zero-knowledge proof. This step is necessary after revocation one or
@@ -463,15 +457,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_update_revocation_registry("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("updated revocation registry: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_update_revocation_registry("did:example", "", "").await?;
+    ///     println!("updated revocation registry: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -480,11 +472,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_update_revocation_registry(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_update_revocation_registry(method, options, payload)
+                .await?,
+        )
     }
 
     /// Issues a new credential. This requires an issued schema, credential definition, an active revocation
@@ -499,15 +492,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_issue_credential("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("issued credential: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_issue_credential("did:example", "", "").await?;
+    ///     println!("issued credential: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -516,11 +507,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_issue_credential(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_issue_credential(method, options, payload)
+                .await?,
+        )
     }
 
     /// Finishes a credential, e.g. by incorporating the prover's master secret into the credential signature after issuance.
@@ -534,15 +526,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_finish_credential("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("issued credential: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_finish_credential("did:example", "", "").await?;
+    ///     println!("issued credential: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -551,11 +541,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_finish_credential(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_finish_credential(method, options, payload)
+                .await?,
+        )
     }
 
     /// Presents a proof for a zero-knowledge proof credential. A proof presentation is the response to a
@@ -570,15 +561,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_present_proof("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created a proof presentation: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_present_proof("did:example", "", "").await?;
+    ///     println!("created a proof presentation: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -587,11 +576,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_present_proof(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_present_proof(method, options, payload)
+                .await?,
+        )
     }
 
     /// Requests a credential. This message is the response to a credential offering.
@@ -605,15 +595,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_request_credential("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created credential request: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_request_credential("did:example", "", "").await?;
+    ///     println!("created credential request: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -622,11 +610,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_request_credential(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_request_credential(method, options, payload)
+                .await?,
+        )
     }
 
     /// Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas.
@@ -640,15 +629,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_request_proof("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("created proof request: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_request_proof("did:example", "", "").await?;
+    ///     println!("created proof request: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -657,11 +644,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_request_proof(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_request_proof(method, options, payload)
+                .await?,
+        )
     }
 
     /// Revokes a credential. After revocation the published revocation registry needs to be updated with information
@@ -676,15 +664,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_revoke_credential("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("revoked credential: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_revoke_credential("did:example", "", "").await?;
+    ///     println!("revoked credential: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -693,11 +679,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_revoke_credential(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_revoke_credential(method, options, payload)
+                .await?,
+        )
     }
 
     /// Verifies one or multiple proofs sent in a proof presentation.
@@ -711,15 +698,13 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::{anyhow, Result};
+    /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let results = vade_evan.vc_zkp_verify_proof("did:example", "", "").await?;
-    ///     if !results.is_empty() {
-    ///         println!("verified proof: {}", results[0].as_ref().ok_or(anyhow!("result not found"))?);
-    ///     }
+    ///     let result = vade_evan.vc_zkp_verify_proof("did:example", "", "").await?;
+    ///     println!("verified proof: {}", result);
     ///     Ok(())
     /// }
     /// ```
@@ -728,11 +713,12 @@ impl VadeEvan {
         method: &str,
         options: &str,
         payload: &str,
-    ) -> Result<Vec<Option<String>>, VadeEvanError> {
-        Ok(self
-            .vade
-            .vc_zkp_verify_proof(method, options, payload)
-            .await?)
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_verify_proof(method, options, payload)
+                .await?,
+        )
     }
 }
 

@@ -48,7 +48,7 @@ const TYPE_OPTIONS_CL: &str = r###"{ "type": "cl" }"###;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = get_argument_matches()?;
 
-    let results = match matches.subcommand() {
+    let result = match matches.subcommand() {
         ("did", Some(sub_m)) => match sub_m.subcommand() {
             #[cfg(feature = "did-write")]
             ("create", Some(sub_m)) => {
@@ -181,9 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )));
             }
         },
-        ("build_version", Some(sub_m)) => {
-            vec![Some(get_vade_evan(sub_m)?.get_version_info())]
-        }
+        ("build_version", Some(sub_m)) => get_vade_evan(sub_m)?.get_version_info(),
         _ => {
             return Err(Box::from(clap::Error::with_description(
                 "invalid subcommand",
@@ -191,18 +189,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )));
         }
     };
-    if results.is_empty() {
-        panic!("no results");
-    }
 
-    let empty_result = String::new();
-    let result_string = results[0]
-        .as_ref()
-        .or(Some(&empty_result))
-        .unwrap()
-        .to_string();
-
-    println!("{}", &result_string);
+    println!("{}", &result);
 
     Ok(())
 }
