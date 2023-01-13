@@ -28,5 +28,6 @@ pub extern crate log;
 mod wasm_lib;
 
 mod api;
+mod helpers;
 
 pub use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};

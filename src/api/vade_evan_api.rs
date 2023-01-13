@@ -18,9 +18,12 @@
 use std::os::raw::c_void;
 use vade::Vade;
 
-use super::{vade_bundle::get_vade, vade_evan_error::VadeEvanError, VersionInfo};
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
+use crate::{
+    api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
+    helpers::VersionInfo,
+};
 
 pub const DEFAULT_TARGET: &str = "substrate-dev.trust-trace.com";
 pub const DEFAULT_SIGNER: &str = "local";
@@ -722,9 +725,10 @@ impl VadeEvan {
     }
 }
 
+#[cfg(not(feature = "sdk"))]
 #[cfg(test)]
 mod tests {
-    use super::{VadeEvan, VadeEvanConfig};
+    use crate::{VadeEvan, VadeEvanConfig};
 
     #[test]
     fn can_be_created() {
