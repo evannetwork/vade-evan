@@ -725,7 +725,7 @@ impl VadeEvan {
     }
 }
 
-#[cfg(not(feature = "sdk"))]
+#[cfg(not(feature = "c-lib"))]
 #[cfg(test)]
 mod tests {
     use crate::{VadeEvan, VadeEvanConfig};
