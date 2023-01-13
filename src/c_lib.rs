@@ -38,7 +38,7 @@ pub struct Response {
 macro_rules! execute_vade_function {
     ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade_evan(
+            let mut vade_evan = get_vade_evan(
                 Some(&$config.to_string()),
                 #[cfg(feature = "sdk")]
                 $request_id,
@@ -46,7 +46,8 @@ macro_rules! execute_vade_function {
                 $callback,
             )
             .map_err(stringify_generic_error)?;
-            vade.$func_name($did_or_method)
+            vade_evan
+                .$func_name($did_or_method)
                 .await
                 .map_err(stringify_vade_evan_error)
         }
@@ -54,7 +55,7 @@ macro_rules! execute_vade_function {
 
     ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade_evan(
+            let mut vade_evan = get_vade_evan(
                 Some(&$config),
                 #[cfg(feature = "sdk")]
                 $request_id,
@@ -62,7 +63,8 @@ macro_rules! execute_vade_function {
                 $callback,
             )
             .map_err(stringify_generic_error)?;
-            vade.$func_name(&$options, &$payload)
+            vade_evan
+                .$func_name(&$options, &$payload)
                 .await
                 .map_err(stringify_vade_evan_error)
         }
@@ -70,7 +72,7 @@ macro_rules! execute_vade_function {
 
     ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade_evan(
+            let mut vade_evan = get_vade_evan(
                 Some(&$config),
                 #[cfg(feature = "sdk")]
                 $request_id,
@@ -78,7 +80,8 @@ macro_rules! execute_vade_function {
                 $callback,
             )
             .map_err(stringify_generic_error)?;
-            vade.$func_name($did_or_method, $options, $payload)
+            vade_evan
+                .$func_name($did_or_method, $options, $payload)
                 .await
                 .map_err(stringify_vade_evan_error)
         }
@@ -86,7 +89,7 @@ macro_rules! execute_vade_function {
 
     ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade_evan(
+            let mut vade_evan = get_vade_evan(
                 Some(&$config),
                 #[cfg(feature = "sdk")]
                 $request_id,
@@ -94,7 +97,8 @@ macro_rules! execute_vade_function {
                 $callback,
             )
             .map_err(stringify_generic_error)?;
-            vade.$func_name($did_or_method, $function, $options, $payload)
+            vade_evan
+                .$func_name($did_or_method, $function, $options, $payload)
                 .await
                 .map_err(stringify_vade_evan_error)
         }
@@ -489,6 +493,15 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
+        "get_version_info" => get_vade_evan(
+            Some(&str_config),
+            #[cfg(feature = "sdk")]
+            ptr_request_list,
+            #[cfg(feature = "sdk")]
+            request_function_callback,
+        )
+        .map_err(stringify_generic_error)
+        .map(|vade_evan| vade_evan.get_version_info()),
         _ => Err("Function not supported by Vade".to_string()),
     };
 
