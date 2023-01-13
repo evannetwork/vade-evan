@@ -20,19 +20,6 @@ use wasm_bindgen::prelude::*;
 use serde::Serialize;
 use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 
-macro_rules! handle_results {
-    ($func_name:expr, $did_or_method:expr, $results:expr) => {
-        let err_msg = format!(
-            "'{}' did not return any result for '{}'",
-            $func_name, $did_or_method,
-        );
-        ensure($results.len() > 0, || (&err_msg).to_string())?;
-
-        let empty_result = &String::new();
-        return Ok(Some($results[0].as_ref().unwrap_or(empty_result).to_string()))
-    };
-}
-
 macro_rules! create_function {
     ($func_name:ident, $did_or_method:ident, $config:ident) => {
         #[wasm_bindgen]
@@ -83,19 +70,6 @@ macro_rules! create_function {
                 .map_err(jsify_vade_evan_error)
         }
     };
-}
-
-/// small drop-in replacement for asserts
-/// if condition is false, will evaluate `create_msg` function and return an Err with it
-fn ensure<F>(condition: bool, create_msg: F) -> Result<(), JsValue>
-where
-    F: FnOnce() -> String,
-{
-    if condition {
-        Ok(())
-    } else {
-        Err(JsValue::from(&create_msg().to_string()))
-    }
 }
 
 #[wasm_bindgen]
