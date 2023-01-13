@@ -199,8 +199,8 @@ fn get_config_values(
     for key in keys {
         if config_undefined || !config_hash_map.contains_key(&key) {
             let value = match &key[..] {
-                "signer" => DEFAULT_TARGET,
-                "target" => DEFAULT_SIGNER,
+                "signer" => DEFAULT_SIGNER,
+                "target" => DEFAULT_TARGET,
                 _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
             };
             vec.push(value.to_string());

@@ -36,7 +36,7 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     } else if signer.starts_with("local") {
         Box::new(LocalSigner::new())
     } else {
-        panic!("invalid signer config")
+        panic!("invalid signer config: {}", &signer)
     }
 }
 
