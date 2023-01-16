@@ -14,9 +14,9 @@
   limitations under the License.
 */
 
+use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 #[cfg(feature = "sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
-use crate::vade_utils::{get_config_default, get_vade as get_vade_from_utils};
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -25,8 +25,6 @@ use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
 use tokio::runtime::Builder;
-
-use vade::Vade;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -37,90 +35,90 @@ pub struct Response {
     pub response: Option<String>,
 }
 
-macro_rules! handle_results {
-    ($func_name:expr, $did_or_method:expr, $results:expr) => {
-        let err_msg = format!(
-            "'{}' did not return any result for '{}'",
-            $func_name, $did_or_method,
-        );
-        ensure($results.len() > 0, || (&err_msg).to_string())?;
-
-        let empty_result = &String::new();
-        return Ok(Some(
-            $results[0].as_ref().unwrap_or(empty_result).to_string(),
-        ))
-    };
-}
-
 macro_rules! execute_vade_function {
     ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config.to_string()), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
-            let results = vade.$func_name($did_or_method).await.map_err(to_err_str)?;
-            handle_results!(stringify!($func_name), stringify!($did_or_method), results);
+            let mut vade_evan = get_vade_evan(
+                Some(&$config.to_string()),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
+            vade_evan
+                .$func_name($did_or_method)
+                .await
+                .map_err(stringify_vade_evan_error)
         }
     };
 
     ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
-            let results = vade
+            let mut vade_evan = get_vade_evan(
+                Some(&$config),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
+            vade_evan
                 .$func_name(&$options, &$payload)
                 .await
-                .map_err(to_err_str)?;
-            let name = stringify!($func_name);
-            handle_results!(&name, &name, results);
+                .map_err(stringify_vade_evan_error)
         }
     };
 
     ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
-            let results = vade
+            let mut vade_evan = get_vade_evan(
+                Some(&$config),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
+            vade_evan
                 .$func_name($did_or_method, $options, $payload)
                 .await
-                .map_err(to_err_str)?;
-            handle_results!(stringify!($func_name), stringify!($did_or_method), results);
+                .map_err(stringify_vade_evan_error)
         }
     };
 
     ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
         async {
-            let mut vade = get_vade(Some(&$config), #[cfg(feature = "sdk")] $request_id, #[cfg(feature = "sdk")] $callback).map_err(to_err_str)?;
-            let results = vade
+            let mut vade_evan = get_vade_evan(
+                Some(&$config),
+                #[cfg(feature = "sdk")]
+                $request_id,
+                #[cfg(feature = "sdk")]
+                $callback,
+            )
+            .map_err(stringify_generic_error)?;
+            vade_evan
                 .$func_name($did_or_method, $function, $options, $payload)
                 .await
-                .map_err(to_err_str)?;
-            handle_results!(
-                format!("{}: {}", stringify!($func_name), $function),
-                $did_or_method,
-                results
-            );
+                .map_err(stringify_vade_evan_error)
         }
     };
 }
 
-fn ensure<F>(condition: bool, create_msg: F) -> Result<(), String>
-where
-    F: FnOnce() -> String,
-{
-    if condition {
-        Ok(())
-    } else {
-        Err(create_msg().to_string())
-    }
+fn stringify_generic_error(err: Box<dyn Error>) -> String {
+    format!("{}", err)
 }
 
-fn to_err_str(err: Box<dyn Error>) -> String {
+fn stringify_vade_evan_error(err: VadeEvanError) -> String {
     format!("{}", err)
 }
 
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
-pub fn get_vade(
+pub fn get_vade_evan(
     config: Option<&String>,
     #[cfg(feature = "sdk")] request_id: *const c_void,
     #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
-) -> Result<Vade, Box<dyn Error>> {
+) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
     let (signer_config, target) = match config_values.as_slice() {
@@ -129,14 +127,16 @@ pub fn get_vade(
             return Err(Box::from("invalid vade config"));
         }
     };
-    return get_vade_from_utils(
+
+    return VadeEvan::new(VadeEvanConfig {
         target,
-        signer_config,
+        signer: signer_config,
         #[cfg(feature = "sdk")]
         request_id,
         #[cfg(feature = "sdk")]
         request_function_callback,
-    );
+    })
+    .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
 }
 
 fn get_config_values(
@@ -163,7 +163,12 @@ fn get_config_values(
 
     for key in keys {
         if config_undefined || !config_hash_map.contains_key(&key) {
-            vec.push(get_config_default(&key)?);
+            let value = match &key[..] {
+                "signer" => DEFAULT_SIGNER,
+                "target" => DEFAULT_TARGET,
+                _ => return Err(Box::from(format!("invalid config key '{}'", key))),
+            };
+            vec.push(value.to_string());
         } else {
             vec.push(
                 config_hash_map
@@ -488,21 +493,26 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
+        "get_version_info" => get_vade_evan(
+            Some(&str_config),
+            #[cfg(feature = "sdk")]
+            ptr_request_list,
+            #[cfg(feature = "sdk")]
+            request_function_callback,
+        )
+        .map_err(stringify_generic_error)
+        .map(|vade_evan| vade_evan.get_version_info()),
         _ => Err("Function not supported by Vade".to_string()),
     };
 
     let response = match result.as_ref() {
-        Ok(Some(value)) => Response {
+        Ok(value) => Response {
             response: Some(value.to_string()),
             error: None,
         },
         Err(e) => Response {
             response: None,
             error: Some(e.to_string()),
-        },
-        _ => Response {
-            response: None,
-            error: Some("Unknown error".to_string()),
         },
     };
 

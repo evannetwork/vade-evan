@@ -16,17 +16,17 @@
 
 extern crate clap;
 
-mod vade_utils;
-
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use vade::Vade;
-use vade_utils::get_vade as get_vade_from_utils;
+
+use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_SIGNER, DEFAULT_TARGET};
 
 macro_rules! wrap_vade2 {
     ($func_name:ident, $sub_m:ident) => {{
         let options = get_argument_value($sub_m, "options", None);
         let payload = get_argument_value($sub_m, "payload", None);
-        get_vade($sub_m)?.$func_name(&options, &payload).await?
+        get_vade_evan($sub_m)?
+            .$func_name(&options, &payload)
+            .await?
     }};
 }
 
@@ -35,7 +35,7 @@ macro_rules! wrap_vade3 {
         let method = get_argument_value($sub_m, "method", None);
         let options = get_argument_value($sub_m, "options", None);
         let payload = get_argument_value($sub_m, "payload", None);
-        get_vade($sub_m)?
+        get_vade_evan($sub_m)?
             .$func_name(&method, &options, &payload)
             .await?
     }};
@@ -48,27 +48,27 @@ const TYPE_OPTIONS_CL: &str = r###"{ "type": "cl" }"###;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = get_argument_matches()?;
 
-    let results = match matches.subcommand() {
+    let result = match matches.subcommand() {
         ("did", Some(sub_m)) => match sub_m.subcommand() {
             #[cfg(feature = "did-write")]
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .did_create(&method, &options, &String::new())
                     .await?
             }
             #[cfg(feature = "did-read")]
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
-                get_vade(&sub_m)?.did_resolve(&did).await?
+                get_vade_evan(&sub_m)?.did_resolve(&did).await?
             }
             #[cfg(feature = "did-write")]
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
                 let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .did_update(&did, &options, &payload)
                     .await?
             }
@@ -87,13 +87,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 wrap_vade2!(didcomm_receive, sub_m)
             }
             ("create_keys", Some(sub_m)) => {
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_keys", "{}", "{}")
                     .await?
             }
             ("query_didcomm_messages", Some(sub_m)) => {
                 let payload = get_argument_value(&sub_m, "payload", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "query_didcomm_messages", "{}", &payload)
                     .await?
             }
@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("create_master_secret", Some(sub_m)) => {
                 let options = get_argument_value(sub_m, "options", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
@@ -126,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             #[cfg(feature = "vc-zkp-cl")]
             ("generate_safe_prime", Some(sub_m)) => {
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
                     .await?
             }
@@ -134,7 +134,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("create_new_keys", Some(sub_m)) => {
                 let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
-                get_vade(&sub_m)?
+                get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
@@ -181,6 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )));
             }
         },
+        ("build_version", Some(sub_m)) => get_vade_evan(sub_m)?.get_version_info(),
         _ => {
             return Err(Box::from(clap::Error::with_description(
                 "invalid subcommand",
@@ -188,32 +189,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )));
         }
     };
-    if results.is_empty() {
-        panic!("no results");
-    }
 
-    let empty_result = String::new();
-    let result_string = results[0]
-        .as_ref()
-        .or(Some(&empty_result))
-        .unwrap()
-        .to_string();
-
-    println!("{}", &result_string);
+    println!("{}", &result);
 
     Ok(())
 }
 
 fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
-    Ok(App::new("vade_evan_bin")
-        .version("0.0.8")
-        .author("evan GmbH")
-        .about("Allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace")
+    Ok(App::new("vade_evan_cli")
+        .version(env!("CARGO_PKG_VERSION"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .about("Allows you to use to work with DIDs and zero knowledge proof VCs")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
             SubCommand::with_name("did")
-                .about("Works with DIDs on TRUST & TRACE.")
+                .about("Works with DIDs.")
                 .setting(AppSettings::DeriveDisplayOrder)
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -276,7 +267,7 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
         )
         .subcommand(
             SubCommand::with_name("vc_zkp")
-                .about("Works with zero knowledge proof VCs on TRUST & TRACE.")
+                .about("Works with zero knowledge proof VCs.")
                 .setting(AppSettings::DeriveDisplayOrder)
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -404,6 +395,11 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
                         .arg(get_clap_argument("signer")?),
                 )
         )
+        .subcommand(
+            SubCommand::with_name("build_version")
+                .about("shows version of vade_evan_cli build and its vade dependencies")
+                .setting(AppSettings::DeriveDisplayOrder)
+        )
     )
 }
 
@@ -427,17 +423,14 @@ fn get_argument_value<'a>(
     }
 }
 
-fn get_vade(matches: &ArgMatches) -> Result<Vade, Box<dyn std::error::Error>> {
-    let target = get_argument_value(&matches, "target", Some("substrate-dev.trust-trace.com"));
-    let signer = get_argument_value(&matches, "signer", Some("local"));
+fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan, Box<dyn std::error::Error>> {
+    let target = get_argument_value(&matches, "target", Some(DEFAULT_TARGET));
+    let signer = get_argument_value(&matches, "signer", Some(DEFAULT_SIGNER));
     #[cfg(feature = "sdk")]
-    let request_id = get_argument_value(&matches, "request_id", Some("local")).parse().expect("Request id should be Unsigned Integer");
-    return get_vade_from_utils(
-        target,
-        signer,
-        #[cfg(feature = "sdk")]
-        request_id,
-    );
+    let request_id = get_argument_value(&matches, "request_id", Some("local"))
+        .parse()
+        .expect("Request id should be Unsigned Integer");
+    return Ok(VadeEvan::new(VadeEvanConfig { target, signer })?);
 }
 
 fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> {

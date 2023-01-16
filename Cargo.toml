@@ -10,6 +10,7 @@ documentation = "https://docs.rs/crate/vade-evan"
 repository = "https://github.com/evannetwork/vade-evan"
 readme = "README.md"
 keywords = ["did", "ssi", "vc", "zkp"]
+build = "build.rs"
 
 [lib]
 name = "vade_evan"
@@ -151,6 +152,8 @@ vade-universal-resolver = { version = "0.0.4", optional = true }
 vade-sidetree = { git = "https://github.com/evannetwork/vade-sidetree.git", branch = "develop", version = "0.0.3", optional = true }
 # feature "didcomm"
 vade-didcomm = { version = "0.3.0", optional = true }
+thiserror = "1.0.38"
+anyhow = "1.0.68"
 
 # add openssl dependency for specific targets
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
@@ -169,3 +172,8 @@ tokio = { version = "0.2.22", features = ["macros", "rt-threaded"] }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.12"
+
+[build-dependencies]
+serde = "1.0"
+serde_derive = "1.0.114"
+toml = "0.5.10"

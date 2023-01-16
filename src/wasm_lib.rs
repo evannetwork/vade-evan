@@ -16,23 +16,9 @@
 
 use console_log;
 use std::{collections::HashMap, error::Error};
-use vade::Vade;
 use wasm_bindgen::prelude::*;
-use crate::vade_utils::{get_vade as get_vade_from_utils, get_config_default};
 use serde::Serialize;
-
-macro_rules! handle_results {
-    ($func_name:expr, $did_or_method:expr, $results:expr) => {
-        let err_msg = format!(
-            "'{}' did not return any result for '{}'",
-            $func_name, $did_or_method,
-        );
-        ensure($results.len() > 0, || (&err_msg).to_string())?;
-
-        let empty_result = &String::new();
-        return Ok(Some($results[0].as_ref().unwrap_or(empty_result).to_string()))
-    };
-}
+use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 
 macro_rules! create_function {
     ($func_name:ident, $did_or_method:ident, $config:ident) => {
@@ -40,10 +26,9 @@ macro_rules! create_function {
         pub async fn $func_name(
             did_or_method: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade.$func_name(&did_or_method).await.map_err(jsify)?;
-            handle_results!(stringify!($func_name), did_or_method, results);
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            vade_evan.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -52,11 +37,9 @@ macro_rules! create_function {
             options: String,
             payload: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade.$func_name(&options, &payload).await.map_err(jsify)?;
-            let name = stringify!($func_name);
-            handle_results!(&name, &name, results);
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            vade_evan.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -66,13 +49,9 @@ macro_rules! create_function {
             options: String,
             payload: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade
-                .$func_name(&did_or_method, &options, &payload)
-                .await
-                .map_err(jsify)?;
-            handle_results!(stringify!($func_name), did_or_method, results);
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            vade_evan.$func_name(&did_or_method, &options, &payload).await.map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -83,28 +62,14 @@ macro_rules! create_function {
             options: String,
             payload: String,
             config: JsValue,
-        ) -> Result<Option<String>, JsValue> {
-            let mut vade = get_vade(Some(&config)).map_err(jsify)?;
-            let results = vade
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
+            vade_evan
                 .$func_name(&did_or_method, &custom_func_name, &options, &payload)
                 .await
-                .map_err(jsify)?;
-                handle_results!(format!("{}: {}", stringify!($func_name), &custom_func_name), did_or_method, results);
+                .map_err(jsify_vade_evan_error)
         }
     };
-}
-
-/// small drop-in replacement for asserts
-/// if condition is false, will evaluate `create_msg` function and return an Err with it
-fn ensure<F>(condition: bool, create_msg: F) -> Result<(), JsValue>
-where
-    F: FnOnce() -> String,
-{
-    if condition {
-        Ok(())
-    } else {
-        Err(JsValue::from(&create_msg().to_string()))
-    }
 }
 
 #[wasm_bindgen]
@@ -177,6 +142,13 @@ cfg_if::cfg_if! {
         create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
 
         create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
+
+        #[wasm_bindgen]
+        pub async fn get_version_info() -> Result<Option<String>, JsValue> {
+            let vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let version_info = vade_evan.get_version_info();
+            Ok(Some(version_info))
+        }
     } else {
     }
 }
@@ -205,7 +177,12 @@ fn get_config_values(
 
     for key in keys {
         if config_undefined || !config_hash_map.contains_key(&key) {
-            vec.push(get_config_default(&key)?);
+            let value = match &key[..] {
+                "signer" => DEFAULT_SIGNER,
+                "target" => DEFAULT_TARGET,
+                _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
+            };
+            vec.push(value.to_string());
         } else {
             vec.push(
                 config_hash_map
@@ -219,10 +196,8 @@ fn get_config_values(
     Ok(vec)
 }
 
-
-
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
-fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
+fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
     let (signer_config, target) = match config_values.as_slice() {
@@ -232,10 +207,14 @@ fn get_vade(config: Option<&JsValue>) -> Result<Vade, Box<dyn Error>> {
         }
     };
 
-    return get_vade_from_utils(target, signer_config);
+    return VadeEvan::new(VadeEvanConfig { target, signer: signer_config }).map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
 }
 
-fn jsify(err: Box<dyn Error>) -> JsValue {
+fn jsify_generic_error(err: Box<dyn Error>) -> JsValue {
+    JsValue::from(format!("{}", err))
+}
+
+fn jsify_vade_evan_error(err: VadeEvanError) -> JsValue {
     JsValue::from(format!("{}", err))
 }
 
@@ -323,13 +302,9 @@ pub async fn execute_vade(
     };
 
     let response = match result {
-        Ok(Some(value)) => Response {
+        Ok(value) => Response {
             response: Some(value.to_string()),
             error: None,
-        },
-        Ok(None) => Response {
-            response: None,
-            error: Some("Got no result".to_string()),
         },
         Err(e) => Response {
             response: None,

@@ -36,25 +36,15 @@ fn get_signer(signer: &str) -> Box<dyn Signer> {
     } else if signer.starts_with("local") {
         Box::new(LocalSigner::new())
     } else {
-        panic!("invalid signer config")
+        panic!("invalid signer config: {}", &signer)
     }
-}
-
-#[cfg(any(feature = "c-lib", target_arch = "wasm32"))]
-pub fn get_config_default(key: &str) -> Result<String, Box<dyn Error>> {
-    Ok(match key {
-        "signer" => "local",
-        "target" => "substrate-dev.trust-trace.com",
-        _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
-    }
-    .to_string())
 }
 
 pub fn get_vade(
     target: &str,
     signer: &str,
     #[cfg(feature = "sdk")] request_id: *const c_void,
-    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(feature = "sdk")] _request_function_callback: ResolveHttpRequest,
 ) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
