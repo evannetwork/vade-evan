@@ -166,7 +166,7 @@ fn get_config_values(
             let value = match &key[..] {
                 "signer" => DEFAULT_SIGNER,
                 "target" => DEFAULT_TARGET,
-                _ => return Err(Box::from(format!("invalid invalid config key '{}'", key))),
+                _ => return Err(Box::from(format!("invalid config key '{}'", key))),
             };
             vec.push(value.to_string());
         } else {
