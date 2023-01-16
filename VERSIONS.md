@@ -4,13 +4,18 @@
 
 ### Features
 
-- migrate `Vade` instance creation and plugin bundling to new `VadeEvan` API layer
-- migration C-lib, CLI and WASM wrapper to use `VadeEvan` instead of `Vade`
-- add `get_version_info` helper function
-
 ### Fixes
 
 ### Deprecation
+
+## v0.4.1
+
+### Features
+
+- migrate `Vade` instance creation and plugin bundling to new `VadeEvan` API layer
+- migration C-lib, CLI and WASM wrapper to use `VadeEvan` instead of `Vade`
+- add `get_version_info` helper function
+- update vade-sidetree
 
 ## v0.4.0
 
