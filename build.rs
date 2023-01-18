@@ -5,6 +5,18 @@ use std::path::Path;
 
 use serde_derive::{Deserialize, Serialize};
 
+macro_rules! append_features {
+    ( $output:ident, $( $feature:expr ),* ) => {
+        {
+            $output.push_str("\n[features]");
+            $(
+                #[cfg(feature = $feature)]
+                $output.push_str(&format!("\n{}", $feature));
+            )*
+        }
+    };
+}
+
 #[derive(Deserialize, Serialize)]
 struct Package {
     name: String,
@@ -39,42 +51,27 @@ fn main() {
     #[allow(unused_mut)]
     let mut output = toml::to_string(&filtered_lock_file).unwrap();
 
-    #[cfg(feature = "default")]
-    output.push_str(&format!("\n{}", "default"));
-    #[cfg(feature = "bundle-default")]
-    output.push_str(&format!("\n{}", "default"));
-    #[cfg(feature = "bundle-sdk")]
-    output.push_str(&format!("\n{}", "bundle-sdk"));
-    #[cfg(feature = "plugin-vade-signer")]
-    output.push_str(&format!("\n{}", "plugin-vade-signer"));
-    #[cfg(feature = "plugin-did-sidetree")]
-    output.push_str(&format!("\n{}", "plugin-did-sidetree"));
-    #[cfg(feature = "plugin-did-substrate")]
-    output.push_str(&format!("\n{}", "plugin-did-substrate"));
-    #[cfg(feature = "plugin-didcomm")]
-    output.push_str(&format!("\n{}", "plugin-didcomm"));
-    #[cfg(feature = "plugin-jwt-vc")]
-    output.push_str(&format!("\n{}", "plugin-jwt-vc"));
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
-    output.push_str(&format!("\n{}", "plugin-vc-zkp-bbs"));
-    #[cfg(feature = "capability-didcomm")]
-    output.push_str(&format!("\n{}", "capability-didcomm"));
-    #[cfg(feature = "capability-did-read")]
-    output.push_str(&format!("\n{}", "capability-did-read"));
-    #[cfg(feature = "capability-did-write")]
-    output.push_str(&format!("\n{}", "capability-did-write"));
-    #[cfg(feature = "capability-sdk")]
-    output.push_str(&format!("\n{}", "capability-sdk"));
-    #[cfg(feature = "capability-vc-zkp")]
-    output.push_str(&format!("\n{}", "capability-vc-zkp"));
-    #[cfg(feature = "capability-target-c-lib")]
-    output.push_str(&format!("\n{}", "capability-target-c-lib"));
-    #[cfg(feature = "capability-target-cli")]
-    output.push_str(&format!("\n{}", "capability-target-cli"));
-    #[cfg(feature = "capability-target-java-lib")]
-    output.push_str(&format!("\n{}", "capability-target-java-lib"));
-    #[cfg(feature = "capability-target-wasm")]
-    output.push_str(&format!("\n{}", "capability-target-wasm"));
+    append_features![
+        output,
+        "default",
+        "bundle-default",
+        "bundle-sdk",
+        "plugin-did-sidetree",
+        "plugin-did-substrate",
+        "plugin-didcomm",
+        "plugin-jwt-vc",
+        "plugin-signer",
+        "plugin-vc-zkp-bbs",
+        "capability-didcomm",
+        "capability-did-read",
+        "capability-did-write",
+        "capability-sdk",
+        "capability-vc-zkp",
+        "capability-target-c-lib",
+        "capability-target-cli",
+        "capability-target-java-lib",
+        "capability-target-wasm"
+    ];
 
     write!(f, "{}", &output).unwrap();
 }

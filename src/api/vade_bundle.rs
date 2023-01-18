@@ -12,7 +12,7 @@ use vade_evan_substrate::{ResolverConfig, VadeEvanSubstrate};
 use vade_jwt_vc::VadeJwtVC;
 #[cfg(feature = "plugin-did-sidetree")]
 use vade_sidetree::VadeSidetree;
-#[cfg(feature = "plugin-vade-signer")]
+#[cfg(feature = "plugin-signer")]
 use vade_signer::{LocalSigner, RemoteSigner, Signer};
 #[cfg(feature = "plugin-did-universal-resolver")]
 use vade_universal_resolver::VadeUniversalResolver;

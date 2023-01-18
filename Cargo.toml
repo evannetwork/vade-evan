@@ -43,10 +43,6 @@ bundle-sdk = [
     "plugin-vc-zkp-bbs",
 ]
 
-plugin-vade-signer = [
-    "vade-signer",
-]
-
 plugin-did-sidetree = [
     "capability-did-read",
     "capability-did-write",
@@ -56,25 +52,28 @@ plugin-did-sidetree = [
 plugin-did-substrate = [
     "capability-did-read",
     "capability-did-write",
-    "plugin-vade-signer",
+    "plugin-signer",
     "vade-evan-substrate",
 ]
 
 plugin-didcomm = [
     "capability-didcomm",
     "vade-didcomm",
-    "vade-didcomm/portable", # target related, should be moved :/
 ]
 
 plugin-jwt-vc = [
     "capability-vc-zkp",
-    "plugin-vade-signer",
+    "plugin-signer",
     "vade-jwt-vc",
+]
+
+plugin-signer = [
+    "vade-signer",
 ]
 
 plugin-vc-zkp-bbs = [
     "capability-vc-zkp",
-    "plugin-vade-signer",
+    "plugin-signer",
     "vade-evan-bbs",
 ]
 
