@@ -20,6 +20,8 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_SIGNER, DEFAULT_TARGET};
 
+// macro might be unused depending on feature combination
+#[allow(unused_macros)]
 macro_rules! wrap_vade2 {
     ($func_name:ident, $sub_m:ident) => {{
         let options = get_argument_value($sub_m, "options", None);
@@ -30,6 +32,8 @@ macro_rules! wrap_vade2 {
     }};
 }
 
+// macro might be unused depending on feature combination
+#[allow(unused_macros)]
 macro_rules! wrap_vade3 {
     ($func_name:ident, $sub_m:ident) => {{
         let method = get_argument_value($sub_m, "method", None);
@@ -41,16 +45,17 @@ macro_rules! wrap_vade3 {
     }};
 }
 
+#[cfg(any(feature = "capability-didcomm", feature = "plugin-vc-zkp-bbs"))]
 const EVAN_METHOD: &str = "did:evan";
-const TYPE_OPTIONS_CL: &str = r###"{ "type": "cl" }"###;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = get_argument_matches()?;
 
     let result = match matches.subcommand() {
+        #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))]
         ("did", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(feature = "did-write")]
+            #[cfg(feature = "capability-did-write")]
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -58,12 +63,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .did_create(&method, &options, &String::new())
                     .await?
             }
-            #[cfg(feature = "did-read")]
+            #[cfg(feature = "capability-did-read")]
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 get_vade_evan(&sub_m)?.did_resolve(&did).await?
             }
-            #[cfg(feature = "did-write")]
+            #[cfg(feature = "capability-did-write")]
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -79,6 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )));
             }
         },
+        #[cfg(feature = "capability-didcomm")]
         ("didcomm", Some(sub_m)) => match sub_m.subcommand() {
             ("send", Some(sub_m)) => {
                 wrap_vade2!(didcomm_send, sub_m)
@@ -104,33 +110,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )));
             }
         },
+        #[cfg(feature = "capability-vc-zkp")]
         ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(feature = "vc-zkp-cl")]
-            ("create_credential_definition", Some(sub_m)) => {
-                wrap_vade3!(vc_zkp_create_credential_definition, sub_m)
-            }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_credential_schema", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_master_secret", Some(sub_m)) => {
                 let options = get_argument_value(sub_m, "options", None);
                 get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_revocation_registry_definition", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_revocation_registry_definition, sub_m)
             }
-            #[cfg(feature = "vc-zkp-cl")]
-            ("generate_safe_prime", Some(sub_m)) => {
-                get_vade_evan(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "generate_safe_prime", TYPE_OPTIONS_CL, "")
-                    .await?
-            }
-            #[cfg(feature = "vc-zkp-bbs")]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_new_keys", Some(sub_m)) => {
                 let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
@@ -138,39 +135,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+            #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))]
             ("issue_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_issue_credential, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("finish_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_finish_credential, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_credential_offer", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_offer, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("present_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_present_proof, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_credential_proposal", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_proposal, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("request_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("request_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("revoke_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_revoke_credential, sub_m)
             }
-            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+            #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))]
             ("verify_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_verify_proof, sub_m)
             }
@@ -426,10 +423,6 @@ fn get_argument_value<'a>(
 fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan, Box<dyn std::error::Error>> {
     let target = get_argument_value(&matches, "target", Some(DEFAULT_TARGET));
     let signer = get_argument_value(&matches, "signer", Some(DEFAULT_SIGNER));
-    #[cfg(feature = "sdk")]
-    let request_id = get_argument_value(&matches, "request_id", Some("local"))
-        .parse()
-        .expect("Request id should be Unsigned Integer");
     return Ok(VadeEvan::new(VadeEvanConfig { target, signer })?);
 }
 

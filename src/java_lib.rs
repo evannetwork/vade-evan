@@ -2,7 +2,7 @@ use crate::c_lib::execute_vade;
 use jni::objects::{JClass, JString};
 use jni::sys::{jarray, jstring};
 use jni::JNIEnv;
-use std::ffi::{CStr,CString};
+use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
 #[no_mangle]
@@ -30,7 +30,7 @@ pub extern "system" fn Java_com_vade_evan_Vade_executeVade(
             .expect("Couldn't get char array options");
     }
 
-    let mut c_str_config= empty_owned_string.as_ptr();
+    let mut c_str_config = empty_owned_string.as_ptr();
     if !config.is_null() {
         c_str_config = env
             .get_string_utf_chars(config)
@@ -40,7 +40,7 @@ pub extern "system" fn Java_com_vade_evan_Vade_executeVade(
     let mut arguments_vec: Vec<*const c_char> = Vec::new();
     let arg_count = env
         .get_array_length(arguments)
-        .expect("Couldn't get arrguments array length");
+        .expect("Couldn't get arguments array length");
 
     for i in 0..arg_count {
         let array_element = env

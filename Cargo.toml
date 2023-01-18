@@ -20,108 +20,102 @@ crate-type = ["cdylib", "rlib"]
 [[bin]]
 name = "vade_evan_cli"
 path = "src/main.rs"
-required-features = ["cli"]
+required-features = ["target-cli"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["cli", "did", "didcomm", "portable", "vc-zkp"]
+default = ["bundle-default", "target-cli"]
 
-# add command line interface; not compatible with `wasm` feature
-cli = [
-    "clap",
-    "did",
-    "didcomm",
-    "tokio",
-    "vc-zkp",
-]
-
-# expose C interface for C applications to use vade
-c-lib = [
-    "did",
-    "didcomm",
-    "tokio",
-    "vc-zkp",
-]
-
-# expose Java interface for Java applications to use vade
-java-lib = ["c-lib"]
-
-# enables using DIDs, also required for some vc-zkp functions
-did = [
-    "did-substrate",
-    "did-sidetree",
-    # "did-universal-resolver",
-    "did-read",
-    "did-write",
-]
-
-# enables zkp plugins, required for zkp plugins
-vc-zkp = [
-    "vc-zkp-bbs",
-    "vc-zkp-cl",
-    "vc-jwt",
-]
-
-# dedicated vc handlers
-vc-zkp-bbs = [
-    "vade-signer",
-    "vade-evan-bbs",
-]
-vc-zkp-cl = [
-    "ring",
-    "vade-signer",
-    "vade-evan-cl",
-]
-
-# dummy feature to support vade-evan-cl
-vade-evan-cl = []
-
-# enables did_resolve related functions and commands
-did-read = []
-
-# enables did_create, did_update related functions and commands
-did-write = []
-
-# dedicated did resolvers
-did-sidetree = [
-    "vade-sidetree",
-]
-did-substrate = [
-    "vade-signer",
-    "vade-evan-substrate",
-]
-did-universal-resolver = [
-    "vade-universal-resolver",
-]
-
-# enables didcomm message features
-didcomm = [
-    "vade-didcomm",
-]
-
-# default native setup, vade-evan-cl is disabled currently
-portable = [
-    "vade-didcomm/portable",
-#   "vade-evan-cl/portable",
-]
-
-# enables JWT signature based VC support
-vc-jwt = [
-    "vade-signer",
-    "vade-jwt-vc",
-]
-
-# build to run as wasm file; not compatible with `native` feature, vade-evan-cl is disabled currently
-wasm = [
-    "vade-didcomm/wasm",
-#   "vade-evan-cl/wasm",
-    "vade-evan-bbs/wasm",
+# plugins we want to enable in our
+bundle-default = [
+    "plugin-did-sidetree",
+    "plugin-did-substrate",
+    "plugin-didcomm",
+    "plugin-jwt-vc",
+    "plugin-vc-zkp-bbs",
 ]
 
 # defines a feature named `sdk`, this feature should be enabled when plugin is compiled for IN3 sdk
-sdk = ["vade-universal-resolver/sdk"]
+bundle-sdk = [
+    "plugin-did-sidetree",
+    "plugin-vc-zkp-bbs",
+]
+
+plugin-vade-signer = [
+    "vade-signer",
+]
+
+plugin-did-sidetree = [
+    "capability-did-read",
+    "capability-did-write",
+    "vade-sidetree",
+]
+
+plugin-did-substrate = [
+    "capability-did-read",
+    "capability-did-write",
+    "plugin-vade-signer",
+    "vade-evan-substrate",
+]
+
+plugin-didcomm = [
+    "capability-didcomm",
+    "vade-didcomm",
+    "vade-didcomm/portable", # target related, should be moved :/
+]
+
+plugin-jwt-vc = [
+    "capability-vc-zkp",
+    "plugin-vade-signer",
+    "vade-jwt-vc",
+]
+
+plugin-vc-zkp-bbs = [
+    "capability-vc-zkp",
+    "plugin-vade-signer",
+    "vade-evan-bbs",
+]
+
+# enable didcomm related functions in targets
+capability-didcomm = []
+
+# enable did resolve in targets
+capability-did-read = []
+
+# enable did create and update in targets
+capability-did-write = []
+
+# enable sdk related features
+capability-sdk = []
+
+# enable vc related functiosn in targets
+capability-vc-zkp = []
+
+# build for consuming vade-evan from C
+target-c-lib = [
+    "tokio",
+    "vade-didcomm/portable",
+]
+
+# build for command line usage
+target-cli = [
+    "clap",
+    "tokio",
+    "vade-didcomm/portable",
+]
+
+# build for consuming vade-evan from Java
+target-java-lib = [
+    "target-c-lib",
+]
+
+# build for usage in wasm
+target-wasm = [
+    "vade-didcomm/wasm",
+    "vade-evan-bbs/wasm",
+]
 
 [dependencies]
 async-trait = "0.1.31"
@@ -131,29 +125,32 @@ ring = { version = "0.16.19", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 vade = "0.1.0"
-###################################################################### feature specific dependencies
-# feature "vc-zkp-bbs"
-vade-evan-bbs = { version = "0.3.0", optional = true, default-features = false }
-
-# feature "vc-zkp-cl", it will be enabled when vade-evan-cl is published to crates.io
-# vade-evan-cl = { git = "https://github.com/evannetwork/vade-evan-cl.git", branch = "develop", version = "0.1.3", default-features = false }
-
-# feature "cli"
-clap = { version = "2.33.1", optional = true }
-tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
-# feature "did-substrate"
-vade-evan-substrate = { version = "0.2.0", optional = true }
-vade-signer = { version = "0.0.1", optional = true }
-# feature "vc-jwt"
-vade-jwt-vc = { version = "0.2.0", optional = true }
-# feature "did-universal-resolver"
-vade-universal-resolver = { version = "0.0.4", optional = true }
-# feature "did-sidetree"
-vade-sidetree = { git = "https://github.com/evannetwork/vade-sidetree.git", branch = "develop", version = "0.0.3", optional = true }
-# feature "didcomm"
-vade-didcomm = { version = "0.3.0", optional = true }
 thiserror = "1.0.38"
 anyhow = "1.0.68"
+
+###################################################################### feature specific dependencies
+# feature "plugin-vc-zkp-bbs"
+vade-evan-bbs = { version = "0.3.0", optional = true, default-features = false }
+
+# feature "target-cli"
+clap = { version = "2.33.1", optional = true }
+tokio = { version = "=1.7.1", optional = true, features = ["rt-multi-thread", "macros"] }
+
+# feature "plugin-did-substrate"
+vade-evan-substrate = { version = "0.2.0", optional = true }
+vade-signer = { version = "0.0.1", optional = true }
+
+# feature "plugin-jwt-vc"
+vade-jwt-vc = { version = "0.2.0", optional = true }
+
+# feature "plugin-universal-resolver"
+vade-universal-resolver = { version = "0.0.4", optional = true }
+
+# feature "plugin-did-sidetree"
+vade-sidetree = { git = "https://github.com/evannetwork/vade-sidetree.git", branch = "develop", version = "0.0.3", optional = true }
+
+# feature "plugin-didcomm"
+vade-didcomm = { version = "0.3.0", optional = true }
 
 # add openssl dependency for specific targets
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
@@ -164,7 +161,7 @@ console_error_panic_hook = "0.1.6"
 console_log = { version = "0.2", features = ["color"] }
 log = "0.4.8"
 serde_derive = "1.0.114"
-wasm-bindgen = { version = "0.2",features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.5"
 
 [dev-dependencies]

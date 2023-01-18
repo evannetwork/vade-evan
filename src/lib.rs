@@ -14,12 +14,12 @@
   limitations under the License.
 */
 
-#[cfg(feature = "sdk")]
+#[cfg(feature = "capability-sdk")]
 mod in3_request_list;
 
-#[cfg(feature = "c-lib")]
+#[cfg(feature = "target-c-lib")]
 mod c_lib;
-#[cfg(feature = "java-lib")]
+#[cfg(feature = "target-java-lib")]
 mod java_lib;
 // wasm only
 #[cfg(target_arch = "wasm32")]

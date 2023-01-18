@@ -15,12 +15,12 @@
 */
 
 use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
-#[cfg(feature = "sdk")]
+#[cfg(feature = "capability-sdk")]
 use crate::in3_request_list::ResolveHttpRequest;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-#[cfg(feature = "sdk")]
+#[cfg(feature = "capability-sdk")]
 use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
@@ -36,13 +36,13 @@ pub struct Response {
 }
 
 macro_rules! execute_vade_function {
-    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config.to_string()),
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -53,13 +53,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -70,13 +70,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -87,13 +87,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -116,8 +116,8 @@ fn stringify_vade_evan_error(err: VadeEvanError) -> String {
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 pub fn get_vade_evan(
     config: Option<&String>,
-    #[cfg(feature = "sdk")] request_id: *const c_void,
-    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(feature = "capability-sdk")] request_id: *const c_void,
+    #[cfg(feature = "capability-sdk")] request_function_callback: ResolveHttpRequest,
 ) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
@@ -131,9 +131,9 @@ pub fn get_vade_evan(
     return VadeEvan::new(VadeEvanConfig {
         target,
         signer: signer_config,
-        #[cfg(feature = "sdk")]
+        #[cfg(feature = "capability-sdk")]
         request_id,
-        #[cfg(feature = "sdk")]
+        #[cfg(feature = "capability-sdk")]
         request_function_callback,
     })
     .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
@@ -188,9 +188,9 @@ pub extern "C" fn execute_vade(
     arguments: *const *const c_char,
     num_of_args: usize,
     options: *const c_char,
-    #[cfg(not(feature = "sdk"))] config: *const c_char,
-    #[cfg(feature = "sdk")] config: *const c_void,
-    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(not(feature = "capability-sdk"))] config: *const c_char,
+    #[cfg(feature = "capability-sdk")] config: *const c_void,
+    #[cfg(feature = "capability-sdk")] request_function_callback: ResolveHttpRequest,
 ) -> *const c_char {
     let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
     let args_array: &[*const c_char] =
@@ -204,21 +204,21 @@ pub extern "C" fn execute_vade(
 
     let mut str_options = String::new();
 
-    #[cfg(not(feature = "sdk"))]
+    #[cfg(not(feature = "capability-sdk"))]
     let mut str_config = String::new();
-    #[cfg(feature = "sdk")]
+    #[cfg(feature = "capability-sdk")]
     let str_config = String::new();
 
     if !options.is_null() {
         str_options = unsafe { CStr::from_ptr(options).to_string_lossy().into_owned() };
     }
 
-    #[cfg(not(feature = "sdk"))]
+    #[cfg(not(feature = "capability-sdk"))]
     if !config.is_null() {
         str_config = unsafe { CStr::from_ptr(config).to_string_lossy().into_owned() };
     }
 
-    #[cfg(feature = "sdk")]
+    #[cfg(feature = "capability-sdk")]
     let ptr_request_list = config as *mut c_void;
 
     let no_args = String::from("");
@@ -230,19 +230,19 @@ pub extern "C" fn execute_vade(
         .expect("Failed to create runtime");
 
     let result = match func.as_str() {
-        #[cfg(feature = "did-read")]
+        #[cfg(feature = "capability-did-read")]
         "did_resolve" => runtime.block_on({
             execute_vade_function!(
                 did_resolve,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(feature = "did-write")]
+        #[cfg(feature = "capability-did-write")]
         "did_create" => runtime.block_on({
             execute_vade_function!(
                 did_create,
@@ -250,13 +250,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(feature = "did-write")]
+        #[cfg(feature = "capability-did-write")]
         "did_update" => runtime.block_on({
             execute_vade_function!(
                 did_update,
@@ -264,53 +264,39 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(feature = "didcomm")]
+        #[cfg(feature = "capability-didcomm")]
         "didcomm_receive" => runtime.block_on({
             execute_vade_function!(
                 didcomm_receive,
                 &str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(feature = "didcomm")]
+        #[cfg(feature = "capability-didcomm")]
         "didcomm_send" => runtime.block_on({
             execute_vade_function!(
                 didcomm_send,
                 str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(feature = "vc-zkp-cl")]
-        "vc_zkp_create_credential_definition" => runtime.block_on({
-            execute_vade_function!(
-                vc_zkp_create_credential_definition,
-                arguments_vec.get(0).unwrap_or_else(|| &no_args),
-                &str_options,
-                arguments_vec.get(1).unwrap_or_else(|| &no_args),
-                str_config,
-                #[cfg(feature = "sdk")]
-                ptr_request_list,
-                #[cfg(feature = "sdk")]
-                request_function_callback
-            )
-        }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_create_credential_offer" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_offer,
@@ -318,13 +304,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_create_credential_proposal" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_proposal,
@@ -332,13 +318,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_create_credential_schema" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_schema,
@@ -346,13 +332,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_create_revocation_registry_definition" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_revocation_registry_definition,
@@ -360,13 +346,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_update_revocation_registry" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_update_revocation_registry,
@@ -374,13 +360,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+        #[cfg(feature = "capability-vc-zkp")]
         "vc_zkp_issue_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_issue_credential,
@@ -388,13 +374,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_finish_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_finish_credential,
@@ -402,13 +388,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_present_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_present_proof,
@@ -416,13 +402,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_request_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_credential,
@@ -430,13 +416,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_request_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_proof,
@@ -444,13 +430,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "vc_zkp_revoke_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_revoke_credential,
@@ -458,13 +444,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+        #[cfg(feature = "capability-vc-zkp")]
         "vc_zkp_verify_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_verify_proof,
@@ -472,13 +458,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
         "run_custom_function" => runtime.block_on({
             execute_vade_function!(
                 run_custom_function,
@@ -487,17 +473,17 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(2).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(feature = "capability-sdk")]
                 request_function_callback
             )
         }),
         "get_version_info" => get_vade_evan(
             Some(&str_config),
-            #[cfg(feature = "sdk")]
+            #[cfg(feature = "capability-sdk")]
             ptr_request_list,
-            #[cfg(feature = "sdk")]
+            #[cfg(feature = "capability-sdk")]
             request_function_callback,
         )
         .map_err(stringify_generic_error)
