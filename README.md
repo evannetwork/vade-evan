@@ -4,8 +4,8 @@
 
 ## About
 
-This crate allows you to use to work with DIDs and zero knowledge proof VCs on Trust and Trace.
-It offers a command line interface and a wasm package to work with a pre-configured [`Vade`] instance for Trust and Trace.
+This crate allows you to use to work with DIDs and zero knowledge proof VCs.
+It offers a command line interface and support to build package for C, Java, WASM, and exports a `VadeEvan` API to use the same functionalities in other Rust projects.
 
 ## Compiling vade-evan
 
@@ -19,102 +19,72 @@ cargo build --release
 
 ### Default Features
 
-By default features `cli`, `did`, `didcomm`, `portable`, and `vc-zkp` are used. So everything included and available for usage in command line interface.
-
-Features can be omitted. So for example `vc-zkp` or `did` could be skipped.
-
-Instead of using `vade-evan-bbs` and `vade-evan-cl`, features can be adjusted to use simple JWT signing for the creation and verification of VC.
+By default features `bundle-default`, `target-cli` are used, so a default feature bundle is used and compiled to a command line interface, so basically using the default feature setup (like above) builds the same as:
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-read,portable,vc-jwt
+cargo build --release --no-default-features --features bundle-default,target-cli
 ```
 
-### DID Features
+When building `vade-evan`, you usually combine a `bundle-` feature and a `target-` feature, which means that you want to include a certain set of features and want to make it available for a certain target/platform.
 
-By default the feature `did` enables did related operations => `did-resolve`, `did-create`, `did-update` using `vade-evan-substrate` and `did-resolve` using `vade-universal-resolver` plugins.
+### Bundles
 
-We also support did operations for sidetree based implementation which can be enabled if you are using non-default features, to enable it add the feature `did-sidetree` to the features set.
+Bundles define which plugins you want to include in your `vade-evan` build, which usually has an impact on the available functions and utilized plugins to handle them.
+
+Bundles are not mandatory as you can also create the same plugin setup by just defining the plugins. Bundle `bundle-default` for example includes `plugin-did-sidetree`, `plugin-did-substrate`, `plugin-didcomm`, `plugin-jwt-vc`, and `plugin-vc-zkp-bbs`. Those can be recombined if desired, e.g. if no DIDComm support is desired, `plugin-didcomm` can be omitted:
 
 ```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-read,did-write,didcomm,portable,vc-zkp
+cargo build --release --no-default-features --features plugin-did-sidetree,plugin-did-substrate,plugin-jwt-vc,plugin-vc-zkp-bbs,target-cli
 ```
 
-In a similar manner if you want to use either `vade-evan-substrate` or `vade-universal-resolver`, you have to add them to features set.
+Note that `plugin-vc-zkp-bbs` relies on `plugin-did-sidetree` to persist data in some steps, so omitting it would impart some of the `plugin-vc-zkp-bbs` functionalities.
 
-```sh
-cargo build --release --no-default-features --features cli,did-substrate,did-read,did-write,didcomm,portable,vc-zkp
-```
+At the moment two bundles are offered by `vade-evan`: `bundle-default` and `bundle-sdk`.
 
-```sh
-cargo build --release --no-default-features --features cli,did-universal-resolver,did-read,didcomm,portable,vc-zkp
-```
+### Targets
 
-Features can be adjusted for specific needs, if you want to restrict read (`did-resolve`) or write (`did-create` and `did-update`) operations for DIDs.
+Targets define for which platform you want to build a vade package. Also more building for more than one target is not supported. Currently these targets are available:
 
-```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-write,didcomm,portable,vc-zkp
-```
+- `target-c-lib` - build for usage in C
+- `target-cli` - build command line interface --> `./target/release/vade_evan_cli`
+- `target-java-lib` - build for usage in Java
+- `target-wasm` - in combination with `wasm-pack`, build for usage in WASM (see below)
 
-```sh
-cargo build --release --no-default-features --features cli,did-sidetree,did-read,didcomm,portable,vc-zkp
-```
+One (and only one) target must be provided when building without default features.
+
+## About the builds
 
 ### C builds with sdk feature
 
-Features can be adjusted to support integration with IN3 SDK by enabling `sdk` feature (`sdk` feature can only be used with `c-lib` feature), by enabling this feature `HTTP` request/response are managed via IN3 SDK.
+Features can be adjusted to support integration with IN3 SDK by enabling `bundle-sdk` feature. `bundle-sdk` feature in combination with `target-c-lib` feature enables `HTTP` request/response managed via IN3 SDK.
 
 ```sh
-cargo build --release --no-default-features --features did-sidetree,did-write,didcomm,portable,vc-zkp,c-lib,sdk 
-```
-
-### Command Line Interface
-
-If you are using non-default features, enable the cli just add the feature `cli` to the feature set:
-
-```sh
-cargo build --release --features cli
-```
-
-You can now use the `vade-evan` cli. Get started by having a look at the help shown after calling it with:
-
-```sh
-./target/release/vade_evan_cli
+cargo build --release --no-default-features --features bundle-sdk,target-c-lib
 ```
 
 ### WASM
 
 #### WASM pack
 
-To compile `vade-evan` for wasm, use wasm pack.
-
-You can specify to use only `did` feature or to use `did` and `vc-zkp`. The following examples will use both features.
-
-Also you have to specify whether to build a browser or a nodejs environment.
+To compile `vade-evan` for wasm, use wasm-pack, you can specify whether to build a browser or a nodejs environment with wasm-pack's `--target` argument. Also use the `target-wasm` feature to tell the compile how to configure `vade-evan` for the vade build.
 
 nodejs:
 
 ```sh
-wasm-pack build --release --target nodejs -- --no-default-features --features did,didcomm,vc-zkp,wasm
+wasm-pack build --release --target nodejs -- --no-default-features --features bundle-default,target-wasm
 ```
 
 browser:
 
 ```sh
-wasm-pack build --release --target web -- --no-default-features --features did,didcomm,vc-zkp,wasm
+wasm-pack build --release --target web -- --no-default-features --features bundle-default,target-wasm
 ```
 
 #### Wrapper for WASM pack
 
 A project that wraps calls against the WASM file has been added and placed at `builds/wasm`.
 
-To build it, you need to have checked out next to your `vade-evan` project:
-
-- `vade-evan-cl`
-- `vade-evan-bbs`
-- `vade-didcomm`
-- `vade-evan-substrate`
-
-Then it can be build by navigating to `builds/wasm` and calling
+To build it, you need to have to build `vade-evan` as described above, navigate to `builds/wasm` and call
 
 ```sh
 yarn && yarn build
@@ -130,25 +100,19 @@ This example will generate a new DID, assign a document to it and update it afte
 
 ### Features for building
 
-| feature                | default | contents |
-| ---------------------- |:-------:| -------- |
-| cli                    |     x   | enables command line interface |
-| c-lib                  |         | exposes C interface for C applications to use vade |
-| did                    |     x   | enables DID functionalities |
-| did-read               |     x   | enables did_resolve method for DID related operations |
-| did-write              |     x   | enables did_create and did_update methods for DID related operations |
-| did-substrate          |     x   | enables DID functionalities (did_resolve, did_create, did_update ) using vade-evan-substrate plugin |
-| did-universal-resolver |     x   | enables did_resolve method using vade-universal-resolver plugin |
-| did-sidetree           |         | enables DID functionalities for Sidetree based implementation using vade-sidetree plugin |
-| didcomm                |     x   | enables DIDComm message handling |
-| sdk                    |         | enables sdk integration via managing http requests/response via IN3 SDK |
-| java-lib               |         | exposes Java interface for Java applications to use vade |
-| vc-zkp                 |     x   | enables VC functionalities using vc-zkp-bbs, vc-zkp-cl, vc-jwt features by default|
-| vc-zkp-bbs             |     x   | enables VC functionalities using vade-evan-bbs plugin|
-| vc-zkp-cl              |     x   | enables VC functionalities using vade-evan-cl plugin|
-| vc-jwt                 |     x   | currently supports `vc_zkp_issue_credential` and `vc_zkp_verify_proof` with JWT signatures |
-| portable               |     x   | build with optimizations to run natively, not compatible with `wasm` feature |
-| wasm                   |         | build with optimizations to run as web assembly, not compatible with `portable` |
+| feature              | default | contents                             |
+|----------------------|:-------:|--------------------------------------|
+| bundle-default       |    x    | include default plugins              |
+| bundle-sdk           |         | include plugins for sdk              |
+| target-c-lib         |         | build for usage in C                 |
+| target-cli           |    x    | build command line interface         |
+| target-java-lib      |         | build for usage in Java              |
+| target-wasm          |         | build for usage in WASM              |
+| plugin-did-sidetree  |    x    | add support for using sidetree DIDs  |
+| plugin-did-substrate |    x    | add support for using substrate DIDs |
+| plugin-didcomm       |    x    | add DIDComm support                  |
+| plugin-jwt-vc        |    x    | add support for JWT VCs              |
+| plugin-vc-zkp-bbs    |    x    | add support for BBS VCs              |
 
 ## Dependencies
 
