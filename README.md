@@ -98,7 +98,20 @@ yarn && node index.js
 
 This example will generate a new DID, assign a document to it and update it afterwards.
 
-### Features for building
+## Features
+
+### Feature name schema
+
+Features in this project follow a naming schema that looks as following:
+
+- `bundle-` features decide which (`VadePlugin`) plugins to include
+- `target-` features decide which build target (CLI, WASM, etc.) to build for
+- `plugin-` feature take care, that plugins and related dependencies are present
+- `capability-` features control which functionalities a `plugin-` may offer
+
+`bundle-`, `target-` and `plugin-` are intended to be used for build/run commands. `capability-` should only be used from within `Cargo.toml` to allow including functionalities in the source files.
+
+### Feature overview
 
 | feature              | default | contents                             |
 |----------------------|:-------:|--------------------------------------|
