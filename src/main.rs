@@ -181,9 +181,13 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+// not included in all build variants
+#[allow(dead_code)]
 fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
+    // variable might be needlessly mutable due to the following feature listing not matching
+    #[allow(unused_mut)]
     let mut subcommand = SubCommand::with_name("did")
-        .about("Works with DIDs.")
+        .about("Work with DIDs")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
@@ -203,7 +207,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "capability-did-read")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create")
-                    .about("Creates a new DID on substrate.")
+                    .about("Creates a new DID.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("target")?)
@@ -218,9 +222,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
             )
             .subcommand(
                 SubCommand::with_name("update")
-                    .about(r###"Updates data related to a DID. Two updates are supported depending on the value of `options.operation`.
-                - whitelistIdentity: whitelists identity `did` on substrate, this is required to be able to perform transactions this this identity
-                - setDidDocument: sets the DID document for `did`"###)
+                    .about(r###"Updates data related to a DID.`"###)
                     .arg(get_clap_argument("did")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -233,45 +235,47 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     Ok(app.subcommand(subcommand))
 }
 
+// not included in all build variants
+#[allow(dead_code)]
 fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     let app = app.subcommand(
-                SubCommand::with_name("didcomm")
-                    .about("Processes DIDComm message")
-                    .setting(AppSettings::DeriveDisplayOrder)
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .subcommand(
-                        SubCommand::with_name("send")
-                            .about(r###"Prepare a plain DIDComm json message to be sent, including encryption and protocol specific message enhancement.
-        The DIDComm options can include a shared secret to encrypt the message with a specific key.
-        If no key was given and the message should be encrypted (depends on protocol implementation), the DIDComm keypair from a db provider will be used."###)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("receive")
-                            .about(r###"Receive a plain DIDComm json message, including decryption and protocol specific message parsing.
-        The DIDComm options can include a shared secret to encrypt the message with a specific key.
-        If no key was given and the message is encrypted the DIDComm keypair from a db will be used."###)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_keys")
-                            .about(r###"Create X25519 secret/public keys, which can be used in options while sending and receiving DIDComm message."###)
-                    )
-                    .subcommand(
-                        SubCommand::with_name("query_didcomm_messages")
-                            .about(r###"Query stored DIDComm messages by prefix (message_{thid}_*) or messageid (message_{thid}_{msgid})."###)
-                            .arg(get_clap_argument("payload")?),
-                    )
+        SubCommand::with_name("didcomm")
+            .about("Process DIDComm message")
+            .setting(AppSettings::DeriveDisplayOrder)
+            .setting(AppSettings::SubcommandRequiredElseHelp)
+            .subcommand(
+                SubCommand::with_name("send")
+                    .about(r###"Prepare a plain DIDComm json message to be sent, including encryption and protocol specific message enhancement. The DIDComm options can include a shared secret to encrypt the message with a specific key. If no key was given and the message should be encrypted (depends on protocol implementation), the DIDComm keypair from a db provider will be used."###)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?),
+            )
+            .subcommand(
+                SubCommand::with_name("receive")
+                    .about(r###"Receive a plain DIDComm json message, including decryption and protocol specific message parsing. The DIDComm options can include a shared secret to encrypt the message with a specific key. If no key was given and the message is encrypted the DIDComm keypair from a db will be used."###)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?),
+            )
+            .subcommand(
+                SubCommand::with_name("create_keys")
+                    .about(r###"Create X25519 secret/public keys, which can be used in options while sending and receiving DIDComm message."###)
+            )
+            .subcommand(
+                SubCommand::with_name("query_didcomm_messages")
+                    .about(r###"Query stored DIDComm messages by prefix (message_{thid}_*) or message id (message_{thid}_{msgid})."###)
+                    .arg(get_clap_argument("payload")?),
+            )
     );
 
     Ok(app)
 }
 
+// not included in all build variants
+#[allow(dead_code)]
 fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
+    // variable might be needlessly mutable due to the following feature listing not matching
+    #[allow(unused_mut)]
     let mut subcommand = SubCommand::with_name("vc_zkp")
-        .about("Work with zero knowledge proof VCs.")
+        .about("Work with zero knowledge proof VCs")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
@@ -460,7 +464,7 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
     let mut app = App::new("vade_evan_cli")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
-        .about("Allows to work with DID's and zero knowledge proof VC's")
+        .about("Allows to work with DIDs and zero knowledge proof VCs")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(

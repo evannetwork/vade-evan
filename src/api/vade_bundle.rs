@@ -20,6 +20,11 @@ use vade_universal_resolver::VadeUniversalResolver;
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 
+#[cfg(any(
+    feature = "plugin-vc-zkp-bbs",
+    feature = "plugin-jwt-vc",
+    feature = "plugin-did-substrate"
+))]
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
         Box::new(RemoteSigner::new(
