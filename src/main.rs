@@ -271,7 +271,7 @@ fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
 
 fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     let mut subcommand = SubCommand::with_name("vc_zkp")
-        .about("Works with zero knowledge proof VCs.")
+        .about("Work with zero knowledge proof VCs.")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
@@ -279,7 +279,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_schema")
-                    .about("Creates a new zero-knowledge proof credential schema. Note that `options.identity` needs to be whitelisted for this function.")
+                    .about("Creates a new zero-knowledge proof credential schema.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -303,7 +303,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_revocation_registry_definition")
-                    .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials. Note that `options.identity` needs to be whitelisted for this function.")
+                    .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -329,7 +329,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("issue_credential")
-                    .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
+                    .about("Issues a new credential.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -343,7 +343,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("finish_credential")
-                    .about("Issues a new credential. This requires an issued schema, credential definition, an active revocation registry and a credential request message.")
+                    .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -357,7 +357,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_offer")
-                    .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema and definition the issuer is capable and willing to use for credential issuance.")
+                    .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema the issuer is capable and willing to use for credential issuance.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -399,7 +399,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("request_credential")
-                    .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
+                    .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -427,7 +427,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("revoke_credential")
-                    .about("Revokes a credential. After revocation the published revocation registry needs to be updated with information returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated with the credential's revocation registry. After revocation, the published revocation registry must be updated. Only then is the credential truly revoked. Note that `options.identity` needs to be whitelisted for this function.")
+                    .about("Revokes a credential. After revocation the published revocation registry needs to be updated with information returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated with the credential's revocation registry. After revocation, the published revocation registry must be updated. Only then is the credential truly revoked.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
@@ -460,7 +460,7 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
     let mut app = App::new("vade_evan_cli")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
-        .about("Allows you to use to work with DIDs and zero knowledge proof VCs")
+        .about("Allows to work with DID's and zero knowledge proof VC's")
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
@@ -523,14 +523,14 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .short("d")
             .value_name("did")
             .required(true)
-            .help("a DID to work on, e.g. 'did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906'")
+            .help("a DID to work with, e.g. 'did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906'")
             .takes_value(true),
         "method" => Arg::with_name("method")
             .long("method")
             .short("m")
             .value_name("method")
             .required(true)
-            .help("method to work on, e.g. 'did:evan'")
+            .help("method to use, e.g. 'did:evan'")
             .takes_value(true),
         "options" => Arg::with_name("options")
             .long("options")
@@ -544,13 +544,13 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .short("p")
             .value_name("payload")
             .required(true)
-            .help("options to send to vade call, serialized JSON, e.g. '{ \"foo\": \"bar\" }'")
+            .help("payload to send to vade call, serialized JSON, e.g. '{ \"foo\": \"bar\" }'")
             .takes_value(true),
         "target" => Arg::with_name("target")
             .long("target")
             .short("t")
             .value_name("target")
-            .help("substrate to use for DID handling, e.g. '127.0.0.1'")
+            .help("server to use for DID handling, e.g. '127.0.0.1'")
             .takes_value(true),
         "signer" => Arg::with_name("signer")
             .long("signer")
