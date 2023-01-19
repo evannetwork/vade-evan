@@ -282,6 +282,28 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_master_secret")
+                    .about("Creates a new master secret.")
+                    .arg(get_clap_argument("options")?)
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_new_keys")
+                    .about("Creates a new key pair and stores it in the DID document.")
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_schema")
                     .about("Creates a new zero-knowledge proof credential schema.")
                     .arg(get_clap_argument("method")?)
@@ -296,34 +318,12 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
-                SubCommand::with_name("create_master_secret")
-                    .about("Creates a new master secret.")
-                    .arg(get_clap_argument("options")?)
-            );
-        } else {}
-    }
-
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
-            subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_revocation_registry_definition")
                     .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)
                     .arg(get_clap_argument("target")?)
-                    .arg(get_clap_argument("signer")?),
-            );
-        } else {}
-    }
-
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
-            subcommand = subcommand.subcommand(
-                SubCommand::with_name("create_new_keys")
-                    .about("Creates a new key pair and stores it in the DID document.")
-                    .arg(get_clap_argument("options")?)
-                    .arg(get_clap_argument("payload")?)
                     .arg(get_clap_argument("signer")?),
             );
         } else {}
