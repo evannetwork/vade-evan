@@ -16,6 +16,7 @@
 
 extern crate clap;
 
+use anyhow::{bail, Result};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_SIGNER, DEFAULT_TARGET};
@@ -49,7 +50,7 @@ macro_rules! wrap_vade3 {
 const EVAN_METHOD: &str = "did:evan";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let matches = get_argument_matches()?;
 
     let result = match matches.subcommand() {
@@ -78,10 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .await?
             }
             _ => {
-                return Err(Box::from(clap::Error::with_description(
-                    "invalid subcommand",
-                    clap::ErrorKind::InvalidSubcommand,
-                )));
+                bail!("invalid subcommand");
             }
         },
         #[cfg(feature = "capability-didcomm")]
@@ -104,10 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .await?
             }
             _ => {
-                return Err(Box::from(clap::Error::with_description(
-                    "invalid subcommand",
-                    clap::ErrorKind::InvalidSubcommand,
-                )));
+                bail!("invalid subcommand");
             }
         },
         #[cfg(feature = "capability-vc-zkp")]
@@ -172,18 +167,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 wrap_vade3!(vc_zkp_verify_proof, sub_m)
             }
             _ => {
-                return Err(Box::from(clap::Error::with_description(
-                    "invalid subcommand",
-                    clap::ErrorKind::InvalidSubcommand,
-                )));
+                bail!("invalid subcommand");
             }
         },
         ("build_version", Some(sub_m)) => get_vade_evan(sub_m)?.get_version_info(),
         _ => {
-            return Err(Box::from(clap::Error::with_description(
-                "invalid subcommand",
-                clap::ErrorKind::InvalidSubcommand,
-            )));
+            bail!("invalid subcommand");
         }
     };
 
@@ -192,7 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
+fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))] {
             let app = app.subcommand(
@@ -234,7 +223,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>, Box<dyn std::
     Ok(app)
 }
 
-fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
+fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "capability-didcomm")] {
             let app = app.subcommand(
@@ -275,7 +264,7 @@ fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>, Box<dyn s
     Ok(app)
 }
 
-fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
+fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "capability-vc-zkp")] {
             let app = app.subcommand(
@@ -415,7 +404,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>, Box<dyn st
     Ok(app)
 }
 
-fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
+fn get_app<'a>() -> Result<App<'a, 'a>> {
     // variable might be needlessly mutable due to the following feature listing not matching
     #[allow(unused_mut)]
     let mut app = App::new("vade_evan_cli")
@@ -437,7 +426,7 @@ fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
     Ok(app)
 }
 
-fn get_argument_matches<'a>() -> Result<ArgMatches<'a>, Box<dyn std::error::Error>> {
+fn get_argument_matches<'a>() -> Result<ArgMatches<'a>> {
     Ok(get_app()?.get_matches())
 }
 
@@ -457,13 +446,13 @@ fn get_argument_value<'a>(
     }
 }
 
-fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan, Box<dyn std::error::Error>> {
+fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan> {
     let target = get_argument_value(&matches, "target", Some(DEFAULT_TARGET));
     let signer = get_argument_value(&matches, "signer", Some(DEFAULT_SIGNER));
     return Ok(VadeEvan::new(VadeEvanConfig { target, signer })?);
 }
 
-fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> {
+fn get_clap_argument(arg_name: &str) -> Result<Arg> {
     Ok(match arg_name {
         "did" => Arg::with_name("did")
             .long("did")
@@ -506,7 +495,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> 
             .help("signer to use to sign messages with, e.g. 'local' or 'remote|http://somewhere'")
             .takes_value(true),
         _ => {
-            return Err(Box::from(format!("invalid arg_name: '{}'", &arg_name)));
+            bail!("invalid arg_name: '{}'", &arg_name);
         },
     })
 }

@@ -100,6 +100,7 @@ target-c-lib = [
 
 # build for command line usage
 target-cli = [
+    "anyhow",
     "clap",
     "tokio",
     "vade-didcomm/portable",
@@ -166,6 +167,10 @@ version = "0.0.4"
 optional = true
 
 # target-cli
+[dependencies.anyhow]
+version = "1.0.68"
+optional = true
+
 [dependencies.clap]
 version = "2.33.1"
 optional = true
