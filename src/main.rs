@@ -182,51 +182,59 @@ async fn main() -> Result<()> {
 }
 
 fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
+    let mut subcommand = SubCommand::with_name("did")
+        .about("Works with DIDs.")
+        .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
+
     cfg_if::cfg_if! {
-        if #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))] {
-            let app = app.subcommand(
-                SubCommand::with_name("did")
-                    .about("Works with DIDs.")
-                    .setting(AppSettings::DeriveDisplayOrder)
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .subcommand(
-                        SubCommand::with_name("create")
-                            .about("Creates a new DID on substrate.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("resolve")
-                            .about("Fetch data about a DID, which returns this DID's DID document.")
-                            .arg(get_clap_argument("did")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("update")
-                            .about(r###"Updates data related to a DID. Two updates are supported depending on the value of `options.operation`.
-                - whitelistIdentity: whitelists identity `did` on substrate, this is required to be able to perform transactions this this identity
-                - setDidDocument: sets the DID document for `did`"###)
-                            .arg(get_clap_argument("did")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
+        if #[cfg(feature = "capability-did-read")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("resolve")
+                    .about("Fetch data about a DID, which returns this DID's DID document.")
+                    .arg(get_clap_argument("did")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
             );
-        } else {
-        }
+        } else {}
     }
 
-    Ok(app)
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "capability-did-read")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create")
+                    .about("Creates a new DID on substrate.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            )
+            .subcommand(
+                SubCommand::with_name("resolve")
+                    .about("Fetch data about a DID, which returns this DID's DID document.")
+                    .arg(get_clap_argument("did")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            )
+            .subcommand(
+                SubCommand::with_name("update")
+                    .about(r###"Updates data related to a DID. Two updates are supported depending on the value of `options.operation`.
+                - whitelistIdentity: whitelists identity `did` on substrate, this is required to be able to perform transactions this this identity
+                - setDidDocument: sets the DID document for `did`"###)
+                    .arg(get_clap_argument("did")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            )
+        } else {}
+    }
+
+    Ok(app.subcommand(subcommand))
 }
 
 fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-didcomm")] {
-            let app = app.subcommand(
+    let app = app.subcommand(
                 SubCommand::with_name("didcomm")
                     .about("Processes DIDComm message")
                     .setting(AppSettings::DeriveDisplayOrder)
@@ -256,152 +264,194 @@ fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                             .about(r###"Query stored DIDComm messages by prefix (message_{thid}_*) or messageid (message_{thid}_{msgid})."###)
                             .arg(get_clap_argument("payload")?),
                     )
-            );
-        } else {
-        }
-    }
+    );
 
     Ok(app)
 }
 
 fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
+    let mut subcommand = SubCommand::with_name("vc_zkp")
+        .about("Works with zero knowledge proof VCs.")
+        .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
+
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-vc-zkp")] {
-            let app = app.subcommand(
-                SubCommand::with_name("vc_zkp")
-                    .about("Works with zero knowledge proof VCs.")
-                    .setting(AppSettings::DeriveDisplayOrder)
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .subcommand(
-                        SubCommand::with_name("create_master_secret")
-                            .about("Creates a new master secret.")
-                            .arg(get_clap_argument("options")?)
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_new_keys")
-                            .about("Creates a new key pair and stores it in the DID document.")
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("generate_safe_prime")
-                            .about("Generates a new safe prime number, that can be used in combination with `create_credential_definition` to for key pair generation.")
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_credential_definition")
-                            .about("Creates a new credential definition and stores the public part on-chain. The private part (key) needs to be stored in a safe way and must not be shared. A credential definition holds cryptographic material needed to verify proofs. Every definition is bound to one credential schema. Note that `options.identity` needs to be whitelisted for this function.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_credential_schema")
-                            .about("Creates a new zero-knowledge proof credential schema. Note that `options.identity` needs to be whitelisted for this function.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_revocation_registry_definition")
-                            .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials. Note that `options.identity` needs to be whitelisted for this function.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("issue_credential")
-                            .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("finish_credential")
-                            .about("Issues a new credential. This requires an issued schema, credential definition, an active revocation registry and a credential request message.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_credential_offer")
-                            .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema and definition the issuer is capable and willing to use for credential issuance.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("present_proof")
-                            .about("Presents a proof for one or more credentials. A proof presentation is the response to a proof request. The proof needs to incorporate all required fields from all required schemas requested in the proof request.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("create_credential_proposal")
-                            .about("Creates a new zero-knowledge proof credential proposal. This message is the first in the credential issuance flow and is sent by the potential credential holder to the credential issuer.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("request_credential")
-                            .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("request_proof")
-                            .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("revoke_credential")
-                            .about("Revokes a credential. After revocation the published revocation registry needs to be updated with information returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated with the credential's revocation registry. After revocation, the published revocation registry must be updated. Only then is the credential truly revoked. Note that `options.identity` needs to be whitelisted for this function.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
-                    .subcommand(
-                        SubCommand::with_name("verify_proof")
-                            .about("Verifies a one or multiple proofs sent in a proof presentation.")
-                            .arg(get_clap_argument("method")?)
-                            .arg(get_clap_argument("options")?)
-                            .arg(get_clap_argument("payload")?)
-                            .arg(get_clap_argument("target")?)
-                            .arg(get_clap_argument("signer")?),
-                    )
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_credential_schema")
+                    .about("Creates a new zero-knowledge proof credential schema. Note that `options.identity` needs to be whitelisted for this function.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
             );
-        } else {
-        }
+        } else {}
     }
 
-    Ok(app)
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_master_secret")
+                    .about("Creates a new master secret.")
+                    .arg(get_clap_argument("options")?)
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_revocation_registry_definition")
+                    .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials. Note that `options.identity` needs to be whitelisted for this function.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_new_keys")
+                    .about("Creates a new key pair and stores it in the DID document.")
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("issue_credential")
+                    .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("finish_credential")
+                    .about("Issues a new credential. This requires an issued schema, credential definition, an active revocation registry and a credential request message.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_credential_offer")
+                    .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema and definition the issuer is capable and willing to use for credential issuance.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("present_proof")
+                    .about("Presents a proof for one or more credentials. A proof presentation is the response to a proof request. The proof needs to incorporate all required fields from all required schemas requested in the proof request.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_credential_proposal")
+                    .about("Creates a new zero-knowledge proof credential proposal. This message is the first in the credential issuance flow and is sent by the potential credential holder to the credential issuer.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("request_credential")
+                    .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("request_proof")
+                    .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("revoke_credential")
+                    .about("Revokes a credential. After revocation the published revocation registry needs to be updated with information returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated with the credential's revocation registry. After revocation, the published revocation registry must be updated. Only then is the credential truly revoked. Note that `options.identity` needs to be whitelisted for this function.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("verify_proof")
+                    .about("Verifies a one or multiple proofs sent in a proof presentation.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    Ok(app.subcommand(subcommand))
 }
 
 fn get_app<'a>() -> Result<App<'a, 'a>> {
@@ -419,9 +469,23 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
                 .setting(AppSettings::DeriveDisplayOrder),
         );
 
-    app = add_subcommand_did(app)?;
-    app = add_subcommand_didcomm(app)?;
-    app = add_subcommand_vc_zkp(app)?;
+    cfg_if::cfg_if! {
+        if #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))] {
+            app = add_subcommand_did(app)?;
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "capability-didcomm")] {
+            app = add_subcommand_didcomm(app)?;
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "capability-vc-zkp")] {
+            app = add_subcommand_vc_zkp(app)?;
+        } else {}
+    }
 
     Ok(app)
 }
