@@ -22,6 +22,7 @@ use vade::Vade;
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
+    helpers::Credential,
     helpers::VersionInfo,
 };
 
@@ -68,6 +69,49 @@ impl VadeEvan {
                 source_message: vade_error.to_string(),
             }),
         }
+    }
+
+    /// Creates a credential request. This function is used to create a credential request which is sent to Issuer
+    ///
+    /// # Arguments
+    ///
+    /// * `issuer_public_key` - issuer public key
+    /// * `bbs_secret` - master secret of the holder/receiver
+    /// * `credential_values` - JSON string with cleartext values to be signed in the credential
+    /// * `credential_offer` - JSON string with credential offer by issuer
+    /// * `credential_schema` - JSON string with credential schema
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use anyhow::Result;
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let result = vade_evan.create_credential_request("", "", "", "", "").await?;
+    ///     println!("created credential request: {}", result);
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn create_credential_request(
+        &mut self,
+        issuer_public_key: &str,
+        bbs_secret: &str,
+        credential_values: &str,
+        credential_offer: &str,
+        credential_schema: &str,
+    ) -> Result<String, VadeEvanError> {
+        let credential = Credential::new(self)?;
+        credential
+            .create_credential_request(
+                issuer_public_key,
+                bbs_secret,
+                credential_values,
+                credential_offer,
+                credential_schema,
+            )
+            .await
     }
 
     /// Creates a new DID. May also persist a DID document for it, depending on plugin implementation.
