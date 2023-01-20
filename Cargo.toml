@@ -28,7 +28,7 @@ wasm-opt = ["-Oz", "--enable-mutable-globals"]
 [features]
 default = ["bundle-default", "target-cli"]
 
-# plugins we want to enable in our
+# plugins we want to be enabled by default
 bundle-default = [
     "plugin-did-sidetree",
     "plugin-did-substrate",
@@ -37,8 +37,9 @@ bundle-default = [
     "plugin-vc-zkp-bbs",
 ]
 
-# defines a feature named `sdk`, this feature should be enabled when plugin is compiled for IN3 sdk
+# plugins for sdk build, this feature should be enabled when plugin is compiled for IN3 sdk
 bundle-sdk = [
+    "capability-sdk",
     "plugin-did-sidetree",
     "plugin-vc-zkp-bbs",
 ]
@@ -77,6 +78,12 @@ plugin-vc-zkp-bbs = [
     "vade-evan-bbs",
 ]
 
+# enable support for using the `c_lib` module to process requests
+capability-c-lib = [
+    "tokio",
+    "vade-didcomm/portable",
+]
+
 # enable didcomm related functions in targets
 capability-didcomm = []
 
@@ -94,8 +101,7 @@ capability-vc-zkp = []
 
 # build for consuming vade-evan from C
 target-c-lib = [
-    "tokio",
-    "vade-didcomm/portable",
+    "capability-c-lib",
 ]
 
 # build for command line usage
@@ -108,7 +114,7 @@ target-cli = [
 
 # build for consuming vade-evan from Java
 target-java-lib = [
-    "target-c-lib",
+    "capability-c-lib",
 ]
 
 # build for usage in wasm

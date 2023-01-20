@@ -15,12 +15,12 @@
 */
 
 use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
-#[cfg(feature = "capability-sdk")]
+#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-#[cfg(feature = "capability-sdk")]
+#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
@@ -36,13 +36,13 @@ pub struct Response {
 }
 
 macro_rules! execute_vade_function {
-    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $request_id:expr, #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config.to_string()),
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $request_id,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -53,13 +53,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
+    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $request_id:expr, #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $request_id,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -70,13 +70,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $request_id:expr, #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $request_id,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -87,13 +87,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "capability-sdk")] $request_id:expr, #[cfg(feature = "capability-sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $request_id:expr, #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $request_id,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -116,8 +116,9 @@ fn stringify_vade_evan_error(err: VadeEvanError) -> String {
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 pub fn get_vade_evan(
     config: Option<&String>,
-    #[cfg(feature = "capability-sdk")] request_id: *const c_void,
-    #[cfg(feature = "capability-sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] request_id: *const c_void,
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+    request_function_callback: ResolveHttpRequest,
 ) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
@@ -131,9 +132,9 @@ pub fn get_vade_evan(
     return VadeEvan::new(VadeEvanConfig {
         target,
         signer: signer_config,
-        #[cfg(feature = "capability-sdk")]
+        #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
         request_id,
-        #[cfg(feature = "capability-sdk")]
+        #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
         request_function_callback,
     })
     .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
@@ -182,15 +183,26 @@ fn get_config_values(
     Ok(vec)
 }
 
+/// Executes a vade call.
+///
+/// About the `config` argument setup used here:
+///
+/// - if built for C and having sdk capability enabled: type is `*const c_void`
+/// - for any other build: type is `*const c_char`
+/// - if built for Java and having sdk capability enabled: it is an unused argument,
+///   so prefix it with `_`
 #[no_mangle]
 pub extern "C" fn execute_vade(
     func_name: *const c_char,
     arguments: *const *const c_char,
     num_of_args: usize,
     options: *const c_char,
-    #[cfg(not(feature = "capability-sdk"))] config: *const c_char,
-    #[cfg(feature = "capability-sdk")] config: *const c_void,
-    #[cfg(feature = "capability-sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(all(feature = "target-java-lib", not(feature = "capability-sdk")))] config: *const c_char,
+    #[cfg(all(feature = "target-java-lib", feature = "capability-sdk"))] _config: *const c_char,
+    #[cfg(all(feature = "target-c-lib", not(feature = "capability-sdk")))] config: *const c_char,
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] config: *const c_void,
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+    request_function_callback: ResolveHttpRequest,
 ) -> *const c_char {
     let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
     let args_array: &[*const c_char] =
@@ -218,7 +230,7 @@ pub extern "C" fn execute_vade(
         str_config = unsafe { CStr::from_ptr(config).to_string_lossy().into_owned() };
     }
 
-    #[cfg(feature = "capability-sdk")]
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
     let ptr_request_list = config as *mut c_void;
 
     let no_args = String::from("");
@@ -236,9 +248,9 @@ pub extern "C" fn execute_vade(
                 did_resolve,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -250,9 +262,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -264,9 +276,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -277,9 +289,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -290,9 +302,9 @@ pub extern "C" fn execute_vade(
                 str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -304,9 +316,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -318,9 +330,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -332,9 +344,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -346,9 +358,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -360,9 +372,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -374,9 +386,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -388,9 +400,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -402,9 +414,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -416,9 +428,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -430,9 +442,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -444,9 +456,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -458,9 +470,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
@@ -473,17 +485,17 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(2).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "capability-sdk")]
+                #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
         }),
         "get_version_info" => get_vade_evan(
             Some(&str_config),
-            #[cfg(feature = "capability-sdk")]
+            #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
             ptr_request_list,
-            #[cfg(feature = "capability-sdk")]
+            #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
             request_function_callback,
         )
         .map_err(stringify_generic_error)

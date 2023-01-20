@@ -14,11 +14,11 @@
   limitations under the License.
 */
 
-#[cfg(feature = "capability-sdk")]
+#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use std::os::raw::c_void;
 use vade::Vade;
 
-#[cfg(feature = "capability-sdk")]
+#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
@@ -58,9 +58,9 @@ impl VadeEvan {
         match get_vade(
             &config.target,
             &config.signer,
-            #[cfg(feature = "capability-sdk")]
+            #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
             config.request_id,
-            #[cfg(feature = "capability-sdk")]
+            #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
             config.request_function_callback,
         ) {
             Ok(vade) => Ok(Self { vade }),
