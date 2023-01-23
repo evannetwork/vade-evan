@@ -479,22 +479,27 @@ pub extern "C" fn execute_vade(
             )
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "create_credential_request" => get_vade_evan(
-            Some(&str_config),
-            #[cfg(feature = "sdk")]
-            ptr_request_list,
-            #[cfg(feature = "sdk")]
-            request_function_callback,
-        )
-        .map_err(stringify_generic_error)
-        .map(|vade_evan| {
-            vade_evan.create_credential_request(
-                arguments_vec.get(0).unwrap_or_else(|| &no_args),
-                arguments_vec.get(1).unwrap_or_else(|| &no_args),
-                arguments_vec.get(2).unwrap_or_else(|| &no_args),
-                arguments_vec.get(3).unwrap_or_else(|| &no_args),
-                arguments_vec.get(4).unwrap_or_else(|| &no_args),
-            )
+        "create_credential_request" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(feature = "sdk")]
+                    ptr_request_list,
+                    #[cfg(feature = "sdk")]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .create_credential_request(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(4).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
         }),
         #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
         "run_custom_function" => runtime.block_on({

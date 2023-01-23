@@ -155,6 +155,27 @@ cfg_if::cfg_if! {
             let version_info = vade_evan.get_version_info();
             Ok(Some(version_info))
         }
+
+        #[wasm_bindgen]
+        pub async fn create_credential_request(
+            issuer_public_key: String,
+            bbs_secret: String,
+            credential_values: String,
+            credential_offer: String,
+            credential_schema: String 
+        ) -> Result<Option<String>, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let credential_result = vade_evan
+            .create_credential_request(
+                &issuer_public_key,
+                &bbs_secret,
+                &credential_values,
+                &credential_offer,
+                &credential_schema).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(Some(credential_result))
+        }
     } else {
     }
 }
