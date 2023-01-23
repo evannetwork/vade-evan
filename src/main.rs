@@ -159,6 +159,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 wrap_vade3!(vc_zkp_create_credential_proposal, sub_m)
             }
             #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+            ("create_credential_request", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .create_credential_request(
+                        get_argument_value(sub_m, "issuer_public_key", None),
+                        get_argument_value(sub_m, "bbs_secret", None),
+                        get_argument_value(sub_m, "credential_values", None),
+                        get_argument_value(sub_m, "credential_offer", None),
+                        get_argument_value(sub_m, "credential_schema", None),
+                    )
+                    .await?
+            }
+            #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
             ("request_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
@@ -368,6 +380,17 @@ If no key was given and the message is encrypted the DIDComm keypair from a db w
                         .arg(get_clap_argument("signer")?),
                 )
                 .subcommand(
+                    SubCommand::with_name("create_credential_request")
+                        .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
+                        .arg(get_clap_argument("issuer_public_key")?)
+                        .arg(get_clap_argument("bbs_secret")?)
+                        .arg(get_clap_argument("credential_values")?)
+                        .arg(get_clap_argument("credential_offer")?)
+                        .arg(get_clap_argument("credential_schema")?)
+                        .arg(get_clap_argument("target")?)
+                        .arg(get_clap_argument("signer")?),
+                )
+                .subcommand(
                     SubCommand::with_name("request_proof")
                         .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
                         .arg(get_clap_argument("method")?)
@@ -474,6 +497,31 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg, Box<dyn std::error::Error>> 
             .short("s")
             .value_name("signer")
             .help("signer to use to sign messages with, e.g. 'local' or 'remote|http://somewhere'")
+            .takes_value(true),
+        "issuer_public_key" => Arg::with_name("issuer_public_key")
+            .long("issuer_public_key")
+            .value_name("issuer_public_key")
+            .help("issuer public key")
+            .takes_value(true),
+        "credential_schema" => Arg::with_name("credential_schema")
+            .long("credential_schema")
+            .value_name("credential_schema")
+            .help("JSON string with credential schema")
+            .takes_value(true),
+        "credential_offer" => Arg::with_name("credential_offer")
+            .long("credential_offer")
+            .value_name("credential_offer")
+            .help("JSON string with credential offer by issuer")
+            .takes_value(true),
+        "credential_values" => Arg::with_name("credential_values")
+            .long("credential_values")
+            .value_name("credential_values")
+            .help("JSON string with cleartext values to be signed in the credential")
+            .takes_value(true),
+        "bbs_secret" => Arg::with_name("bbs_secret")
+            .long("bbs_secret")
+            .value_name("bbs_secret")
+            .help("master secret of the holder/receiver")
             .takes_value(true),
         _ => {
             return Err(Box::from(format!("invalid arg_name: '{}'", &arg_name)));
