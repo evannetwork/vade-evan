@@ -29,60 +29,25 @@ wasm-opt = ["-Oz", "--enable-mutable-globals"]
 default = ["bundle-default", "target-cli"]
 
 # plugins we want to be enabled by default
-bundle-default = [
-    "plugin-did-sidetree",
-    "plugin-did-substrate",
-    "plugin-didcomm",
-    "plugin-jwt-vc",
-    "plugin-vc-zkp-bbs",
-]
+bundle-default = ["plugin-did-sidetree", "plugin-did-substrate", "plugin-didcomm", "plugin-jwt-vc", "plugin-vc-zkp-bbs"]
 
 # plugins for sdk build, this feature should be enabled when plugin is compiled for IN3 sdk
-bundle-sdk = [
-    "capability-sdk",
-    "plugin-did-sidetree",
-    "plugin-vc-zkp-bbs",
-]
+bundle-sdk = ["capability-sdk", "plugin-did-sidetree", "plugin-vc-zkp-bbs"]
 
-plugin-did-sidetree = [
-    "capability-did-read",
-    "capability-did-write",
-    "vade-sidetree",
-]
+plugin-did-sidetree = ["capability-did-read", "capability-did-write", "vade-sidetree"]
 
-plugin-did-substrate = [
-    "capability-did-read",
-    "capability-did-write",
-    "plugin-signer",
-    "vade-evan-substrate",
-]
+plugin-did-substrate = ["capability-did-read", "capability-did-write", "plugin-signer", "vade-evan-substrate"]
 
-plugin-didcomm = [
-    "capability-didcomm",
-    "vade-didcomm",
-]
+plugin-didcomm = ["capability-didcomm", "vade-didcomm"]
 
-plugin-jwt-vc = [
-    "capability-vc-zkp",
-    "plugin-signer",
-    "vade-jwt-vc",
-]
+plugin-jwt-vc = ["capability-vc-zkp", "plugin-signer", "vade-jwt-vc"]
 
-plugin-signer = [
-    "vade-signer",
-]
+plugin-signer = ["vade-signer"]
 
-plugin-vc-zkp-bbs = [
-    "capability-vc-zkp",
-    "plugin-signer",
-    "vade-evan-bbs",
-]
+plugin-vc-zkp-bbs = ["capability-vc-zkp", "plugin-signer", "vade-evan-bbs"]
 
 # enable support for using the `c_lib` module to process requests
-capability-c-lib = [
-    "tokio",
-    "vade-didcomm/portable",
-]
+capability-c-lib = ["tokio", "vade-didcomm/portable"]
 
 # enable didcomm related functions in targets
 capability-didcomm = []
@@ -100,28 +65,16 @@ capability-sdk = []
 capability-vc-zkp = []
 
 # build for consuming vade-evan from C
-target-c-lib = [
-    "capability-c-lib",
-]
+target-c-lib = ["capability-c-lib"]
 
 # build for command line usage
-target-cli = [
-    "anyhow",
-    "clap",
-    "tokio",
-    "vade-didcomm/portable",
-]
+target-cli = ["anyhow", "clap", "tokio", "vade-didcomm/portable"]
 
 # build for consuming vade-evan from Java
-target-java-lib = [
-    "capability-c-lib",
-]
+target-java-lib = ["capability-c-lib"]
 
 # build for usage in wasm
-target-wasm = [
-    "vade-didcomm/wasm",
-    "vade-evan-bbs/wasm",
-]
+target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm"]
 
 ############################################################################### generic dependencies
 [dependencies]
