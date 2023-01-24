@@ -54,8 +54,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
+                let payload = get_argument_value(&sub_m, "payload", None);
                 get_vade_evan(&sub_m)?
-                    .did_create(&method, &options, &String::new())
+                    .did_create(&method, &options, &payload)
                     .await?
             }
             #[cfg(feature = "did-read")]
@@ -212,6 +213,7 @@ fn get_app<'a>() -> Result<App<'a, 'a>, Box<dyn std::error::Error>> {
                         .about("Creates a new DID on substrate.")
                         .arg(get_clap_argument("method")?)
                         .arg(get_clap_argument("options")?)
+                        .arg(get_clap_argument("payload")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
                 )
