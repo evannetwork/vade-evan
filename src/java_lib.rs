@@ -40,7 +40,7 @@ pub extern "system" fn Java_com_vade_evan_Vade_executeVade(
     let mut arguments_vec: Vec<*const c_char> = Vec::new();
     let arg_count = env
         .get_array_length(arguments)
-        .expect("Couldn't get arrguments array length");
+        .expect("Couldn't get arguments array length");
 
     for i in 0..arg_count {
         let array_element = env

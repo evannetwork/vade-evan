@@ -13,6 +13,8 @@
 
 ### Deprecation
 
+- refactor feature names and combinations
+
 ## v0.4.0
 
 ### Features

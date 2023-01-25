@@ -5,6 +5,18 @@ use std::path::Path;
 
 use serde_derive::{Deserialize, Serialize};
 
+macro_rules! append_features {
+    ( $output:ident, $( $feature:expr ),* ) => {
+        {
+            $output.push_str("\n[features]");
+            $(
+                #[cfg(feature = $feature)]
+                $output.push_str(&format!("\n{}", $feature));
+            )*
+        }
+    };
+}
+
 #[derive(Deserialize, Serialize)]
 struct Package {
     name: String,
@@ -35,5 +47,31 @@ fn main() {
     let dest_path = Path::new(&env::var("OUT_DIR").unwrap()).join("build_info.txt");
     let mut f = BufWriter::new(File::create(&dest_path).unwrap());
 
-    write!(f, "{}", toml::to_string(&filtered_lock_file).unwrap()).unwrap();
+    // variable might be needlessly mutable due to the following feature listing not matching
+    #[allow(unused_mut)]
+    let mut output = toml::to_string(&filtered_lock_file).unwrap();
+
+    append_features![
+        output,
+        "default",
+        "bundle-default",
+        "bundle-sdk",
+        "plugin-did-sidetree",
+        "plugin-did-substrate",
+        "plugin-didcomm",
+        "plugin-jwt-vc",
+        "plugin-signer",
+        "plugin-vc-zkp-bbs",
+        "capability-didcomm",
+        "capability-did-read",
+        "capability-did-write",
+        "capability-sdk",
+        "capability-vc-zkp",
+        "capability-target-c-lib",
+        "capability-target-cli",
+        "capability-target-java-lib",
+        "capability-target-wasm"
+    ];
+
+    write!(f, "{}", &output).unwrap();
 }
