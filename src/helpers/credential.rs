@@ -1,7 +1,5 @@
 use crate::api::{VadeEvan, VadeEvanError};
-
-const EVAN_METHOD: &str = "did:evan";
-const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
+use crate::helpers::datatypes::{EVAN_METHOD, TYPE_BBS_OPTIONS};
 
 pub struct Credential<'a> {
     vade_evan: &'a mut VadeEvan,
@@ -32,7 +30,7 @@ impl<'a> Credential<'a> {
         );
         let result = self
             .vade_evan
-            .vc_zkp_request_credential(EVAN_METHOD, TYPE_OPTIONS, &payload)
+            .vc_zkp_request_credential(EVAN_METHOD, TYPE_BBS_OPTIONS, &payload)
             .await?;
 
         Ok(result)
