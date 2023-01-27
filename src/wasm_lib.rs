@@ -161,7 +161,7 @@ fn get_config_values(
     match config {
         Some(value) => {
             if !value.is_undefined() {
-                config_hash_map = value.into_serde()?;
+                config_hash_map = serde_wasm_bindgen::from_value(value.clone())?;
                 config_undefined = false;
             } else {
                 config_hash_map = HashMap::<String, String>::new();
