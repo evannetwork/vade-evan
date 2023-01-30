@@ -24,6 +24,7 @@ pub struct DidDocument {
     pub id: String,
     pub service: Vec<Service>,
     pub services: Vec<Service>,
+    // TODO-TWI: make it optional
     pub verification_method: Vec<VerificationMethod>,
 }
 

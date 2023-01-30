@@ -94,16 +94,6 @@ async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEva
 
     Ok(non_empty_lines)
 }
-
-// async fn async get_issuer_did_doc(
-//     issuer_did: &str,
-// ) -> Result<(), VadeEvanError> {
-//     let issuer_did_doc = self.vade_evan.did_resolve(issuer_did).await?;
-//     let response_obj: Value = serde_json::from_str(&schema_did_doc_str)?;
-
-
-// }
-
 pub struct Credential<'a> {
     vade_evan: &'a mut VadeEvan,
 }
@@ -147,21 +137,45 @@ impl<'a> Credential<'a> {
         Ok(result)
     }
 
-    // TODO: add bbs_secret: &str,
-    // TODO: add credential: BbsCredential
-    pub async fn verify(
+    pub async fn get_issuer_pub_key(
         self,
         issuer_did: &str,
-    ) -> Result<(), VadeEvanError> {
+        public_key_type: &str
+    ) -> Result<String, VadeEvanError> {
         let did_result_str = self.vade_evan.did_resolve(issuer_did).await?;
         let did_result_value: Value = serde_json::from_str(&did_result_str)?;
         let did_document_result = did_result_value.get("didDocument").ok_or_else(|| {
             VadeEvanError::InvalidDidDocument("missing 'didDocument' in response".to_string())
         });
         let did_document_str = serde_json::to_string(&did_document_result?)?;
-        let didcomm_obj: DidDocument = serde_json::from_str(&did_document_str)?;
+        let mut did_document: DidDocument = serde_json::from_str(&did_document_str)?;
 
-        // println!("{}", didcomm_obj);
+        let mut public_key: &str = "";
+        // TODO: add assertionMethod checks
+        // TODO: add public key checks
+        // if (did_document.verification_method) {
+        // TODO: make verification methods optional
+        // let reversed_methods = did_document.verification_method.reverse();
+        for method in did_document.verification_method.iter() {
+            match &method.type_field {
+                public_key_type => {
+                    public_key = &method.public_key_jwk.x;
+                },
+            }
+        }
+
+        Ok(public_key.to_string())
+    }
+
+    // TODO: add bbs_secret: &str,
+    // TODO: add credential: BbsCredential
+    pub async fn verify(
+        self,
+        issuer_did: &str,
+    ) -> Result<(), VadeEvanError> {
+        let issuer_pub_key = self.get_issuer_pub_key(issuer_did, "JsonWebKey2020").await?;
+
+        println!("found issuer pub key: {}", issuer_pub_key);
 
         Ok(())
     }
