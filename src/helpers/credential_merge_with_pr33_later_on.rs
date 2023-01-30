@@ -13,6 +13,7 @@ use vade_evan_bbs::{
 };
 
 use crate::api::{VadeEvan, VadeEvanError};
+use crate::datatypes::{DidDocument};
 
 const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
@@ -94,6 +95,15 @@ async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEva
     Ok(non_empty_lines)
 }
 
+// async fn async get_issuer_did_doc(
+//     issuer_did: &str,
+// ) -> Result<(), VadeEvanError> {
+//     let issuer_did_doc = self.vade_evan.did_resolve(issuer_did).await?;
+//     let response_obj: Value = serde_json::from_str(&schema_did_doc_str)?;
+
+
+// }
+
 pub struct Credential<'a> {
     vade_evan: &'a mut VadeEvan,
 }
@@ -136,6 +146,25 @@ impl<'a> Credential<'a> {
 
         Ok(result)
     }
+
+    // TODO: add bbs_secret: &str,
+    // TODO: add credential: BbsCredential
+    pub async fn verify(
+        self,
+        issuer_did: &str,
+    ) -> Result<(), VadeEvanError> {
+        let did_result_str = self.vade_evan.did_resolve(issuer_did).await?;
+        let did_result_value: Value = serde_json::from_str(&did_result_str)?;
+        let did_document_result = did_result_value.get("didDocument").ok_or_else(|| {
+            VadeEvanError::InvalidDidDocument("missing 'didDocument' in response".to_string())
+        });
+        let did_document_str = serde_json::to_string(&did_document_result?)?;
+        let didcomm_obj: DidDocument = serde_json::from_str(&did_document_str)?;
+
+        // println!("{}", didcomm_obj);
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -148,7 +177,8 @@ mod tests {
     use super::Credential;
 
     const CREDENTIAL_MESSAGE_COUNT: usize = 13;
-    const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
+    const VALID_ISSUER_DID: &str = "did:evan:EiBtSZwjyrwiMfUUOU5o0CKdavUi36l7lYKszccZyvl84A";
+    const NON_EXISTING_ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
     const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
     const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
 
@@ -162,15 +192,45 @@ mod tests {
         let credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
-            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, Some(SUBJECT_DID))
+            .create_credential_offer(SCHEMA_DID, false, VALID_ISSUER_DID, Some(SUBJECT_DID))
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
-        assert_eq!(offer_obj.issuer, ISSUER_DID);
+        assert_eq!(offer_obj.issuer, VALID_ISSUER_DID);
         assert_eq!(offer_obj.subject, Some(SUBJECT_DID.to_string()));
         assert_eq!(offer_obj.credential_message_count, CREDENTIAL_MESSAGE_COUNT);
         assert!(!offer_obj.nonce.is_empty());
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_verify_credential() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let credential = Credential::new(&mut vade_evan)?;
+
+        // TODO: verify credential nquads
+
+        // verify the credential issuer
+        credential.verify(VALID_ISSUER_DID).await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn verify_credential_verifies_issuer_not_found() -> Result<()> {
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn verify_credential_verifies_issuer_not_valid() -> Result<()> {
         Ok(())
     }
 }
