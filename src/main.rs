@@ -170,6 +170,26 @@ async fn main() -> Result<()> {
                 bail!("invalid subcommand");
             }
         },
+        ("helper", Some(sub_m)) => match sub_m.subcommand() {
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            ("create_credential_offer", Some(sub_m)) => {
+                let use_valid_until = match get_optional_argument_value(sub_m, "use_valid_until") {
+                    Some(value) => value.to_lowercase() == "true",
+                    None => false,
+                };
+                get_vade_evan(sub_m)?
+                    .helper_create_credential_offer(
+                        get_argument_value(sub_m, "schema_did", None),
+                        use_valid_until,
+                        get_argument_value(sub_m, "issuer_did", None),
+                        get_optional_argument_value(sub_m, "subject_did"),
+                    )
+                    .await?
+            }
+            _ => {
+                bail!("invalid subcommand");
+            }
+        },
         ("build_version", Some(sub_m)) => get_vade_evan(sub_m)?.get_version_info(),
         _ => {
             bail!("invalid subcommand");
@@ -179,6 +199,32 @@ async fn main() -> Result<()> {
     println!("{}", &result);
 
     Ok(())
+}
+
+// not included in all build variants
+#[allow(dead_code)]
+fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
+    // variable might be needlessly mutable due to the following feature listing not matching
+    #[allow(unused_mut)]
+    let mut subcommand = SubCommand::with_name("helper")
+        .about("streamlined and updated VADE API that will replace some of the current functions")
+        .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_credential_offer")
+                    .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema the issuer is capable and willing to use for credential issuance.")
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("use_valid_until")?)
+                    .arg(get_clap_argument("issuer_did")?)
+                    .arg(get_clap_argument("subject_did")?),
+            );
+        } else {}
+    }
+
+    Ok(app.subcommand(subcommand))
 }
 
 // not included in all build variants
@@ -491,6 +537,8 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
         } else {}
     }
 
+    app = add_subcommand_helper(app)?;
+
     Ok(app)
 }
 
@@ -512,6 +560,11 @@ fn get_argument_value<'a>(
             }
         },
     }
+}
+
+#[cfg(feature = "plugin-vc-zkp-bbs")] // currently only used for vc offers
+fn get_optional_argument_value<'a>(matches: &'a ArgMatches, arg_name: &'a str) -> Option<&'a str> {
+    matches.value_of(arg_name)
 }
 
 fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan> {
@@ -561,6 +614,28 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .short("s")
             .value_name("signer")
             .help("signer to use to sign messages with, e.g. 'local' or 'remote|http://somewhere'")
+            .takes_value(true),
+        "schema_did" => Arg::with_name("schema_did")
+            .long("schema_did")
+            .value_name("schema_did")
+            .required(true)
+            .help("schema to create the offer for, e.g. 'did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw'")
+            .takes_value(true),
+        "use_valid_until" => Arg::with_name("use_valid_until")
+            .long("use_valid_until")
+            .value_name("use_valid_until")
+            .help("true if `validUntil` will be present in credential")
+            .takes_value(true),
+        "issuer_did" => Arg::with_name("issuer_did")
+            .long("issuer_did")
+            .value_name("issuer_did")
+            .required(true)
+            .help("DID of issuer")
+            .takes_value(true),
+        "subject_did" => Arg::with_name("subject_did")
+            .long("subject_did")
+            .value_name("subject_did")
+            .help("DID of subject")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);

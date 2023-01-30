@@ -105,12 +105,12 @@ impl<'a> Credential<'a> {
 
     pub async fn create_credential_offer(
         self,
-        schema_did: String,
+        schema_did: &str,
         use_valid_until: bool,
-        issuer_did: String,
-        subject_did: Option<String>,
+        issuer_did: &str,
+        subject_did: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        let schema_did_doc_str = self.vade_evan.did_resolve(&schema_did).await?;
+        let schema_did_doc_str = self.vade_evan.did_resolve(schema_did).await?;
 
         let credential_draft = create_empty_unsigned_credential(
             &schema_did_doc_str,
@@ -121,8 +121,8 @@ impl<'a> Credential<'a> {
         let nquads = convert_to_nquads(&credential_draft_str).await?;
 
         let payload = OfferCredentialPayload {
-            issuer: issuer_did,
-            subject: subject_did,
+            issuer: issuer_did.to_string(),
+            subject: subject_did.map(|v| v.to_string()),
             nquad_count: nquads.len(),
         };
         let result = self
@@ -162,12 +162,7 @@ mod tests {
         let credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
-            .create_credential_offer(
-                SCHEMA_DID.to_string(),
-                false,
-                ISSUER_DID.to_string(),
-                Some(SUBJECT_DID.to_string()),
-            )
+            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, Some(SUBJECT_DID))
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;

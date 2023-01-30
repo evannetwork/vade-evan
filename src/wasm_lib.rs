@@ -146,6 +146,26 @@ cfg_if::cfg_if! {
             let version_info = vade_evan.get_version_info();
             Ok(Some(version_info))
         }
+
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[wasm_bindgen]
+        pub async fn helper_create_credential_offer(
+            schema_did: String,
+            use_valid_until: bool,
+            issuer_did: String,
+            subject_did: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let offer = vade_evan
+                .helper_create_credential_offer(
+                    &schema_did,
+                    use_valid_until,
+                    &issuer_did,
+                    subject_did.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(offer)
+        }
     } else {
     }
 }
