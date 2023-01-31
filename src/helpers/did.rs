@@ -1,8 +1,15 @@
 use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{
+    AddPublicKeys,
+    AddServices,
     DIDOperationType,
+    DidUpdatePayload,
+    Patch,
+    PublicKeyJWK,
     PublicKeyModel,
     PublicKeyPurpose,
+    RemovePublicKeys,
+    RemoveServices,
     Service,
     EVAN_METHOD,
     TYPE_BBS_KEY,
@@ -11,7 +18,6 @@ use crate::helpers::datatypes::{
 };
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 
-use super::datatypes::PublicKeyJWK;
 pub struct DID<'a> {
     vade_evan: &'a mut VadeEvan,
 }
@@ -37,6 +43,8 @@ impl<'a> DID<'a> {
                     crv: "BLS12381_G2".to_owned(),
                     x: val.to_owned(),
                     y: None,
+                    d: None,
+                    nonce: None,
                 },
                 purposes: vec![
                     PublicKeyPurpose::Authentication,
@@ -63,6 +71,8 @@ impl<'a> DID<'a> {
                         crv: "secp256k1".to_owned(),
                         x: encode_config(pub_key[1..33].as_ref(), URL_SAFE_NO_PAD),
                         y: Some(encode_config(pub_key[33..65].as_ref(), URL_SAFE_NO_PAD)),
+                        d: None,
+                        nonce: None,
                     },
                     purposes: vec![
                         PublicKeyPurpose::Authentication,
@@ -104,13 +114,104 @@ impl<'a> DID<'a> {
             .await?;
         Ok(result)
     }
+
     pub async fn update(
         self,
         did: &str,
         operation: DIDOperationType,
-        identity: Option<&str>,
+        update_key: PublicKeyJWK,
         payload: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        Ok("".to_string())
+        let mut patch: Patch = Patch::Default;
+
+        let mut next_update_key = update_key.clone();
+        let mut nonce = next_update_key
+            .nonce
+            .unwrap_or_else(|| "0".to_string())
+            .parse::<u32>()
+            .map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
+        nonce += 1;
+        next_update_key.nonce = Some(nonce.to_string());
+
+        match operation {
+            DIDOperationType::AddKey => {
+                let new_key_to_add: PublicKeyJWK = serde_json::from_str(payload.unwrap_or(""))
+                    .map_err(|err| VadeEvanError::InternalError {
+                        source_message: err.to_string(),
+                    })?;
+                let public_key_to_add = PublicKeyModel {
+                    id: "update_key".to_owned(),
+                    r#type: "EcdsaSecp256k1VerificationKey2019".to_string(),
+                    purposes: [PublicKeyPurpose::KeyAgreement].to_vec(),
+                    public_key_jwk: new_key_to_add,
+                };
+
+                patch = Patch::AddPublicKeys(AddPublicKeys {
+                    public_keys: vec![public_key_to_add],
+                });
+            }
+            DIDOperationType::RemoveKey => {
+                let key_id_to_remove = payload
+                    .ok_or("key id required for removal")
+                    .map_err(|err| VadeEvanError::InternalError {
+                        source_message: err.to_string(),
+                    })?
+                    .to_owned();
+                patch = Patch::RemovePublicKeys(RemovePublicKeys {
+                    ids: vec![key_id_to_remove],
+                });
+            }
+            DIDOperationType::AddServiceEnpoint => {
+                let service: Service =
+                    serde_json::from_str(payload.unwrap_or("")).map_err(|err| {
+                        VadeEvanError::InternalError {
+                            source_message: err.to_string(),
+                        }
+                    })?;
+
+                patch = Patch::AddServices(AddServices {
+                    services: vec![service],
+                });
+            }
+
+            DIDOperationType::RemoveServiceEnpoint => {
+                let service_id_to_remove = payload
+                    .ok_or("service id required for removal")
+                    .map_err(|err| VadeEvanError::InternalError {
+                        source_message: err.to_string(),
+                    })?
+                    .to_owned();
+
+                patch = Patch::RemoveServices(RemoveServices {
+                    ids: vec![service_id_to_remove],
+                });
+            }
+        };
+
+        let update_payload = DidUpdatePayload {
+            update_type: "update".to_string(),
+            update_key: Some(update_key),
+            next_update_key: Some(next_update_key),
+            patches: Some(vec![patch]),
+            next_recovery_key: None,
+            recovery_key: None,
+        };
+
+        let result = self
+            .vade_evan
+            .did_update(
+                did,
+                TYPE_SIDETREE_OPTIONS,
+                &serde_json::to_string(&update_payload).map_err(|err| {
+                    VadeEvanError::InternalError {
+                        source_message: err.to_string(),
+                    }
+                })?,
+            )
+            .await?;
+
+        Ok(result)
     }
 }
