@@ -10,6 +10,8 @@ pub enum VadeEvanError {
     NoResults,
     #[error("invalid did document")]
     InvalidDidDocument(String),
+    #[error("pubkey for verification method not found")]
+    InvalidVerificationMethod(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
     #[error("JSON-ld handling failed, {0}")]

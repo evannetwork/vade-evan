@@ -4,16 +4,12 @@ use ssi::{
     urdna2015::normalize,
 };
 use vade_evan_bbs::{
-    CredentialSchema,
-    CredentialSchemaReference,
-    CredentialStatus,
-    CredentialSubject,
-    OfferCredentialPayload,
-    UnsignedBbsCredential,
+    CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject,
+    OfferCredentialPayload, UnsignedBbsCredential,
 };
 
 use crate::api::{VadeEvan, VadeEvanError};
-use crate::datatypes::{DidDocument};
+use crate::datatypes::DidDocument;
 
 const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
@@ -137,43 +133,65 @@ impl<'a> Credential<'a> {
         Ok(result)
     }
 
-    pub async fn get_issuer_pub_key(
+    /// Resolve a issuer did, get the did document and extract the public key out of the
+    /// verification methods
+    ///
+    /// # Arguments
+    /// * `issuer_did` - DID of the issuer to load the pub key from
+    /// * `public_key_type` - type of verification method to extract the pub key
+    ///
+    /// # Returns
+    /// * `CredentialProposal` - The message to be sent to an issuer
+    async fn get_issuer_pub_key(
         self,
         issuer_did: &str,
-        public_key_type: &str
+        public_key_type: &str,
     ) -> Result<String, VadeEvanError> {
+        // resolve the did and extract the did document out of it
         let did_result_str = self.vade_evan.did_resolve(issuer_did).await?;
         let did_result_value: Value = serde_json::from_str(&did_result_str)?;
         let did_document_result = did_result_value.get("didDocument").ok_or_else(|| {
-            VadeEvanError::InvalidDidDocument("missing 'didDocument' in response".to_string())
+            VadeEvanError::InvalidDidDocument(
+                "missing 'didDocument' property in resolved did".to_string(),
+            )
         });
         let did_document_str = serde_json::to_string(&did_document_result?)?;
-        let mut did_document: DidDocument = serde_json::from_str(&did_document_str)?;
+        let did_document: DidDocument = serde_json::from_str(&did_document_str)?;
+
+        // get the verification methods
+        let verification_methods =
+            did_document
+                .verification_method
+                .ok_or(VadeEvanError::InvalidVerificationMethod(
+                    "missing 'verification_method' property in did_document".to_string(),
+                ))?;
 
         let mut public_key: &str = "";
-        // TODO: add assertionMethod checks
-        // TODO: add public key checks
-        // if (did_document.verification_method) {
-        // TODO: make verification methods optional
-        // let reversed_methods = did_document.verification_method.reverse();
-        for method in did_document.verification_method.iter() {
-            match &method.type_field {
-                public_key_type => {
-                    public_key = &method.public_key_jwk.x;
-                },
+        for method in verification_methods.iter() {
+            if method.type_field == public_key_type {
+                public_key = &method.public_key_jwk.x;
+                break;
             }
+        }
+
+        if public_key == "" {
+            return Err(VadeEvanError::InvalidVerificationMethod(
+                "no public key found for verification type {public_key_type}".to_string(),
+            ));
         }
 
         Ok(public_key.to_string())
     }
 
-    // TODO: add bbs_secret: &str,
-    // TODO: add credential: BbsCredential
     pub async fn verify(
         self,
         issuer_did: &str,
+        public_key_type: &str,
     ) -> Result<(), VadeEvanError> {
-        let issuer_pub_key = self.get_issuer_pub_key(issuer_did, "JsonWebKey2020").await?;
+        let issuer_pub_key = self.get_issuer_pub_key(issuer_did, public_key_type).await?;
+
+        // TODO: add bbs_secret: &str,
+        // TODO: add credential: BbsCredential
 
         println!("found issuer pub key: {}", issuer_pub_key);
 
@@ -192,9 +210,10 @@ mod tests {
 
     const CREDENTIAL_MESSAGE_COUNT: usize = 13;
     const VALID_ISSUER_DID: &str = "did:evan:EiBtSZwjyrwiMfUUOU5o0CKdavUi36l7lYKszccZyvl84A";
-    const NON_EXISTING_ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
     const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
     const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
+    const PUB_KEY_TYPE: &str = "JsonWebKey2020";
+    const JSON_WEB_PUB_KEY: &str = "0ya7nOYpfP6joriZg0tjSl4uyN992Lqk3Ef-bzzhuC4";
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
@@ -231,20 +250,49 @@ mod tests {
         // TODO: verify credential nquads
 
         // verify the credential issuer
-        credential.verify(VALID_ISSUER_DID).await?;
+        credential
+            .verify(VALID_ISSUER_DID, "JsonWebKey2020")
+            .await?;
 
         Ok(())
     }
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn verify_credential_verifies_issuer_not_found() -> Result<()> {
+    async fn can_get_issuer_pub_key() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let credential = Credential::new(&mut vade_evan)?;
+        let pub_key = credential
+            .get_issuer_pub_key(VALID_ISSUER_DID, PUB_KEY_TYPE)
+            .await?;
+
+        assert_eq!(pub_key, JSON_WEB_PUB_KEY);
+
         Ok(())
     }
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn verify_credential_verifies_issuer_not_valid() -> Result<()> {
+    async fn will_throw_when_pubkey_not_found() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let credential = Credential::new(&mut vade_evan)?;
+        let pub_key = credential
+            .get_issuer_pub_key(VALID_ISSUER_DID, "INVALID_PUB_KEY_TYPE")
+            .await;
+
+        match pub_key {
+            Ok(_) => assert!(false, "pub key should not be there"),
+            Err(_) => assert!(true, "pub key not found"),
+        }
+
         Ok(())
     }
 }

@@ -25,7 +25,7 @@ pub struct DidDocument {
     pub service: Vec<Service>,
     pub services: Vec<Service>,
     // TODO-TWI: make it optional
-    pub verification_method: Vec<VerificationMethod>,
+    pub verification_method: Option<Vec<VerificationMethod>>,
 }
 
 // impl std::fmt::Display for DidDocument {
