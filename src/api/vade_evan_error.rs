@@ -10,12 +10,22 @@ pub enum VadeEvanError {
     NoResults,
     #[error("invalid did document")]
     InvalidDidDocument(String),
-    #[error("pubkey for verification method not found")]
+    #[error("pubkey for verification method not found, {0}")]
     InvalidVerificationMethod(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
     #[error("JSON-ld handling failed, {0}")]
     JsonLdHandling(String),
+    // how to say "we need a separate error type" without saying "we need a separate error type":
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[error("base64 decoding failed")]
+    Base64DecodingFailed(#[from] base64::DecodeError),
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[error("an error has occurred during bbs signature validation: {0}")]
+    BbsValidationError(String),
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[error("could not parse public key: {0}")]
+    PublicKeyParsingError(String),
 }
 impl From<Box<dyn std::error::Error>> for VadeEvanError {
     fn from(vade_error: Box<dyn std::error::Error>) -> VadeEvanError {
