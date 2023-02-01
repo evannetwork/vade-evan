@@ -138,14 +138,14 @@ impl<'a> Credential<'a> {
     ///
     /// # Arguments
     /// * `issuer_did` - DID of the issuer to load the pub key from
-    /// * `public_key_type` - type of verification method to extract the pub key
+    /// * `verification_method_id` - id of verification method to extract the pub key
     ///
     /// # Returns
     /// * `CredentialProposal` - The message to be sent to an issuer
     async fn get_issuer_pub_key(
         self,
         issuer_did: &str,
-        public_key_type: &str,
+        verification_method_id: &str,
     ) -> Result<String, VadeEvanError> {
         // resolve the did and extract the did document out of it
         let did_result_str = self.vade_evan.did_resolve(issuer_did).await?;
@@ -168,7 +168,7 @@ impl<'a> Credential<'a> {
 
         let mut public_key: &str = "";
         for method in verification_methods.iter() {
-            if method.type_field == public_key_type {
+            if method.id == verification_method_id {
                 public_key = &method.public_key_jwk.x;
                 break;
             }
@@ -176,7 +176,7 @@ impl<'a> Credential<'a> {
 
         if public_key == "" {
             return Err(VadeEvanError::InvalidVerificationMethod(
-                "no public key found for verification type {public_key_type}".to_string(),
+                "no public key found for verification id {verification_method_id}".to_string(),
             ));
         }
 
@@ -186,9 +186,11 @@ impl<'a> Credential<'a> {
     pub async fn verify(
         self,
         issuer_did: &str,
-        public_key_type: &str,
+        verification_method_id: &str,
     ) -> Result<(), VadeEvanError> {
-        let issuer_pub_key = self.get_issuer_pub_key(issuer_did, public_key_type).await?;
+        let issuer_pub_key = self
+            .get_issuer_pub_key(issuer_did, verification_method_id)
+            .await?;
 
         // TODO: add bbs_secret: &str,
         // TODO: add credential: BbsCredential
@@ -212,7 +214,7 @@ mod tests {
     const VALID_ISSUER_DID: &str = "did:evan:EiBtSZwjyrwiMfUUOU5o0CKdavUi36l7lYKszccZyvl84A";
     const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
     const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
-    const PUB_KEY_TYPE: &str = "JsonWebKey2020";
+    const VERIFICATION_METHOD_ID: &str = "#publicKey";
     const JSON_WEB_PUB_KEY: &str = "0ya7nOYpfP6joriZg0tjSl4uyN992Lqk3Ef-bzzhuC4";
 
     #[tokio::test]
@@ -251,7 +253,7 @@ mod tests {
 
         // verify the credential issuer
         credential
-            .verify(VALID_ISSUER_DID, "JsonWebKey2020")
+            .verify(VALID_ISSUER_DID, VERIFICATION_METHOD_ID)
             .await?;
 
         Ok(())
@@ -267,7 +269,7 @@ mod tests {
 
         let credential = Credential::new(&mut vade_evan)?;
         let pub_key = credential
-            .get_issuer_pub_key(VALID_ISSUER_DID, PUB_KEY_TYPE)
+            .get_issuer_pub_key(VALID_ISSUER_DID, VERIFICATION_METHOD_ID)
             .await?;
 
         assert_eq!(pub_key, JSON_WEB_PUB_KEY);
@@ -285,7 +287,7 @@ mod tests {
 
         let credential = Credential::new(&mut vade_evan)?;
         let pub_key = credential
-            .get_issuer_pub_key(VALID_ISSUER_DID, "INVALID_PUB_KEY_TYPE")
+            .get_issuer_pub_key(VALID_ISSUER_DID, "#random-id")
             .await;
 
         match pub_key {
