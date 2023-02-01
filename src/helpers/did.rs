@@ -119,11 +119,14 @@ impl<'a> DID<'a> {
         self,
         did: &str,
         operation: DIDOperationType,
-        update_key: PublicKeyJWK,
-        payload: Option<&str>,
+        update_key: &str,
+        payload: &str,
     ) -> Result<String, VadeEvanError> {
         let mut patch: Patch = Patch::Default;
-
+        let update_key: PublicKeyJWK =
+            serde_json::from_str(update_key).map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
         let mut next_update_key = update_key.clone();
         let mut nonce = next_update_key
             .nonce
@@ -137,8 +140,8 @@ impl<'a> DID<'a> {
 
         match operation {
             DIDOperationType::AddKey => {
-                let new_key_to_add: PublicKeyJWK = serde_json::from_str(payload.unwrap_or(""))
-                    .map_err(|err| VadeEvanError::InternalError {
+                let new_key_to_add: PublicKeyJWK =
+                    serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
                         source_message: err.to_string(),
                     })?;
                 let public_key_to_add = PublicKeyModel {
@@ -153,22 +156,15 @@ impl<'a> DID<'a> {
                 });
             }
             DIDOperationType::RemoveKey => {
-                let key_id_to_remove = payload
-                    .ok_or("key id required for removal")
-                    .map_err(|err| VadeEvanError::InternalError {
-                        source_message: err.to_string(),
-                    })?
-                    .to_owned();
+                let key_id_to_remove = payload.to_owned();
                 patch = Patch::RemovePublicKeys(RemovePublicKeys {
                     ids: vec![key_id_to_remove],
                 });
             }
             DIDOperationType::AddServiceEnpoint => {
                 let service: Service =
-                    serde_json::from_str(payload.unwrap_or("")).map_err(|err| {
-                        VadeEvanError::InternalError {
-                            source_message: err.to_string(),
-                        }
+                    serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
+                        source_message: err.to_string(),
                     })?;
 
                 patch = Patch::AddServices(AddServices {
@@ -177,12 +173,7 @@ impl<'a> DID<'a> {
             }
 
             DIDOperationType::RemoveServiceEnpoint => {
-                let service_id_to_remove = payload
-                    .ok_or("service id required for removal")
-                    .map_err(|err| VadeEvanError::InternalError {
-                        source_message: err.to_string(),
-                    })?
-                    .to_owned();
+                let service_id_to_remove = payload.to_owned();
 
                 patch = Patch::RemoveServices(RemoveServices {
                     ids: vec![service_id_to_remove],

@@ -158,7 +158,7 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "bbs_secret", None),
                         get_argument_value(sub_m, "credential_values", None),
                         get_argument_value(sub_m, "credential_offer", None),
-                        get_argument_value(sub_m, "credential_schema", None),
+                        get_argument_value(sub_m, "credential_schema_did", None),
                     )
                     .await?
             }
@@ -420,7 +420,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("bbs_secret")?)
                     .arg(get_clap_argument("credential_values")?)
                     .arg(get_clap_argument("credential_offer")?)
-                    .arg(get_clap_argument("credential_schema")?)
+                    .arg(get_clap_argument("credential_schema_did")?)
                     .arg(get_clap_argument("target")?)
                     .arg(get_clap_argument("signer")?),
             );

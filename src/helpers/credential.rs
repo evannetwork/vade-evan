@@ -1,5 +1,6 @@
 use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{EVAN_METHOD, TYPE_BBS_OPTIONS};
+use serde_json::Value;
 
 pub struct Credential<'a> {
     vade_evan: &'a mut VadeEvan,
@@ -16,8 +17,26 @@ impl<'a> Credential<'a> {
         bbs_secret: &str,
         credential_values: &str,
         credential_offer: &str,
-        credential_schema: &str,
+        credential_schema_did: &str,
     ) -> Result<String, VadeEvanError> {
+        let schema_did_doc_str = self.vade_evan.did_resolve(credential_schema_did).await?;
+        let response_obj: Value = serde_json::from_str(&schema_did_doc_str).map_err(|err| {
+            VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            }
+        })?;
+        let did_document_obj =
+            response_obj
+                .get("didDocument")
+                .ok_or_else(|| VadeEvanError::InternalError {
+                    source_message: "missing 'didDocument' in response".to_string(),
+                });
+        let credential_schema = serde_json::to_string(&did_document_obj?).map_err(|err| {
+            VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            }
+        })?;
+
         let payload = format!(
             r#"{{
                 "credentialOffering": {},

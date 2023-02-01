@@ -15,16 +15,17 @@
 */
 
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
-use std::os::raw::c_void;
-use vade::Vade;
-
-#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
     helpers::Credential,
+    helpers::DIDOperationType,
     helpers::VersionInfo,
+    helpers::DID,
 };
+#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+use std::os::raw::c_void;
+use vade::Vade;
 
 pub const DEFAULT_TARGET: &str = "substrate-dev.trust-trace.com";
 pub const DEFAULT_SIGNER: &str = "local";
@@ -79,7 +80,7 @@ impl VadeEvan {
     /// * `bbs_secret` - master secret of the holder/receiver
     /// * `credential_values` - JSON string with cleartext values to be signed in the credential
     /// * `credential_offer` - JSON string with credential offer by issuer
-    /// * `credential_schema` - JSON string with credential schema
+    /// * `credential_schema_did` - did for credential schema
     ///
     /// # Example
     ///
@@ -89,8 +90,28 @@ impl VadeEvan {
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.create_credential_request("", "", "", "", "").await?;
-    ///     println!("created credential request: {}", result);
+    ///     let credential_offer = r#"{
+    ///        "issuer": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+    ///        "subject": "did:any:abc",
+    ///        "nonce": "QqJR4o6joiApYVXX7JLbRIZBQ9QprlFpewo8GbojIKY=",
+    ///        "credentialMessageCount": 2
+    ///    }"#;
+    ///    let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+    ///    let credential_values = r#"{
+    ///        "email": "value@x.com"
+    ///    }"#;
+    ///    let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
+    ///
+    ///    let credential_request = vade_evan
+    ///        .create_credential_request(
+    ///            issuer_pub_key,
+    ///            bbs_secret,
+    ///            credential_values,
+    ///            credential_offer,
+    ///            "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw",
+    ///        )
+    ///        .await?;
+    ///     println!("created credential request: {}", credential_request);
     ///     Ok(())
     /// }
     /// ```
@@ -100,7 +121,7 @@ impl VadeEvan {
         bbs_secret: &str,
         credential_values: &str,
         credential_offer: &str,
-        credential_schema: &str,
+        credential_schema_did: &str,
     ) -> Result<String, VadeEvanError> {
         let credential = Credential::new(self)?;
         credential
@@ -109,7 +130,7 @@ impl VadeEvan {
                 bbs_secret,
                 credential_values,
                 credential_offer,
-                credential_schema,
+                credential_schema_did,
             )
             .await
     }
@@ -766,6 +787,88 @@ impl VadeEvan {
                 .vc_zkp_verify_proof(method, options, payload)
                 .await?,
         )
+    }
+
+    /// Creates a did with optional predefined keys and service endpoints
+    ///
+    /// # Arguments
+    ///
+    /// * `bbs_key` - base64 encoded bbs public key (Bls12381G2Key2020)
+    /// * `signing_key` - base64 encoded public key (JsonWebKey2020)
+    /// * `service_endpoint` - service endpoint url
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use anyhow::Result;
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let bbs_key = r#"" ""#
+    ///     let signing_key = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+    ///     let service_url = r#"" ""#;
+    ///      
+    ///     let create_response = vade_evan
+    ///        .helper_did_create(
+    ///            Some(bbs_key),
+    ///            Some(signing_key),
+    ///            Some(service_url),
+    ///        )
+    ///        .await?;
+    ///     println!("did create response: {}", create_response);
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn helper_did_create(
+        &mut self,
+        bbs_key: Option<&str>,
+        signing_key: Option<&str>,
+        service_endpoint: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        let did = DID::new(self)?;
+        did.create(bbs_key, signing_key, service_endpoint).await
+    }
+
+    /// Updates a did (add/remove public key jwk and add/remove service endpoint)
+    ///
+    /// # Arguments
+    ///
+    /// did: did to update,
+    /// operation: type of did update to be performed ,
+    /// update_key: JSON string containing pubilc key in JWK format,
+    /// payload: payload of update command as per operation,
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use anyhow::Result;
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let did = r#"" ""#
+    ///     let update_key = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+    ///     let operation = r#"" ""#;
+    ///     let payload = r#"" ""#;
+    ///      
+    ///     let create_response = vade_evan
+    ///        .helper_did_update(did, operation, update_key, payload)
+    ///        .await?;
+    ///     println!("did create response: {}", create_response);
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn helper_did_update(
+        &mut self,
+        did: &str,
+        operation: DIDOperationType,
+        update_key: &str,
+        payload: &str,
+    ) -> Result<String, VadeEvanError> {
+        let did_helper = DID::new(self)?;
+
+        did_helper.update(did, operation, update_key, payload).await
     }
 }
 
