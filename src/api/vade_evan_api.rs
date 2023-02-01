@@ -19,7 +19,7 @@ use std::os::raw::c_void;
 use vade::Vade;
 
 #[cfg(feature = "plugin-vc-zkp-bbs")]
-use crate::helpers::Credential;
+
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{

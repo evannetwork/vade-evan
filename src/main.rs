@@ -660,7 +660,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "bbs_secret" => Arg::with_name("bbs_secret")
             .long("bbs_secret")
             .value_name("bbs_secret")
-            .help("master secret of the holder/receiver")
+            .help("master secret of the holder/receiver"),
         "schema_did" => Arg::with_name("schema_did")
             .long("schema_did")
             .value_name("schema_did")
