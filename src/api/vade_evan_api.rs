@@ -18,6 +18,8 @@
 use std::os::raw::c_void;
 use vade::Vade;
 
+#[cfg(feature = "plugin-vc-zkp-bbs")]
+use crate::helpers::Credential;
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
@@ -297,6 +299,57 @@ impl VadeEvan {
     /// ``
     pub fn get_version_info(&self) -> String {
         VersionInfo::get_version_info()
+    }
+
+    /// Creates a new zero-knowledge proof credential offer. This message is the response
+    /// to a credential proposal. `create_credential_offer` function can be used in the same step
+    /// and produces the same output as `vc_zkp_create_credential_offer` but uses a simpler argument setup.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - schema to create the offer for
+    /// * `use_valid_until` - true if `validUntil` will be present in credential
+    /// * `issuer_did` - DID of issuer
+    /// * `subject_did` - DID of subject (or `None` no subject id is used)
+    ///
+    /// # Returns
+    /// * credential offer as JSON serialized [`BbsCredentialOffer`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredentialOffer.html)
+    /// # Example
+    ///
+    /// ```
+    /// use anyhow::Result;
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
+    /// const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+    /// const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let offer_str = vade_evan
+    ///         .helper_create_credential_offer(
+    ///             SCHEMA_DID,
+    ///             false,
+    ///             ISSUER_DID,
+    ///             Some(SUBJECT_DID),
+    ///         )
+    ///         .await?;
+    ///
+    ///     Ok(())
+    /// }
+    /// ```
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    pub async fn helper_create_credential_offer(
+        &mut self,
+        schema_did: &str,
+        use_valid_until: bool,
+        issuer_did: &str,
+        subject_did: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        let credential = Credential::new(self)?;
+        credential
+            .create_credential_offer(schema_did, use_valid_until, issuer_did, subject_did)
+            .await
     }
 
     /// Runs a custom function, this allows to use `Vade`s API for custom calls, that do not belong
