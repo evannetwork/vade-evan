@@ -852,10 +852,10 @@ impl VadeEvan {
     ///     let operation = r#"" ""#;
     ///     let payload = r#"" ""#;
     ///      
-    ///     let create_response = vade_evan
+    ///     let update_response = vade_evan
     ///        .helper_did_update(did, operation, update_key, payload)
     ///        .await?;
-    ///     println!("did create response: {}", create_response);
+    ///     println!("did update response: {}", update_response);
     ///     Ok(())
     /// }
     /// ```
