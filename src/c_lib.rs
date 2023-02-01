@@ -488,7 +488,7 @@ pub extern "C" fn execute_vade(
                 )
                 .map_err(stringify_generic_error)?;
                 vade_evan
-                    .create_credential_request(
+                    .helper_create_credential_request(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),
                         arguments_vec.get(1).unwrap_or_else(|| &no_args),
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),

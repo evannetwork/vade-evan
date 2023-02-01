@@ -102,7 +102,7 @@ impl VadeEvan {
     ///    let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
     ///
     ///    let credential_request = vade_evan
-    ///        .create_credential_request(
+    ///        .helper_create_credential_request(
     ///            issuer_pub_key,
     ///            bbs_secret,
     ///            credential_values,
@@ -114,7 +114,7 @@ impl VadeEvan {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn create_credential_request(
+    pub async fn helper_create_credential_request(
         &mut self,
         issuer_public_key: &str,
         bbs_secret: &str,

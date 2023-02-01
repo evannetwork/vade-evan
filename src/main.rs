@@ -153,7 +153,7 @@ async fn main() -> Result<()> {
             #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("create_credential_request", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
-                    .create_credential_request(
+                    .helper_create_credential_request(
                         get_argument_value(sub_m, "issuer_public_key", None),
                         get_argument_value(sub_m, "bbs_secret", None),
                         get_argument_value(sub_m, "credential_values", None),

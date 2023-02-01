@@ -154,7 +154,7 @@ cfg_if::cfg_if! {
         }
 
         #[wasm_bindgen]
-        pub async fn create_credential_request(
+        pub async fn helper_create_credential_request(
             issuer_public_key: String,
             bbs_secret: String,
             credential_values: String,
@@ -164,7 +164,7 @@ cfg_if::cfg_if! {
 
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let credential_result = vade_evan
-            .create_credential_request(
+            .helper_create_credential_request(
                 &issuer_public_key,
                 &bbs_secret,
                 &credential_values,
