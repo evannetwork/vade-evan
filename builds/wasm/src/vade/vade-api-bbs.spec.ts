@@ -1,5 +1,6 @@
 import {
   CredentialBbs,
+  CredentialSchema,
   CredentialOfferBbs,
   CredentialRequestBbs,
   ProofRequestBbs,
@@ -14,7 +15,7 @@ function keyOf(did: string) {
   return `${did}#key-1`;
 }
 
-const CREDENTIAL_OFFER_TYPE = 'EvanBbsCredentialOffering';
+// const CREDENTIAL_OFFER_TYPE = 'EvanBbsCredentialOffering';
 const CREDENTIAL_PROOF_PURPOSE = 'assertionMethod';
 const CREDENTIAL_PROPOSAL_TYPE = 'EvanCredentialProposal';
 const CREDENTIAL_REQUEST_TYPE = 'EvanBbsCredentialRequest';
@@ -28,7 +29,7 @@ const PUB_KEY = 'jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9Je
 const REMOTE_ISSUER_DID = 'did:evan:testcore:0x3fd50CC762DC91F5440B8a530Db7B52813730596'.toLocaleLowerCase();
 const REMOTE_SIGNING_KEY = '270f69319fb71423d5f66f2a9d5f828536fa3c6108807449d4a541911b566b68';
 const REMOTE_SIGNING_OPTIONS = {
-  privateKey: REMOTE_SIGNING_KEY,
+  signingKey: REMOTE_SIGNING_KEY,
   identity: REMOTE_ISSUER_DID,
 };
 const SCHEMA_DID = 'did:evan:zkp:0xd641c26161e769cef4b41760211972b274a8f37f135a34083e4e48b3f1035eda';
@@ -50,24 +51,26 @@ const helper = {
   ),
   createCredentialOffer: (proposal: CredentialProposalBbs) => vade.bbs.createCredentialOffer(
     {
-      credentialProposal: proposal,
       issuer: proposal.issuer,
       nquadCount: NQUADS.length,
+      subject: proposal.subject,
     },
   ),
-  createCredentialRequest: (offer: CredentialOfferBbs) => vade.bbs.createCredentialRequest(
+  createCredentialRequest: (offer: CredentialOfferBbs, schema: CredentialSchema) => vade.bbs.createCredentialRequest(
     {
       credentialOffering: offer,
       masterSecret: MASTER_SECRET,
       credentialValues: TEST_CREDENTIAL_VALUES,
       issuerPubKey: PUB_KEY,
+      credentialSchema: schema,
     },
   ),
-  createRevocationRegistry: () => vade.bbs.createRevocationRegistry(
+  createRevocationRegistry: (credentialDid) => vade.bbs.createRevocationRegistry(
     {
+      credentialDid: credentialDid.id,
       issuerDid: REMOTE_ISSUER_DID,
       issuerPublicKeyDid: keyOf(REMOTE_ISSUER_DID),
-      issuerProvingKey: REMOTE_SIGNING_OPTIONS.privateKey,
+      issuerProvingKey: REMOTE_SIGNING_OPTIONS.signingKey,
     },
     REMOTE_SIGNING_OPTIONS,
   ),
@@ -142,13 +145,16 @@ const helper = {
       revealAttributes: { [SCHEMA_DID]: [1] },
     },
   ),
-  verifyProof: ({ presentation, proofRequest, nquads }) => vade.bbs.verifyProof(
+  verifyProof: ({
+    presentation, proofRequest, nquads, revocationList,
+  }) => vade.bbs.verifyProof(
     {
       presentation,
       proofRequest,
       keysToSchemaMap: { [SCHEMA_DID]: PUB_KEY },
       nquadsToSchemaMap: { [SCHEMA_DID]: nquads },
       signerAddress: SIGNER_1_ADDRESS,
+      revocationList,
     },
   ),
   revokeCredential: ({ revocationList }) => vade.bbs.revokeCredential(
@@ -157,7 +163,7 @@ const helper = {
       revocationList: revocationList.id,
       revocationId: '0',
       issuerPublicKeyDid: keyOf(REMOTE_ISSUER_DID),
-      issuerProvingKey: REMOTE_SIGNING_OPTIONS.privateKey,
+      issuerProvingKey: REMOTE_SIGNING_OPTIONS.signingKey,
     },
     REMOTE_SIGNING_OPTIONS,
   ),
@@ -193,7 +199,10 @@ describe('vade API for BBS+ credentials', () => {
   let revocationListPromise: Promise<RevocationListCredential>;
 
   beforeAll(async () => {
-    revocationListPromise = Promise.resolve(await helper.createRevocationRegistry());
+    // initially create revocation registry did
+    const didDoc = await vade.sdid.createDid(null, null, null, null);
+    // const didDocument = await vade.sdid.getDid(didDoc.did.didDocument.id);
+    revocationListPromise = Promise.resolve(await helper.createRevocationRegistry(didDoc.did.didDocument));
   });
 
   it('can create BBS+ keypair', async () => {
@@ -230,15 +239,14 @@ describe('vade API for BBS+ credentials', () => {
     const offer = await helper.createCredentialOffer(proposal);
 
     expect(offer.issuer).toEqual(ISSUER_DID);
-    expect(offer.schema).toEqual(proposal.schema);
     expect(offer.subject).toEqual(proposal.subject);
-    expect(offer.type).toEqual(CREDENTIAL_OFFER_TYPE);
   });
 
   it('can create credential request', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
-    const { credentialRequest: request, signatureBlinding } = await helper.createCredentialRequest(offer);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
+    const { credentialRequest: request, signatureBlinding } = await helper.createCredentialRequest(offer, schema);
 
     expect(request.schema).toEqual(SCHEMA_DID);
     expect(request.subject).toEqual(offer.subject);
@@ -276,7 +284,8 @@ describe('vade API for BBS+ credentials', () => {
   it('can create unfinished credential', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
-    const { credentialRequest: request } = await helper.createCredentialRequest(offer);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
+    const { credentialRequest: request } = await helper.createCredentialRequest(offer, schema);
     const revocationList = await revocationListPromise;
     const unsignedVc = helper.getUnsignedVc(offer.subject, revocationList);
     const unfinishedCredential = await helper.issueCredential({ offer, request, unsignedVc });
@@ -298,10 +307,11 @@ describe('vade API for BBS+ credentials', () => {
   it('can create finished credential', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
     const {
       credentialRequest: request,
       signatureBlinding,
-    } = await helper.createCredentialRequest(offer);
+    } = await helper.createCredentialRequest(offer, schema);
     const revocationList = await revocationListPromise;
     const unsignedVc = helper.getUnsignedVc(offer.subject, revocationList);
     const unfinishedCredential = await helper.issueCredential({ offer, request, unsignedVc });
@@ -341,10 +351,11 @@ describe('vade API for BBS+ credentials', () => {
   it('create a presentation of a finished credential', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
     const {
       credentialRequest: request,
       signatureBlinding,
-    } = await helper.createCredentialRequest(offer);
+    } = await helper.createCredentialRequest(offer, schema);
     const revocationList = await revocationListPromise;
     const unsignedVc = helper.getUnsignedVc(offer.subject, revocationList);
     const unfinishedCredential = await helper.issueCredential({ offer, request, unsignedVc });
@@ -394,10 +405,11 @@ describe('vade API for BBS+ credentials', () => {
   it('can verify a credential', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
     const {
       credentialRequest: request,
       signatureBlinding,
-    } = await helper.createCredentialRequest(offer);
+    } = await helper.createCredentialRequest(offer, schema);
     const revocationList = await revocationListPromise;
     const unsignedVc = helper.getUnsignedVc(offer.subject, revocationList);
     const unfinishedCredential = await helper.issueCredential({ offer, request, unsignedVc });
@@ -406,7 +418,9 @@ describe('vade API for BBS+ credentials', () => {
     );
     const proofRequest = await helper.requestProof();
     const presentation = await helper.presentProof({ finishedCredential, proofRequest });
-    const isValid = await helper.verifyProof({ presentation, proofRequest, nquads: [NQUADS[0]] });
+    const isValid = await helper.verifyProof({
+      presentation, proofRequest, nquads: [NQUADS[0]], revocationList,
+    });
 
     expect(isValid).toEqual({ presentedProof: presentation.id, status: 'verified' });
   });
@@ -414,10 +428,11 @@ describe('vade API for BBS+ credentials', () => {
   it('cannot verify a credential with wrong proven credentials', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
     const {
       credentialRequest: request,
       signatureBlinding,
-    } = await helper.createCredentialRequest(offer);
+    } = await helper.createCredentialRequest(offer, schema);
     const revocationList = await revocationListPromise;
     const unsignedVc = helper.getUnsignedVc(offer.subject, revocationList);
     const unfinishedCredential = await helper.issueCredential({ offer, request, unsignedVc });
@@ -426,7 +441,9 @@ describe('vade API for BBS+ credentials', () => {
     );
     const proofRequest = await helper.requestProof();
     const presentation = await helper.presentProof({ finishedCredential, proofRequest });
-    const isValid = await helper.verifyProof({ presentation, proofRequest, nquads: ['We expect something different'] });
+    const isValid = await helper.verifyProof({
+      presentation, proofRequest, nquads: ['We expect something different'], revocationList,
+    });
 
     expect(isValid).toEqual({
       presentedProof: presentation.id,
@@ -438,10 +455,11 @@ describe('vade API for BBS+ credentials', () => {
   it('cannot verify revoked credential', async () => {
     const proposal = await helper.createCredentialProposal();
     const offer = await helper.createCredentialOffer(proposal);
+    const schema = await vade.did.getDid(SCHEMA_DID) as unknown as CredentialSchema;
     const {
       credentialRequest: request,
       signatureBlinding,
-    } = await helper.createCredentialRequest(offer);
+    } = await helper.createCredentialRequest(offer, schema);
     const revocationList = await revocationListPromise;
     const unsignedVc = helper.getUnsignedVc(offer.subject, revocationList);
     const unfinishedCredential = await helper.issueCredential({ offer, request, unsignedVc });
@@ -454,7 +472,9 @@ describe('vade API for BBS+ credentials', () => {
 
     const proofRequest = await helper.requestProof();
     const presentation = await helper.presentProof({ finishedCredential, proofRequest });
-    const isValid = await helper.verifyProof({ presentation, proofRequest, nquads: [NQUADS[0]] });
+    const isValid = await helper.verifyProof({
+      presentation, proofRequest, nquads: [NQUADS[0]], revocationList,
+    });
 
     expect(isValid).toEqual({
       presentedProof: presentation.id,

@@ -3,6 +3,8 @@ import type { DIDDocument } from './interfaces';
 import { DidUpdateArguments as SubstrateDidUpdateOptions, IdentityArguments } from './typings/vade-evan-substrate';
 import { checkRequiredProperties, VadeOptions, VadeApiShared } from './vade-api-shared';
 
+const TYPE_SUBSTRATE = 'substrate';
+
 class VadeApiSubstrate extends VadeApiShared {
   /**
    * whitelists a specific evan did on substrate that this private key can create DIDs
@@ -12,20 +14,26 @@ class VadeApiSubstrate extends VadeApiShared {
    */
   public async whitelistIdentity(
     identity: string,
-    privateKey: string,
+    privateKeyUuid: string,
+    remoteSignerUrl: string,
   ): Promise<void> {
     if (!identity.startsWith('did')) {
       throw new Error('identity should start with did:evan:...');
     }
     await this.executeVade<SubstrateDidUpdateOptions, string, void>(
       {
-        command: 'did_update',
-        did: identity,
+        command: 'did',
+        subcommand: 'update',
+        method: null,
         options: {
-          privateKey,
+          privateKey: remoteSignerUrl ? identity : privateKeyUuid,
           operation: 'whitelistIdentity',
           identity,
+          type: TYPE_SUBSTRATE,
         },
+        payload: 'no_payload',
+        did: identity,
+        signer: remoteSignerUrl ? `remote|${remoteSignerUrl}` : undefined,
       },
     );
   }
@@ -42,7 +50,7 @@ class VadeApiSubstrate extends VadeApiShared {
     );
     checkRequiredProperties(
       options,
-      ['identity', 'privateKey'],
+      ['identity', 'signingKey'],
       'options',
     );
     if (!options.identity.startsWith('did')) {
@@ -50,14 +58,18 @@ class VadeApiSubstrate extends VadeApiShared {
     }
     await this.executeVade<SubstrateDidUpdateOptions, DIDDocument, void>(
       {
-        command: 'did_update',
-        did,
+        command: 'did',
+        subcommand: 'update',
         options: {
           identity: options.identity,
           operation: 'setDidDocument',
-          privateKey: options.privateKey,
+          privateKey: options.remoteSignerUrl ? options.identity : options.signingKey,
+          type: TYPE_SUBSTRATE,
         },
         payload: params.didDocument,
+        did: options.identity,
+        signer: options.remoteSignerUrl ? `remote|${options.remoteSignerUrl}` : undefined,
+        method: null,
       },
     );
   }
@@ -70,7 +82,9 @@ class VadeApiSubstrate extends VadeApiShared {
   public async getDid(did: string): Promise<DIDDocument> {
     return this.executeVade<void, void, DIDDocument>(
       {
-        command: 'did_resolve',
+        command: 'did',
+        subcommand: 'resolve',
+        method: '',
         did,
       },
     );
@@ -84,7 +98,7 @@ class VadeApiSubstrate extends VadeApiShared {
   public async createDid(options: VadeOptions): Promise<void> {
     checkRequiredProperties(
       options,
-      ['identity', 'privateKey'],
+      ['identity', 'signingKey'],
       'options',
     );
     if (!options.identity.startsWith('did')) {
@@ -92,11 +106,13 @@ class VadeApiSubstrate extends VadeApiShared {
     }
     return this.executeVade<IdentityArguments, void, void>(
       {
-        command: 'did_create',
+        command: 'did',
+        subcommand: 'create',
         method: 'did:evan',
         options: {
           identity: options.identity,
-          privateKey: options.privateKey,
+          privateKey: options.signingKey,
+          type: TYPE_SUBSTRATE,
         },
       },
     );

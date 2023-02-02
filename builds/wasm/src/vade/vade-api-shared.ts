@@ -19,28 +19,29 @@ if (!global.Window) {
 
 wasm.set_panic_hook();
 
-type VadeFunction =
-  'did_resolve' |
-  'did_update' |
-  'did_create' |
-  'run_custom_function' |
-  'vc_zkp_create_credential_definition' |
-  'vc_zkp_create_credential_offer' |
-  'vc_zkp_create_credential_proposal' |
-  'vc_zkp_create_credential_schema' |
-  'vc_zkp_create_revocation_registry_definition' |
-  'vc_zkp_finish_credential' |
-  'vc_zkp_issue_credential' |
-  'vc_zkp_present_proof' |
-  'vc_zkp_request_credential' |
-  'vc_zkp_request_proof' |
-  'vc_zkp_revoke_credential' |
-  'vc_zkp_verify_proof'
-;
+// type VadeFunction =
+//   'did_resolve' |
+//   'did_update' |
+//   'did_create' |
+//   'run_custom_function' |
+//   'vc_zkp_create_credential_definition' |
+//   'vc_zkp_create_credential_offer' |
+//   'vc_zkp_create_credential_proposal' |
+//   'vc_zkp_create_credential_schema' |
+//   'vc_zkp_create_revocation_registry_definition' |
+//   'vc_zkp_finish_credential' |
+//   'vc_zkp_issue_credential' |
+//   'vc_zkp_present_proof' |
+//   'vc_zkp_request_credential' |
+//   'vc_zkp_request_proof' |
+//   'vc_zkp_revoke_credential' |
+//   'vc_zkp_verify_proof'
+// ;
 
 interface VadeOptions {
   identity: string;
-  privateKey: string;
+  remoteSignerUrl?: string;
+  signingKey: string;
 }
 
 /**
@@ -87,40 +88,45 @@ class VadeApiShared {
   public async executeVade<O, P, R>(
     {
       command,
-      customFunction,
-      method,
-      did,
+      subcommand,
+      method = 'did:evan',
       options,
       payload,
+      did,
+      signer = this.signer,
     }: {
-      command: VadeFunction;
-      customFunction?: string;
+      command: string;
+      subcommand: string;
       method?: string;
-      did?: string;
       options?: O;
       payload?: P;
+      did?: string;
+      signer?: string;
     },
   ): Promise<R> {
+    const cmd = `${command}_${subcommand}`;
+
     if (!command) {
       throw new Error('command missing');
     }
-    if (!wasm[command]) {
-      throw new Error(`unknown vade command: ${command}`);
+    if (!wasm[cmd]) {
+      throw new Error(`unknown vade command: ${cmd}`);
     }
     if (!method && !did && command !== 'run_custom_function') {
       throw new Error('neither `did` nor `method` provided');
     }
+
     const config = {
-      signer: this.signer,
+      signer,
       target: this.substrate,
     };
 
     const vadeArguments: unknown[] = [method || did];
     if (command === 'run_custom_function') {
       // only run_custom_function has an extra argument here
-      vadeArguments.push(customFunction);
+      vadeArguments.push(subcommand);
     }
-    if (command !== 'did_resolve') {
+    if (cmd !== 'did_resolve') {
       // only did_resolve omits options and payload
       vadeArguments.push(
         options ? JSON.stringify(options) : '',
@@ -132,13 +138,13 @@ class VadeApiShared {
     if (vadeArguments.find((a) => typeof a === 'undefined')) {
       throw new Error(`invalid arguments for vade: ${JSON.stringify(vadeArguments)}`);
     }
-    const wasmResult = await wasm[command].call(wasm, ...vadeArguments);
+    const wasmResult = await wasm[cmd].call(wasm, ...vadeArguments);
     try {
       return wasmResult
         ? JSON.parse(wasmResult)
         : null;
     } catch (ex) {
-      throw new Error(`could not parse result for "${command}", wasm result: ${wasmResult}; ${ex.message || ex}`);
+      throw new Error(`could not parse result for "${cmd}", wasm result: ${wasmResult}; ${ex.message || ex}`);
     }
   }
 }

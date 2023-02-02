@@ -49,6 +49,28 @@ class VadeApiBbs extends VadeApiShared {
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
    * @param options.privateKey key to request the signing endpoint with
    */
+  /*
+    params: {
+    identity: string;
+    name: string;
+    properties: Record<string, SchemaProperty>;
+    publicKeyDidId: string;
+    requiredProperties: string[];
+    description?: string;
+    credentialDid: string;
+  },
+  options: VadeOptions,
+  context: Context,
+): Promise<CredentialSchema> {
+  checkRequiredProperties(
+    params,
+    ['identity', 'name', 'properties', 'publicKeyDidId', 'requiredProperties', 'credentialDid'],
+    'params',
+  );
+
+  checkRequiredProperties(options, ['signingKey'], 'options');
+
+   */
   public async createSchema(
     params: {
       identity: string,
@@ -57,6 +79,7 @@ class VadeApiBbs extends VadeApiShared {
       publicKeyDidId: string,
       requiredProperties: string[],
       description?: string,
+      credentialDid: string,
     },
     options: VadeOptions,
   ): Promise<CredentialSchema> {
@@ -68,13 +91,14 @@ class VadeApiBbs extends VadeApiShared {
         'properties',
         'publicKeyDidId',
         'requiredProperties',
+        'credentialDid',
       ],
       'params',
     );
 
     checkRequiredProperties(
       options,
-      ['privateKey'],
+      ['signingKey'],
       'options',
     );
 
@@ -84,10 +108,11 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsAuthenticationOptions, CreateCredentialSchemaPayload, CredentialSchema>(
       {
-        command: 'vc_zkp_create_credential_schema',
+        command: 'vc_zkp',
+        subcommand: 'create_credential_schema',
         method: 'did:evan',
         options: {
-          privateKey: options.privateKey,
+          privateKey: options.remoteSignerUrl ? params.publicKeyDidId : options.signingKey,
           identity: options.identity,
           type: TYPE_BBS,
         },
@@ -99,8 +124,10 @@ class VadeApiBbs extends VadeApiShared {
           requiredProperties: params.requiredProperties,
           allowAdditionalProperties: false,
           issuerPublicKeyDid: params.publicKeyDidId,
-          issuerProvingKey: params.publicKeyDidId,
+          issuerProvingKey: options.remoteSignerUrl ? params.publicKeyDidId : options.signingKey,
+          credentialDid: params.credentialDid,
         },
+        signer: options.remoteSignerUrl ? `remote|${options.remoteSignerUrl}` : undefined,
       },
     );
   }
@@ -111,10 +138,11 @@ class VadeApiBbs extends VadeApiShared {
   public async createMasterSecret(): Promise<string> {
     return this.executeVade<BbsTypeOptions, void, string>(
       {
-        command: 'run_custom_function',
-        customFunction: 'create_master_secret',
+        command: 'vc_zkp',
+        subcommand: 'create_master_secret',
         options: TYPE_OPTIONS_BBS,
-        method: 'did:evan',
+        signer: null,
+        method: null,
       },
     );
   }
@@ -139,15 +167,16 @@ class VadeApiBbs extends VadeApiShared {
     );
     const ms = await this.executeVade<BbsAuthenticationOptions, CreateKeysPayload, BbsKeys>(
       {
-        command: 'run_custom_function',
-        customFunction: 'create_new_keys',
-        method: 'did:evan',
+        command: 'vc_zkp',
+        subcommand: 'create_new_keys',
+        method: null,
         options: {
-          privateKey: options.privateKey,
+          privateKey: options.remoteSignerUrl ? params.keyOwnerDid : options.signingKey,
           identity: options.identity,
           type: TYPE_BBS,
         },
         payload: params,
+        signer: options.remoteSignerUrl ? `remote|${options.remoteSignerUrl}` : undefined,
       },
     );
     return ms;
@@ -166,7 +195,6 @@ class VadeApiBbs extends VadeApiShared {
     checkRequiredProperties(
       params,
       [
-        'verifierDid',
         'schemas',
         'revealAttributes',
       ],
@@ -175,7 +203,8 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsTypeOptions, RequestProofPayload, BbsProofRequest>(
       {
-        command: 'vc_zkp_request_proof',
+        command: 'vc_zkp',
+        subcommand: 'request_proof',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -197,7 +226,6 @@ class VadeApiBbs extends VadeApiShared {
       params,
       [
         'issuer',
-        'subject',
         'schema',
       ],
       'params',
@@ -205,7 +233,8 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsTypeOptions, CreateCredentialProposalPayload, CredentialProposal>(
       {
-        command: 'vc_zkp_create_credential_proposal',
+        command: 'vc_zkp',
+        subcommand: 'create_credential_proposal',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -227,7 +256,6 @@ class VadeApiBbs extends VadeApiShared {
       params,
       [
         'issuer',
-        'credentialProposal',
         'nquadCount',
       ],
       'params',
@@ -235,7 +263,8 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsTypeOptions, OfferCredentialPayload, BbsCredentialOffer>(
       {
-        command: 'vc_zkp_create_credential_offer',
+        command: 'vc_zkp',
+        subcommand: 'create_credential_offer',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -270,7 +299,8 @@ class VadeApiBbs extends VadeApiShared {
     RequestCredentialPayload,
     [BbsCredentialRequest, string]>(
       {
-        command: 'vc_zkp_request_credential',
+        command: 'vc_zkp',
+        subcommand: 'request_credential',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -299,13 +329,14 @@ class VadeApiBbs extends VadeApiShared {
         'issuerDid',
         'issuerPublicKeyDid',
         'issuerProvingKey',
+        'credentialDid',
       ],
       'params',
     );
     checkRequiredProperties(
       options,
       [
-        'privateKey',
+        'signingKey',
       ],
       'options',
     );
@@ -318,14 +349,16 @@ class VadeApiBbs extends VadeApiShared {
     CreateRevocationListPayload,
     RevocationListCredential>(
       {
-        command: 'vc_zkp_create_revocation_registry_definition',
+        command: 'vc_zkp',
+        subcommand: 'create_revocation_registry_definition',
         method: 'did:evan',
         options: {
-          privateKey: options.privateKey,
+          privateKey: options.remoteSignerUrl ? params.issuerDid : options.signingKey,
           identity: options.identity,
           type: TYPE_BBS,
         },
         payload: params,
+        signer: options.remoteSignerUrl ? `remote|${options.remoteSignerUrl}` : undefined,
       },
     );
   }
@@ -362,7 +395,8 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsTypeOptions, IssueCredentialPayload, UnfinishedBbsCredential>(
       {
-        command: 'vc_zkp_issue_credential',
+        command: 'vc_zkp',
+        subcommand: 'issue_credential',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -396,7 +430,8 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsTypeOptions, FinishCredentialPayload, BbsCredential>(
       {
-        command: 'vc_zkp_finish_credential',
+        command: 'vc_zkp',
+        subcommand: 'finish_credential',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -441,10 +476,11 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsAuthenticationOptions, PresentProofPayload, ProofPresentation>(
       {
-        command: 'vc_zkp_present_proof',
+        command: 'vc_zkp',
+        subcommand: 'present_proof',
         method: 'did:evan',
         options: {
-          privateKey: options.privateKey,
+          privateKey: options.signingKey,
           identity: options.identity,
           type: TYPE_BBS,
         },
@@ -477,7 +513,8 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsTypeOptions, VerifyProofPayload, BbsProofVerification>(
       {
-        command: 'vc_zkp_verify_proof',
+        command: 'vc_zkp',
+        subcommand: 'verify_proof',
         method: 'did:evan',
         options: TYPE_OPTIONS_BBS,
         payload: params,
@@ -524,14 +561,16 @@ class VadeApiBbs extends VadeApiShared {
 
     return this.executeVade<BbsAuthenticationOptions, RevokeCredentialPayload, RevocationListCredential>(
       {
-        command: 'vc_zkp_revoke_credential',
+        command: 'vc_zkp',
+        subcommand: 'revoke_credential',
         method: 'did:evan',
         options: {
-          privateKey: options.privateKey,
+          privateKey: options.signingKey,
           identity: options.identity,
           type: TYPE_BBS,
         },
         payload: params,
+        signer: options.remoteSignerUrl ? `remote|${options.remoteSignerUrl}` : undefined,
       },
     );
   }

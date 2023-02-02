@@ -1,13 +1,13 @@
 import { VadeApiSubstrate } from './vade-api-substrate';
-import { VadeApiCl } from './vade-api-cl';
+import { VadeApiSidetree } from './vade-api-sidetree';
 import { VadeApiBbs } from './vade-api-bbs';
 
 class Vade {
   public did: VadeApiSubstrate;
 
-  public cl: VadeApiCl;
-
   public bbs: VadeApiBbs;
+
+  public sdid: VadeApiSidetree;
 
   constructor(
     options?:
@@ -15,8 +15,8 @@ class Vade {
   ) {
     // config handling here
     this.did = new VadeApiSubstrate(options);
-    this.cl = new VadeApiCl(options);
     this.bbs = new VadeApiBbs(options);
+    this.sdid = new VadeApiSidetree(options);
   }
 }
 
