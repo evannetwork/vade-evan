@@ -60,8 +60,9 @@ async fn main() -> Result<()> {
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
+                let payload = get_argument_value(&sub_m, "payload", None);
                 get_vade_evan(&sub_m)?
-                    .did_create(&method, &options, &String::new())
+                    .did_create(&method, &options, &payload)
                     .await?
             }
             #[cfg(feature = "capability-did-read")]

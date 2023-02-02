@@ -10,6 +10,8 @@
 
 ### Fixes
 
+- add `payload` argument to did_create in CLI
+
 ### Deprecation
 
 - refactor feature names and combinations
