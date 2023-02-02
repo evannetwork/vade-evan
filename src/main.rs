@@ -211,6 +211,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Creates a new DID.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
                     .arg(get_clap_argument("target")?)
                     .arg(get_clap_argument("signer")?),
             )
