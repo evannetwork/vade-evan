@@ -551,7 +551,7 @@ class VadeApiBbs extends VadeApiShared {
 
     checkRequiredProperties(
       options,
-      ['privateKey'],
+      ['signingKey'],
       'options',
     );
 

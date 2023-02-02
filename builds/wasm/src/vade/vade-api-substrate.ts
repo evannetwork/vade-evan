@@ -10,11 +10,12 @@ class VadeApiSubstrate extends VadeApiShared {
    * whitelists a specific evan did on substrate that this private key can create DIDs
    *
    * @param identity identity to whitelist
-   * @param privateKey reference to private key to sign with
+   * @param signingKeyUuid reference to private key to sign with
+   * @param remoteSignerUrl
    */
   public async whitelistIdentity(
     identity: string,
-    privateKeyUuid: string,
+    signingKeyUuid: string,
     remoteSignerUrl: string,
   ): Promise<void> {
     if (!identity.startsWith('did')) {
@@ -26,7 +27,7 @@ class VadeApiSubstrate extends VadeApiShared {
         subcommand: 'update',
         method: null,
         options: {
-          privateKey: remoteSignerUrl ? identity : privateKeyUuid,
+          signingKey: remoteSignerUrl ? identity : signingKeyUuid,
           operation: 'whitelistIdentity',
           identity,
           type: TYPE_SUBSTRATE,
@@ -63,7 +64,7 @@ class VadeApiSubstrate extends VadeApiShared {
         options: {
           identity: options.identity,
           operation: 'setDidDocument',
-          privateKey: options.remoteSignerUrl ? options.identity : options.signingKey,
+          signingKey: options.remoteSignerUrl ? options.identity : options.signingKey,
           type: TYPE_SUBSTRATE,
         },
         payload: params.didDocument,
@@ -111,7 +112,7 @@ class VadeApiSubstrate extends VadeApiShared {
         method: 'did:evan',
         options: {
           identity: options.identity,
-          privateKey: options.signingKey,
+          signingKey: options.signingKey,
           type: TYPE_SUBSTRATE,
         },
       },

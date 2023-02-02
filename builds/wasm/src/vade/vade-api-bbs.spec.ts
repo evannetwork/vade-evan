@@ -160,7 +160,7 @@ const helper = {
   revokeCredential: ({ revocationList }) => vade.bbs.revokeCredential(
     {
       issuer: ISSUER_DID,
-      revocationList: revocationList.id,
+      revocationList,
       revocationId: '0',
       issuerPublicKeyDid: keyOf(REMOTE_ISSUER_DID),
       issuerProvingKey: REMOTE_SIGNING_OPTIONS.signingKey,
