@@ -32,6 +32,9 @@ pub enum VadeEvanError {
     #[cfg(feature = "plugin-vc-zkp-bbs")]
     #[error("credential has been revoked")]
     CredentialRevoked,
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[error("wrong number of messages in credential, got {0} but proof was created for {1}")]
+    MessageCountMismatch(usize, usize),
 }
 impl From<Box<dyn std::error::Error>> for VadeEvanError {
     fn from(vade_error: Box<dyn std::error::Error>) -> VadeEvanError {

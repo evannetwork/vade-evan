@@ -1,5 +1,4 @@
-use std::io::Read;
-use std::panic;
+use std::{io::Read, panic};
 
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
@@ -38,56 +37,6 @@ struct DidDocumentResult<T> {
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
 const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
-
-fn create_empty_unsigned_credential(
-    schema_did_doc_str: &str,
-    subject_did: Option<&str>,
-    use_valid_until: bool,
-) -> Result<UnsignedBbsCredential, VadeEvanError> {
-    let response_obj: Value = serde_json::from_str(&schema_did_doc_str)?;
-    let did_document_obj = response_obj.get("didDocument").ok_or_else(|| {
-        VadeEvanError::InvalidDidDocument("missing 'didDocument' in response".to_string())
-    });
-    let did_document_str = serde_json::to_string(&did_document_obj?)?;
-    let schema_obj: CredentialSchema = serde_json::from_str(&did_document_str)?;
-
-    let credential = UnsignedBbsCredential {
-        context: vec![
-            "https://www.w3.org/2018/credentials/v1".to_string(),
-            "https://schema.org/".to_string(),
-            "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
-        ],
-        id: "uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string(),
-        r#type: vec!["VerifiableCredential".to_string()],
-        issuer: "did:evan:testcore:placeholder_issuer".to_string(),
-        valid_until: if use_valid_until {
-            Some("2031-01-01T00:00:00.000Z".to_string())
-        } else {
-            None
-        },
-        issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
-        credential_subject: CredentialSubject {
-            id: subject_did.map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
-            data: schema_obj // fill ALL subject data fields with empty string (mandatory and optional ones)
-                .properties
-                .into_iter()
-                .map(|(name, _schema_property)| (name, String::new()))
-                .collect(),
-        },
-        credential_schema: CredentialSchemaReference {
-            id: schema_obj.id,
-            r#type: schema_obj.r#type,
-        },
-        credential_status: CredentialStatus {
-            id: "did:evan:zkp:placeholder_status#0".to_string(),
-            r#type: "RevocationList2020Status".to_string(),
-            revocation_list_index: "0".to_string(),
-            revocation_list_credential: "did:evan:zkp:placeholder_status".to_string(),
-        },
-    };
-
-    Ok(credential)
-}
 
 async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEvanError> {
     let mut loader = StaticLoader;
@@ -170,19 +119,15 @@ impl<'a> Credential<'a> {
     }
 
     pub async fn create_credential_offer(
-        self,
+        &mut self,
         schema_did: &str,
         use_valid_until: bool,
         issuer_did: &str,
         subject_did: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        let schema_did_doc_str = self.vade_evan.did_resolve(schema_did).await?;
-
-        let credential_draft = create_empty_unsigned_credential(
-            &schema_did_doc_str,
-            subject_did.as_deref(),
-            use_valid_until,
-        )?;
+        let credential_draft = self
+            .create_empty_unsigned_credential(schema_did, subject_did.as_deref(), use_valid_until)
+            .await?;
         let credential_draft_str = serde_json::to_string(&credential_draft)?;
         let nquads = convert_to_nquads(&credential_draft_str).await?;
 
@@ -217,16 +162,7 @@ impl<'a> Credential<'a> {
         issuer_did: &str,
         verification_method_id: &str,
     ) -> Result<String, VadeEvanError> {
-        // resolve the did and extract the did document out of it
-        let did_result_str = self.vade_evan.did_resolve(issuer_did).await?;
-        let did_result_value: Value = serde_json::from_str(&did_result_str)?;
-        let did_document_result = did_result_value.get("didDocument").ok_or_else(|| {
-            VadeEvanError::InvalidDidDocument(
-                "missing 'didDocument' property in resolved did".to_string(),
-            )
-        });
-        let did_document_str = serde_json::to_string(&did_document_result?)?;
-        let did_document: DidDocument = serde_json::from_str(&did_document_str)?;
+        let did_document: DidDocument = self.get_did_document(issuer_did).await?;
 
         // get the verification methods
         let verification_methods =
@@ -298,7 +234,14 @@ impl<'a> Credential<'a> {
         let credential_without_proof = serde_json::to_string(&parsed_credential)?;
         let did_doc_nquads = convert_to_nquads(&credential_without_proof).await?;
 
-        // TODO swo: check nquad count
+        if (did_doc_nquads.len() + ADDITIONAL_HIDDEN_MESSAGES_COUNT)
+            != credential.proof.credential_message_count
+        {
+            return Err(VadeEvanError::MessageCountMismatch(
+                credential.proof.credential_message_count,
+                did_doc_nquads.len() + ADDITIONAL_HIDDEN_MESSAGES_COUNT,
+            ));
+        }
 
         // get public key suitable for messages
         let issuer_pub_key = self
@@ -341,14 +284,60 @@ impl<'a> Credential<'a> {
 
         Ok(did_result_value.did_document)
     }
+
+    async fn create_empty_unsigned_credential(
+        &mut self,
+        schema_did: &str,
+        subject_did: Option<&str>,
+        use_valid_until: bool,
+    ) -> Result<UnsignedBbsCredential, VadeEvanError> {
+        let schema: CredentialSchema = self.get_did_document(schema_did).await?;
+
+        let credential = UnsignedBbsCredential {
+            context: vec![
+                "https://www.w3.org/2018/credentials/v1".to_string(),
+                "https://schema.org/".to_string(),
+                "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
+            ],
+            id: "uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string(),
+            r#type: vec!["VerifiableCredential".to_string()],
+            issuer: "did:evan:testcore:placeholder_issuer".to_string(),
+            valid_until: if use_valid_until {
+                Some("2031-01-01T00:00:00.000Z".to_string())
+            } else {
+                None
+            },
+            issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
+            credential_subject: CredentialSubject {
+                id: subject_did.map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
+                data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
+                    .properties
+                    .into_iter()
+                    .map(|(name, _schema_property)| (name, String::new()))
+                    .collect(),
+            },
+            credential_schema: CredentialSchemaReference {
+                id: schema.id,
+                r#type: schema.r#type,
+            },
+            credential_status: CredentialStatus {
+                id: "did:evan:zkp:placeholder_status#0".to_string(),
+                r#type: "RevocationList2020Status".to_string(),
+                revocation_list_index: "0".to_string(),
+                revocation_list_credential: "did:evan:zkp:placeholder_status".to_string(),
+            },
+        };
+
+        Ok(credential)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use vade_evan_bbs::BbsCredentialOffer;
+    use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
 
-    use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
+    use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 
     use super::Credential;
 
@@ -445,7 +434,7 @@ mod tests {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
         })?;
-        let credential = Credential::new(&mut vade_evan)?;
+        let mut credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
             .create_credential_offer(SCHEMA_DID, false, VALID_ISSUER_DID, Some(SUBJECT_DID))
@@ -480,6 +469,40 @@ mod tests {
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_rejects_credentials_with_invalid_message_count() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        let mut credential_parsed: BbsCredential = serde_json::from_str(&EXAMPLE_CREDENTIAL)?;
+        credential_parsed.proof.credential_message_count = 3;
+        let credential_with_invalid_msg_count = serde_json::to_string(&credential_parsed)?;
+
+        match credential
+            .verify_credential(
+                &credential_with_invalid_msg_count,
+                VERIFICATION_METHOD_ID,
+                MASTER_SECRET,
+            )
+            .await
+        {
+            Ok(_) => assert!(false, "credential should have been detected as revoked"),
+            Err(VadeEvanError::MessageCountMismatch(got, expected)) => {
+                assert_eq!(3, got);
+                assert_eq!(13, expected);
+                assert!(true, "credential revoked as expected")
+            }
+            _ => assert!(false, "revocation check failed with unexpected error"),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_can_detect_a_broken_credential() -> Result<()> {
         use crate::VadeEvanError;
 
@@ -490,7 +513,6 @@ mod tests {
 
         let mut credential = Credential::new(&mut vade_evan)?;
 
-        // verify the credential issuer
         match credential
             .verify_credential(
                 EXAMPLE_CREDENTIAL_REVOKED,

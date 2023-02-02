@@ -282,7 +282,7 @@ impl VadeEvan {
         issuer_did: &str,
         subject_did: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        let credential = Credential::new(self)?;
+        let mut credential = Credential::new(self)?;
         credential
             .create_credential_offer(schema_did, use_valid_until, issuer_did, subject_did)
             .await
