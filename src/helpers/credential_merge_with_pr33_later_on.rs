@@ -233,8 +233,10 @@ impl<'a> Credential<'a> {
             i += 1;
         }
         let decoded_proof = base64::decode(signature)?;
-        // let signature = Signature::from(Box::from(decoded_proof.as_slice()));
-        let signature = Signature::from(decoded_proof.into_boxed_slice());
+        let signature = panic::catch_unwind(|| Signature::from(decoded_proof.into_boxed_slice()))
+            .map_err(|_| {
+            VadeEvanError::BbsValidationError("Error parsing signature".to_string())
+        })?;
         let is_valid = signature
             .verify(&signature_messages, &pk)
             .map_err(|err| VadeEvanError::BbsValidationError(err.to_string()))?;
