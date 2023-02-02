@@ -7,6 +7,8 @@
 - migrate `Vade` instance creation and plugin bundling to new `VadeEvan` API layer
 - migration C-lib, CLI and WASM wrapper to use `VadeEvan` instead of `Vade`
 - add `get_version_info` helper function
+- add `create_credential_request` helper function
+- add `create_credential_offer` helper function
 
 ### Fixes
 

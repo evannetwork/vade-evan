@@ -170,6 +170,38 @@ async fn main() -> Result<()> {
                 bail!("invalid subcommand");
             }
         },
+        ("helper", Some(sub_m)) => match sub_m.subcommand() {
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            ("create_credential_offer", Some(sub_m)) => {
+                let use_valid_until = match get_optional_argument_value(sub_m, "use_valid_until") {
+                    Some(value) => value.to_lowercase() == "true",
+                    None => false,
+                };
+                get_vade_evan(sub_m)?
+                    .helper_create_credential_offer(
+                        get_argument_value(sub_m, "schema_did", None),
+                        use_valid_until,
+                        get_argument_value(sub_m, "issuer_did", None),
+                        get_optional_argument_value(sub_m, "subject_did"),
+                    )
+                    .await?
+            }
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            ("create_credential_request", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_credential_request(
+                        get_argument_value(sub_m, "issuer_public_key", None),
+                        get_argument_value(sub_m, "bbs_secret", None),
+                        get_argument_value(sub_m, "credential_values", None),
+                        get_argument_value(sub_m, "credential_offer", None),
+                        get_argument_value(sub_m, "schema_did", None),
+                    )
+                    .await?
+            }
+            _ => {
+                bail!("invalid subcommand");
+            }
+        },
         ("build_version", Some(sub_m)) => get_vade_evan(sub_m)?.get_version_info(),
         _ => {
             bail!("invalid subcommand");
@@ -179,6 +211,48 @@ async fn main() -> Result<()> {
     println!("{}", &result);
 
     Ok(())
+}
+
+// not included in all build variants
+#[allow(dead_code)]
+fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
+    // variable might be needlessly mutable due to the following feature listing not matching
+    #[allow(unused_mut)]
+    let mut subcommand = SubCommand::with_name("helper")
+        .about("streamlined and updated VADE API that will replace some of the current functions")
+        .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::SubcommandRequiredElseHelp);
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_credential_offer")
+                    .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema the issuer is capable and willing to use for credential issuance.")
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("use_valid_until")?)
+                    .arg(get_clap_argument("issuer_did")?)
+                    .arg(get_clap_argument("subject_did")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_credential_request")
+                    .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
+                    .arg(get_clap_argument("issuer_public_key")?)
+                    .arg(get_clap_argument("bbs_secret")?)
+                    .arg(get_clap_argument("credential_values")?)
+                    .arg(get_clap_argument("credential_offer")?)
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    Ok(app.subcommand(subcommand))
 }
 
 // not included in all build variants
@@ -398,7 +472,6 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
             );
         } else {}
     }
-
     cfg_if::cfg_if! {
         if #[cfg(feature = "plugin-vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
@@ -491,6 +564,8 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
         } else {}
     }
 
+    app = add_subcommand_helper(app)?;
+
     Ok(app)
 }
 
@@ -512,6 +587,11 @@ fn get_argument_value<'a>(
             }
         },
     }
+}
+
+#[cfg(feature = "plugin-vc-zkp-bbs")] // currently only used for vc offers
+fn get_optional_argument_value<'a>(matches: &'a ArgMatches, arg_name: &'a str) -> Option<&'a str> {
+    matches.value_of(arg_name)
 }
 
 fn get_vade_evan(matches: &ArgMatches) -> Result<VadeEvan> {
@@ -561,6 +641,47 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .short("s")
             .value_name("signer")
             .help("signer to use to sign messages with, e.g. 'local' or 'remote|http://somewhere'")
+            .takes_value(true),
+        "issuer_public_key" => Arg::with_name("issuer_public_key")
+            .long("issuer_public_key")
+            .value_name("issuer_public_key")
+            .help("issuer public key")
+            .takes_value(true),
+        "credential_offer" => Arg::with_name("credential_offer")
+            .long("credential_offer")
+            .value_name("credential_offer")
+            .help("JSON string with credential offer by issuer")
+            .takes_value(true),
+        "credential_values" => Arg::with_name("credential_values")
+            .long("credential_values")
+            .value_name("credential_values")
+            .help("JSON string with cleartext values to be signed in the credential")
+            .takes_value(true),
+        "bbs_secret" => Arg::with_name("bbs_secret")
+            .long("bbs_secret")
+            .value_name("bbs_secret")
+            .help("master secret of the holder/receiver"),
+        "schema_did" => Arg::with_name("schema_did")
+            .long("schema_did")
+            .value_name("schema_did")
+            .required(true)
+            .help("schema to create the offer for, e.g. 'did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw'")
+            .takes_value(true),
+        "use_valid_until" => Arg::with_name("use_valid_until")
+            .long("use_valid_until")
+            .value_name("use_valid_until")
+            .help("true if `validUntil` will be present in credential")
+            .takes_value(true),
+        "issuer_did" => Arg::with_name("issuer_did")
+            .long("issuer_did")
+            .value_name("issuer_did")
+            .required(true)
+            .help("DID of issuer")
+            .takes_value(true),
+        "subject_did" => Arg::with_name("subject_did")
+            .long("subject_did")
+            .value_name("subject_did")
+            .help("DID of subject")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
