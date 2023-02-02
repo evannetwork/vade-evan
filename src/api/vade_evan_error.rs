@@ -26,6 +26,12 @@ pub enum VadeEvanError {
     #[cfg(feature = "plugin-vc-zkp-bbs")]
     #[error("could not parse public key: {0}")]
     PublicKeyParsingError(String),
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[error("revocation list invalid; {0}")]
+    RevocationListInvalid(String),
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[error("credential has been revoked")]
+    CredentialRevoked,
 }
 impl From<Box<dyn std::error::Error>> for VadeEvanError {
     fn from(vade_error: Box<dyn std::error::Error>) -> VadeEvanError {

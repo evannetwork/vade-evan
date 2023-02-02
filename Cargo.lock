@@ -5113,6 +5113,7 @@ dependencies = [
  "clap",
  "console_error_panic_hook",
  "console_log",
+ "flate2",
  "jni",
  "log",
  "openssl",

@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::panic;
 
 use bbs::{
@@ -6,6 +7,8 @@ use bbs::{
     HashElem,
     SignatureMessage,
 };
+use flate2::read::GzDecoder;
+use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::{value::Value, Map};
 use ssi::{
     jsonld::{json_to_dataset, JsonLdOptions, StaticLoader},
@@ -18,11 +21,18 @@ use vade_evan_bbs::{
     CredentialStatus,
     CredentialSubject,
     OfferCredentialPayload,
+    RevocationListCredential,
     UnsignedBbsCredential,
 };
 
 use crate::api::{VadeEvan, VadeEvanError};
 use crate::datatypes::DidDocument;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DidDocumentResult<T> {
+    did_document: T,
+}
 
 // Master secret is always incorporated, without being mentioned in the credential schema
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
@@ -120,6 +130,34 @@ fn get_public_key_generator(
     })?;
 
     Ok(public_key_generator)
+}
+
+pub fn is_revoked(
+    credential_status: &CredentialStatus,
+    revocation_list: &RevocationListCredential,
+) -> Result<bool, VadeEvanError> {
+    let encoded_list = base64::decode_config(
+        revocation_list.credential_subject.encoded_list.to_string(),
+        base64::URL_SAFE,
+    )?;
+    let mut decoder = GzDecoder::new(&encoded_list[..]);
+    let mut decoded_list = Vec::new();
+    decoder
+        .read_to_end(&mut decoded_list)
+        .map_err(|e| VadeEvanError::RevocationListInvalid(e.to_string()))?;
+
+    let revocation_list_index_number = credential_status
+        .revocation_list_index
+        .parse::<usize>()
+        .map_err(|e| {
+            VadeEvanError::RevocationListInvalid(format!("Error parsing revocation_list_id: {}", e))
+        })?;
+
+    let byte_index_float: f32 = (revocation_list_index_number / 8) as f32;
+    let byte_index: usize = byte_index_float.floor() as usize;
+    let revoked = decoded_list[byte_index] & (1 << (revocation_list_index_number % 8)) != 0;
+
+    Ok(revoked)
 }
 
 pub struct Credential<'a> {
@@ -260,6 +298,8 @@ impl<'a> Credential<'a> {
         let credential_without_proof = serde_json::to_string(&parsed_credential)?;
         let did_doc_nquads = convert_to_nquads(&credential_without_proof).await?;
 
+        // TODO swo: check nquad count
+
         // get public key suitable for messages
         let issuer_pub_key = self
             .get_issuer_public_key(&credential.issuer, verification_method_id)
@@ -278,9 +318,28 @@ impl<'a> Credential<'a> {
         )
         .await?;
 
-        // TODO: check if credential has not been revoked?
+        // check if credential has been revoked
+        // let revocation_list =  getDidDocument(context, cred.credentialStatus.revocationListCredential);
+        // resolve the did and extract the did document out of it
+        let revocation_list: RevocationListCredential = self
+            .get_did_document(&credential.credential_status.revocation_list_credential)
+            .await?;
+        let credential_revoked = is_revoked(&credential.credential_status, &revocation_list)?;
+        if credential_revoked {
+            return Err(VadeEvanError::CredentialRevoked);
+        }
 
         Ok(())
+    }
+
+    async fn get_did_document<T>(&mut self, did: &str) -> Result<T, VadeEvanError>
+    where
+        T: DeserializeOwned,
+    {
+        let did_result_str = self.vade_evan.did_resolve(did).await?;
+        let did_result_value: DidDocumentResult<T> = serde_json::from_str(&did_result_str)?;
+
+        Ok(did_result_value.did_document)
     }
 }
 
@@ -340,6 +399,44 @@ mod tests {
             }
         }
     }"###;
+    const EXAMPLE_CREDENTIAL_REVOKED: &str = r###"{
+        "id": "uuid:19b1e481-8743-4c27-8934-45d682714ccc",
+        "type": [
+            "VerifiableCredential"
+        ],
+        "proof": {
+            "type": "BbsBlsSignature2020",
+            "created": "2023-02-02T14:23:43.000Z",
+            "signature": "lqKrWCzOaeL4qRRyhN4555I5/A/TmKQ9iJUvA+34pwNfh4rBLFxKlLwJK5dfuQjrDZ+0EWSK8X+e7Jv9cWjOZ+v/t3lgT3nFczMtfPjgFe4a3iWKCRUi1HM6h1+c6HY+C0j0QOB606TTXe2EInb+WQ==",
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+            "credentialMessageCount": 13,
+            "requiredRevealStatements": []
+        },
+        "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://schema.org/",
+            "https://w3id.org/vc-revocation-list-2020/v1"
+        ],
+        "issuanceDate": "2023-02-02T14:23:42.120Z",
+        "credentialSchema": {
+            "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+            "type": "EvanVCSchema"
+        },
+        "credentialStatus": {
+            "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#6",
+            "type": "RevocationList2020Status",
+            "revocationListIndex": "6",
+            "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+        },
+        "credentialSubject": {
+            "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+            "data": {
+                "bio": "biography"
+            }
+        }
+    }"###;
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
@@ -365,7 +462,7 @@ mod tests {
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_verify_credential() -> Result<()> {
+    async fn helper_can_verify_valid_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -373,12 +470,41 @@ mod tests {
 
         let mut credential = Credential::new(&mut vade_evan)?;
 
-        // TODO: verify credential nquads
-
         // verify the credential issuer
         credential
             .verify_credential(EXAMPLE_CREDENTIAL, VERIFICATION_METHOD_ID, MASTER_SECRET)
             .await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_detect_a_broken_credential() -> Result<()> {
+        use crate::VadeEvanError;
+
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        // verify the credential issuer
+        match credential
+            .verify_credential(
+                EXAMPLE_CREDENTIAL_REVOKED,
+                VERIFICATION_METHOD_ID,
+                MASTER_SECRET,
+            )
+            .await
+        {
+            Ok(_) => assert!(false, "credential should have been detected as revoked"),
+            Err(VadeEvanError::CredentialRevoked) => {
+                assert!(true, "credential revoked as expected")
+            }
+            _ => assert!(false, "revocation check failed with unexpected error"),
+        };
 
         Ok(())
     }

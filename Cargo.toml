@@ -44,7 +44,7 @@ plugin-jwt-vc = ["capability-vc-zkp", "plugin-signer", "vade-jwt-vc"]
 
 plugin-signer = ["vade-signer"]
 
-plugin-vc-zkp-bbs = ["base64", "bbs", "capability-vc-zkp", "plugin-signer", "ssi", "vade-evan-bbs"]
+plugin-vc-zkp-bbs = ["base64", "bbs", "capability-vc-zkp", "flate2", "plugin-signer", "ssi", "vade-evan-bbs"]
 
 # enable support for using the `c_lib` module to process requests
 capability-c-lib = ["tokio", "vade-didcomm/portable"]
@@ -126,6 +126,10 @@ optional = true
 version = "0.4.1"
 optional = true
 default-features= false
+
+[dependencies.flate2]
+version = "1.0.20"
+optional = true
 
 [dependencies.vade-evan-bbs]
 version = "0.3.0"
