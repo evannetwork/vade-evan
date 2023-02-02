@@ -103,9 +103,7 @@ optional = true
 # plugin-didcomm
 [dependencies.vade-didcomm]
 git = "https://github.com/evannetwork/vade-didcomm.git"
-# can be reverted to develop after # as long as https://github.com/evannetwork/vade-didcomm/pull/5
-# branch = "develop"
-branch = "feature/update-didcomm-rs-to-no-resolve-version"
+branch = "develop"
 optional = true
 
 # plugin-jwt-vc
