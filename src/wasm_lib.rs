@@ -153,6 +153,46 @@ cfg_if::cfg_if! {
             Ok(Some(version_info))
         }
 
+        #[cfg(feature = "capability-did-write")]
+        #[wasm_bindgen]
+        pub async fn helper_did_create(
+            bbs_key: Option<String>,
+            signing_key: Option<String>,
+            service_endpoint: Option<String>,
+        ) -> Result<Option<String>, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let did_create_result = vade_evan
+            .helper_did_create(
+                bbs_key.as_ref().map(|x| x.as_ref()),
+                signing_key.as_ref().map(|x| x.as_ref()),
+                service_endpoint.as_ref().map(|x| x.as_ref())
+            ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(Some(did_create_result))
+        }
+
+        #[cfg(feature = "capability-did-write")]
+        #[wasm_bindgen]
+        pub async fn helper_did_update(
+            did: String,
+            operation: String,
+            update_key: String,
+            payload: String,
+        ) -> Result<Option<String>, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let did_update_key = vade_evan
+            .helper_did_update(
+                did.as_ref(),
+                operation.as_ref(),
+                update_key.as_ref(),
+                payload.as_ref()
+            ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(Some(did_update_key))
+        }
+
         #[cfg(feature = "plugin-vc-zkp-bbs")]
         #[wasm_bindgen]
         pub async fn helper_create_credential_request(

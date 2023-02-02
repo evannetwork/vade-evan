@@ -126,7 +126,7 @@ impl<'a> DID<'a> {
     ) -> Result<String, VadeEvanError> {
         let patch: Patch;
         let operation =
-            DIDOperationType::from_str(operation).map_err(|err| VadeEvanError::InternalError {
+            DIDOperationType::from_str(operation).map_err(|_| VadeEvanError::InternalError {
                 source_message: "Unsupported update operation".to_owned(),
             })?;
         let update_key: PublicKeyJWK =

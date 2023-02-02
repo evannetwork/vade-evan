@@ -17,7 +17,6 @@
 use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
-use crate::helpers::DIDOperationType;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -305,7 +304,7 @@ pub extern "C" fn execute_vade(
             )
         }),
         #[cfg(feature = "capability-did-write")]
-        "helper_did_update_add_public_key" => runtime.block_on({
+        "helper_did_update" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
                     Some(&str_config),
@@ -318,9 +317,9 @@ pub extern "C" fn execute_vade(
                 vade_evan
                     .helper_did_update(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),
-                        DIDOperationType::AddKey,
                         arguments_vec.get(1).unwrap_or_else(|| &no_args),
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)
