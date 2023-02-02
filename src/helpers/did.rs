@@ -4,6 +4,7 @@ use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{
     AddPublicKeys,
     AddServices,
+    CreateDidPayload,
     DIDOperationType,
     DidUpdatePayload,
     Patch,
@@ -98,18 +99,20 @@ impl<'a> DID<'a> {
             None => {}
         }
 
-        let payload = format!(
-            r#"{{
-                "public_keys": {},
-                "services": {},
-            }}"#,
-            serde_json::to_string(&public_keys).map_err(|err| VadeEvanError::InternalError {
-                source_message: err.to_string()
-            })?,
-            serde_json::to_string(&services).map_err(|err| VadeEvanError::InternalError {
-                source_message: err.to_string()
-            })?
-        );
+        let mut create_payload: CreateDidPayload = CreateDidPayload {
+            update_key: None,
+            recovery_key: None,
+            public_keys: None,
+            services: None,
+        };
+        if public_keys.len() > 0 {
+            create_payload.public_keys = Some(public_keys);
+        }
+        if services.len() > 0 {
+            create_payload.services = Some(services);
+        }
+        let payload = serde_json::to_string(&create_payload)?;
+        println!("create payload{}", payload);
         let result = self
             .vade_evan
             .did_create(EVAN_METHOD, TYPE_SIDETREE_OPTIONS, &payload)
@@ -211,4 +214,132 @@ impl<'a> DID<'a> {
 
         Ok(result)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
+    use anyhow::Result;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct CreateDIDResponse {
+        did: Did,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Did {
+        did_document: DidDoc,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct DidDoc {
+        id: String,
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_create_did_with_bbs_keys() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
+
+        let did_create_result = vade_evan
+            .helper_did_create(Some(base64_encoded_bbs_key), None, None)
+            .await;
+
+        assert!(did_create_result.is_ok());
+        // println!("{}", did_create_result?);
+        let create_response: CreateDIDResponse = serde_json::from_str(&did_create_result?)?;
+
+        let did_resolve = vade_evan
+            .did_resolve(&create_response.did.did_document.id)
+            .await?;
+        println!("{}", did_resolve);
+        assert!(did_resolve.contains(base64_encoded_bbs_key));
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_create_did_with_service_endpoint() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let service_endpoint = "www.example.service";
+
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, Some(service_endpoint))
+            .await;
+
+        assert!(did_create_result.is_ok());
+        // println!("{}", did_create_result?);
+        let create_response: CreateDIDResponse = serde_json::from_str(&did_create_result?)?;
+
+        let did_resolve = vade_evan
+            .did_resolve(&create_response.did.did_document.id)
+            .await?;
+        println!("{}", did_resolve);
+        assert!(did_resolve.contains(service_endpoint));
+        Ok(())
+    }
+
+    // #[tokio::test]
+    // #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    // async fn helper_can_update_did_with_service_endpoint() -> Result<()> {
+    //     let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+    //         target: DEFAULT_TARGET,
+    //         signer: DEFAULT_SIGNER,
+    //     })?;
+
+    //     let did_create_result = vade_evan
+    //         .helper_did_create(None, None, Some(service_endpoint))
+    //         .await;
+
+    //     assert!(did_create_result.is_ok());
+    //     println!("{}", did_create_result?);
+    //     Ok(())
+    // }
+
+    // #[tokio::test]
+    // #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    // async fn helper_can_update_did_with_public_key() -> Result<()> {
+    //     let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+    //         target: DEFAULT_TARGET,
+    //         signer: DEFAULT_SIGNER,
+    //     })?;
+    //     let service_endpoint = "www.example.service";
+
+    //     let did_create_result = vade_evan
+    //         .helper_did_create(None, None, Some(service_endpoint))
+    //         .await;
+
+    //     assert!(did_create_result.is_ok());
+    //     println!("{}", did_create_result?);
+    //     Ok(())
+    // }
+
+    // #[tokio::test]
+    // #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    // async fn helper_can_update_did_with_public_key() -> Result<()> {
+    //     let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+    //         target: DEFAULT_TARGET,
+    //         signer: DEFAULT_SIGNER,
+    //     })?;
+    //     let service_endpoint = "www.example.service";
+
+    //     let did_create_result = vade_evan
+    //         .helper_did_create(None, None, Some(service_endpoint))
+    //         .await;
+
+    //     assert!(did_create_result.is_ok());
+    //     println!("{}", did_create_result?);
+    //     Ok(())
+    // }
 }

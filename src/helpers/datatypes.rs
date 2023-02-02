@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub const EVAN_METHOD: &str = "did:evan";
 pub const TYPE_BBS_OPTIONS: &str = r#"{ "type": "bbs" }"#;
-pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", \"waitForCompletion\":true }"#;
+pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", "waitForCompletion":true }"#;
 
 pub const TYPE_BBS_KEY: &str = "Bls12381G2Key2020";
 pub const TYPE_JSONWEB_KEY: &str = "JsonWebKey2020";
@@ -109,4 +109,14 @@ pub struct DidUpdatePayload {
     pub next_update_key: Option<PublicKeyJWK>,
     pub next_recovery_key: Option<PublicKeyJWK>,
     pub patches: Option<Vec<Patch>>,
+}
+
+/// Payload for DID creation. If keys are not provided, they will be generated automatically
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateDidPayload {
+    pub update_key: Option<PublicKeyJWK>,
+    pub recovery_key: Option<PublicKeyJWK>,
+    pub public_keys: Option<Vec<PublicKeyModel>>,
+    pub services: Option<Vec<Service>>,
 }

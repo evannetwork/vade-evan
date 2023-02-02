@@ -198,6 +198,27 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(feature = "capability-did-write")]
+            ("did_create", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_did_create(
+                        sub_m.value_of("bbs_key"),
+                        sub_m.value_of("signign_key"),
+                        sub_m.value_of("service_endpoint"),
+                    )
+                    .await?
+            }
+            #[cfg(feature = "capability-did-write")]
+            ("did_update", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_did_update(
+                        get_argument_value(sub_m, "did", None),
+                        get_argument_value(sub_m, "operation", None),
+                        get_argument_value(sub_m, "update_key", None),
+                        get_argument_value(sub_m, "payload", None),
+                    )
+                    .await?
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -251,6 +272,34 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
             );
         } else {}
     }
+    cfg_if::cfg_if! {
+            if #[cfg(feature = "capability-did-write")] {
+                subcommand = subcommand.subcommand(
+                    SubCommand::with_name("did_create")
+                        .about("Creates a did, take optional arguments for predefined keys and service endpoints")
+                        .arg(get_clap_argument("bbs_key")?)
+                        .arg(get_clap_argument("signing_key")?)
+                        .arg(get_clap_argument("service_endpoint")?)
+                        .arg(get_clap_argument("target")?)
+                        .arg(get_clap_argument("signer")?),
+                );
+            } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "capability-did-write")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("did_update")
+                    .about("Updates a did (add/remove publickey and add/remove service_endpoint)")
+                    .arg(get_clap_argument("did")?)
+                    .arg(get_clap_argument("operation")?)
+                    .arg(get_clap_argument("update_key")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+}
 
     Ok(app.subcommand(subcommand))
 }
@@ -682,6 +731,31 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .long("subject_did")
             .value_name("subject_did")
             .help("DID of subject")
+            .takes_value(true),
+        "operation" => Arg::with_name("operation")
+            .long("operation")
+            .value_name("operation")
+            .help("Operation type AddKey/RemoveKey/AddServiceEnpoint/RemoveServiceEnpoint")
+            .takes_value(true),
+        "update_key" => Arg::with_name("update_key")
+            .long("update_key")
+            .value_name("update_key")
+            .help("Update key for did update in JWK format")
+            .takes_value(true),
+        "bbs_key" => Arg::with_name("bbs_key")
+            .long("bbs_key")
+            .value_name("bbs_key")
+            .help("pre-generated bbs public key")
+            .takes_value(true),
+        "signing_key" => Arg::with_name("signing_key")
+            .long("signing_key")
+            .value_name("signing_key")
+            .help("signing key to be added to did doc")
+            .takes_value(true),
+        "service_endpoint" => Arg::with_name("service_endpoint")
+            .long("service_endpoint")
+            .value_name("service_endpoint")
+            .help("Service endpoint url")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
