@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{
     AddPublicKeys,
@@ -118,11 +120,15 @@ impl<'a> DID<'a> {
     pub async fn update(
         self,
         did: &str,
-        operation: DIDOperationType,
+        operation: &str,
         update_key: &str,
         payload: &str,
     ) -> Result<String, VadeEvanError> {
-        let mut patch: Patch = Patch::Default;
+        let patch: Patch;
+        let operation =
+            DIDOperationType::from_str(operation).map_err(|err| VadeEvanError::InternalError {
+                source_message: "Unsupported update operation".to_owned(),
+            })?;
         let update_key: PublicKeyJWK =
             serde_json::from_str(update_key).map_err(|err| VadeEvanError::InternalError {
                 source_message: err.to_string(),

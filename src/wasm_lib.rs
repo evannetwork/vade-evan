@@ -153,8 +153,9 @@ cfg_if::cfg_if! {
             Ok(Some(version_info))
         }
 
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
         #[wasm_bindgen]
-        pub async fn create_credential_request(
+        pub async fn helper_create_credential_request(
             issuer_public_key: String,
             bbs_secret: String,
             credential_values: String,
@@ -164,7 +165,7 @@ cfg_if::cfg_if! {
 
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let credential_result = vade_evan
-            .create_credential_request(
+            .helper_create_credential_request(
                 &issuer_public_key,
                 &bbs_secret,
                 &credential_values,
@@ -172,6 +173,26 @@ cfg_if::cfg_if! {
                 &credential_schema).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(Some(credential_result))
+        }
+
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[wasm_bindgen]
+        pub async fn helper_create_credential_offer(
+            schema_did: String,
+            use_valid_until: bool,
+            issuer_did: String,
+            subject_did: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let offer = vade_evan
+                .helper_create_credential_offer(
+                    &schema_did,
+                    use_valid_until,
+                    &issuer_did,
+                    subject_did.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(offer)
         }
     } else {
     }
@@ -188,7 +209,7 @@ fn get_config_values(
     match config {
         Some(value) => {
             if !value.is_undefined() {
-                config_hash_map = value.into_serde()?;
+                config_hash_map = serde_wasm_bindgen::from_value(value.clone())?;
                 config_undefined = false;
             } else {
                 config_hash_map = HashMap::<String, String>::new();

@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 pub const EVAN_METHOD: &str = "did:evan";
@@ -27,11 +28,25 @@ pub struct AddServices {
     pub services: Vec<Service>,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum DIDOperationType {
     AddKey,
     RemoveKey,
     AddServiceEnpoint,
     RemoveServiceEnpoint,
+}
+
+impl FromStr for DIDOperationType {
+    type Err = ();
+    fn from_str(input: &str) -> Result<DIDOperationType, Self::Err> {
+        match input {
+            "AddKey"  => Ok(DIDOperationType::AddKey),
+            "RemoveKey"  => Ok(DIDOperationType::RemoveKey),
+            "AddServiceEnpoint"  => Ok(DIDOperationType::AddServiceEnpoint),
+            "RemoveServiceEnpoint" => Ok(DIDOperationType::RemoveServiceEnpoint),
+            _      => Err(()),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

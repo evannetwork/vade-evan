@@ -44,7 +44,7 @@ plugin-jwt-vc = ["capability-vc-zkp", "plugin-signer", "vade-jwt-vc"]
 
 plugin-signer = ["vade-signer"]
 
-plugin-vc-zkp-bbs = ["capability-vc-zkp", "plugin-signer", "vade-evan-bbs"]
+plugin-vc-zkp-bbs = ["capability-vc-zkp", "plugin-signer", "ssi", "vade-evan-bbs"]
 
 # enable support for using the `c_lib` module to process requests
 capability-c-lib = ["tokio", "vade-didcomm/portable"]
@@ -87,6 +87,7 @@ serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 thiserror = "1.0.38"
 vade = "0.1.0"
 
+
 ###################################################################### feature specific dependencies
 # plugin-did-sidetree
 [dependencies.vade-sidetree]
@@ -102,7 +103,10 @@ optional = true
 
 # plugin-didcomm
 [dependencies.vade-didcomm]
-version = "0.3.0"
+git = "https://github.com/evannetwork/vade-didcomm.git"
+# can be reverted to develop after # as long as https://github.com/evannetwork/vade-didcomm/pull/5
+# branch = "develop"
+branch = "feature/update-didcomm-rs-to-no-resolve-version"
 optional = true
 
 # plugin-jwt-vc
@@ -120,6 +124,10 @@ optional = true
 version = "0.3.0"
 optional = true
 default-features = false
+
+[dependencies.ssi]
+version = "0.5.0"
+optional = true
 
 # plugin-universal-resolver
 [dependencies.vade-universal-resolver]
@@ -150,6 +158,7 @@ console_error_panic_hook = "0.1.6"
 console_log = { version = "0.2", features = ["color"] }
 log = "0.4.17"
 serde_derive = "1.0.114"
+serde-wasm-bindgen = "0.4.5"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.5"
 

@@ -31,5 +31,3 @@ mod api;
 mod helpers;
 
 pub use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
-
-const EVAN_METHOD: &str = "did:evan";
