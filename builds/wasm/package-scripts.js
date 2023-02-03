@@ -41,7 +41,7 @@ const buildWasm = (buildForBrowser) => [
   `--out-dir ${__dirname}/${VADE_WASM_FOLDER}`,
   '--',
   '--no-default-features',
-  '--features did,didcomm,vc-zkp,wasm',
+  '--features bundle-default,target-wasm',
   '&&',
   fixFunctionArgName,
 ].join(' ');
