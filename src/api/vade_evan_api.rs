@@ -286,6 +286,7 @@ impl VadeEvan {
         credential
             .create_credential_offer(schema_did, use_valid_until, issuer_did, subject_did)
             .await
+            .map_err(|err| err.into())
     }
 
     /// Creates a credential request. This function is used to create a credential request which is sent to Issuer
@@ -339,7 +340,7 @@ impl VadeEvan {
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, VadeEvanError> {
-        let credential = Credential::new(self)?;
+        let mut credential = Credential::new(self)?;
         credential
             .create_credential_request(
                 issuer_public_key,
@@ -349,6 +350,7 @@ impl VadeEvan {
                 credential_schema_did,
             )
             .await
+            .map_err(|err| err.into())
     }
 
     /// Verifies a given credential by checking if given master secret was incorporated
@@ -423,6 +425,7 @@ impl VadeEvan {
         credential_helper
             .verify_credential(credential, master_secret)
             .await
+            .map_err(|err| err.into())
     }
 
     /// Runs a custom function, this allows to use `Vade`s API for custom calls, that do not belong

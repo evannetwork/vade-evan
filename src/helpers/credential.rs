@@ -13,6 +13,7 @@ use ssi::{
     jsonld::{json_to_dataset, JsonLdOptions, StaticLoader},
     urdna2015::normalize,
 };
+use thiserror::Error;
 use vade_evan_bbs::{
     BbsCredential,
     CredentialSchema,
@@ -24,16 +25,42 @@ use vade_evan_bbs::{
     UnsignedBbsCredential,
 };
 
-use crate::api::{VadeEvan, VadeEvanError};
+use crate::api::VadeEvan;
 
 use super::{datatypes::DidDocumentResult, IdentityDidDocument};
+
+#[derive(Error, Debug)]
+pub enum CredentialError {
+    #[error("internal VadeEvan call failed; {0}")]
+    VadeEvanError(String),
+    #[error("invalid did document")]
+    InvalidDidDocument(String),
+    #[error("pubkey for verification method not found, {0}")]
+    InvalidVerificationMethod(String),
+    #[error("JSON (de)serialization failed")]
+    JsonDeSerialization(#[from] serde_json::Error),
+    #[error("JSON-ld handling failed, {0}")]
+    JsonLdHandling(String),
+    #[error("base64 decoding failed")]
+    Base64DecodingFailed(#[from] base64::DecodeError),
+    #[error("an error has occurred during bbs signature validation: {0}")]
+    BbsValidationError(String),
+    #[error("could not parse public key: {0}")]
+    PublicKeyParsingError(String),
+    #[error("revocation list invalid; {0}")]
+    RevocationListInvalid(String),
+    #[error("credential has been revoked")]
+    CredentialRevoked,
+    #[error("wrong number of messages in credential, got {0} but proof was created for {1}")]
+    MessageCountMismatch(usize, usize),
+}
 
 // Master secret is always incorporated, without being mentioned in the credential schema
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
 const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
 
-async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEvanError> {
+async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, CredentialError> {
     let mut loader = StaticLoader;
     let options = JsonLdOptions {
         base: None,           // -b, Base IRI
@@ -48,7 +75,7 @@ async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEva
         &mut loader,
     )
     .await
-    .map_err(|err| VadeEvanError::JsonLdHandling(err.to_string()))?;
+    .map_err(|err| CredentialError::JsonLdHandling(err.to_string()))?;
     let dataset_normalized = normalize(&dataset).unwrap();
     let normalized = dataset_normalized.to_nquads().unwrap();
     let non_empty_lines = normalized
@@ -63,11 +90,11 @@ async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEva
 fn get_public_key_generator(
     public_key: &str,
     message_count: usize,
-) -> Result<PublicKey, VadeEvanError> {
+) -> Result<PublicKey, CredentialError> {
     let public_key: DeterministicPublicKey =
         DeterministicPublicKey::from(base64::decode(public_key)?.into_boxed_slice());
     let public_key_generator = public_key.to_public_key(message_count).map_err(|e| {
-        VadeEvanError::PublicKeyParsingError(format!(
+        CredentialError::PublicKeyParsingError(format!(
             "public key invalid, generate public key generator; {}",
             e
         ))
@@ -79,7 +106,7 @@ fn get_public_key_generator(
 pub fn is_revoked(
     credential_status: &CredentialStatus,
     revocation_list: &RevocationListCredential,
-) -> Result<bool, VadeEvanError> {
+) -> Result<bool, CredentialError> {
     let encoded_list = base64::decode_config(
         revocation_list.credential_subject.encoded_list.to_string(),
         base64::URL_SAFE,
@@ -88,13 +115,16 @@ pub fn is_revoked(
     let mut decoded_list = Vec::new();
     decoder
         .read_to_end(&mut decoded_list)
-        .map_err(|e| VadeEvanError::RevocationListInvalid(e.to_string()))?;
+        .map_err(|e| CredentialError::RevocationListInvalid(e.to_string()))?;
 
     let revocation_list_index_number = credential_status
         .revocation_list_index
         .parse::<usize>()
         .map_err(|e| {
-            VadeEvanError::RevocationListInvalid(format!("Error parsing revocation_list_id: {}", e))
+            CredentialError::RevocationListInvalid(format!(
+                "Error parsing revocation_list_id: {}",
+                e
+            ))
         })?;
 
     let byte_index_float: f32 = (revocation_list_index_number / 8) as f32;
@@ -109,7 +139,7 @@ pub struct Credential<'a> {
 }
 
 impl<'a> Credential<'a> {
-    pub fn new(vade_evan: &'a mut VadeEvan) -> Result<Credential, VadeEvanError> {
+    pub fn new(vade_evan: &'a mut VadeEvan) -> Result<Credential, CredentialError> {
         Ok(Credential { vade_evan })
     }
 
@@ -119,7 +149,7 @@ impl<'a> Credential<'a> {
         use_valid_until: bool,
         issuer_did: &str,
         subject_did: Option<&str>,
-    ) -> Result<String, VadeEvanError> {
+    ) -> Result<String, CredentialError> {
         let credential_draft = self
             .create_empty_unsigned_credential(schema_did, subject_did.as_deref(), use_valid_until)
             .await?;
@@ -138,36 +168,22 @@ impl<'a> Credential<'a> {
                 TYPE_OPTIONS,
                 &serde_json::to_string(&payload)?,
             )
-            .await?;
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
 
         Ok(result)
     }
 
     pub async fn create_credential_request(
-        self,
+        &mut self,
         issuer_public_key: &str,
         bbs_secret: &str,
         credential_values: &str,
         credential_offer: &str,
         credential_schema_did: &str,
-    ) -> Result<String, VadeEvanError> {
-        let schema_did_doc_str = self.vade_evan.did_resolve(credential_schema_did).await?;
-        let response_obj: Value = serde_json::from_str(&schema_did_doc_str).map_err(|err| {
-            VadeEvanError::InternalError {
-                source_message: err.to_string(),
-            }
-        })?;
-        let did_document_obj =
-            response_obj
-                .get("didDocument")
-                .ok_or_else(|| VadeEvanError::InternalError {
-                    source_message: "missing 'didDocument' in response".to_string(),
-                });
-        let credential_schema = serde_json::to_string(&did_document_obj?).map_err(|err| {
-            VadeEvanError::InternalError {
-                source_message: err.to_string(),
-            }
-        })?;
+    ) -> Result<String, CredentialError> {
+        let credential_schema: CredentialSchema =
+            self.get_did_document(credential_schema_did).await?;
 
         let payload = format!(
             r#"{{
@@ -177,12 +193,17 @@ impl<'a> Credential<'a> {
                 "issuerPubKey": {},
                 "credentialSchema": {}
             }}"#,
-            credential_offer, bbs_secret, credential_values, issuer_public_key, credential_schema
+            credential_offer,
+            bbs_secret,
+            credential_values,
+            issuer_public_key,
+            serde_json::to_string(&credential_schema)?
         );
         let result = self
             .vade_evan
             .vc_zkp_request_credential(EVAN_METHOD, TYPE_OPTIONS, &payload)
-            .await?;
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
 
         Ok(result)
     }
@@ -191,7 +212,7 @@ impl<'a> Credential<'a> {
         &mut self,
         credential_str: &str,
         master_secret: &str,
-    ) -> Result<(), VadeEvanError> {
+    ) -> Result<(), CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
 
         // get nquads
@@ -203,7 +224,7 @@ impl<'a> Credential<'a> {
         if (did_doc_nquads.len() + ADDITIONAL_HIDDEN_MESSAGES_COUNT)
             != credential.proof.credential_message_count
         {
-            return Err(VadeEvanError::MessageCountMismatch(
+            return Err(CredentialError::MessageCountMismatch(
                 credential.proof.credential_message_count,
                 did_doc_nquads.len() + ADDITIONAL_HIDDEN_MESSAGES_COUNT,
             ));
@@ -215,7 +236,7 @@ impl<'a> Credential<'a> {
             .verification_method
             .rsplit_once('#')
             .ok_or_else(|| {
-                VadeEvanError::InvalidVerificationMethod(
+                CredentialError::InvalidVerificationMethod(
                     "invalid verification method in proof".to_string(),
                 )
             })?
@@ -243,7 +264,7 @@ impl<'a> Credential<'a> {
             .await?;
         let credential_revoked = is_revoked(&credential.credential_status, &revocation_list)?;
         if credential_revoked {
-            return Err(VadeEvanError::CredentialRevoked);
+            return Err(CredentialError::CredentialRevoked);
         }
 
         Ok(())
@@ -254,7 +275,7 @@ impl<'a> Credential<'a> {
         schema_did: &str,
         subject_did: Option<&str>,
         use_valid_until: bool,
-    ) -> Result<UnsignedBbsCredential, VadeEvanError> {
+    ) -> Result<UnsignedBbsCredential, CredentialError> {
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
 
         let credential = UnsignedBbsCredential {
@@ -295,11 +316,15 @@ impl<'a> Credential<'a> {
         Ok(credential)
     }
 
-    async fn get_did_document<T>(&mut self, did: &str) -> Result<T, VadeEvanError>
+    async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
     where
         T: DeserializeOwned,
     {
-        let did_result_str = self.vade_evan.did_resolve(did).await?;
+        let did_result_str = self
+            .vade_evan
+            .did_resolve(did)
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
         let did_result_value: DidDocumentResult<T> = serde_json::from_str(&did_result_str)?;
 
         Ok(did_result_value.did_document)
@@ -318,7 +343,7 @@ impl<'a> Credential<'a> {
         &mut self,
         issuer_did: &str,
         verification_method_id: &str,
-    ) -> Result<String, VadeEvanError> {
+    ) -> Result<String, CredentialError> {
         let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
@@ -330,7 +355,7 @@ impl<'a> Credential<'a> {
         }
 
         if public_key == "" {
-            return Err(VadeEvanError::InvalidVerificationMethod(format!(
+            return Err(CredentialError::InvalidVerificationMethod(format!(
                 "no public key found for verification id {}",
                 &verification_method_id
             )));
@@ -345,7 +370,7 @@ impl<'a> Credential<'a> {
         did_doc_nquads: &Vec<String>,
         master_secret: &str,
         pk: &PublicKey,
-    ) -> Result<(), VadeEvanError> {
+    ) -> Result<(), CredentialError> {
         let mut signature_messages: Vec<SignatureMessage> = Vec::new();
         let master_secret_message: SignatureMessage =
             SignatureMessage::from(base64::decode(master_secret)?.into_boxed_slice());
@@ -358,11 +383,11 @@ impl<'a> Credential<'a> {
         let decoded_proof = base64::decode(signature)?;
         let signature = panic::catch_unwind(|| Signature::from(decoded_proof.into_boxed_slice()))
             .map_err(|_| {
-            VadeEvanError::BbsValidationError("Error parsing signature".to_string())
+            CredentialError::BbsValidationError("Error parsing signature".to_string())
         })?;
         let is_valid = signature
             .verify(&signature_messages, &pk)
-            .map_err(|err| VadeEvanError::BbsValidationError(err.to_string()))?;
+            .map_err(|err| CredentialError::BbsValidationError(err.to_string()))?;
 
         dbg!(&is_valid);
 
@@ -375,9 +400,9 @@ mod tests {
     use anyhow::Result;
     use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
 
-    use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
+    use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
 
-    use super::Credential;
+    use super::{Credential, CredentialError};
 
     const CREDENTIAL_ACTIVE: &str = r###"{
         "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
@@ -595,7 +620,7 @@ mod tests {
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),
-            Err(VadeEvanError::MessageCountMismatch(got, expected)) => {
+            Err(CredentialError::MessageCountMismatch(got, expected)) => {
                 assert_eq!(3, got);
                 assert_eq!(13, expected);
                 assert!(true, "credential revoked as expected")
@@ -609,7 +634,7 @@ mod tests {
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_can_detect_a_broken_credential() -> Result<()> {
-        use crate::VadeEvanError;
+        use super::CredentialError;
 
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -623,7 +648,7 @@ mod tests {
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),
-            Err(VadeEvanError::CredentialRevoked) => {
+            Err(CredentialError::CredentialRevoked) => {
                 assert!(true, "credential revoked as expected")
             }
             _ => assert!(false, "revocation check failed with unexpected error"),

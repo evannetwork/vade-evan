@@ -6,7 +6,7 @@ mod credential;
 mod datatypes;
 
 #[cfg(feature = "plugin-vc-zkp-bbs")]
-pub(crate) use credential::Credential;
+pub(crate) use credential::{Credential, CredentialError};
 #[cfg(feature = "plugin-vc-zkp-bbs")]
 pub use datatypes::IdentityDidDocument;
 pub(crate) use version_info::VersionInfo;
