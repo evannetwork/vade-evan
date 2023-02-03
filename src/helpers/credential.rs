@@ -38,56 +38,6 @@ const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
 const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
 
-// fn create_empty_unsigned_credential(
-//     schema_did_doc_str: &str,
-//     subject_did: Option<&str>,
-//     use_valid_until: bool,
-// ) -> Result<UnsignedBbsCredential, VadeEvanError> {
-//     let response_obj: Value = serde_json::from_str(&schema_did_doc_str)?;
-//     let did_document_obj = response_obj.get("didDocument").ok_or_else(|| {
-//         VadeEvanError::InvalidDidDocument("missing 'didDocument' in response".to_string())
-//     });
-//     let did_document_str = serde_json::to_string(&did_document_obj?)?;
-//     let schema_obj: CredentialSchema = serde_json::from_str(&did_document_str)?;
-
-//     let credential = UnsignedBbsCredential {
-//         context: vec![
-//             "https://www.w3.org/2018/credentials/v1".to_string(),
-//             "https://schema.org/".to_string(),
-//             "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
-//         ],
-//         id: "uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string(),
-//         r#type: vec!["VerifiableCredential".to_string()],
-//         issuer: "did:evan:testcore:placeholder_issuer".to_string(),
-//         valid_until: if use_valid_until {
-//             Some("2031-01-01T00:00:00.000Z".to_string())
-//         } else {
-//             None
-//         },
-//         issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
-//         credential_subject: CredentialSubject {
-//             id: subject_did.map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
-//             data: schema_obj // fill ALL subject data fields with empty string (mandatory and optional ones)
-//                 .properties
-//                 .into_iter()
-//                 .map(|(name, _schema_property)| (name, String::new()))
-//                 .collect(),
-//         },
-//         credential_schema: CredentialSchemaReference {
-//             id: schema_obj.id,
-//             r#type: schema_obj.r#type,
-//         },
-//         credential_status: CredentialStatus {
-//             id: "did:evan:zkp:placeholder_status#0".to_string(),
-//             r#type: "RevocationList2020Status".to_string(),
-//             revocation_list_index: "0".to_string(),
-//             revocation_list_credential: "did:evan:zkp:placeholder_status".to_string(),
-//         },
-//     };
-
-//     Ok(credential)
-// }
-
 async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, VadeEvanError> {
     let mut loader = StaticLoader;
     let options = JsonLdOptions {
@@ -283,8 +233,6 @@ impl<'a> Credential<'a> {
         )
         .await?;
 
-        // check if credential has been revoked
-        // let revocation_list =  getDidDocument(context, cred.credentialStatus.revocationListCredential);
         // resolve the did and extract the did document out of it
         let revocation_list: RevocationListCredential = self
             .get_did_document(&credential.credential_status.revocation_list_credential)
