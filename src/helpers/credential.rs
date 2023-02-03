@@ -7,7 +7,7 @@ use bbs::{
     SignatureMessage,
 };
 use flate2::read::GzDecoder;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::de::DeserializeOwned;
 use serde_json::{value::Value, Map};
 use ssi::{
     jsonld::{json_to_dataset, JsonLdOptions, StaticLoader},
@@ -25,13 +25,8 @@ use vade_evan_bbs::{
 };
 
 use crate::api::{VadeEvan, VadeEvanError};
-use crate::datatypes::DidDocument;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DidDocumentResult<T> {
-    did_document: T,
-}
+use super::{datatypes::DidDocumentResult, IdentityDidDocument};
 
 // Master secret is always incorporated, without being mentioned in the credential schema
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
@@ -315,18 +310,10 @@ impl<'a> Credential<'a> {
         issuer_did: &str,
         verification_method_id: &str,
     ) -> Result<String, VadeEvanError> {
-        let did_document: DidDocument = self.get_did_document(issuer_did).await?;
-
-        // get the verification methods
-        let verification_methods =
-            did_document
-                .verification_method
-                .ok_or(VadeEvanError::InvalidVerificationMethod(
-                    "missing 'verification_method' property in did_document".to_string(),
-                ))?;
+        let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
-        for method in verification_methods.iter() {
+        for method in did_document.verification_method.iter() {
             if method.id == verification_method_id {
                 public_key = &method.public_key_jwk.x;
                 break;

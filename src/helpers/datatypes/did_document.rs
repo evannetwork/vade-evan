@@ -18,21 +18,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct DidDocument {
+pub struct IdentityDidDocument {
     #[serde(rename = "@context")]
     pub context: (String, String, DidDocumentContext),
     pub id: String,
     pub service: Vec<Service>,
-    pub services: Vec<Service>,
-    // TODO-TWI: make it optional
-    pub verification_method: Option<Vec<VerificationMethod>>,
+    pub verification_method: Vec<VerificationMethod>,
 }
-
-// impl std::fmt::Display for DidDocument {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "id: {}", self.id);
-//     }
-// }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -67,4 +59,10 @@ pub struct PublicKeyJwk {
     pub kty: String,
     pub x: String,
     pub y: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DidDocumentResult<T> {
+    pub did_document: T,
 }
