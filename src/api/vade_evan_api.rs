@@ -858,14 +858,14 @@ impl VadeEvan {
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let bbs_key = r#"" ""#
-    ///     let signing_key = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
-    ///     let service_url = r#"" ""#;
+    ///     let bbs_key =  "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
+    ///     let signing_key = None;
+    ///     let service_url = "www.example.service";
     ///      
     ///     let create_response = vade_evan
     ///        .helper_did_create(
     ///            Some(bbs_key),
-    ///            Some(signing_key),
+    ///            signing_key,
     ///            Some(service_url),
     ///        )
     ///        .await?;
@@ -897,14 +897,14 @@ impl VadeEvan {
     /// ```
     /// use anyhow::Result;
     /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
-    ///
+    /// 
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let did = r#"" ""#
-    ///     let update_key = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
-    ///     let operation = r#"" ""#;
-    ///     let payload = r#"" ""#;
-    ///      
+    ///     let did = "did:evan:0x123334233232";
+    ///     let update_key = r#"{"kty":"EC","crv":"secp256k1","x":"W8rj8Dko_f0KgqY-nzCvzy_pNbVmYyiaY1GpiuvZKsw","y":"E2cKPqGtq55iiyZIdTCe59HgeQ1bdnMcNdbf9tI5ogo","d":"yZv5g_rjyC0nnUii7pxEh7V2M6XZHeJCu5OjfLMNlSI"}"#;
+    ///     let operation = r#"AddServiceEnpoint"#;
+    ///     let service = r#"{"id":"sds","r#type":"SecureDataStrore","service_endpoint":"www.google.com"}"#;
+    ///     let payload = &serde_json::to_string(&service)?;
     ///     let update_response = vade_evan
     ///        .helper_did_update(did, operation, update_key, payload)
     ///        .await?;

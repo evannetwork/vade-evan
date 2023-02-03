@@ -86,13 +86,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 thiserror = "1.0.38"
 vade = "0.1.0"
-
+uuid = { version = "0.8.2", features = ["v4"] }
 
 ###################################################################### feature specific dependencies
 # plugin-did-sidetree
 [dependencies.vade-sidetree]
 git = "https://github.com/evannetwork/vade-sidetree.git"
-branch = "develop"
+branch = "feature/EI-393-adjust-sidetree-api"
 version = "0.0.3"
 optional = true
 
@@ -165,6 +165,7 @@ wasm-bindgen-futures = "0.4.5"
 ############################################################################ generic dev dependencies
 [dev-dependencies]
 anyhow = "1.0.68"
+serial_test = "0.5.1"
 tokio = { version = "0.2.22", features = ["macros", "rt-threaded"] }
 
 ################################################################### target specific dev dependencies

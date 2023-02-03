@@ -20,6 +20,7 @@ use crate::helpers::datatypes::{
     TYPE_SIDETREE_OPTIONS,
 };
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
+use uuid::Uuid;
 
 pub struct DID<'a> {
     vade_evan: &'a mut VadeEvan,
@@ -112,7 +113,7 @@ impl<'a> DID<'a> {
             create_payload.services = Some(services);
         }
         let payload = serde_json::to_string(&create_payload)?;
-        println!("create payload{}", payload);
+
         let result = self
             .vade_evan
             .did_create(EVAN_METHOD, TYPE_SIDETREE_OPTIONS, &payload)
@@ -153,8 +154,10 @@ impl<'a> DID<'a> {
                     serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
                         source_message: err.to_string(),
                     })?;
+                let id = format!("key#{}", Uuid::new_v4().to_simple().to_string());
+
                 let public_key_to_add = PublicKeyModel {
-                    id: "update_key".to_owned(),
+                    id,
                     r#type: "EcdsaSecp256k1VerificationKey2019".to_string(),
                     purposes: [PublicKeyPurpose::KeyAgreement].to_vec(),
                     public_key_jwk: new_key_to_add,
@@ -199,17 +202,17 @@ impl<'a> DID<'a> {
             recovery_key: None,
         };
 
+        let payload = &serde_json::to_string(&update_payload).map_err(|err| {
+            VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            }
+        })?;
+
+        println!("{}\n", payload);
+
         let result = self
             .vade_evan
-            .did_update(
-                did,
-                TYPE_SIDETREE_OPTIONS,
-                &serde_json::to_string(&update_payload).map_err(|err| {
-                    VadeEvanError::InternalError {
-                        source_message: err.to_string(),
-                    }
-                })?,
-            )
+            .did_update(did, TYPE_SIDETREE_OPTIONS, payload)
             .await?;
 
         Ok(result)
@@ -218,14 +221,29 @@ impl<'a> DID<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
+    use crate::helpers::datatypes::{PublicKeyJWK, Service};
+    use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
     use serde::{Deserialize, Serialize};
+    use serial_test::serial;
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SidetreeDidDocument {
+        did_document: DidDoc,
+    }
+
+    #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct KeyAgreement {
+        id: String,
+    }
 
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct CreateDIDResponse {
         did: Did,
+        update_key: PublicKeyJWK,
     }
 
     #[derive(Serialize, Deserialize)]
@@ -238,15 +256,18 @@ mod tests {
     #[serde(rename_all = "camelCase")]
     struct DidDoc {
         id: String,
+        pub verification_method: Option<Vec<KeyAgreement>>,
     }
 
     #[tokio::test]
+    #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_can_create_did_with_bbs_keys() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
         })?;
+
         let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
 
         let did_create_result = vade_evan
@@ -254,18 +275,12 @@ mod tests {
             .await;
 
         assert!(did_create_result.is_ok());
-        // println!("{}", did_create_result?);
-        let create_response: CreateDIDResponse = serde_json::from_str(&did_create_result?)?;
-
-        let did_resolve = vade_evan
-            .did_resolve(&create_response.did.did_document.id)
-            .await?;
-        println!("{}", did_resolve);
-        assert!(did_resolve.contains(base64_encoded_bbs_key));
+        assert!(did_create_result?.contains(base64_encoded_bbs_key));
         Ok(())
     }
 
     #[tokio::test]
+    #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_can_create_did_with_service_endpoint() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -277,69 +292,250 @@ mod tests {
         let did_create_result = vade_evan
             .helper_did_create(None, None, Some(service_endpoint))
             .await;
-
         assert!(did_create_result.is_ok());
-        // println!("{}", did_create_result?);
-        let create_response: CreateDIDResponse = serde_json::from_str(&did_create_result?)?;
-
-        let did_resolve = vade_evan
-            .did_resolve(&create_response.did.did_document.id)
-            .await?;
-        println!("{}", did_resolve);
-        assert!(did_resolve.contains(service_endpoint));
+        assert!(did_create_result?.contains(service_endpoint));
         Ok(())
     }
 
-    // #[tokio::test]
-    // #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    // async fn helper_can_update_did_with_service_endpoint() -> Result<()> {
-    //     let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
-    //         target: DEFAULT_TARGET,
-    //         signer: DEFAULT_SIGNER,
-    //     })?;
+    #[tokio::test]
+    #[serial]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_update_did_add_key() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
 
-    //     let did_create_result = vade_evan
-    //         .helper_did_create(None, None, Some(service_endpoint))
-    //         .await;
+        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
 
-    //     assert!(did_create_result.is_ok());
-    //     println!("{}", did_create_result?);
-    //     Ok(())
-    // }
+        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
 
-    // #[tokio::test]
-    // #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    // async fn helper_can_update_did_with_public_key() -> Result<()> {
-    //     let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
-    //         target: DEFAULT_TARGET,
-    //         signer: DEFAULT_SIGNER,
-    //     })?;
-    //     let service_endpoint = "www.example.service";
+        let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
 
-    //     let did_create_result = vade_evan
-    //         .helper_did_create(None, None, Some(service_endpoint))
-    //         .await;
+        let public_key = PublicKeyJWK {
+            kty: "EC".to_owned(),
+            crv: "BLS12381_G2".to_owned(),
+            x: base64_encoded_bbs_key.to_owned(),
+            y: None,
+            d: None,
+            nonce: None,
+        };
 
-    //     assert!(did_create_result.is_ok());
-    //     println!("{}", did_create_result?);
-    //     Ok(())
-    // }
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "AddKey",
+                &serde_json::to_string(&did_create_result.update_key)?,
+                &serde_json::to_string(&public_key)?,
+            )
+            .await;
 
-    // #[tokio::test]
-    // #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    // async fn helper_can_update_did_with_public_key() -> Result<()> {
-    //     let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
-    //         target: DEFAULT_TARGET,
-    //         signer: DEFAULT_SIGNER,
-    //     })?;
-    //     let service_endpoint = "www.example.service";
+        assert!(did_update_result.is_ok());
 
-    //     let did_create_result = vade_evan
-    //         .helper_did_create(None, None, Some(service_endpoint))
-    //         .await;
+        let did_resolve_result = vade_evan
+            .did_resolve(&did_create_result.did.did_document.id)
+            .await?;
+        assert!(did_resolve_result.contains(&base64_encoded_bbs_key));
+        Ok(())
+    }
 
-    //     assert!(did_create_result.is_ok());
-    //     println!("{}", did_create_result?);
-    //     Ok(())
-    // }
+    #[tokio::test]
+    #[serial]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_update_did_add_service() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+
+        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+
+        let service_endpoint = "https://w3id.org/did-resolution/v1".to_string();
+
+        let service = Service {
+            id: "sds".to_string(),
+            r#type: "SecureDataStrore".to_string(),
+            service_endpoint: service_endpoint.clone(),
+        };
+
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "AddServiceEnpoint",
+                &serde_json::to_string(&did_create_result.update_key)?,
+                &serde_json::to_string(&service)?,
+            )
+            .await;
+
+        assert!(did_update_result.is_ok());
+
+        let did_resolve_result = vade_evan
+            .did_resolve(&did_create_result.did.did_document.id)
+            .await?;
+        assert!(did_resolve_result.contains(&service_endpoint));
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_update_did_add_remove_service() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+
+        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+
+        let service_endpoint = "https://w3id.org/did-resolution/v1".to_string();
+
+        let service = Service {
+            id: "sds".to_string(),
+            r#type: "SecureDataStrore".to_string(),
+            service_endpoint: service_endpoint.clone(),
+        };
+
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "AddServiceEnpoint",
+                &serde_json::to_string(&did_create_result.update_key)?,
+                &serde_json::to_string(&service)?,
+            )
+            .await;
+
+        assert!(did_update_result.is_ok());
+
+        let did_resolve_result = vade_evan
+            .did_resolve(&did_create_result.did.did_document.id)
+            .await?;
+        assert!(did_resolve_result.contains(&service_endpoint));
+
+        // Get update key for next update to remove service
+        let mut update_key = did_create_result.update_key.clone();
+        let mut nonce = update_key
+            .nonce
+            .unwrap_or_else(|| "0".to_string())
+            .parse::<u32>()
+            .map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
+        nonce += 1;
+        update_key.nonce = Some(nonce.to_string());
+
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "RemoveServiceEnpoint",
+                &serde_json::to_string(&update_key)?,
+                "sds",
+            )
+            .await;
+
+        assert!(did_update_result.is_ok());
+
+        // resolve and see if the service is removed
+        let did_resolve_result = vade_evan
+            .did_resolve(&did_create_result.did.did_document.id)
+            .await?;
+
+        println!("{}\n", did_resolve_result);
+        assert!(!did_resolve_result.contains(&service_endpoint));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
+    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    async fn helper_can_update_did_add_remove_key() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+
+        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+
+        let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
+
+        let public_key = PublicKeyJWK {
+            kty: "EC".to_owned(),
+            crv: "BLS12381_G2".to_owned(),
+            x: base64_encoded_bbs_key.to_owned(),
+            y: None,
+            d: None,
+            nonce: None,
+        };
+
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "AddKey",
+                &serde_json::to_string(&did_create_result.update_key)?,
+                &serde_json::to_string(&public_key)?,
+            )
+            .await;
+
+        assert!(did_update_result.is_ok());
+
+        let did_resolve_result = vade_evan
+            .did_resolve(&did_create_result.did.did_document.id)
+            .await?;
+        assert!(did_resolve_result.contains(&base64_encoded_bbs_key));
+
+        let did_resolve_result: SidetreeDidDocument = serde_json::from_str(&did_resolve_result)?;
+
+        // Get update key for next update to remove key
+        let mut update_key = did_create_result.update_key.clone();
+        let mut nonce = update_key
+            .nonce
+            .unwrap_or_else(|| "0".to_string())
+            .parse::<u32>()
+            .map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
+        nonce += 1;
+        update_key.nonce = Some(nonce.to_string());
+
+        let verification_method = &did_resolve_result
+            .did_document
+            .verification_method
+            .ok_or("updated key not found")
+            .map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
+        let key_id = &verification_method
+            .get(0)
+            .ok_or("invalid key")
+            .map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?
+            .id;
+        let key_id = &key_id[1..key_id.len()]; // remove # symbol from key id
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "RemoveKey",
+                &serde_json::to_string(&update_key)?,
+                key_id,
+            )
+            .await;
+
+        assert!(did_update_result.is_ok());
+
+        // resolve and see if the key is removed
+        let did_resolve_result = vade_evan
+            .did_resolve(&did_create_result.did.did_document.id)
+            .await?;
+
+        println!("{}", did_resolve_result);
+        assert!(!did_resolve_result.contains(&base64_encoded_bbs_key));
+        Ok(())
+    }
 }

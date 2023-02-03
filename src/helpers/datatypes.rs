@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 pub const EVAN_METHOD: &str = "did:evan";
 pub const TYPE_BBS_OPTIONS: &str = r#"{ "type": "bbs" }"#;
@@ -9,21 +9,25 @@ pub const TYPE_BBS_KEY: &str = "Bls12381G2Key2020";
 pub const TYPE_JSONWEB_KEY: &str = "JsonWebKey2020";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RemovePublicKeys {
     pub ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AddPublicKeys {
     pub public_keys: Vec<PublicKeyModel>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RemoveServices {
     pub ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AddServices {
     pub services: Vec<Service>,
 }
@@ -40,11 +44,11 @@ impl FromStr for DIDOperationType {
     type Err = ();
     fn from_str(input: &str) -> Result<DIDOperationType, Self::Err> {
         match input {
-            "AddKey"  => Ok(DIDOperationType::AddKey),
-            "RemoveKey"  => Ok(DIDOperationType::RemoveKey),
-            "AddServiceEnpoint"  => Ok(DIDOperationType::AddServiceEnpoint),
+            "AddKey" => Ok(DIDOperationType::AddKey),
+            "RemoveKey" => Ok(DIDOperationType::RemoveKey),
+            "AddServiceEnpoint" => Ok(DIDOperationType::AddServiceEnpoint),
             "RemoveServiceEnpoint" => Ok(DIDOperationType::RemoveServiceEnpoint),
-            _      => Err(()),
+            _ => Err(()),
         }
     }
 }
@@ -102,6 +106,7 @@ pub enum Patch {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct DidUpdatePayload {
     pub update_type: String,
     pub update_key: Option<PublicKeyJWK>,
