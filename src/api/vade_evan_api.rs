@@ -357,7 +357,6 @@ impl VadeEvan {
     /// # Arguments
     ///
     /// * `credential` - credential to verify as serialized JSON
-    /// * `verification_method_id` - ID of verification method used from issuers DID document
     /// * `master_secret` - master secret incorporated as a blinded value into the proof of the credential
     ///
     /// # Example
@@ -406,12 +405,11 @@ impl VadeEvan {
     ///             }
     ///         }
     ///     }"###;
-    ///     let verification_method_id = "#bbs-key-1";
     ///     let master_secret = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
     ///
     ///     // verify the credential issuer
     ///     vade_evan
-    ///         .helper_verify_credential(credential, verification_method_id, master_secret)
+    ///         .helper_verify_credential(credential, master_secret)
     ///         .await?;
     ///
     ///     Ok(())
@@ -419,12 +417,11 @@ impl VadeEvan {
     pub async fn helper_verify_credential(
         &mut self,
         credential: &str,
-        verification_method_id: &str,
         master_secret: &str,
     ) -> Result<(), VadeEvanError> {
         let mut credential_helper = Credential::new(self)?;
         credential_helper
-            .verify_credential(credential, verification_method_id, master_secret)
+            .verify_credential(credential, master_secret)
             .await
     }
 

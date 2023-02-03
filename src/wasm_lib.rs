@@ -199,14 +199,12 @@ cfg_if::cfg_if! {
         #[wasm_bindgen]
         pub async fn helper_verify_credential(
             credential: String,
-            verification_method_id: String,
             master_secret: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             vade_evan
                 .helper_verify_credential(
                     &credential,
-                    &verification_method_id,
                     &master_secret,
                 ).await
                 .map_err(jsify_vade_evan_error)?;

@@ -190,7 +190,6 @@ impl<'a> Credential<'a> {
     pub async fn verify_credential(
         &mut self,
         credential_str: &str,
-        verification_method_id: &str,
         master_secret: &str,
     ) -> Result<(), VadeEvanError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
@@ -211,8 +210,18 @@ impl<'a> Credential<'a> {
         }
 
         // get public key suitable for messages
+        let verification_method_id = credential
+            .proof
+            .verification_method
+            .rsplit_once('#')
+            .ok_or_else(|| {
+                VadeEvanError::InvalidVerificationMethod(
+                    "invalid verification method in proof".to_string(),
+                )
+            })?
+            .1;
         let issuer_pub_key = self
-            .get_issuer_public_key(&credential.issuer, verification_method_id)
+            .get_issuer_public_key(&credential.issuer, &format!("#{}", verification_method_id))
             .await?;
         let public_key_generator = get_public_key_generator(
             &issuer_pub_key,
@@ -561,7 +570,7 @@ mod tests {
 
         // verify the credential issuer
         credential
-            .verify_credential(CREDENTIAL_ACTIVE, VERIFICATION_METHOD_ID, MASTER_SECRET)
+            .verify_credential(CREDENTIAL_ACTIVE, MASTER_SECRET)
             .await?;
 
         Ok(())
@@ -582,11 +591,7 @@ mod tests {
         let credential_with_invalid_msg_count = serde_json::to_string(&credential_parsed)?;
 
         match credential
-            .verify_credential(
-                &credential_with_invalid_msg_count,
-                VERIFICATION_METHOD_ID,
-                MASTER_SECRET,
-            )
+            .verify_credential(&credential_with_invalid_msg_count, MASTER_SECRET)
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),
@@ -614,7 +619,7 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         match credential
-            .verify_credential(CREDENTIAL_REVOKED, VERIFICATION_METHOD_ID, MASTER_SECRET)
+            .verify_credential(CREDENTIAL_REVOKED, MASTER_SECRET)
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),
