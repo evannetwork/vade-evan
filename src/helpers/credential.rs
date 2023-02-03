@@ -435,14 +435,7 @@ mod tests {
 
     use super::Credential;
 
-    const CREDENTIAL_MESSAGE_COUNT: usize = 13;
-    const VALID_ISSUER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
-    const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-    const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
-    const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";
-    const JSON_WEB_PUB_KEY: &str = "qWZ7EGhzYsSlBq4mLhNal6cHXBD88ZfncdbEWQoue6SaAbZ7k56IxsjcvuXD6LGYDgMgtjTHnBraaMRiwJVBJenXgOT8nto7ZUTO/TvCXwtyPMzGrLM5JNJdEaPP4QJN";
-    const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    const EXAMPLE_CREDENTIAL: &str = r###"{
+    const CREDENTIAL_ACTIVE: &str = r###"{
         "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
         "type": [
             "VerifiableCredential"
@@ -480,7 +473,8 @@ mod tests {
             }
         }
     }"###;
-    const EXAMPLE_CREDENTIAL_REVOKED: &str = r###"{
+    const CREDENTIAL_MESSAGE_COUNT: usize = 13;
+    const CREDENTIAL_REVOKED: &str = r###"{
         "id": "uuid:19b1e481-8743-4c27-8934-45d682714ccc",
         "type": [
             "VerifiableCredential"
@@ -518,6 +512,12 @@ mod tests {
             }
         }
     }"###;
+    const ISSUER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
+    const PUBLIC_KEY: &str = "qWZ7EGhzYsSlBq4mLhNal6cHXBD88ZfncdbEWQoue6SaAbZ7k56IxsjcvuXD6LGYDgMgtjTHnBraaMRiwJVBJenXgOT8nto7ZUTO/TvCXwtyPMzGrLM5JNJdEaPP4QJN";
+    const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
+    const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+    const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
+    const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";
 
     #[tokio::test]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
@@ -529,11 +529,11 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
-            .create_credential_offer(SCHEMA_DID, false, VALID_ISSUER_DID, Some(SUBJECT_DID))
+            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, Some(SUBJECT_DID))
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
-        assert_eq!(offer_obj.issuer, VALID_ISSUER_DID);
+        assert_eq!(offer_obj.issuer, ISSUER_DID);
         assert_eq!(offer_obj.subject, Some(SUBJECT_DID.to_string()));
         assert_eq!(offer_obj.credential_message_count, CREDENTIAL_MESSAGE_COUNT);
         assert!(!offer_obj.nonce.is_empty());
@@ -585,10 +585,10 @@ mod tests {
 
         let mut credential = Credential::new(&mut vade_evan)?;
         let pub_key = credential
-            .get_issuer_public_key(VALID_ISSUER_DID, VERIFICATION_METHOD_ID)
+            .get_issuer_public_key(ISSUER_DID, VERIFICATION_METHOD_ID)
             .await?;
 
-        assert_eq!(pub_key, JSON_WEB_PUB_KEY);
+        assert_eq!(pub_key, PUBLIC_KEY);
 
         Ok(())
     }
@@ -603,7 +603,7 @@ mod tests {
 
         let mut credential = Credential::new(&mut vade_evan)?;
         let pub_key = credential
-            .get_issuer_public_key(VALID_ISSUER_DID, "#random-id")
+            .get_issuer_public_key(ISSUER_DID, "#random-id")
             .await;
 
         match pub_key {
@@ -626,7 +626,7 @@ mod tests {
 
         // verify the credential issuer
         credential
-            .verify_credential(EXAMPLE_CREDENTIAL, VERIFICATION_METHOD_ID, MASTER_SECRET)
+            .verify_credential(CREDENTIAL_ACTIVE, VERIFICATION_METHOD_ID, MASTER_SECRET)
             .await?;
 
         Ok(())
@@ -642,7 +642,7 @@ mod tests {
 
         let mut credential = Credential::new(&mut vade_evan)?;
 
-        let mut credential_parsed: BbsCredential = serde_json::from_str(&EXAMPLE_CREDENTIAL)?;
+        let mut credential_parsed: BbsCredential = serde_json::from_str(&CREDENTIAL_ACTIVE)?;
         credential_parsed.proof.credential_message_count = 3;
         let credential_with_invalid_msg_count = serde_json::to_string(&credential_parsed)?;
 
@@ -679,11 +679,7 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         match credential
-            .verify_credential(
-                EXAMPLE_CREDENTIAL_REVOKED,
-                VERIFICATION_METHOD_ID,
-                MASTER_SECRET,
-            )
+            .verify_credential(CREDENTIAL_REVOKED, VERIFICATION_METHOD_ID, MASTER_SECRET)
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),
