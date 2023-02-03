@@ -437,8 +437,6 @@ mod tests {
 
     const CREDENTIAL_MESSAGE_COUNT: usize = 13;
     const VALID_ISSUER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
-    const NON_EXISTING_ISSUER_DID: &str =
-        "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
     const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
     const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
     const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";

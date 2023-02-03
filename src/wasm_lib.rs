@@ -155,28 +155,6 @@ cfg_if::cfg_if! {
 
         #[cfg(feature = "plugin-vc-zkp-bbs")]
         #[wasm_bindgen]
-        pub async fn helper_create_credential_request(
-            issuer_public_key: String,
-            bbs_secret: String,
-            credential_values: String,
-            credential_offer: String,
-            credential_schema: String 
-        ) -> Result<Option<String>, JsValue> {
-
-            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            let credential_result = vade_evan
-            .helper_create_credential_request(
-                &issuer_public_key,
-                &bbs_secret,
-                &credential_values,
-                &credential_offer,
-                &credential_schema).await
-                .map_err(jsify_vade_evan_error)?;
-            Ok(Some(credential_result))
-        }
-
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
-        #[wasm_bindgen]
         pub async fn helper_create_credential_offer(
             schema_did: String,
             use_valid_until: bool,
@@ -193,6 +171,46 @@ cfg_if::cfg_if! {
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(offer)
+        }
+
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[wasm_bindgen]
+        pub async fn helper_create_credential_request(
+            issuer_public_key: String,
+            bbs_secret: String,
+            credential_values: String,
+            credential_offer: String,
+            credential_schema: String
+        ) -> Result<String, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let credential_result = vade_evan
+                .helper_create_credential_request(
+                    &issuer_public_key,
+                    &bbs_secret,
+                    &credential_values,
+                    &credential_offer,
+                    &credential_schema).await
+                    .map_err(jsify_vade_evan_error)?;
+            Ok(credential_result)
+        }
+
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[wasm_bindgen]
+        pub async fn helper_verify_credential(
+            credential: String,
+            verification_method_id: String,
+            master_secret: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_verify_credential(
+                    &credential,
+                    &verification_method_id,
+                    &master_secret,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
         }
     } else {
     }

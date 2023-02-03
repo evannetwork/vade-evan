@@ -198,6 +198,17 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            ("verify_credential", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_verify_credential(
+                        get_argument_value(sub_m, "credential", None),
+                        get_argument_value(sub_m, "verification_method_id", None),
+                        get_argument_value(sub_m, "master_secret", None),
+                    )
+                    .await?;
+                "".to_string()
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -248,6 +259,19 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("target")?)
                     .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("verify_credential")
+                    .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema the issuer is capable and willing to use for credential issuance.")
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("use_valid_until")?)
+                    .arg(get_clap_argument("issuer_did")?)
+                    .arg(get_clap_argument("subject_did")?),
             );
         } else {}
     }
@@ -682,6 +706,21 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .long("subject_did")
             .value_name("subject_did")
             .help("DID of subject")
+            .takes_value(true),
+        "credential" => Arg::with_name("credential")
+            .long("credential")
+            .value_name("credential")
+            .help("credential to verity")
+            .takes_value(true),
+        "verification_method_id" => Arg::with_name("verification_method_id")
+            .long("verification_method_id")
+            .value_name("verification_method_id")
+            .help("ID of verification method used from issuers DID document")
+            .takes_value(true),
+        "master_secret" => Arg::with_name("master_secret")
+            .long("master_secret")
+            .value_name("master_secret")
+            .help("master secret incorporated as a blinded value into the proof of the credential")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
