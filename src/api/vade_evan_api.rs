@@ -19,11 +19,12 @@ use std::os::raw::c_void;
 use vade::Vade;
 
 #[cfg(feature = "plugin-vc-zkp-bbs")]
-use crate::helpers::Credential;
+
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
+    helpers::Credential,
     helpers::VersionInfo,
 };
 
@@ -70,6 +71,69 @@ impl VadeEvan {
                 source_message: vade_error.to_string(),
             }),
         }
+    }
+
+    /// Creates a credential request. This function is used to create a credential request which is sent to Issuer
+    ///
+    /// # Arguments
+    ///
+    /// * `issuer_public_key` - issuer public key
+    /// * `bbs_secret` - master secret of the holder/receiver
+    /// * `credential_values` - JSON string with cleartext values to be signed in the credential
+    /// * `credential_offer` - JSON string with credential offer by issuer
+    /// * `credential_schema_did` - did for credential schema
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use anyhow::Result;
+    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    /// async fn example() -> Result<()> {
+    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///     let credential_offer = r#"{
+    ///        "issuer": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+    ///        "subject": "did:any:abc",
+    ///        "nonce": "QqJR4o6joiApYVXX7JLbRIZBQ9QprlFpewo8GbojIKY=",
+    ///        "credentialMessageCount": 2
+    ///    }"#;
+    ///    let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+    ///    let credential_values = r#"{
+    ///        "email": "value@x.com"
+    ///    }"#;
+    ///    let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
+    ///
+    ///    let credential_request = vade_evan
+    ///        .helper_create_credential_request(
+    ///            issuer_pub_key,
+    ///            bbs_secret,
+    ///            credential_values,
+    ///            credential_offer,
+    ///            "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw",
+    ///        )
+    ///        .await?;
+    ///     println!("created credential request: {}", credential_request);
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn helper_create_credential_request(
+        &mut self,
+        issuer_public_key: &str,
+        bbs_secret: &str,
+        credential_values: &str,
+        credential_offer: &str,
+        credential_schema_did: &str,
+    ) -> Result<String, VadeEvanError> {
+        let credential = Credential::new(self)?;
+        credential
+            .create_credential_request(
+                issuer_public_key,
+                bbs_secret,
+                credential_values,
+                credential_offer,
+                credential_schema_did,
+            )
+            .await
     }
 
     /// Creates a new DID. May also persist a DID document for it, depending on plugin implementation.

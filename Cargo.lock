@@ -5072,7 +5072,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=feature/update-didcomm-rs-to-no-resolve-version#376d6b7d1f2e4d30dbf21e33aadc1a230125dee5"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#c090f58906fa6b7cc1e5a7ea70f43a6219417530"
 dependencies = [
  "async-trait",
  "bs58",

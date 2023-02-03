@@ -14,21 +14,21 @@
   limitations under the License.
 */
 
+use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 use console_log;
+use serde::Serialize;
 use std::{collections::HashMap, error::Error};
 use wasm_bindgen::prelude::*;
-use serde::Serialize;
-use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 
 macro_rules! create_function {
     ($func_name:ident, $did_or_method:ident, $config:ident) => {
         #[wasm_bindgen]
-        pub async fn $func_name(
-            did_or_method: String,
-            config: JsValue,
-        ) -> Result<String, JsValue> {
+        pub async fn $func_name(did_or_method: String, config: JsValue) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            vade_evan.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)
+            vade_evan
+                .$func_name(&did_or_method)
+                .await
+                .map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -39,7 +39,10 @@ macro_rules! create_function {
             config: JsValue,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            vade_evan.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)
+            vade_evan
+                .$func_name(&options, &payload)
+                .await
+                .map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -51,7 +54,10 @@ macro_rules! create_function {
             config: JsValue,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            vade_evan.$func_name(&did_or_method, &options, &payload).await.map_err(jsify_vade_evan_error)
+            vade_evan
+                .$func_name(&did_or_method, &options, &payload)
+                .await
+                .map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -149,6 +155,28 @@ cfg_if::cfg_if! {
 
         #[cfg(feature = "plugin-vc-zkp-bbs")]
         #[wasm_bindgen]
+        pub async fn helper_create_credential_request(
+            issuer_public_key: String,
+            bbs_secret: String,
+            credential_values: String,
+            credential_offer: String,
+            credential_schema: String 
+        ) -> Result<Option<String>, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let credential_result = vade_evan
+            .helper_create_credential_request(
+                &issuer_public_key,
+                &bbs_secret,
+                &credential_values,
+                &credential_offer,
+                &credential_schema).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(Some(credential_result))
+        }
+
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[wasm_bindgen]
         pub async fn helper_create_credential_offer(
             schema_did: String,
             use_valid_until: bool,
@@ -224,7 +252,11 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn Error>> {
         }
     };
 
-    return VadeEvan::new(VadeEvanConfig { target, signer: signer_config }).map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
+    return VadeEvan::new(VadeEvanConfig {
+        target,
+        signer: signer_config,
+    })
+    .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
 }
 
 fn jsify_generic_error(err: Box<dyn Error>) -> JsValue {
