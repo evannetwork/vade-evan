@@ -1892,6 +1892,16 @@ dependencies = [
 
 [[package]]
 name = "hmac"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "126888268dcc288495a26bf004b38c5fdbb31682f992c84ceb046a1f0fe38840"
+dependencies = [
+ "crypto-mac 0.8.0",
+ "digest 0.9.0",
+]
+
+[[package]]
+name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
@@ -1908,6 +1918,17 @@ dependencies = [
  "digest 0.8.1",
  "generic-array 0.12.4",
  "hmac 0.7.1",
+]
+
+[[package]]
+name = "hmac-drbg"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17ea0a1394df5b6574da6e0c1ade9e78868c9fb0a4e5ef4428e32da4676b85b1"
+dependencies = [
+ "digest 0.9.0",
+ "generic-array 0.14.4",
+ "hmac 0.8.1",
 ]
 
 [[package]]
@@ -2466,11 +2487,59 @@ dependencies = [
  "arrayref",
  "crunchy",
  "digest 0.8.1",
- "hmac-drbg",
+ "hmac-drbg 0.2.0",
  "rand 0.7.3",
  "sha2 0.8.2",
  "subtle 2.4.0",
  "typenum",
+]
+
+[[package]]
+name = "libsecp256k1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd1137239ab33b41aa9637a88a28249e5e70c40a42ccc92db7f12cc356c1fcd7"
+dependencies = [
+ "arrayref",
+ "base64 0.12.3",
+ "digest 0.9.0",
+ "hmac-drbg 0.3.0",
+ "libsecp256k1-core",
+ "libsecp256k1-gen-ecmult",
+ "libsecp256k1-gen-genmult",
+ "rand 0.7.3",
+ "serde",
+ "sha2 0.9.5",
+ "typenum",
+]
+
+[[package]]
+name = "libsecp256k1-core"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0f6ab710cec28cef759c5f18671a27dae2a5f952cdaaee1d8e2908cb2478a80"
+dependencies = [
+ "crunchy",
+ "digest 0.9.0",
+ "subtle 2.4.0",
+]
+
+[[package]]
+name = "libsecp256k1-gen-ecmult"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccab96b584d38fac86a83f07e659f0deafd0253dc096dab5a36d53efe653c5c3"
+dependencies = [
+ "libsecp256k1-core",
+]
+
+[[package]]
+name = "libsecp256k1-gen-genmult"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67abfe149395e3aa1c48a2beb32b068e2334402df8181f818d3aee2b304c4f5d"
+dependencies = [
+ "libsecp256k1-core",
 ]
 
 [[package]]
@@ -5200,7 +5269,7 @@ dependencies = [
  "flate2",
  "hex",
  "js-sys",
- "libsecp256k1",
+ "libsecp256k1 0.3.5",
  "reqwest 0.10.10",
  "serde",
  "serde_json",
@@ -5229,7 +5298,7 @@ dependencies = [
  "hex",
  "instant",
  "js-sys",
- "libsecp256k1",
+ "libsecp256k1 0.3.5",
  "log",
  "parity-scale-codec",
  "rand 0.7.3",
@@ -5268,7 +5337,7 @@ dependencies = [
  "futures",
  "hex",
  "js-sys",
- "libsecp256k1",
+ "libsecp256k1 0.3.5",
  "log",
  "serde",
  "serde_json",
@@ -5281,7 +5350,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/EI-393-adjust-sidetree-api#43cc984103ab7c26a7e21b3c169d603b64d6497a"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/fix-update-with-nonce#38646dcf58bb90aded07a8503f80d95a832c7556"
 dependencies = [
  "async-std",
  "async-trait",
@@ -5300,12 +5369,12 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/EI-393-adjust-sidetree-api#43cc984103ab7c26a7e21b3c169d603b64d6497a"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/fix-update-with-nonce#38646dcf58bb90aded07a8503f80d95a832c7556"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
  "getrandom 0.2.3",
- "libsecp256k1",
+ "libsecp256k1 0.5.0",
  "multihash 0.13.2",
  "serde",
  "serde_jcs",
@@ -5322,7 +5391,7 @@ dependencies = [
  "async-trait",
  "byteorder",
  "hex",
- "libsecp256k1",
+ "libsecp256k1 0.3.5",
  "log",
  "rand 0.7.3",
  "reqwest 0.11.4",

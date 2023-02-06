@@ -262,7 +262,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_create_did_with_bbs_keys() -> Result<()> {
+    async fn helper_did_can_create_did_with_bbs_keys() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -282,7 +282,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_create_did_with_service_endpoint() -> Result<()> {
+    async fn helper_did_can_create_did_with_service_endpoint() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -300,7 +300,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_update_did_add_key() -> Result<()> {
+    async fn helper_did_can_update_did_add_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -342,7 +342,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_update_did_add_service() -> Result<()> {
+    async fn helper_did_can_update_did_add_service() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -381,7 +381,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_update_did_add_remove_service() -> Result<()> {
+    async fn helper_did_can_update_did_add_remove_service() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -391,7 +391,7 @@ mod tests {
 
         let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
 
-        let service_endpoint = "https://w3id.org/did-resolution/v1".to_string();
+        let service_endpoint = "https://www.google.de".to_string();
 
         let service = Service {
             id: "sds".to_string(),
@@ -452,7 +452,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
-    async fn helper_can_update_did_add_remove_key() -> Result<()> {
+    async fn helper_did_can_update_did_add_remove_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,

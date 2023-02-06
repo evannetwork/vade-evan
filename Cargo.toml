@@ -92,7 +92,7 @@ uuid = { version = "0.8.2", features = ["v4"] }
 # plugin-did-sidetree
 [dependencies.vade-sidetree]
 git = "https://github.com/evannetwork/vade-sidetree.git"
-branch = "feature/EI-393-adjust-sidetree-api"
+branch = "feature/fix-update-with-nonce"
 version = "0.0.3"
 optional = true
 
