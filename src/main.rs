@@ -60,8 +60,9 @@ async fn main() -> Result<()> {
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
+                let payload = get_argument_value(&sub_m, "payload", None);
                 get_vade_evan(&sub_m)?
-                    .did_create(&method, &options, &String::new())
+                    .did_create(&method, &options, &payload)
                     .await?
             }
             #[cfg(feature = "capability-did-read")]
@@ -284,6 +285,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Creates a new DID.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
                     .arg(get_clap_argument("target")?)
                     .arg(get_clap_argument("signer")?),
             )
