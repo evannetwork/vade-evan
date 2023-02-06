@@ -182,7 +182,6 @@ cfg_if::cfg_if! {
             credential_offer: String,
             credential_schema: String
         ) -> Result<String, JsValue> {
-
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let credential_result = vade_evan
                 .helper_create_credential_request(
