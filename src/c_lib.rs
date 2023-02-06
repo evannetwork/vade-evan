@@ -503,7 +503,7 @@ pub extern "C" fn execute_vade(
             }
         }),
         #[cfg(feature = "capability-vc-zkp")]
-        "create_credential_request" => runtime.block_on({
+        "helper_create_credential_request" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
                     Some(&str_config),
@@ -523,6 +523,27 @@ pub extern "C" fn execute_vade(
                     )
                     .await
                     .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(feature = "capability-vc-zkp")]
+        "helper_verify_credential" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_verify_credential(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)?;
+                Ok("".to_string())
             }
         }),
         #[cfg(any(feature = "plugin-vc-zkp-bbs"))]

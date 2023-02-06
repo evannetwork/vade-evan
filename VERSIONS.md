@@ -9,6 +9,7 @@
 - add `get_version_info` helper function
 - add `create_credential_request` helper function
 - add `create_credential_offer` helper function
+- add `helper_verify_credential` helper function
 
 ### Fixes
 

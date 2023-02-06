@@ -199,6 +199,16 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            ("verify_credential", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_verify_credential(
+                        get_argument_value(sub_m, "credential", None),
+                        get_argument_value(sub_m, "master_secret", None),
+                    )
+                    .await?;
+                "".to_string()
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -249,6 +259,17 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("target")?)
                     .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("verify_credential")
+                    .about("Verifies a given credential by checking if given master secret was incorporated into proof and if proof was signed with issuers public key.")
+                    .arg(get_clap_argument("credential")?)
+                    .arg(get_clap_argument("master_secret")?)
             );
         } else {}
     }
@@ -684,6 +705,18 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .long("subject_did")
             .value_name("subject_did")
             .help("DID of subject")
+            .takes_value(true),
+        "credential" => Arg::with_name("credential")
+            .long("credential")
+            .value_name("credential")
+            .required(true)
+            .help("credential to verity")
+            .takes_value(true),
+        "master_secret" => Arg::with_name("master_secret")
+            .long("master_secret")
+            .value_name("master_secret")
+            .required(true)
+            .help("master secret incorporated as a blinded value into the proof of the credential")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);

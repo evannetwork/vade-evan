@@ -5107,10 +5107,13 @@ version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "base64 0.13.0",
+ "bbs",
  "cfg-if 0.1.10",
  "clap",
  "console_error_panic_hook",
  "console_log",
+ "flate2",
  "jni",
  "log",
  "openssl",
@@ -5231,7 +5234,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#97d62a4744a5830001e724aa05782c86b1c0d9a3"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#31a69207795d318e3c5f3973827ba8da03a55dcc"
 dependencies = [
  "async-std",
  "async-trait",
@@ -5250,7 +5253,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#97d62a4744a5830001e724aa05782c86b1c0d9a3"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#31a69207795d318e3c5f3973827ba8da03a55dcc"
 dependencies = [
  "base64 0.13.0",
  "bitflags",
