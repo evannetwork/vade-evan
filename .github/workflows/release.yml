@@ -5,7 +5,7 @@ on:
     tags:
       - '*'
 
-env: 
+env:
   CARGO_TERM_COLOR: always
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
           target: x86_64-unknown-linux-gnu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: ${{ matrix.toolchain }}
