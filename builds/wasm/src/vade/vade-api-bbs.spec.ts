@@ -15,7 +15,6 @@ function keyOf(did: string) {
   return `${did}#key-1`;
 }
 
-// const CREDENTIAL_OFFER_TYPE = 'EvanBbsCredentialOffering';
 const CREDENTIAL_PROOF_PURPOSE = 'assertionMethod';
 const CREDENTIAL_PROPOSAL_TYPE = 'EvanCredentialProposal';
 const CREDENTIAL_REQUEST_TYPE = 'EvanBbsCredentialRequest';
