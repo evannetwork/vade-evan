@@ -208,8 +208,6 @@ impl<'a> DID<'a> {
             }
         })?;
 
-        println!("{}\n", payload);
-
         let result = self
             .vade_evan
             .did_update(did, TYPE_SIDETREE_OPTIONS, payload)
@@ -307,7 +305,6 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-
         let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
 
         let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
@@ -443,7 +440,6 @@ mod tests {
             .did_resolve(&did_create_result.did.did_document.id)
             .await?;
 
-        println!("{}\n", did_resolve_result);
         assert!(!did_resolve_result.contains(&service_endpoint));
 
         Ok(())
@@ -533,8 +529,6 @@ mod tests {
         let did_resolve_result = vade_evan
             .did_resolve(&did_create_result.did.did_document.id)
             .await?;
-
-        println!("{}", did_resolve_result);
         assert!(!did_resolve_result.contains(&base64_encoded_bbs_key));
         Ok(())
     }
