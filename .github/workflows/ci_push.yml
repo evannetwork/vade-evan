@@ -74,6 +74,19 @@ jobs:
         shell: bash
         run: sudo apt install -y clang
 
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
       - name: Install wasm-pack (from workaround repository)
         # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
         # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
