@@ -7,7 +7,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  cache:
+  cache-job:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
