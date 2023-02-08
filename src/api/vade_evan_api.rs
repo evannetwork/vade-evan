@@ -83,14 +83,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.did_create("did:example", "", "").await?;
-    ///     println!("created new did: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.did_create("did:example", "", "").await?;
+    ///             println!("created new did: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn did_create(
@@ -111,14 +117,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.did_resolve("did:example:123").await?;
-    ///     println!("got did: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.did_resolve("did:example:123").await?;
+    ///             println!("got did: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn did_resolve(&mut self, did: &str) -> Result<String, VadeEvanError> {
@@ -136,14 +148,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.did_update("did:example", "", "").await?;
-    ///     println!("did successfully updated: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.did_update("did:example", "", "").await?;
+    ///             println!("did successfully updated: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn did_update(
@@ -168,14 +186,20 @@ impl VadeEvan {
     ///
     /// # Example
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.didcomm_receive("", "").await?;
-    ///     println!("received DIDComm message: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.didcomm_receive("", "").await?;
+    ///             println!("received DIDComm message: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn didcomm_receive(
@@ -198,14 +222,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.didcomm_send("", "").await?;
-    ///     println!("prepared DIDComm message: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.didcomm_send("", "").await?;
+    ///             println!("prepared DIDComm message: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn didcomm_send(
@@ -222,17 +252,23 @@ impl VadeEvan {
     ///
     /// # Example
     ///
-    /// ``
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.get_version_info();
-    ///     println!("vade_evan version info: \n{}", &result);
-    ///     Ok(())
+    ///         fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.get_version_info();
+    ///             println!("vade_evan version info: \n{}", &result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
-    /// ``
+    /// ```
     pub fn get_version_info(&self) -> String {
         VersionInfo::get_version_info()
     }
@@ -253,25 +289,31 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
-    /// const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-    /// const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
+    ///         const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
+    ///         const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+    ///         const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let offer_str = vade_evan
-    ///         .helper_create_credential_offer(
-    ///             SCHEMA_DID,
-    ///             false,
-    ///             ISSUER_DID,
-    ///             Some(SUBJECT_DID),
-    ///         )
-    ///         .await?;
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let offer_str = vade_evan
+    ///                 .helper_create_credential_offer(
+    ///                     SCHEMA_DID,
+    ///                     false,
+    ///                     ISSUER_DID,
+    ///                     Some(SUBJECT_DID),
+    ///                 )
+    ///                 .await?;
     ///
-    ///     Ok(())
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     #[cfg(feature = "plugin-vc-zkp-bbs")]
@@ -302,34 +344,40 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let credential_offer = r#"{
-    ///        "issuer": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
-    ///        "subject": "did:any:abc",
-    ///        "nonce": "QqJR4o6joiApYVXX7JLbRIZBQ9QprlFpewo8GbojIKY=",
-    ///        "credentialMessageCount": 2
-    ///    }"#;
-    ///    let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
-    ///    let credential_values = r#"{
-    ///        "email": "value@x.com"
-    ///    }"#;
-    ///    let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let credential_offer = r#"{
+    ///                "issuer": "did:evan:testcore:0x0d87204c3957d73b68ae28d0af961d3c72403906",
+    ///                "subject": "did:any:abc",
+    ///                "nonce": "QqJR4o6joiApYVXX7JLbRIZBQ9QprlFpewo8GbojIKY=",
+    ///                "credentialMessageCount": 2
+    ///            }"#;
+    ///            let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+    ///            let credential_values = r#"{
+    ///                "email": "value@x.com"
+    ///            }"#;
+    ///            let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
     ///
-    ///    let credential_request = vade_evan
-    ///        .helper_create_credential_request(
-    ///            issuer_pub_key,
-    ///            bbs_secret,
-    ///            credential_values,
-    ///            credential_offer,
-    ///            "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw",
-    ///        )
-    ///        .await?;
-    ///     println!("created credential request: {}", credential_request);
-    ///     Ok(())
+    ///            let credential_request = vade_evan
+    ///                .helper_create_credential_request(
+    ///                    issuer_pub_key,
+    ///                    bbs_secret,
+    ///                    credential_values,
+    ///                    credential_offer,
+    ///                    "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw",
+    ///                )
+    ///                .await?;
+    ///             println!("created credential request: {}", credential_request);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     #[cfg(feature = "plugin-vc-zkp-bbs")]
@@ -365,57 +413,63 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let credential = r###"{
-    ///         "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
-    ///         "type": [
-    ///             "VerifiableCredential"
-    ///         ],
-    ///         "proof": {
-    ///             "type": "BbsBlsSignature2020",
-    ///             "created": "2023-02-01T14:08:17.000Z",
-    ///             "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
-    ///             "proofPurpose": "assertionMethod",
-    ///             "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
-    ///             "credentialMessageCount": 13,
-    ///             "requiredRevealStatements": []
-    ///         },
-    ///         "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-    ///         "@context": [
-    ///             "https://www.w3.org/2018/credentials/v1",
-    ///             "https://schema.org/",
-    ///             "https://w3id.org/vc-revocation-list-2020/v1"
-    ///         ],
-    ///         "issuanceDate": "2023-02-01T14:08:09.849Z",
-    ///         "credentialSchema": {
-    ///             "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
-    ///             "type": "EvanVCSchema"
-    ///         },
-    ///         "credentialStatus": {
-    ///             "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
-    ///             "type": "RevocationList2020Status",
-    ///             "revocationListIndex": "4",
-    ///             "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
-    ///         },
-    ///         "credentialSubject": {
-    ///             "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-    ///             "data": {
-    ///                 "bio": "biography"
-    ///             }
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let credential = r###"{
+    ///                 "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+    ///                 "type": [
+    ///                     "VerifiableCredential"
+    ///                 ],
+    ///                 "proof": {
+    ///                     "type": "BbsBlsSignature2020",
+    ///                     "created": "2023-02-01T14:08:17.000Z",
+    ///                     "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+    ///                     "proofPurpose": "assertionMethod",
+    ///                     "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+    ///                     "credentialMessageCount": 13,
+    ///                     "requiredRevealStatements": []
+    ///                 },
+    ///                 "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                 "@context": [
+    ///                     "https://www.w3.org/2018/credentials/v1",
+    ///                     "https://schema.org/",
+    ///                     "https://w3id.org/vc-revocation-list-2020/v1"
+    ///                 ],
+    ///                 "issuanceDate": "2023-02-01T14:08:09.849Z",
+    ///                 "credentialSchema": {
+    ///                     "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+    ///                     "type": "EvanVCSchema"
+    ///                 },
+    ///                 "credentialStatus": {
+    ///                     "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+    ///                     "type": "RevocationList2020Status",
+    ///                     "revocationListIndex": "4",
+    ///                     "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+    ///                 },
+    ///                 "credentialSubject": {
+    ///                     "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                     "data": {
+    ///                         "bio": "biography"
+    ///                     }
+    ///                 }
+    ///             }"###;
+    ///             let master_secret = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
+    ///
+    ///             // verify the credential issuer
+    ///             vade_evan
+    ///                 .helper_verify_credential(credential, master_secret)
+    ///                 .await?;
+    ///
+    ///             Ok(())
     ///         }
-    ///     }"###;
-    ///     let master_secret = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    ///
-    ///     // verify the credential issuer
-    ///     vade_evan
-    ///         .helper_verify_credential(credential, master_secret)
-    ///         .await?;
-    ///
-    ///     Ok(())
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     #[cfg(feature = "plugin-vc-zkp-bbs")]
     pub async fn helper_verify_credential(
@@ -443,14 +497,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.run_custom_function("did:example", "test connection", "", "").await?;
-    ///     println!("connection status is: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.run_custom_function("did:example", "test connection", "", "").await?;
+    ///             println!("connection status is: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn run_custom_function(
@@ -480,14 +540,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_create_credential_definition("did:example", "", "").await?;
-    ///     println!("created a credential definition: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_create_credential_definition("did:example", "", "").await?;
+    ///             println!("created a credential definition: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_create_credential_definition(
@@ -514,14 +580,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_create_credential_offer("did:example", "", "").await?;
-    ///     println!("created a credential offer: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_create_credential_offer("did:example", "", "").await?;
+    ///             println!("created a credential offer: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_create_credential_offer(
@@ -549,14 +621,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_create_credential_proposal("did:example", "", "").await?;
-    ///     println!("created a credential proposal: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_create_credential_proposal("did:example", "", "").await?;
+    ///             println!("created a credential proposal: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_create_credential_proposal(
@@ -584,14 +662,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_create_credential_schema("did:example", "", "").await?;
-    ///     println!("created a credential schema: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_create_credential_schema("did:example", "", "").await?;
+    ///             println!("created a credential schema: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_create_credential_schema(
@@ -620,14 +704,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_create_revocation_registry_definition("did:example", "", "").await?;
-    ///     println!("created a revocation registry definition: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_create_revocation_registry_definition("did:example", "", "").await?;
+    ///             println!("created a revocation registry definition: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_create_revocation_registry_definition(
@@ -655,14 +745,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_update_revocation_registry("did:example", "", "").await?;
-    ///     println!("updated revocation registry: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_update_revocation_registry("did:example", "", "").await?;
+    ///             println!("updated revocation registry: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_update_revocation_registry(
@@ -690,14 +786,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_issue_credential("did:example", "", "").await?;
-    ///     println!("issued credential: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_issue_credential("did:example", "", "").await?;
+    ///             println!("issued credential: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_issue_credential(
@@ -724,14 +826,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_finish_credential("did:example", "", "").await?;
-    ///     println!("issued credential: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_finish_credential("did:example", "", "").await?;
+    ///             println!("issued credential: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_finish_credential(
@@ -759,14 +867,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_present_proof("did:example", "", "").await?;
-    ///     println!("created a proof presentation: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_present_proof("did:example", "", "").await?;
+    ///             println!("created a proof presentation: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_present_proof(
@@ -793,14 +907,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_request_credential("did:example", "", "").await?;
-    ///     println!("created credential request: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_request_credential("did:example", "", "").await?;
+    ///             println!("created credential request: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_request_credential(
@@ -827,14 +947,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_request_proof("did:example", "", "").await?;
-    ///     println!("created proof request: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_request_proof("did:example", "", "").await?;
+    ///             println!("created proof request: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_request_proof(
@@ -862,14 +988,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_revoke_credential("did:example", "", "").await?;
-    ///     println!("revoked credential: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_revoke_credential("did:example", "", "").await?;
+    ///             println!("revoked credential: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_revoke_credential(
@@ -896,14 +1028,20 @@ impl VadeEvan {
     /// # Example
     ///
     /// ```
-    /// use anyhow::Result;
-    /// use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    /// async fn example() -> Result<()> {
-    ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let result = vade_evan.vc_zkp_verify_proof("did:example", "", "").await?;
-    ///     println!("verified proof: {}", result);
-    ///     Ok(())
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_verify_proof("did:example", "", "").await?;
+    ///             println!("verified proof: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
     /// }
     /// ```
     pub async fn vc_zkp_verify_proof(
@@ -920,7 +1058,7 @@ impl VadeEvan {
     }
 }
 
-#[cfg(not(feature = "c-lib"))]
+#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
 #[cfg(test)]
 mod tests {
     use crate::{VadeEvan, VadeEvanConfig};

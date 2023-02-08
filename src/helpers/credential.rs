@@ -396,6 +396,7 @@ impl<'a> Credential<'a> {
 }
 
 #[cfg(test)]
+#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
 mod tests {
     use anyhow::Result;
     use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
@@ -545,7 +546,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn can_get_issuer_pub_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -584,7 +584,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_can_verify_valid_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -602,7 +601,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_rejects_credentials_with_invalid_message_count() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -632,7 +630,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_can_detect_a_broken_credential() -> Result<()> {
         use super::CredentialError;
 
