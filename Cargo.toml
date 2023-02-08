@@ -44,7 +44,7 @@ plugin-jwt-vc = ["capability-vc-zkp", "plugin-signer", "vade-jwt-vc"]
 
 plugin-signer = ["vade-signer"]
 
-plugin-vc-zkp-bbs = ["capability-vc-zkp", "plugin-signer", "ssi", "vade-evan-bbs"]
+plugin-vc-zkp-bbs = ["base64", "bbs", "capability-vc-zkp", "flate2", "plugin-signer", "ssi", "vade-evan-bbs"]
 
 # enable support for using the `c_lib` module to process requests
 capability-c-lib = ["tokio", "vade-didcomm/portable"]
@@ -79,7 +79,6 @@ target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm"]
 ############################################################################### generic dependencies
 [dependencies]
 async-trait = "0.1.31"
-base64 = "0.13.0"
 cfg-if = "0.1"
 jni = "0.19.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -92,7 +91,7 @@ uuid = { version = "0.8.2", features = ["v4"] }
 # plugin-did-sidetree
 [dependencies.vade-sidetree]
 git = "https://github.com/evannetwork/vade-sidetree.git"
-branch = "feature/fix-update-with-nonce"
+branch = "develop"
 version = "0.0.3"
 optional = true
 
@@ -118,6 +117,19 @@ version = "0.0.1"
 optional = true
 
 # plugin-vc-zkp-bbs
+[dependencies.base64]
+version = "0.13.0"
+optional = true
+
+[dependencies.bbs]
+version = "0.4.1"
+optional = true
+default-features= false
+
+[dependencies.flate2]
+version = "1.0.20"
+optional = true
+
 [dependencies.vade-evan-bbs]
 version = "0.3.0"
 optional = true

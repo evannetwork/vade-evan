@@ -94,7 +94,7 @@ impl<'a> DID<'a> {
         match service_endpoint {
             Some(val) => services.push(Service {
                 id: "service#1".to_owned(),
-                r#type: "CustomService".to_owned(),
+                type_field: "CustomService".to_owned(),
                 service_endpoint: val.to_owned(),
             }),
             None => {}
@@ -112,7 +112,10 @@ impl<'a> DID<'a> {
         if services.len() > 0 {
             create_payload.services = Some(services);
         }
-        let payload = serde_json::to_string(&create_payload)?;
+        let payload =
+            serde_json::to_string(&create_payload).map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
 
         let result = self
             .vade_evan
@@ -219,17 +222,17 @@ impl<'a> DID<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::helpers::datatypes::{PublicKeyJWK, Service};
+    use crate::helpers::datatypes::{
+        DidDocumentResult,
+        IdentityDidDocument,
+        PublicKeyJWK,
+        Service,
+    };
     use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
+
     use serde::{Deserialize, Serialize};
     use serial_test::serial;
-
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct SidetreeDidDocument {
-        did_document: DidDoc,
-    }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -346,14 +349,13 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-
         let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
 
         let service_endpoint = "https://w3id.org/did-resolution/v1".to_string();
 
         let service = Service {
             id: "sds".to_string(),
-            r#type: "SecureDataStrore".to_string(),
+            type_field: "SecureDataStrore".to_string(),
             service_endpoint: service_endpoint.clone(),
         };
 
@@ -385,14 +387,13 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-
         let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
 
         let service_endpoint = "https://www.google.de".to_string();
 
         let service = Service {
             id: "sds".to_string(),
-            r#type: "SecureDataStrore".to_string(),
+            type_field: "SecureDataStrore".to_string(),
             service_endpoint: service_endpoint.clone(),
         };
 
@@ -455,7 +456,6 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-
         let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
 
         let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
@@ -485,7 +485,8 @@ mod tests {
             .await?;
         assert!(did_resolve_result.contains(&base64_encoded_bbs_key));
 
-        let did_resolve_result: SidetreeDidDocument = serde_json::from_str(&did_resolve_result)?;
+        let did_resolve_result: DidDocumentResult<IdentityDidDocument> =
+            serde_json::from_str(&did_resolve_result)?;
 
         // Get update key for next update to remove key
         let mut update_key = did_create_result.update_key.clone();
@@ -499,14 +500,9 @@ mod tests {
         nonce += 1;
         update_key.nonce = Some(nonce.to_string());
 
-        let verification_method = &did_resolve_result
+        let key_id = &did_resolve_result
             .did_document
             .verification_method
-            .ok_or("updated key not found")
-            .map_err(|err| VadeEvanError::InternalError {
-                source_message: err.to_string(),
-            })?;
-        let key_id = &verification_method
             .get(0)
             .ok_or("invalid key")
             .map_err(|err| VadeEvanError::InternalError {
