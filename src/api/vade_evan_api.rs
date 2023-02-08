@@ -332,6 +332,7 @@ impl VadeEvan {
     ///     Ok(())
     /// }
     /// ```
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
     pub async fn helper_create_credential_request(
         &mut self,
         issuer_public_key: &str,
@@ -416,6 +417,7 @@ impl VadeEvan {
     ///
     ///     Ok(())
     /// }
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
     pub async fn helper_verify_credential(
         &mut self,
         credential: &str,

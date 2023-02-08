@@ -32,6 +32,11 @@ jobs:
         feature_bundle:
           - bundle-default
           - bundle-sdk
+          - plugin-did-sidetree
+          - plugin-did-substrate
+          - plugin-didcomm
+          - plugin-jwt-vc
+          - plugin-vc-zkp-bbs
 
         feature_target:
           - target-c-lib
@@ -77,9 +82,11 @@ jobs:
         shell: bash
         run: sudo apt install -y clang
 
-      - name: Install wasm-pack
+      - name: Install wasm-pack (from workaround repository)
+        # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
+        # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
         if: ${{ matrix.feature_target == 'target-wasm'}}
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: cargo install --git https://github.com/frewsxcv/wasm-pack.git --branch patch-2
 
       - name: Build WASM file with wasm-pack
         if: ${{ matrix.feature_target == 'target-wasm'}}
