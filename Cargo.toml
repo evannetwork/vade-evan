@@ -15,7 +15,7 @@ build = "build.rs"
 [lib]
 name = "vade_evan"
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [[bin]]
 name = "vade_evan_cli"
