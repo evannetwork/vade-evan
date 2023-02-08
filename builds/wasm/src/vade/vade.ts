@@ -1,22 +1,18 @@
-import { VadeApiSubstrate } from './vade-api-substrate';
 import { VadeApiSidetree } from './vade-api-sidetree';
 import { VadeApiBbs } from './vade-api-bbs';
 
 class Vade {
-  public did: VadeApiSubstrate;
-
   public bbs: VadeApiBbs;
 
-  public sdid: VadeApiSidetree;
+  public did: VadeApiSidetree;
 
   constructor(
     options?:
-    { logLevel?: string, signer?: string, substrate?: string },
+    { logLevel?: string, signer?: string },
   ) {
     // config handling here
-    this.did = new VadeApiSubstrate(options);
     this.bbs = new VadeApiBbs(options);
-    this.sdid = new VadeApiSidetree(options);
+    this.did = new VadeApiSidetree(options);
   }
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import type { DIDDocument } from './interfaces';
 import {
   DidCreateOptions,
@@ -8,12 +7,27 @@ import {
   DidRecoverPayload,
   DidUpdateOptions,
   DidUpdatePayload,
+  JsonWebKeyWithNonce,
   Patch,
   PublicKeyModel,
   Service,
-  UpdateType,
 } from './typings/vade-sidetree';
+
 import { VadeApiShared } from './vade-api-shared';
+
+export enum UpdateType {
+  Update = 'update',
+  Recovery = 'recovery',
+  Deactivate = 'deactivate',
+}
+
+export enum PublicKeyPurpose {
+  Authentication = 'authentication',
+  AssertionMethod = 'assertionMethod',
+  CapabilityInvocation = 'capabilityInvocation',
+  CapabilityDelegation = 'capabilityDelegation',
+  KeyAgreement = 'keyAgreement',
+}
 
 const TYPE_SIDETREE = 'sidetree';
 class VadeApiSidetree extends VadeApiShared {
@@ -27,10 +41,10 @@ class VadeApiSidetree extends VadeApiShared {
    * @param context current context
    */
   public async createDid(
-    updateKey: JsonWebKey,
-    recoveryKey: JsonWebKey,
-    publicKeys: PublicKeyModel[],
-    services: Service[],
+    updateKey: JsonWebKeyWithNonce,
+    recoveryKey: JsonWebKeyWithNonce,
+    publicKeys?: PublicKeyModel[],
+    services?: Service[],
   ): Promise<DidCreateResponse> {
     return this.executeVade<DidCreateOptions, DidCreatePayload, DidCreateResponse>({
       command: 'did',
@@ -51,8 +65,8 @@ class VadeApiSidetree extends VadeApiShared {
 
   public async updateDid(
     did: string,
-    updateKey: JsonWebKey,
-    nextUpdateKey: JsonWebKey,
+    updateKey: JsonWebKeyWithNonce,
+    nextUpdateKey: JsonWebKeyWithNonce,
     patches: Patch[],
   ): Promise<void> {
     await this.executeVade<DidUpdateOptions, DidUpdatePayload, void>({
@@ -73,7 +87,7 @@ class VadeApiSidetree extends VadeApiShared {
     });
   }
 
-  public async deactivateDid(did: string, recoveryKey: JsonWebKey): Promise<void> {
+  public async deactivateDid(did: string, recoveryKey: JsonWebKeyWithNonce): Promise<void> {
     await this.executeVade<DidUpdateOptions, DidDeactivatePayload, void>({
       command: 'did',
       subcommand: 'update',
@@ -92,10 +106,10 @@ class VadeApiSidetree extends VadeApiShared {
 
   public async recoverDid(
     did: string,
-    updateKey: JsonWebKey,
-    recoveryKey: JsonWebKey,
-    nextUpdateKey: JsonWebKey,
-    nextRecoveryKey: JsonWebKey,
+    updateKey: JsonWebKeyWithNonce,
+    recoveryKey: JsonWebKeyWithNonce,
+    nextUpdateKey: JsonWebKeyWithNonce,
+    nextRecoveryKey: JsonWebKeyWithNonce,
     patches: Patch[],
   ): Promise<void> {
     await this.executeVade<DidUpdateOptions, DidRecoverPayload, void>({
