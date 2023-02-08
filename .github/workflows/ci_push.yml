@@ -40,8 +40,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-       - name: Build binaries
-         run: cargo build --release
+      - name: Build binaries
+        run: cargo build --release
 
   build:
     strategy:
