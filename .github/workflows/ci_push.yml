@@ -13,13 +13,13 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
-          # - windows-latest
+          - windows-latest
 
         target:
           - x86_64-unknown-linux-gnu
           - x86_64-apple-darwin
           - aarch64-apple-darwin
-          # - x86_64-pc-windows-msvc
+          - x86_64-pc-windows-msvc
 
         toolchain:
           - stable
@@ -81,14 +81,14 @@ jobs:
         shell: bash
         run: sudo apt install -y clang
 
-      # - name: Install wasm-pack (from workaround repository)
-      #   # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
-      #   # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
-      #   if: ${{ matrix.feature_target == 'target-wasm'}}
-      #   run: cargo install --git https://github.com/frewsxcv/wasm-pack.git --branch patch-2
+      - name: Install wasm-pack (with workaround for Linux)
+        # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
+        # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.feature_target == 'target-wasm'}}
+        run: cargo install --git https://github.com/frewsxcv/wasm-pack.git --branch patch-2
 
-      - name: Install wasm-pack (from official script)
-        if: ${{ matrix.feature_target == 'target-wasm'}}
+      - name: Install wasm-pack (with official script)
+        if: ${{ matrix.os != 'ubuntu-latest' && matrix.feature_target == 'target-wasm'}}
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build WASM file with wasm-pack
