@@ -12,7 +12,6 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
@@ -65,6 +64,10 @@ jobs:
           - os: windows-latest
             target: x86_64-unknown-linux-gnu
 
+    runs-on: ${{ matrix.os }}
+
+    continue-on-error: true
+
     steps:
       - uses: actions/checkout@v3
 
@@ -82,11 +85,15 @@ jobs:
         shell: bash
         run: sudo apt install -y clang
 
-      - name: Install wasm-pack (from workaround repository)
+      - name: Install wasm-pack (with workaround for Linux)
         # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
         # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
-        if: ${{ matrix.feature_target == 'target-wasm'}}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.feature_target == 'target-wasm'}}
         run: cargo install --git https://github.com/frewsxcv/wasm-pack.git --branch patch-2
+
+      - name: Install wasm-pack (with official script)
+        if: ${{ matrix.os != 'ubuntu-latest' && matrix.feature_target == 'target-wasm'}}
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build WASM file with wasm-pack
         if: ${{ matrix.feature_target == 'target-wasm'}}

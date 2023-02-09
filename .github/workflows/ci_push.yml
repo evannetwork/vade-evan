@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         os:
-          - macos-latest
+          # - macos-latest
           - ubuntu-latest
-          - windows-latest
+          # - windows-latest
 
         target:
           - x86_64-unknown-linux-gnu
@@ -26,17 +26,17 @@ jobs:
 
         feature_bundle:
           - bundle-default
-          # - bundle-sdk
-          # - plugin-did-sidetree
-          # - plugin-did-substrate
-          # - plugin-didcomm
-          # - plugin-jwt-vc
-          # - plugin-vc-zkp-bbs
+          - bundle-sdk
+          - plugin-did-sidetree
+          - plugin-did-substrate
+          - plugin-didcomm
+          - plugin-jwt-vc
+          - plugin-vc-zkp-bbs
 
         feature_target:
-          # - target-c-lib
-          # - target-cli
-          # - target-java-lib
+          - target-c-lib
+          - target-cli
+          - target-java-lib
           - target-wasm
 
         exclude:
