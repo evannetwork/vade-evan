@@ -34,10 +34,10 @@ class VadeApiSidetree extends VadeApiShared {
   /**
    * create sidetree DID document
    *
-   * @param updateKey
-   * @param recoveryKey
-   * @param publicKeys
-   * @param services
+   * @param updateKey the JWK public key which will be used for the initial update key
+   * @param recoveryKey the JWK public key which will be used for the initial recovery key
+   * @param publicKeys an optional array of JWK keys which should be initially referenced in the did document
+   * @param services an optional array of services which should be initially referenced in the did document
    * @param context current context
    */
   public async createDid(
@@ -47,9 +47,7 @@ class VadeApiSidetree extends VadeApiShared {
     services?: Service[],
   ): Promise<DidCreateResponse> {
     return this.executeVade<DidCreateOptions, DidCreatePayload, DidCreateResponse>({
-      command: 'did',
-      subcommand: 'create',
-      method: 'did:evan',
+      command: 'did_create',
       options: {
         type: TYPE_SIDETREE,
         waitForCompletion: true,
@@ -63,6 +61,13 @@ class VadeApiSidetree extends VadeApiShared {
     });
   }
 
+  /**
+   * Updates a sidetree did document with the defined patches
+   * @param did full did as string
+   * @param updateKey previous defined private JWK key in the did document
+   * @param nextUpdateKey public JWK key which will be used for the next update
+   * @param patches an array of defined patches which should be applied to the did document
+   */
   public async updateDid(
     did: string,
     updateKey: JsonWebKeyWithNonce,
@@ -70,8 +75,7 @@ class VadeApiSidetree extends VadeApiShared {
     patches: Patch[],
   ): Promise<void> {
     await this.executeVade<DidUpdateOptions, DidUpdatePayload, void>({
-      command: 'did',
-      subcommand: 'update',
+      command: 'did_update',
       method: null,
       options: {
         type: TYPE_SIDETREE,
@@ -87,10 +91,14 @@ class VadeApiSidetree extends VadeApiShared {
     });
   }
 
+  /**
+   * deactivates a did (not recoverable anymore)
+   * @param did full did as string
+   * @param recoveryKey private JWK key which was defined as recovery key
+   */
   public async deactivateDid(did: string, recoveryKey: JsonWebKeyWithNonce): Promise<void> {
     await this.executeVade<DidUpdateOptions, DidDeactivatePayload, void>({
-      command: 'did',
-      subcommand: 'update',
+      command: 'did_update',
       method: null,
       options: {
         type: TYPE_SIDETREE,
@@ -104,6 +112,15 @@ class VadeApiSidetree extends VadeApiShared {
     });
   }
 
+  /**
+   * recovers a did to a new state with the recovery key
+   * @param did full did as string
+   * @param updateKey previous defined private JWK key in the did document
+   * @param recoveryKey previous defined private JWK key in the did document
+   * @param nextUpdateKey public JWK key which will be used for the next update
+   * @param nextRecoveryKey public JWK key which will be used for the next recovery
+   * @param patches  an array of defined patches which should be applied to the did document
+   */
   public async recoverDid(
     did: string,
     updateKey: JsonWebKeyWithNonce,
@@ -113,8 +130,7 @@ class VadeApiSidetree extends VadeApiShared {
     patches: Patch[],
   ): Promise<void> {
     await this.executeVade<DidUpdateOptions, DidRecoverPayload, void>({
-      command: 'did',
-      subcommand: 'update',
+      command: 'did_update',
       method: null,
       options: {
         type: TYPE_SIDETREE,
@@ -136,13 +152,11 @@ class VadeApiSidetree extends VadeApiShared {
    * Fetches a DID document for a DID.
    *
    * @param did DID to resolve
-   * @param context current context
    */
   public async getDid(did: string): Promise<DIDDocument> {
     try {
       return await this.executeVade<void, void, DIDDocument>({
-        command: 'did',
-        subcommand: 'resolve',
+        command: 'did_resolve',
         method: '',
         did,
       });
