@@ -1,4 +1,4 @@
-use crate::api::{VadeEvan};
+use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
 
@@ -346,7 +346,11 @@ impl<'a> Credential<'a> {
         let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
-        for method in did_document.verification_method.iter() {
+        let verification_methods = did_document
+            .verification_method
+            .ok_or("no verification method found")
+            .map_err(|err| CredentialError::PublicKeyParsingError(err.to_string()))?;
+        for method in verification_methods.iter() {
             if method.id == verification_method_id {
                 public_key = &method.public_key_jwk.x;
                 break;
@@ -537,7 +541,6 @@ mod tests {
             )
             .await?;
 
-        println!("{}", credential_request);
         assert!(credential_request.contains("blindSignatureContext"));
 
         Ok(())

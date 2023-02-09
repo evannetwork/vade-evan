@@ -139,8 +139,8 @@ pub struct IdentityDidDocument {
     #[serde(rename = "@context")]
     pub context: (String, String, DidDocumentContext),
     pub id: String,
-    pub service: Vec<Service>,
-    pub verification_method: Vec<VerificationMethod>,
+    pub service: Option<Vec<Service>>,
+    pub verification_method: Option<Vec<VerificationMethod>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

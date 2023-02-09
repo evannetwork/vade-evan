@@ -231,33 +231,14 @@ mod tests {
     use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
 
-    use serde::{Deserialize, Serialize};
+    use serde::Deserialize;
     use serial_test::serial;
 
-    #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+    #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct KeyAgreement {
-        id: String,
-    }
-
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct CreateDIDResponse {
-        did: Did,
+    struct CreateDIDResponse<T> {
+        did: DidDocumentResult<T>,
         update_key: PublicKeyJWK,
-    }
-
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Did {
-        did_document: DidDoc,
-    }
-
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct DidDoc {
-        id: String,
-        pub verification_method: Option<Vec<KeyAgreement>>,
     }
 
     #[tokio::test]
@@ -308,7 +289,8 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+        let did_create_result: CreateDIDResponse<IdentityDidDocument> =
+            serde_json::from_str(&did_create_result)?;
 
         let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
 
@@ -349,7 +331,8 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+        let did_create_result: CreateDIDResponse<IdentityDidDocument> =
+            serde_json::from_str(&did_create_result)?;
 
         let service_endpoint = "https://w3id.org/did-resolution/v1".to_string();
 
@@ -387,7 +370,8 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+        let did_create_result: CreateDIDResponse<IdentityDidDocument> =
+            serde_json::from_str(&did_create_result)?;
 
         let service_endpoint = "https://www.google.de".to_string();
 
@@ -456,7 +440,8 @@ mod tests {
         })?;
 
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
-        let did_create_result: CreateDIDResponse = serde_json::from_str(&did_create_result)?;
+        let did_create_result: CreateDIDResponse<IdentityDidDocument> =
+            serde_json::from_str(&did_create_result)?;
 
         let base64_encoded_bbs_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
 
@@ -500,9 +485,15 @@ mod tests {
         nonce += 1;
         update_key.nonce = Some(nonce.to_string());
 
-        let key_id = &did_resolve_result
+        let verification_method = &did_resolve_result
             .did_document
             .verification_method
+            .ok_or("verification method not found")
+            .map_err(|err| VadeEvanError::InternalError {
+                source_message: err.to_string(),
+            })?;
+
+        let key_id = &verification_method
             .get(0)
             .ok_or("invalid key")
             .map_err(|err| VadeEvanError::InternalError {
