@@ -40,7 +40,7 @@ impl<'a> DID<'a> {
         let mut public_keys: Vec<PublicKeyModel> = vec![];
         match bbs_key {
             Some(val) => public_keys.push(PublicKeyModel {
-                id: "#bbs-key-1".to_owned(),
+                id: format!("bbs-key#{}", Uuid::new_v4().to_simple().to_string()),
                 r#type: TYPE_BBS_KEY.to_owned(),
                 public_key_jwk: PublicKeyJWK {
                     kty: "EC".to_owned(),
@@ -68,7 +68,7 @@ impl<'a> DID<'a> {
                     }
                 })?;
                 public_keys.push(PublicKeyModel {
-                    id: "#signing-key-1".to_owned(),
+                    id: format!("signing-key-1#{}", Uuid::new_v4().to_simple().to_string()),
                     r#type: TYPE_JSONWEB_KEY.to_owned(),
                     public_key_jwk: PublicKeyJWK {
                         kty: "EC".to_owned(),
