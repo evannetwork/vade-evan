@@ -46,8 +46,9 @@ class VadeApiBbs extends VadeApiShared {
    * @param params.properties properties attached to the schema
    * @param params.publicKeyDidId id string of the signed public key in did (e.g. did:evan:0x12345#key-1)
    * @param params.requiredProperties array of strings with required properties
+   * @param params.credentialDid did which should be used for the schema credentialid
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
-   * @param options.privateKey key to request the signing endpoint with
+   * @param options.signingKey key to request the signing endpoint with
    */
   public async createSchema(
     params: {
@@ -129,7 +130,7 @@ class VadeApiBbs extends VadeApiShared {
    *
    * @param params.keyOwnerDid did that will receive new public key
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
-   * @param options.privateKey key to request the signing endpoint with
+   * @param options.signingKey key to request the signing endpoint with
    */
   public async createBbsKeys(
     params: CreateKeysPayload,
@@ -287,7 +288,7 @@ class VadeApiBbs extends VadeApiShared {
    * @param params.issuerProvingKey proving key of issuer
    * @param params.credentialDid did which should be used for the revocation credential id
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
-   * @param options.privateKey key to request the signing endpoint with
+   * @param options.signingKey key to request the signing endpoint with
    */
   public async createRevocationRegistry(
     params: CreateRevocationListPayload,
@@ -416,7 +417,7 @@ class VadeApiBbs extends VadeApiShared {
    * @param params.proverPublicKeyDid reference to public key in provers did document
    * @param params.proverProvingKey proving key to use
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
-   * @param options.privateKey key to request the signing endpoint with
+   * @param options.signingKey key to request the signing endpoint with
    */
   public async presentProof(
     params: PresentProofPayload,
@@ -491,7 +492,7 @@ class VadeApiBbs extends VadeApiShared {
    * @param params.issuerPublicKeyDid did with id mentioned in the revocation list proof
    * @param params.issuerProvingKey uuid of the azure private key
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
-   * @param options.privateKey key to request the signing endpoint with
+   * @param options.signingKey key to request the signing endpoint with
    */
   public async revokeCredential(
     params: RevokeCredentialPayload,
