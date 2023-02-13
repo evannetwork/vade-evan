@@ -15,7 +15,7 @@ build = "build.rs"
 [lib]
 name = "vade_evan"
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [[bin]]
 name = "vade_evan_cli"
@@ -156,7 +156,7 @@ optional = true
 [dependencies.tokio]
 version = "=1.7.1"
 optional = true
-features = ["rt-multi-thread", "macros"]
+features = ["rt-multi-thread", "macros", "net", "time"]
 
 ####################################################################### target specific dependencies
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
@@ -175,7 +175,7 @@ getrandom = { version = "0.1", features = ["wasm-bindgen"] }
 ############################################################################ generic dev dependencies
 [dev-dependencies]
 anyhow = "1.0.68"
-tokio = { version = "0.2.22", features = ["macros", "rt-threaded"] }
+tokio = { version = "=1.7.1", features = ["macros", "rt-multi-thread"] }
 
 ################################################################### target specific dev dependencies
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

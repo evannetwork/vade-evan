@@ -476,7 +476,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(feature = "capability-vc-zkp")]
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
         "helper_create_credential_offer" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -502,7 +502,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(feature = "capability-vc-zkp")]
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
         "helper_create_credential_request" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -525,7 +525,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(feature = "capability-vc-zkp")]
+        #[cfg(feature = "plugin-vc-zkp-bbs")]
         "helper_verify_credential" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(

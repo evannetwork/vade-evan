@@ -301,7 +301,7 @@ pub async fn execute_vade(
     custom_func_name: String,
     config: JsValue,
 ) -> String {
-    let result = match func_name.as_str() {
+    let result: Result<String, JsValue> = match func_name.as_str() {
         #[cfg(feature = "capability-did-read")]
         "did_resolve" =>
             did_resolve(did_or_method, config).await,
@@ -358,10 +358,7 @@ pub async fn execute_vade(
         #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
         "vc_zkp_verify_proof" =>
             vc_zkp_verify_proof(did_or_method, options, payload, config).await,
-        _ => {
-            let empty_result = &String::new();
-            return empty_result.to_string();
-        }
+        _ => Err(JsValue::from(format!("invalid command for execute_vade: {}", &func_name))),
     };
 
     let response = match result {
