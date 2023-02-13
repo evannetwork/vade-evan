@@ -15,7 +15,7 @@ build = "build.rs"
 [lib]
 name = "vade_evan"
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [[bin]]
 name = "vade_evan_cli"
@@ -156,7 +156,7 @@ optional = true
 [dependencies.tokio]
 version = "=1.7.1"
 optional = true
-features = ["rt-multi-thread", "macros"]
+features = ["rt-multi-thread", "macros", "net", "time"]
 
 # plugin-did-sidetree
 [dependencies.uuid]
@@ -181,7 +181,7 @@ getrandom = { version = "0.1", features = ["wasm-bindgen"] }
 [dev-dependencies]
 anyhow = "1.0.68"
 serial_test = "0.5.1"
-tokio = { version = "0.2.22", features = ["macros", "rt-threaded"] }
+tokio = { version = "=1.7.1", features = ["macros", "rt-multi-thread"] }
 
 ################################################################### target specific dev dependencies
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

@@ -1,15 +1,22 @@
-use anyhow::Result;
-use vade_evan::{VadeEvan, VadeEvanConfig};
+cfg_if::cfg_if! {
+    if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+        use anyhow::Result;
+        use vade_evan::{VadeEvan, VadeEvanConfig};
 
-#[test]
-fn can_get_version_info() -> Result<()> {
-    let vade_evan = VadeEvan::new(VadeEvanConfig {
-        target: "test",
-        signer: "remote|http://127.0.0.1:7070/key/sign",
-    })?;
-    let version_info = vade_evan.get_version_info();
+        #[test]
+        #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+        fn can_get_version_info() -> Result<()> {
+            let vade_evan = VadeEvan::new(VadeEvanConfig {
+                target: "test",
+                signer: "remote|http://127.0.0.1:7070/key/sign",
+            })?;
+            let version_info = vade_evan.get_version_info();
 
-    assert!(version_info.contains("vade-evan"));
+            assert!(version_info.contains("vade-evan"));
 
-    Ok(())
+            Ok(())
+        }
+    } else {
+        // currently no example for capability-sdk and target-c-lib/target-java-lib
+    }
 }

@@ -400,100 +400,109 @@ impl<'a> Credential<'a> {
 }
 
 #[cfg(test)]
+#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
 mod tests {
-    use anyhow::Result;
-    use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "plugin-did-sidetree")] {
+            use anyhow::Result;
+            use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
 
-    use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
+            use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
 
-    use super::{Credential, CredentialError};
+            use super::{Credential, CredentialError};
 
-    const CREDENTIAL_ACTIVE: &str = r###"{
-        "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
-        "type": [
-            "VerifiableCredential"
-        ],
-        "proof": {
-            "type": "BbsBlsSignature2020",
-            "created": "2023-02-01T14:08:17.000Z",
-            "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
-            "credentialMessageCount": 13,
-            "requiredRevealStatements": []
-        },
-        "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-        "@context": [
-            "https://www.w3.org/2018/credentials/v1",
-            "https://schema.org/",
-            "https://w3id.org/vc-revocation-list-2020/v1"
-        ],
-        "issuanceDate": "2023-02-01T14:08:09.849Z",
-        "credentialSchema": {
-            "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
-            "type": "EvanVCSchema"
-        },
-        "credentialStatus": {
-            "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
-            "type": "RevocationList2020Status",
-            "revocationListIndex": "4",
-            "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
-        },
-        "credentialSubject": {
-            "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-            "data": {
-                "bio": "biography"
-            }
+            const CREDENTIAL_ACTIVE: &str = r###"{
+                "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+                "type": [
+                    "VerifiableCredential"
+                ],
+                "proof": {
+                    "type": "BbsBlsSignature2020",
+                    "created": "2023-02-01T14:08:17.000Z",
+                    "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+                    "proofPurpose": "assertionMethod",
+                    "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+                    "credentialMessageCount": 13,
+                    "requiredRevealStatements": []
+                },
+                "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://schema.org/",
+                    "https://w3id.org/vc-revocation-list-2020/v1"
+                ],
+                "issuanceDate": "2023-02-01T14:08:09.849Z",
+                "credentialSchema": {
+                    "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+                    "type": "EvanVCSchema"
+                },
+                "credentialStatus": {
+                    "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+                    "type": "RevocationList2020Status",
+                    "revocationListIndex": "4",
+                    "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+                },
+                "credentialSubject": {
+                    "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                    "data": {
+                        "bio": "biography"
+                    }
+                }
+            }"###;
+            const CREDENTIAL_MESSAGE_COUNT: usize = 13;
+            const CREDENTIAL_REVOKED: &str = r###"{
+                "id": "uuid:19b1e481-8743-4c27-8934-45d682714ccc",
+                "type": [
+                    "VerifiableCredential"
+                ],
+                "proof": {
+                    "type": "BbsBlsSignature2020",
+                    "created": "2023-02-02T14:23:43.000Z",
+                    "signature": "lqKrWCzOaeL4qRRyhN4555I5/A/TmKQ9iJUvA+34pwNfh4rBLFxKlLwJK5dfuQjrDZ+0EWSK8X+e7Jv9cWjOZ+v/t3lgT3nFczMtfPjgFe4a3iWKCRUi1HM6h1+c6HY+C0j0QOB606TTXe2EInb+WQ==",
+                    "proofPurpose": "assertionMethod",
+                    "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+                    "credentialMessageCount": 13,
+                    "requiredRevealStatements": []
+                },
+                "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://schema.org/",
+                    "https://w3id.org/vc-revocation-list-2020/v1"
+                ],
+                "issuanceDate": "2023-02-02T14:23:42.120Z",
+                "credentialSchema": {
+                    "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+                    "type": "EvanVCSchema"
+                },
+                "credentialStatus": {
+                    "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#6",
+                    "type": "RevocationList2020Status",
+                    "revocationListIndex": "6",
+                    "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+                },
+                "credentialSubject": {
+                    "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                    "data": {
+                        "bio": "biography"
+                    }
+                }
+            }"###;
+            const ISSUER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
+            const PUBLIC_KEY: &str = "qWZ7EGhzYsSlBq4mLhNal6cHXBD88ZfncdbEWQoue6SaAbZ7k56IxsjcvuXD6LGYDgMgtjTHnBraaMRiwJVBJenXgOT8nto7ZUTO/TvCXwtyPMzGrLM5JNJdEaPP4QJN";
+            const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
+            const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+            const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
+            const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";
+        } else {
         }
-    }"###;
-    const CREDENTIAL_MESSAGE_COUNT: usize = 13;
-    const CREDENTIAL_REVOKED: &str = r###"{
-        "id": "uuid:19b1e481-8743-4c27-8934-45d682714ccc",
-        "type": [
-            "VerifiableCredential"
-        ],
-        "proof": {
-            "type": "BbsBlsSignature2020",
-            "created": "2023-02-02T14:23:43.000Z",
-            "signature": "lqKrWCzOaeL4qRRyhN4555I5/A/TmKQ9iJUvA+34pwNfh4rBLFxKlLwJK5dfuQjrDZ+0EWSK8X+e7Jv9cWjOZ+v/t3lgT3nFczMtfPjgFe4a3iWKCRUi1HM6h1+c6HY+C0j0QOB606TTXe2EInb+WQ==",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
-            "credentialMessageCount": 13,
-            "requiredRevealStatements": []
-        },
-        "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-        "@context": [
-            "https://www.w3.org/2018/credentials/v1",
-            "https://schema.org/",
-            "https://w3id.org/vc-revocation-list-2020/v1"
-        ],
-        "issuanceDate": "2023-02-02T14:23:42.120Z",
-        "credentialSchema": {
-            "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
-            "type": "EvanVCSchema"
-        },
-        "credentialStatus": {
-            "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#6",
-            "type": "RevocationList2020Status",
-            "revocationListIndex": "6",
-            "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
-        },
-        "credentialSubject": {
-            "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-            "data": {
-                "bio": "biography"
-            }
-        }
-    }"###;
-    const ISSUER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
-    const PUBLIC_KEY: &str = "qWZ7EGhzYsSlBq4mLhNal6cHXBD88ZfncdbEWQoue6SaAbZ7k56IxsjcvuXD6LGYDgMgtjTHnBraaMRiwJVBJenXgOT8nto7ZUTO/TvCXwtyPMzGrLM5JNJdEaPP4QJN";
-    const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-    const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
-    const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";
+    }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    #[cfg(all(
+        feature = "plugin-did-sidetree",
+        not(all(feature = "target-c-lib", feature = "capability-sdk"))
+    ))]
     async fn helper_can_create_credential_offer() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -515,6 +524,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn helper_can_create_credential_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -548,7 +558,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn can_get_issuer_pub_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -566,7 +576,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn will_throw_when_pub_key_not_found() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -587,7 +597,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn helper_can_verify_valid_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -605,7 +615,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn helper_rejects_credentials_with_invalid_message_count() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -635,7 +645,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn helper_can_detect_a_broken_credential() -> Result<()> {
         use super::CredentialError;
 
