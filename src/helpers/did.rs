@@ -13,13 +13,17 @@ use uuid::Uuid;
 
 use vade_sidetree::{
     datatypes::{DidUpdatePayload, UpdateType},
-    did::{JsonWebKey, JsonWebKeyPublic, PublicKey, Purpose, Service},
     AddPublicKeys,
     AddServices,
     CreateDidPayload,
+    JsonWebKey,
+    JsonWebKeyPublic,
     Patch,
+    PublicKey,
+    Purpose,
     RemovePublicKeys,
     RemoveServices,
+    Service,
 };
 
 pub struct Did<'a> {
@@ -235,11 +239,11 @@ impl<'a> Did<'a> {
 mod tests {
     use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
+    use serial_test::serial;
     use vade_sidetree::{
         datatypes::{DidCreateResponse, Service, SidetreeDidDocument},
         did::JsonWebKey,
     };
-    use serial_test::serial;
 
     #[tokio::test]
     #[serial]
