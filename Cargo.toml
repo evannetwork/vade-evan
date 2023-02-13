@@ -34,7 +34,7 @@ bundle-default = ["plugin-did-sidetree", "plugin-did-substrate", "plugin-didcomm
 # plugins for sdk build, this feature should be enabled when plugin is compiled for IN3 sdk
 bundle-sdk = ["capability-sdk", "plugin-did-sidetree", "plugin-vc-zkp-bbs"]
 
-plugin-did-sidetree = ["capability-did-read", "capability-did-write", "vade-sidetree"]
+plugin-did-sidetree = ["capability-did-read", "capability-did-write", "vade-sidetree", "uuid"]
 
 plugin-did-substrate = ["capability-did-read", "capability-did-write", "plugin-signer", "vade-evan-substrate"]
 
@@ -85,13 +85,12 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 thiserror = "1.0.38"
 vade = "0.1.0"
-uuid = { version = "0.8.2", features = ["v4"] }
 
 ###################################################################### feature specific dependencies
 # plugin-did-sidetree
 [dependencies.vade-sidetree]
 git = "https://github.com/evannetwork/vade-sidetree.git"
-branch = "develop"
+branch = "feature/make-sidetree-client-module-accessible"
 version = "0.0.3"
 optional = true
 
@@ -159,6 +158,11 @@ version = "=1.7.1"
 optional = true
 features = ["rt-multi-thread", "macros"]
 
+# plugin-did-sidetree
+[dependencies.uuid]
+version = "0.8.2"
+features = ["v4"]
+optional = true
 ####################################################################### target specific dependencies
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
 openssl = { version = "*", features = ["vendored"] }

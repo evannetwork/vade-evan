@@ -153,10 +153,10 @@ cfg_if::cfg_if! {
             Ok(Some(version_info))
         }
 
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "plugin-did-sidetree")]
         #[wasm_bindgen]
         pub async fn helper_did_create(
-            bbs_key: Option<String>,
+            bbs_public_key: Option<String>,
             signing_key: Option<String>,
             service_endpoint: Option<String>,
         ) -> Result<Option<String>, JsValue> {
@@ -164,7 +164,7 @@ cfg_if::cfg_if! {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let did_create_result = vade_evan
             .helper_did_create(
-                bbs_key.as_ref().map(|x| x.as_ref()),
+                bbs_public_key.as_ref().map(|x| x.as_ref()),
                 signing_key.as_ref().map(|x| x.as_ref()),
                 service_endpoint.as_ref().map(|x| x.as_ref())
             ).await
@@ -172,7 +172,7 @@ cfg_if::cfg_if! {
             Ok(Some(did_create_result))
         }
 
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "plugin-did-sidetree")]
         #[wasm_bindgen]
         pub async fn helper_did_update(
             did: String,

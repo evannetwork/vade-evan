@@ -5350,7 +5350,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#246b99dc86fbcc7b6b63ff7cd9c659d3e68e319b"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/make-sidetree-client-module-accessible#05fe7cc794c6f3f9aabb48d764b072e85b92b53c"
 dependencies = [
  "async-std",
  "async-trait",
@@ -5370,7 +5370,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree-client"
 version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#246b99dc86fbcc7b6b63ff7cd9c659d3e68e319b"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=feature/make-sidetree-client-module-accessible#05fe7cc794c6f3f9aabb48d764b072e85b92b53c"
 dependencies = [
  "base64 0.13.1",
  "bitflags",

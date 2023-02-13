@@ -268,7 +268,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "plugin-did-sidetree")]
         "helper_did_create" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -303,7 +303,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "plugin-did-sidetree")]
         "helper_did_update" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(

@@ -26,7 +26,7 @@ use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
     helpers::VersionInfo,
-    helpers::DID,
+    helpers::Did,
 };
 
 pub const DEFAULT_TARGET: &str = "substrate-dev.trust-trace.com";
@@ -923,7 +923,7 @@ impl VadeEvan {
     ///
     /// # Arguments
     ///
-    /// * `bbs_key` - base64 encoded bbs public key (Bls12381G2Key2020)
+    /// * `bbs_public_key` - base64 encoded bbs public key (Bls12381G2Key2020)
     /// * `signing_key` - base64 encoded public key (JsonWebKey2020)
     /// * `service_endpoint` - service endpoint url
     ///
@@ -935,13 +935,13 @@ impl VadeEvan {
     ///
     /// async fn example() -> Result<()> {
     ///     let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
-    ///     let bbs_key =  "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
+    ///     let bbs_public_key =  "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
     ///     let signing_key = None;
     ///     let service_url = "www.example.service";
     ///      
     ///     let create_response = vade_evan
     ///        .helper_did_create(
-    ///            Some(bbs_key),
+    ///            Some(bbs_public_key),
     ///            signing_key,
     ///            Some(service_url),
     ///        )
@@ -950,14 +950,15 @@ impl VadeEvan {
     ///     Ok(())
     /// }
     /// ```
+    #[cfg(feature = "plugin-did-sidetree")]
     pub async fn helper_did_create(
         &mut self,
-        bbs_key: Option<&str>,
+        bbs_public_key: Option<&str>,
         signing_key: Option<&str>,
         service_endpoint: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        let did = DID::new(self)?;
-        did.create(bbs_key, signing_key, service_endpoint).await
+        let did = Did::new(self)?;
+        did.create(bbs_public_key, signing_key, service_endpoint).await
     }
 
     /// Updates a did (add/remove public key jwk and add/remove service endpoint)
@@ -989,6 +990,7 @@ impl VadeEvan {
     ///     Ok(())
     /// }
     /// ```
+    #[cfg(feature = "plugin-did-sidetree")]
     pub async fn helper_did_update(
         &mut self,
         did: &str,
@@ -996,7 +998,7 @@ impl VadeEvan {
         update_key: &str,
         payload: &str,
     ) -> Result<String, VadeEvanError> {
-        let did_helper = DID::new(self)?;
+        let did_helper = Did::new(self)?;
 
         did_helper.update(did, operation, update_key, payload).await
     }

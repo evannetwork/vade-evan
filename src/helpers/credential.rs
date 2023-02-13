@@ -27,7 +27,8 @@ use vade_evan_bbs::{
     UnsignedBbsCredential,
 };
 
-use super::{datatypes::DidDocumentResult, IdentityDidDocument};
+use super::datatypes::DidDocumentResult;
+use vade_sidetree::datatypes::DidDocument;
 
 #[derive(Error, Debug)]
 pub enum CredentialError {
@@ -343,7 +344,7 @@ impl<'a> Credential<'a> {
         issuer_did: &str,
         verification_method_id: &str,
     ) -> Result<String, CredentialError> {
-        let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
+        let did_document: DidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
         let verification_methods = did_document
