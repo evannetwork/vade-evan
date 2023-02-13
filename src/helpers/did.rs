@@ -12,18 +12,21 @@ use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use uuid::Uuid;
 
 use vade_sidetree::{
-    datatypes::{DidUpdatePayload, UpdateType},
-    AddPublicKeys,
-    AddServices,
+    datatypes::{
+        AddPublicKeys,
+        AddServices,
+        DidUpdatePayload,
+        JsonWebKey,
+        JsonWebKeyPublic,
+        Patch,
+        PublicKey,
+        Purpose,
+        RemovePublicKeys,
+        RemoveServices,
+        Service,
+        UpdateType,
+    },
     CreateDidPayload,
-    JsonWebKey,
-    JsonWebKeyPublic,
-    Patch,
-    PublicKey,
-    Purpose,
-    RemovePublicKeys,
-    RemoveServices,
-    Service,
 };
 
 pub struct Did<'a> {
@@ -240,10 +243,7 @@ mod tests {
     use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
     use serial_test::serial;
-    use vade_sidetree::{
-        datatypes::{DidCreateResponse, Service, SidetreeDidDocument},
-        did::JsonWebKey,
-    };
+    use vade_sidetree::datatypes::{DidCreateResponse, JsonWebKey, Service, SidetreeDidDocument};
 
     #[tokio::test]
     #[serial]
@@ -340,7 +340,7 @@ mod tests {
 
         let service = Service {
             id: "sds".to_string(),
-            type_field: "SecureDataStrore".to_string(),
+            service_type: "SecureDataStrore".to_string(),
             service_endpoint: service_endpoint.clone(),
         };
 
@@ -378,7 +378,7 @@ mod tests {
 
         let service = Service {
             id: "sds".to_string(),
-            type_field: "SecureDataStrore".to_string(),
+            service_type: "SecureDataStrore".to_string(),
             service_endpoint: service_endpoint.clone(),
         };
 
