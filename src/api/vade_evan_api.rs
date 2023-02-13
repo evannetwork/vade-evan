@@ -20,13 +20,13 @@ use vade::Vade;
 
 #[cfg(feature = "plugin-vc-zkp-bbs")]
 use crate::helpers::Credential;
-
+#[cfg(feature = "plugin-did-sidetree")]
+use crate::helpers::Did;
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
     helpers::VersionInfo,
-    helpers::Did,
 };
 
 pub const DEFAULT_TARGET: &str = "substrate-dev.trust-trace.com";

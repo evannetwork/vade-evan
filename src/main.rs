@@ -661,7 +661,7 @@ fn get_argument_value<'a>(
     }
 }
 
-#[cfg(feature = "plugin-vc-zkp-bbs")] // currently only used for vc offers
+#[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 fn get_optional_argument_value<'a>(matches: &'a ArgMatches, arg_name: &'a str) -> Option<&'a str> {
     matches.value_of(arg_name)
 }

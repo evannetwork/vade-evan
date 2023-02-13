@@ -34,7 +34,7 @@ bundle-default = ["plugin-did-sidetree", "plugin-did-substrate", "plugin-didcomm
 # plugins for sdk build, this feature should be enabled when plugin is compiled for IN3 sdk
 bundle-sdk = ["capability-sdk", "plugin-did-sidetree", "plugin-vc-zkp-bbs"]
 
-plugin-did-sidetree = ["capability-did-read", "capability-did-write", "vade-sidetree", "uuid"]
+plugin-did-sidetree = ["base64", "capability-did-read", "capability-did-write", "vade-sidetree", "uuid"]
 
 plugin-did-substrate = ["capability-did-read", "capability-did-write", "plugin-signer", "vade-evan-substrate"]
 
