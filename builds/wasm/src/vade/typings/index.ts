@@ -13,35 +13,25 @@ import {
   UnfinishedBbsCredential as UnfinishedCredentialBbs,
   UnsignedCredential as UnsignedCredentialBbs,
 } from './vade-evan-bbs';
+
 import {
-  BigNumber,
-  CreateRevocationRegistryDefinitionResult,
-  Credential as CredentialCl,
-  CredentialDefinition as CredentialDefinitionCl,
-  CredentialOffer as CredentialOfferCl,
-  CredentialPrivateKey,
-  CredentialProposal as CredentialProposalCl,
-  CredentialRequest as CredentialRequestCl,
-  CredentialSchema as CredentialSchemaCl,
-  CredentialSecretsBlindingFactors,
-  EncodedCredentialValue as EncodedCredentialValueCl,
-  IssueCredentialResult as IssueCredentialResultCl,
-  MasterSecret as MasterSecretCl,
-  ProofCredential as ProofCredentialCl,
-  ProofPresentation as ProofPresentationCl,
-  ProofRequest as ProofRequestCl,
-  RevocationIdInformation,
-  SchemaProperty as SchemaPropertyCl,
-  SubProofRequest as SubProofRequestCl,
-} from './vade-evan-cl';
+  AssertionProof as AssertionProofJwt,
+  Credential as CredentialJwt,
+  CredentialSchemaReference as CredentialSchemaReferenceJwt,
+  CredentialStatus as CredentialStatusJwt,
+  CredentialSubject as CredentialSubjectJwt,
+  IssueCredentialPayload as IssueCredentialPayloadJwt,
+  IssueCredentialResult as IssueCredentialResultJwt,
+  ProofVerification as ProofVerificationJwt,
+  SchemaProperty as SchemaPropertyJwt,
+  SignerOptions as SignerOptionsJwt,
+  TypeOptions as TypeOptionsJwt,
+  UnsignedCredential as UnsignedCredentialJwt,
+  VerifyProofPayload as VerifyProofPayloadJwt,
+} from './vade-jwt-vc';
 
 export interface IssueCredentialResultBbs {
   credential: UnfinishedCredentialBbs;
-}
-
-export interface RequestCredentialResultCl {
-  request: CredentialRequestCl;
-  blindingFactors?: CredentialSecretsBlindingFactors;
 }
 
 export interface RequestCredentialResultBbs {
@@ -49,52 +39,47 @@ export interface RequestCredentialResultBbs {
   signatureBlinding?: string;
 }
 
-export type CreateRevocationRegistryResult = CreateRevocationRegistryDefinitionResult | RevocationListCredential;
-export type Credential = CredentialCl | CredentialBbs;
-export type CredentialOffer = CredentialOfferCl | CredentialOfferBbs;
-export type CredentialProposal = CredentialProposalCl | CredentialProposalBbs;
-export type CredentialSchema = CredentialSchemaCl | CredentialSchemaBbs;
+export type CreateRevocationRegistryResult = RevocationListCredential;
+export type VerifiableCredential = CredentialBbs | CredentialJwt;
+export type CredentialOffer = CredentialOfferBbs;
+export type CredentialProposal = CredentialProposalBbs;
+export type CredentialSchema = CredentialSchemaBbs;
 export type EncodedCredentialValueBbs = string;
-export type EncodedCredentialValue = EncodedCredentialValueCl | EncodedCredentialValueBbs;
-export type IssueCredentialResult = IssueCredentialResultCl | IssueCredentialResultBbs;
-export type MasterSecret = MasterSecretCl | MasterSecretBbs;
+export type EncodedCredentialValue = EncodedCredentialValueBbs;
+export type IssueCredentialResult = IssueCredentialResultBbs | IssueCredentialResultJwt;
+export type MasterSecret = MasterSecretBbs;
 export type MasterSecretBbs = string;
-export type ProofCredential = ProofCredentialCl | ProofCredentialBbs;
-export type ProofPresentation = ProofPresentationCl | ProofPresentationBbs;
-export type ProofRequest = ProofRequestCl | ProofRequestBbs;
-export type RequestCredentialResult = RequestCredentialResultCl | RequestCredentialResultBbs;
-export type SchemaProperty = SchemaPropertyCl | SchemaPropertyBbs;
-export type SubProofRequest = SubProofRequestCl | SubProofRequestBbs;
+export type ProofCredential = ProofCredentialBbs;
+export type ProofPresentation = ProofPresentationBbs;
+export type ProofRequest = ProofRequestBbs;
+export type RequestCredentialResult = RequestCredentialResultBbs;
+export type SchemaProperty = SchemaPropertyBbs | SchemaPropertyJwt;
+export type SubProofRequest = SubProofRequestBbs;
+export type UnsignedCredential = UnsignedCredentialBbs | UnsignedCredentialJwt;
 
 export {
-  BigNumber,
-  CreateRevocationRegistryDefinitionResult,
+  AssertionProofJwt,
   CredentialBbs,
-  CredentialCl,
-  CredentialDefinitionCl,
+  CredentialJwt,
   CredentialOfferBbs,
-  CredentialOfferCl,
-  CredentialPrivateKey,
   CredentialProposalBbs,
-  CredentialProposalCl,
   CredentialRequestBbs,
-  CredentialRequestCl,
   CredentialSchemaBbs,
-  CredentialSchemaCl,
-  CredentialSecretsBlindingFactors,
-  EncodedCredentialValueCl,
-  IssueCredentialResultCl,
-  MasterSecretCl,
+  CredentialSchemaReferenceJwt,
+  CredentialStatusJwt,
+  CredentialSubjectJwt,
+  IssueCredentialPayloadJwt,
+  IssueCredentialResultJwt,
   ProofPresentationBbs,
-  ProofPresentationCl,
   ProofRequestBbs,
-  ProofRequestCl,
-  RevocationIdInformation,
+  ProofVerificationJwt,
   RevocationListCredential,
   SchemaPropertyBbs,
-  SchemaPropertyCl,
-  SubProofRequestCl,
+  SignerOptionsJwt,
   SubProofRequestBbs,
+  TypeOptionsJwt,
   UnfinishedCredentialBbs,
   UnsignedCredentialBbs,
+  UnsignedCredentialJwt,
+  VerifyProofPayloadJwt,
 };

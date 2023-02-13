@@ -5,7 +5,8 @@ const NPM_COMMAND = process.env.npm_lifecycle_event;
 const VADE_PLUGINS = [
   'vade-evan-cl',
   'vade-evan-bbs',
-  'vade-evan-substrate',
+  'vade-sidetree',
+  'vade-jwt-vc',
 ];
 const VADE_WASM_FOLDER = 'src/vade/wasm';
 
@@ -23,7 +24,7 @@ const jest = ({
   ...(files ? [files] : []),
 ].join(' '));
 const tsProject = '-p ./tsconfig.build.json';
-const tscPaths = `tscpaths ${tsProject} -s ./src -o ./dist/src > /dev/null && tscpaths ${tsProject} -s ./functions -o ./dist/functions > /dev/null`;
+const tscPaths = `tscpaths ${tsProject} -s ./src -o ./dist/src > /dev/null`;
 const copyVadeFiles = `rm -rf dist/${VADE_WASM_FOLDER} && cp -r ${VADE_WASM_FOLDER} dist/${VADE_WASM_FOLDER}`;
 const buildTypescript = `tsc ${tsProject} && ${tscPaths} && ${copyVadeFiles}`;
 const fixFunctionArgName = [
@@ -41,7 +42,7 @@ const buildWasm = (buildForBrowser) => [
   `--out-dir ${__dirname}/${VADE_WASM_FOLDER}`,
   '--',
   '--no-default-features',
-  '--features did,didcomm,vc-zkp,wasm',
+  '--features bundle-default,target-wasm',
   '&&',
   fixFunctionArgName,
 ].join(' ');
