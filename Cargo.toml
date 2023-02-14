@@ -88,9 +88,14 @@ vade = "0.1.0"
 
 ###################################################################### feature specific dependencies
 # plugin-did-sidetree
+[dependencies.uuid]
+version = "0.8.2"
+optional = true
+features = ["v4"]
+
 [dependencies.vade-sidetree]
 git = "https://github.com/evannetwork/vade-sidetree.git"
-branch = "feature/make-sidetree-client-module-accessible"
+branch = "develop"
 version = "0.0.3"
 optional = true
 
@@ -115,6 +120,11 @@ optional = true
 version = "0.0.1"
 optional = true
 
+# plugin-universal-resolver
+[dependencies.vade-universal-resolver]
+version = "0.0.4"
+optional = true
+
 # plugin-vc-zkp-bbs
 [dependencies.base64]
 version = "0.13.0"
@@ -129,19 +139,14 @@ default-features= false
 version = "1.0.20"
 optional = true
 
-[dependencies.vade-evan-bbs]
-version = "0.3.0"
-optional = true
-default-features = false
-
 [dependencies.ssi]
 version = "0.5.0"
 optional = true
 
-# plugin-universal-resolver
-[dependencies.vade-universal-resolver]
-version = "0.0.4"
+[dependencies.vade-evan-bbs]
+version = "0.3.0"
 optional = true
+default-features = false
 
 # target-cli
 [dependencies.anyhow]
@@ -152,17 +157,11 @@ optional = true
 version = "2.33.1"
 optional = true
 
-# target-cli
 [dependencies.tokio]
 version = "=1.7.1"
 optional = true
 features = ["rt-multi-thread", "macros", "net", "time"]
 
-# plugin-did-sidetree
-[dependencies.uuid]
-version = "0.8.2"
-features = ["v4"]
-optional = true
 ####################################################################### target specific dependencies
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
 openssl = { version = "*", features = ["vendored"] }
