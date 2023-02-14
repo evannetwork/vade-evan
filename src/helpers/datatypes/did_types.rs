@@ -13,15 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
-use serde::Deserialize;
 use std::str::FromStr;
+use serde::{Deserialize, Serialize};
 
-pub const EVAN_METHOD: &str = "did:evan";
+#[cfg(feature = "plugin-did-sidetree")]
 pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", "waitForCompletion":true }"#;
-
-pub const TYPE_BBS_KEY: &str = "Bls12381G2Key2020";
-pub const TYPE_JSONWEB_KEY: &str = "JsonWebKey2020";
+pub const EVAN_METHOD: &str = "did:evan";
 
 #[derive(Debug, PartialEq)]
 pub enum DIDOperationType {
@@ -48,4 +45,25 @@ impl FromStr for DIDOperationType {
 #[serde(rename_all = "camelCase")]
 pub struct DidDocumentResult<T> {
     pub did_document: T,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityDidDocument {
+    pub id: String,
+    pub verification_method: Option<Vec<VerificationMethod>>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VerificationMethod {
+    pub id: String,
+    pub public_key_jwk: PublicKeyJwk,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PublicKeyJwk {
+    pub x: String,
+    pub y: Option<String>,
 }

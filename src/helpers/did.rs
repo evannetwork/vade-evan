@@ -4,8 +4,6 @@ use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{
     DIDOperationType,
     EVAN_METHOD,
-    TYPE_BBS_KEY,
-    TYPE_JSONWEB_KEY,
     TYPE_SIDETREE_OPTIONS,
 };
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
@@ -28,6 +26,9 @@ use vade_sidetree::{
     },
     CreateDidPayload,
 };
+
+pub const TYPE_BBS_KEY: &str = "Bls12381G2Key2020";
+pub const TYPE_JSONWEB_KEY: &str = "JsonWebKey2020";
 
 pub struct Did<'a> {
     vade_evan: &'a mut VadeEvan,
@@ -239,6 +240,8 @@ impl<'a> Did<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "plugin-did-sidetree")]
+#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
 mod tests {
     use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
@@ -247,7 +250,6 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_did_can_create_did_with_bbs_public_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -267,7 +269,6 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_did_can_create_did_with_service_endpoint() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -285,7 +286,6 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_did_can_update_did_add_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -326,7 +326,6 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_did_can_update_did_add_service() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -364,7 +363,6 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_did_can_update_did_add_remove_service() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -433,7 +431,6 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
     async fn helper_did_can_update_did_add_remove_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
