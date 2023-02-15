@@ -34,7 +34,7 @@ bundle-default = ["plugin-did-sidetree", "plugin-did-substrate", "plugin-didcomm
 # plugins for sdk build, this feature should be enabled when plugin is compiled for IN3 sdk
 bundle-sdk = ["capability-sdk", "plugin-did-sidetree", "plugin-vc-zkp-bbs"]
 
-plugin-did-sidetree = ["capability-did-read", "capability-did-write", "vade-sidetree"]
+plugin-did-sidetree = ["base64", "capability-did-read", "capability-did-write", "vade-sidetree", "uuid"]
 
 plugin-did-substrate = ["capability-did-read", "capability-did-write", "plugin-signer", "vade-evan-substrate"]
 
@@ -88,6 +88,11 @@ vade = "0.1.0"
 
 ###################################################################### feature specific dependencies
 # plugin-did-sidetree
+[dependencies.uuid]
+version = "0.8.2"
+optional = true
+features = ["v4"]
+
 [dependencies.vade-sidetree]
 git = "https://github.com/evannetwork/vade-sidetree.git"
 branch = "develop"
@@ -115,6 +120,11 @@ optional = true
 version = "0.0.1"
 optional = true
 
+# plugin-universal-resolver
+[dependencies.vade-universal-resolver]
+version = "0.0.4"
+optional = true
+
 # plugin-vc-zkp-bbs
 [dependencies.base64]
 version = "0.13.0"
@@ -129,19 +139,14 @@ default-features= false
 version = "1.0.20"
 optional = true
 
-[dependencies.vade-evan-bbs]
-version = "0.3.0"
-optional = true
-default-features = false
-
 [dependencies.ssi]
 version = "0.5.0"
 optional = true
 
-# plugin-universal-resolver
-[dependencies.vade-universal-resolver]
-version = "0.0.4"
+[dependencies.vade-evan-bbs]
+version = "0.3.0"
 optional = true
+default-features = false
 
 # target-cli
 [dependencies.anyhow]
@@ -152,7 +157,6 @@ optional = true
 version = "2.33.1"
 optional = true
 
-# target-cli
 [dependencies.tokio]
 version = "=1.7.1"
 optional = true
@@ -165,16 +169,17 @@ openssl = { version = "*", features = ["vendored"] }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
 console_log = { version = "0.2", features = ["color"] }
+getrandom = { version = "0.1", features = ["wasm-bindgen"] }
 log = "0.4.17"
 serde_derive = "1.0.114"
 serde-wasm-bindgen = "0.4.5"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.5"
-getrandom = { version = "0.1", features = ["wasm-bindgen"] }
 
 ############################################################################ generic dev dependencies
 [dev-dependencies]
 anyhow = "1.0.68"
+serial_test = "0.5.1"
 tokio = { version = "=1.7.1", features = ["macros", "rt-multi-thread"] }
 
 ################################################################### target specific dev dependencies
