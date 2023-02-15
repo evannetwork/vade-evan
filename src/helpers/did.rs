@@ -23,6 +23,7 @@ use vade_sidetree::{
         RemoveServices,
         Service,
         UpdateType,
+        JsonPatch
     },
     CreateDidPayload,
 };
@@ -212,6 +213,9 @@ impl<'a> Did<'a> {
                 patch = Patch::RemoveServices(RemoveServices {
                     ids: vec![service_id_to_remove],
                 });
+            }
+            DIDOperationType::ReplaceDidDoc =>{
+                patch = Patch::IetfJsonPatch(JsonPatch)
             }
         };
 

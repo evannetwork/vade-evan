@@ -24,6 +24,7 @@ use vade_evan_bbs::{
     CredentialSubject,
     OfferCredentialPayload,
     RevocationListCredential,
+    RevokeCredentialPayload,
     UnsignedBbsCredential,
 };
 
@@ -267,6 +268,77 @@ impl<'a> Credential<'a> {
         }
 
         Ok(())
+    }
+
+    pub async fn revoke_credential(
+        &mut self,
+        credential_str: &str,
+        public_key_jwk: &str,
+        private_key: &str,
+    ) -> Result<String, CredentialError> {
+        let credential: BbsCredential = serde_json::from_str(credential_str)?;
+        let public_key_jwk: PublicKeyJwk = serde_json::from_str(public_key_jwk)?;
+        let revocation_list: RevocationListCredential = self
+            .get_did_document(&credential.credential_status.revocation_list_credential)
+            .await?;
+
+        let payload = RevokeCredentialPayload {
+            issuer: credential.issuer.clone(),
+            revocation_list,
+            revocation_id: credential.credential_status.revocation_list_index,
+            issuer_public_key_did: credential.issuer.clone(),
+            issuer_proving_key: credential.issuer,
+        };
+
+        let payload = serde_json::to_string(&payload)?;
+        let updated_revocation_list = self
+            .vade_evan
+            .vc_zkp_revoke_credential(EVAN_METHOD, TYPE_OPTIONS, &payload)
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+
+        
+        // const vcObj = assetData.value as unknown as {
+        //     credential: CredentialBbs;
+        //   };
+
+        //   // Resolve revocationListCredential doc
+        //   const revocationList = (await getDidDocument(
+        //     context,
+        //     vcObj.credential.credentialStatus.revocationListCredential,
+        //   )) as RevocationListCredential;
+
+        //   const signingKeyReference = assetData.issuer.startsWith('did:')
+        //     ? (await Identity.findOneOrFail({ where: { did: assetData.issuer } })).uuid
+        //     : assetData.issuer;
+
+        //   const updatedRevocationListDidDocument = await vadeApiBbs.revokeCredential(
+        //     {
+        //       issuer: vcObj.credential.issuer,
+        //       revocationList,
+        //       revocationId: vcObj.credential.credentialStatus.revocationListIndex,
+        //       issuerPublicKeyDid: vcObj.credential.issuer,
+        //       issuerProvingKey: signingKeyReference,
+        //     },
+        //     {
+        //       signingKey: signingKeyReference,
+        //       identity: vcObj.credential.issuer,
+        //     },
+        //     context,
+        //   );
+
+        //   await updateSidetreeDidDoc(revocationList.id, {
+        //     action: 'ietf-json-patch',
+        //     patches: [
+        //       {
+        //         op: 'replace',
+        //         path: '',
+        //         value: updatedRevocationListDidDocument as unknown as Record<string, unknown>,
+        //       },
+        //     ],
+        //   });
+
+        Ok("".to_owned())
     }
 
     async fn create_empty_unsigned_credential(
