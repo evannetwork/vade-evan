@@ -199,6 +199,27 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(feature = "plugin-did-sidetree")]
+            ("did_create", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_did_create(
+                        get_optional_argument_value(sub_m, "bbs_public_key"),
+                        get_optional_argument_value(sub_m, "signign_key"),
+                        get_optional_argument_value(sub_m, "service_endpoint"),
+                    )
+                    .await?
+            }
+            #[cfg(feature = "plugin-did-sidetree")]
+            ("did_update", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_did_update(
+                        get_argument_value(sub_m, "did", None),
+                        get_argument_value(sub_m, "operation", None),
+                        get_argument_value(sub_m, "update_key", None),
+                        get_argument_value(sub_m, "payload", None),
+                    )
+                    .await?
+            }
             #[cfg(feature = "plugin-vc-zkp-bbs")]
             ("verify_credential", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
@@ -279,6 +300,34 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("signer")?),
             );
         } else {}
+    }
+    cfg_if::cfg_if! {
+            if #[cfg(feature = "plugin-did-sidetree")] {
+                subcommand = subcommand.subcommand(
+                    SubCommand::with_name("did_create")
+                        .about("Creates a did, take optional arguments for predefined keys and service endpoints")
+                        .arg(get_clap_argument("bbs_public_key")?)
+                        .arg(get_clap_argument("signing_key")?)
+                        .arg(get_clap_argument("service_endpoint")?)
+                        .arg(get_clap_argument("target")?)
+                        .arg(get_clap_argument("signer")?),
+                );
+            } else {}
+    }
+
+    cfg_if::cfg_if! {
+            if #[cfg(feature = "plugin-did-sidetree")] {
+                subcommand = subcommand.subcommand(
+                    SubCommand::with_name("did_update")
+                        .about("Updates a did (add/remove publickey and add/remove service_endpoint)")
+                        .arg(get_clap_argument("did")?)
+                        .arg(get_clap_argument("operation")?)
+                        .arg(get_clap_argument("update_key")?)
+                        .arg(get_clap_argument("payload")?)
+                        .arg(get_clap_argument("target")?)
+                        .arg(get_clap_argument("signer")?),
+                );
+            } else {}
     }
 
     cfg_if::cfg_if! {
@@ -630,7 +679,7 @@ fn get_argument_value<'a>(
     }
 }
 
-#[cfg(feature = "plugin-vc-zkp-bbs")] // currently only used for vc offers
+#[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 fn get_optional_argument_value<'a>(matches: &'a ArgMatches, arg_name: &'a str) -> Option<&'a str> {
     matches.value_of(arg_name)
 }
@@ -686,20 +735,24 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "issuer_public_key" => Arg::with_name("issuer_public_key")
             .long("issuer_public_key")
             .value_name("issuer_public_key")
+            .required(true)
             .help("issuer public key")
             .takes_value(true),
         "credential_offer" => Arg::with_name("credential_offer")
             .long("credential_offer")
             .value_name("credential_offer")
+            .required(true)
             .help("JSON string with credential offer by issuer")
             .takes_value(true),
         "credential_values" => Arg::with_name("credential_values")
             .long("credential_values")
             .value_name("credential_values")
+            .required(true)
             .help("JSON string with cleartext values to be signed in the credential")
             .takes_value(true),
         "bbs_secret" => Arg::with_name("bbs_secret")
             .long("bbs_secret")
+            .required(true)
             .value_name("bbs_secret")
             .help("master secret of the holder/receiver"),
         "schema_did" => Arg::with_name("schema_did")
@@ -724,6 +777,32 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("subject_did")
             .help("DID of subject")
             .takes_value(true),
+        "operation" => Arg::with_name("operation")
+            .long("operation")
+            .value_name("operation")
+            .required(true)
+            .help("Operation type AddKey/RemoveKey/AddServiceEnpoint/RemoveServiceEnpoint")
+            .takes_value(true),
+        "update_key" => Arg::with_name("update_key")
+            .long("update_key")
+            .value_name("update_key")
+            .required(true)
+            .help("Update key for did update in JWK format")
+            .takes_value(true),
+        "bbs_public_key" => Arg::with_name("bbs_public_key")
+            .long("bbs_public_key")
+            .value_name("bbs_public_key")
+            .help("optional pre-generated bbs public key")
+            .takes_value(true),
+        "signing_key" => Arg::with_name("signing_key")
+            .long("signing_key")
+            .value_name("signing_key")
+            .help("optional signing key to be added to did doc")
+            .takes_value(true),
+        "service_endpoint" => Arg::with_name("service_endpoint")
+            .long("service_endpoint")
+            .value_name("optional service_endpoint to be added to did doc")
+            .help("Service endpoint url"),
         "credential" => Arg::with_name("credential")
             .long("credential")
             .value_name("credential")

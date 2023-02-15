@@ -1,3 +1,5 @@
+use crate::api::VadeEvan;
+use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
 
 use bbs::{
@@ -16,9 +18,7 @@ use ssi::{
 use thiserror::Error;
 use vade_evan_bbs::{BbsCredential, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, OfferCredentialPayload, RevocationListCredential, UnsignedBbsCredential};
 
-use crate::api::VadeEvan;
-
-use super::{datatypes::DidDocumentResult, IdentityDidDocument};
+use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 
 #[derive(Error, Debug)]
 pub enum CredentialError {
@@ -48,7 +48,6 @@ pub enum CredentialError {
 
 // Master secret is always incorporated, without being mentioned in the credential schema
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
-const EVAN_METHOD: &str = "did:evan";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
 
 async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, CredentialError> {
@@ -421,7 +420,11 @@ impl<'a> Credential<'a> {
         let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
-        for method in did_document.verification_method.iter() {
+        let verification_methods = did_document
+            .verification_method
+            .ok_or("no verification method found")
+            .map_err(|err| CredentialError::PublicKeyParsingError(err.to_string()))?;
+        for method in verification_methods.iter() {
             if method.id == verification_method_id {
                 public_key = &method.public_key_jwk.x;
                 break;
@@ -622,7 +625,6 @@ mod tests {
             )
             .await?;
 
-        println!("{}", credential_request);
         assert!(credential_request.contains("blindSignatureContext"));
 
         Ok(())

@@ -10,6 +10,7 @@
 - add `create_credential_request` helper function
 - add `create_credential_offer` helper function
 - add `helper_verify_credential` helper function
+- add `helper_did_create` and `helper_did_update` functions
 
 ### Fixes
 

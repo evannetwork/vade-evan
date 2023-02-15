@@ -1,4 +1,3 @@
-mod did_document;
+mod did_types;
 
-pub use did_document::DidDocumentResult;
-pub use did_document::IdentityDidDocument;
+pub use did_types::*;

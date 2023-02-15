@@ -268,6 +268,27 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
+        #[cfg(feature = "plugin-did-sidetree")]
+        "helper_did_create" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_did_create(
+                        arguments_vec.get(0).map(|x| &**x),
+                        arguments_vec.get(1).map(|x| &**x),
+                        arguments_vec.get(2).map(|x| &**x),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
         #[cfg(feature = "capability-did-write")]
         "did_update" => runtime.block_on({
             execute_vade_function!(
@@ -281,6 +302,28 @@ pub extern "C" fn execute_vade(
                 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
                 request_function_callback
             )
+        }),
+        #[cfg(feature = "plugin-did-sidetree")]
+        "helper_did_update" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_did_update(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
         }),
         #[cfg(feature = "capability-didcomm")]
         "didcomm_receive" => runtime.block_on({
