@@ -209,6 +209,24 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
+            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            ("create_self_issued_credential", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_self_issued_credential(
+                        get_argument_value(sub_m, "schema_did", None),
+                        get_argument_value(sub_m, "issuer_did", None),
+                        get_argument_value(sub_m, "subject_did", None),
+                        get_argument_value(sub_m, "issuer_public_key", None),
+                        get_argument_value(sub_m, "bbs_secret", None),
+                        get_argument_value(sub_m, "bbs_private_key", None),
+                        get_argument_value(sub_m, "credential_values", None),
+                        get_optional_argument_value(sub_m, "credential_revocation_did"),
+                        get_optional_argument_value(sub_m, "credential_revocation_id"),
+                        get_optional_argument_value(sub_m, "exp_date"),
+                    )
+                    .await?;
+                "".to_string()
+            }
             _ => {
                 bail!("invalid subcommand");
             }

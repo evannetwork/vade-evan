@@ -484,6 +484,81 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
+    /// Creates a new zero-knowledge proof self issued credential.
+    /// `create_self_issued_credential` function can be used in the same step
+    /// and produces the same output as `vc_zkp_create_credential_offer` but uses a simpler argument setup.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - schema to create the credential
+    /// * `issuer_did` - DID of issuer
+    /// * `subject_did` - DID of subject
+    ///
+    /// # Returns
+    /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
+    ///         const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+    ///         const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
+    ///         const ISSUER_PUBLIC_KEY: &str = "pubkey";
+    ///         const BBS_SECRET: &str = "bbssecret";
+    ///         const BBS_PRIVATE_KEY: &str = "bbsprivkey";
+    ///         const CRED_VALUES: &str = "{\"test\":\"value\"}";
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let offer_str = vade_evan
+    ///                 .helper_create_self_issued_credential(
+    ///                     SCHEMA_DID,
+    ///                     ISSUER_DID,
+    ///                     SUBJECT_DID,
+    ///                     ISSUER_PUBLIC_KEY,
+    ///                     BBS_SECRET,
+    ///                     BBS_PRIVATE_KEY,
+    ///                     CRED_VALUES,
+    ///                     Some(),
+    ///                     Some(),
+    ///                     Some(),
+    ///                 )
+    ///                 .await?;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
+    /// }
+    /// ```
+    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    pub async fn helper_create_self_issued_credential(
+        &mut self,
+        schema_did: &str,
+        issuer_did: &str,
+        subject_did: &str,
+        issuer_public_key: &str,
+        bbs_secret: &str,
+        bbs_private_key: &str,
+        credential_values: &str,
+        credential_revocation_did: Option<&str>,
+        credential_revocation_id: Option<&str>,
+        exp_date: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        let mut credential = Credential::new(self)?;
+        credential
+            .create_self_issued_credential(schema_did, issuer_did, subject_did, issuer_public_key,
+                                           bbs_secret, bbs_private_key, credential_values,
+                                           credential_revocation_did, credential_revocation_id, exp_date )
+            .await
+            .map_err(|err| err.into())
+    }
+
     /// Runs a custom function, this allows to use `Vade`s API for custom calls, that do not belong
     /// to `Vade`s core functionality but may be required for a projects use cases.
     ///

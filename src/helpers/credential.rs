@@ -14,16 +14,7 @@ use ssi::{
     urdna2015::normalize,
 };
 use thiserror::Error;
-use vade_evan_bbs::{
-    BbsCredential,
-    CredentialSchema,
-    CredentialSchemaReference,
-    CredentialStatus,
-    CredentialSubject,
-    OfferCredentialPayload,
-    RevocationListCredential,
-    UnsignedBbsCredential,
-};
+use vade_evan_bbs::{BbsCredential, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, OfferCredentialPayload, RevocationListCredential, UnsignedBbsCredential};
 
 use crate::api::VadeEvan;
 
@@ -268,6 +259,89 @@ impl<'a> Credential<'a> {
         }
 
         Ok(())
+    }
+
+    pub async fn create_self_issued_credential(
+        &mut self,
+        schema_did: &str,
+        issuer_did: &str,
+        subject_did: &str,
+        issuer_public_key: &str,
+        bbs_secret: &str,
+        bbs_private_key: &str,
+        credential_values: &str,
+        credential_revocation_did: Option<&str>,
+        credential_revocation_id: Option<&str>,
+        exp_date: Option<&str>,
+    ) -> Result<String, CredentialError> {
+        let use_valid_until= if exp_date { true } else { false };
+        let offer = self
+            .create_credential_offer(
+                schema_did,
+                use_valid_until,
+                issuer_did,
+                Option::from(subject_did),
+            )
+            .await?.into_ok();
+        let credential_values_str = serde_json::to_string(&credential_values)?;
+        let request = self
+            .create_credential_request(
+                issuer_public_key,
+                bbs_secret,
+                &credential_values_str,
+                offer,
+                schema_did,
+            ).await?.into_ok();
+        let revocation_str = self.get_did_document(credential_revocation_did.map(|s| s.to_string()).as_str()).await?;
+        let credential_revocation: RevocationListCredential = serde_json::from_str(revocation_str).unwrap();
+        let credential_request: BbsCredentialRequest = serde_json::from_str(request).unwrap();
+        let payload= format!(
+            r#"{{
+                "issuer": {},
+                "subject": {},
+                "credentialRequest": {},
+                "credentialPrivateKey": {}
+                "credentialRevocationDefinition": {}
+                "revocationPrivateKey": {}
+                "revocationInformation": {}
+            }}"#,
+            issuer_did,
+            subject_did,
+            credential_request.request,
+            bbs_private_key,
+            credential_revocation.issued,
+            credential_revocation.proof.jws.as_str(),
+            credential_revocation.proof.proof_purpose,
+        );
+        let credential_str = self
+            .vade_evan
+            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &payload)
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+        let credential: BbsCredential = serde_json::from_str(credential_str.into_ok()).unwrap();
+        let payload_finish = format!(
+            r#"{{
+                "credential": {},
+                "credentialRequest": {},
+                "credentialRevocationDefinition": {},
+                "blindingFactors": {}
+                "masterSecret": {}
+                "revocationState": {}
+            }}"#,
+            serde_json::to_string(&credential).as_str(),
+            credential_request.request,
+            credential_revocation.issued,
+            credential_request.blind_signature_context,
+            bbs_secret,
+            credential_revocation.proof.proof_purpose,
+        );
+        let result = self
+            .vade_evan
+            .vc_zkp_finish_credential(EVAN_METHOD, TYPE_OPTIONS, &payload_finish)
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+
+        Ok(result)
     }
 
     async fn create_empty_unsigned_credential(
