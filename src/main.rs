@@ -230,6 +230,16 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
+            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            ("revoke_credential", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_revoke_credential(
+                        get_argument_value(sub_m, "credential", None),
+                        get_argument_value(sub_m, "bbs_public_key", None),
+                    )
+                    .await?;
+                "".to_string()
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -323,6 +333,16 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         } else {}
     }
 
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("revoke_credential")
+                    .about("Revokes a given credential with vade and updates the revocation list credential.")
+                    .arg(get_clap_argument("credential")?)
+                    .arg(get_clap_argument("bbs_public_key")?)
+            );
+        } else {}
+    }
     Ok(app.subcommand(subcommand))
 }
 

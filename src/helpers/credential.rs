@@ -2,6 +2,7 @@ use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
 
+use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
@@ -27,8 +28,6 @@ use vade_evan_bbs::{
     RevokeCredentialPayload,
     UnsignedBbsCredential,
 };
-
-use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 
 #[derive(Error, Debug)]
 pub enum CredentialError {
@@ -270,21 +269,20 @@ impl<'a> Credential<'a> {
         Ok(())
     }
 
+    #[cfg(feature = "plugin-did-sidetree")]
     pub async fn revoke_credential(
         &mut self,
         credential_str: &str,
-        public_key_jwk: &str,
-        private_key: &str,
+        update_key_jwk: &str,
     ) -> Result<String, CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
-        let public_key_jwk: PublicKeyJwk = serde_json::from_str(public_key_jwk)?;
         let revocation_list: RevocationListCredential = self
             .get_did_document(&credential.credential_status.revocation_list_credential)
             .await?;
 
         let payload = RevokeCredentialPayload {
             issuer: credential.issuer.clone(),
-            revocation_list,
+            revocation_list: revocation_list.clone(),
             revocation_id: credential.credential_status.revocation_list_index,
             issuer_public_key_did: credential.issuer.clone(),
             issuer_proving_key: credential.issuer,
@@ -297,48 +295,13 @@ impl<'a> Credential<'a> {
             .await
             .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
 
-        
-        // const vcObj = assetData.value as unknown as {
-        //     credential: CredentialBbs;
-        //   };
-
-        //   // Resolve revocationListCredential doc
-        //   const revocationList = (await getDidDocument(
-        //     context,
-        //     vcObj.credential.credentialStatus.revocationListCredential,
-        //   )) as RevocationListCredential;
-
-        //   const signingKeyReference = assetData.issuer.startsWith('did:')
-        //     ? (await Identity.findOneOrFail({ where: { did: assetData.issuer } })).uuid
-        //     : assetData.issuer;
-
-        //   const updatedRevocationListDidDocument = await vadeApiBbs.revokeCredential(
-        //     {
-        //       issuer: vcObj.credential.issuer,
-        //       revocationList,
-        //       revocationId: vcObj.credential.credentialStatus.revocationListIndex,
-        //       issuerPublicKeyDid: vcObj.credential.issuer,
-        //       issuerProvingKey: signingKeyReference,
-        //     },
-        //     {
-        //       signingKey: signingKeyReference,
-        //       identity: vcObj.credential.issuer,
-        //     },
-        //     context,
-        //   );
-
-        //   await updateSidetreeDidDoc(revocationList.id, {
-        //     action: 'ietf-json-patch',
-        //     patches: [
-        //       {
-        //         op: 'replace',
-        //         path: '',
-        //         value: updatedRevocationListDidDocument as unknown as Record<string, unknown>,
-        //       },
-        //     ],
-        //   });
-
-        Ok("".to_owned())
+        let update_result = self.vade_evan.helper_did_update(
+            &revocation_list.id,
+            "ReplaceDidDoc",
+            update_key_jwk,
+            &updated_revocation_list,
+        ).await.map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+        Ok(update_result)
     }
 
     async fn create_empty_unsigned_credential(
@@ -477,9 +440,10 @@ mod tests {
         if #[cfg(feature = "plugin-did-sidetree")] {
             use anyhow::Result;
             use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
-
             use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
-
+            use vade_sidetree::datatypes::DidCreateResponse;
+            use vade_evan_bbs::RevocationListCredential;
+            use crate::helpers::datatypes::DidDocumentResult;
             use super::{Credential, CredentialError};
 
             const CREDENTIAL_ACTIVE: &str = r###"{
@@ -729,6 +693,65 @@ mod tests {
 
         match credential
             .verify_credential(CREDENTIAL_REVOKED, MASTER_SECRET)
+            .await
+        {
+            Ok(_) => assert!(false, "credential should have been detected as revoked"),
+            Err(CredentialError::CredentialRevoked) => {
+                assert!(true, "credential revoked as expected")
+            }
+            _ => assert!(false, "revocation check failed with unexpected error"),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "plugin-did-sidetree")]
+    async fn helper_can_revoke_credential() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: "test",
+            signer: "remote|http://127.0.0.1:7070/key/sign",
+        })?;
+        // create did
+        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+        let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
+        let mut credential: BbsCredential  = serde_json::from_str(CREDENTIAL_ACTIVE)?;
+
+              
+        let did_result_str = vade_evan
+        .did_resolve(&credential.credential_status.revocation_list_credential)
+        .await?;
+        let did_result_value: DidDocumentResult<RevocationListCredential> = serde_json::from_str(&did_result_str)?;
+        let mut revocation_list = did_result_value.did_document;
+        revocation_list.id = did_create_result.did.did_document.id.clone();
+
+        credential.credential_status.revocation_list_credential = revocation_list.id.clone();
+        // Replace did doc with revocation list        
+        let did_update_result = vade_evan
+            .helper_did_update(
+                &did_create_result.did.did_document.id,
+                "ReplaceDidDoc",
+                &serde_json::to_string(&did_create_result.update_key)?,
+                &serde_json::to_string(&revocation_list)?,
+            )
+            .await;
+        assert!(did_update_result.is_ok());
+         // Get update key for next update to remove key
+        let mut update_key = did_create_result.update_key.clone();
+        let mut nonce = update_key
+            .nonce
+            .unwrap_or_else(|| "0".to_string())
+            .parse::<u32>()?;
+        nonce += 1;
+        update_key.nonce = Some(nonce.to_string());
+ 
+        // call revoke credential
+        let revoke_result = vade_evan.helper_revoke_credential(&serde_json::to_string(&credential)?, &serde_json::to_string(&update_key)?).await;
+        assert!(revoke_result.is_ok());
+        let mut credential_helper = Credential::new(&mut vade_evan)?;
+        // verify credential
+        match credential_helper
+            .verify_credential(&serde_json::to_string(&credential)?, MASTER_SECRET)
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),

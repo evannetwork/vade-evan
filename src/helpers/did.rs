@@ -1,11 +1,7 @@
 use std::str::FromStr;
 
 use crate::api::{VadeEvan, VadeEvanError};
-use crate::helpers::datatypes::{
-    DIDOperationType,
-    EVAN_METHOD,
-    TYPE_SIDETREE_OPTIONS,
-};
+use crate::helpers::datatypes::{DIDOperationType, EVAN_METHOD, TYPE_SIDETREE_OPTIONS};
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use uuid::Uuid;
 
@@ -14,6 +10,8 @@ use vade_sidetree::{
         AddPublicKeys,
         AddServices,
         DidUpdatePayload,
+        IetfJsonPatch,
+        JsonPatch,
         JsonWebKey,
         JsonWebKeyPublic,
         Patch,
@@ -23,7 +21,6 @@ use vade_sidetree::{
         RemoveServices,
         Service,
         UpdateType,
-        JsonPatch
     },
     CreateDidPayload,
 };
@@ -214,8 +211,18 @@ impl<'a> Did<'a> {
                     ids: vec![service_id_to_remove],
                 });
             }
-            DIDOperationType::ReplaceDidDoc =>{
-                patch = Patch::IetfJsonPatch(JsonPatch)
+            DIDOperationType::ReplaceDidDoc => {
+                let updated_did_doc = serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
+                        source_message: err.to_string(),
+                    })?;
+                let ietf_json_patch = IetfJsonPatch {
+                    op: "replace".to_owned(),
+                    path: "".to_owned(),
+                    value: updated_did_doc,
+                };
+                patch = Patch::IetfJsonPatch(JsonPatch {
+                    patches: vec![ietf_json_patch],
+                })
             }
         };
 
