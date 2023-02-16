@@ -552,7 +552,7 @@ impl VadeEvan {
     ///
     ///             // revoke the credential issuer
     ///             vade_evan
-    ///                 .helper_revoke_credential(credential, update_key_jwk)
+    ///                 .helper_revoke_credential(credential, update_key_jwk, Some("dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106"))
     ///                 .await?;
     ///
     ///             Ok(())
