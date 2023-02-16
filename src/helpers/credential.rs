@@ -274,18 +274,23 @@ impl<'a> Credential<'a> {
         &mut self,
         credential_str: &str,
         update_key_jwk: &str,
+        private_key: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
         let revocation_list: RevocationListCredential = self
             .get_did_document(&credential.credential_status.revocation_list_credential)
             .await?;
 
+        let proving_key = match private_key {
+            Some(key) => key,
+            None => &credential.issuer,
+        };
         let payload = RevokeCredentialPayload {
             issuer: credential.issuer.clone(),
             revocation_list: revocation_list.clone(),
             revocation_id: credential.credential_status.revocation_list_index,
             issuer_public_key_did: credential.issuer.clone(),
-            issuer_proving_key: credential.issuer,
+            issuer_proving_key: proving_key.to_owned(),
         };
 
         let payload = serde_json::to_string(&payload)?;
@@ -295,12 +300,16 @@ impl<'a> Credential<'a> {
             .await
             .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
 
-        let update_result = self.vade_evan.helper_did_update(
-            &revocation_list.id,
-            "ReplaceDidDoc",
-            update_key_jwk,
-            &updated_revocation_list,
-        ).await.map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+        let update_result = self
+            .vade_evan
+            .helper_did_update(
+                &revocation_list.id,
+                "ReplaceDidDoc",
+                update_key_jwk,
+                &updated_revocation_list,
+            )
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
         Ok(update_result)
     }
 
@@ -710,23 +719,23 @@ mod tests {
     async fn helper_can_revoke_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
-            signer: "remote|http://127.0.0.1:7070/key/sign",
+            signer: "local",
         })?;
         // create did
         let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
-        let mut credential: BbsCredential  = serde_json::from_str(CREDENTIAL_ACTIVE)?;
+        let mut credential: BbsCredential = serde_json::from_str(CREDENTIAL_ACTIVE)?;
 
-              
         let did_result_str = vade_evan
-        .did_resolve(&credential.credential_status.revocation_list_credential)
-        .await?;
-        let did_result_value: DidDocumentResult<RevocationListCredential> = serde_json::from_str(&did_result_str)?;
+            .did_resolve(&credential.credential_status.revocation_list_credential)
+            .await?;
+        let did_result_value: DidDocumentResult<RevocationListCredential> =
+            serde_json::from_str(&did_result_str)?;
         let mut revocation_list = did_result_value.did_document;
         revocation_list.id = did_create_result.did.did_document.id.clone();
 
         credential.credential_status.revocation_list_credential = revocation_list.id.clone();
-        // Replace did doc with revocation list        
+        // Replace did doc with revocation list
         let did_update_result = vade_evan
             .helper_did_update(
                 &did_create_result.did.did_document.id,
@@ -736,7 +745,7 @@ mod tests {
             )
             .await;
         assert!(did_update_result.is_ok());
-         // Get update key for next update to remove key
+        // Get update key for next update to remove key
         let mut update_key = did_create_result.update_key.clone();
         let mut nonce = update_key
             .nonce
@@ -744,9 +753,15 @@ mod tests {
             .parse::<u32>()?;
         nonce += 1;
         update_key.nonce = Some(nonce.to_string());
- 
+
         // call revoke credential
-        let revoke_result = vade_evan.helper_revoke_credential(&serde_json::to_string(&credential)?, &serde_json::to_string(&update_key)?).await;
+        let revoke_result = vade_evan
+            .helper_revoke_credential(
+                &serde_json::to_string(&credential)?,
+                &serde_json::to_string(&update_key)?,
+                Some("dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106"),
+            )
+            .await;
         assert!(revoke_result.is_ok());
         let mut credential_helper = Credential::new(&mut vade_evan)?;
         // verify credential

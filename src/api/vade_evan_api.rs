@@ -492,6 +492,7 @@ impl VadeEvan {
     ///
     /// * `credential` - credential to be revovked as serialized JSON
     /// * `update_key_jwk` - update key  in jwk format as serialized JSON
+    /// * `private_key` - optional private key for local signer to be used for signing
     ///
     /// # Example
     ///
@@ -565,10 +566,11 @@ impl VadeEvan {
         &mut self,
         credential: &str,
         update_key_jwk: &str,
+        private_key: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential_helper = Credential::new(self)?;
         credential_helper
-            .revoke_credential(credential, update_key_jwk)
+            .revoke_credential(credential, update_key_jwk, private_key)
             .await
             .map_err(|err| err.into())
     }

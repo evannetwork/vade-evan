@@ -236,6 +236,7 @@ async fn main() -> Result<()> {
                     .helper_revoke_credential(
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "bbs_public_key", None),
+                        get_optional_argument_value(sub_m, "private_key")
                     )
                     .await?;
                 "".to_string()
@@ -340,6 +341,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Revokes a given credential with vade and updates the revocation list credential.")
                     .arg(get_clap_argument("credential")?)
                     .arg(get_clap_argument("bbs_public_key")?)
+                    .arg(get_clap_argument("private_key")?)
             );
         } else {}
     }
@@ -816,6 +818,11 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("master_secret")
             .required(true)
             .help("master secret incorporated as a blinded value into the proof of the credential")
+            .takes_value(true),
+        "private_key" => Arg::with_name("private_key")
+            .long("private_key")
+            .value_name("private_key")
+            .help("optional private key to be supplied for local signer")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
