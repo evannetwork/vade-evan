@@ -235,7 +235,7 @@ async fn main() -> Result<()> {
                 get_vade_evan(sub_m)?
                     .helper_revoke_credential(
                         get_argument_value(sub_m, "credential", None),
-                        get_argument_value(sub_m, "bbs_public_key", None),
+                        get_argument_value(sub_m, "update_key", None),
                         get_optional_argument_value(sub_m, "private_key")
                     )
                     .await?;
@@ -340,7 +340,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                 SubCommand::with_name("revoke_credential")
                     .about("Revokes a given credential with vade and updates the revocation list credential.")
                     .arg(get_clap_argument("credential")?)
-                    .arg(get_clap_argument("bbs_public_key")?)
+                    .arg(get_clap_argument("update_key")?)
                     .arg(get_clap_argument("private_key")?)
             );
         } else {}
