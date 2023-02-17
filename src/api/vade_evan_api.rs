@@ -506,28 +506,22 @@ impl VadeEvan {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
-    ///         const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
     ///         const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-    ///         const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
-    ///         const ISSUER_PUBLIC_KEY: &str = "pubkey";
+    ///         const CREDENTIAL_SUBJECT_STR: &str = "{\"id\":\"did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f\", \"data\":{\"test\":\"value\"}";
     ///         const BBS_SECRET: &str = "bbssecret";
     ///         const BBS_PRIVATE_KEY: &str = "bbsprivkey";
-    ///         const CRED_VALUES: &str = "{\"test\":\"value\"}";
     ///
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///             let offer_str = vade_evan
     ///                 .helper_create_self_issued_credential(
     ///                     SCHEMA_DID,
-    ///                     ISSUER_DID,
-    ///                     SUBJECT_DID,
-    ///                     ISSUER_PUBLIC_KEY,
+    ///                     CREDENTIAL_SUBJECT_STR,
     ///                     BBS_SECRET,
     ///                     BBS_PRIVATE_KEY,
-    ///                     CRED_VALUES,
-    ///                     Some(),
-    ///                     Some(),
-    ///                     Some(),
+    ///                     Some(""),
+    ///                     Some(""),
+    ///                     Some(""),
     ///                 )
     ///                 .await?;
     ///
@@ -542,20 +536,16 @@ impl VadeEvan {
     pub async fn helper_create_self_issued_credential(
         &mut self,
         schema_did: &str,
-        issuer_did: &str,
-        subject_did: &str,
-        issuer_public_key: &str,
+        credential_subject_str: &str,
         bbs_secret: &str,
         bbs_private_key: &str,
-        credential_values: &str,
         credential_revocation_did: Option<&str>,
         credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
-            .create_self_issued_credential(schema_did, issuer_did, subject_did, issuer_public_key,
-                                           bbs_secret, bbs_private_key, credential_values,
+            .create_self_issued_credential(schema_did, credential_subject_str, bbs_secret, bbs_private_key,
                                            credential_revocation_did, credential_revocation_id, exp_date )
             .await
             .map_err(|err| err.into())
@@ -1155,7 +1145,7 @@ impl VadeEvan {
     ///         let bbs_public_key =  "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
     ///         let signing_key = None;
     ///         let service_url = "www.example.service";
-    ///      
+    ///
     ///         let create_response = vade_evan
     ///            .helper_did_create(
     ///                Some(bbs_public_key),
@@ -1197,7 +1187,7 @@ impl VadeEvan {
     /// ```
     /// cfg_if::cfg_if! {
     /// if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
-    /// 
+    ///
     ///     use anyhow::Result;
     ///     use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
