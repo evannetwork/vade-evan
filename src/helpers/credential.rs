@@ -291,7 +291,7 @@ impl<'a> Credential<'a> {
             .create_credential_request(
                 issuer_public_key.as_str(),
                 bbs_secret,
-                &credential_values_str,
+                credential_values_str.as_str(),
                 offer.as_str(),
                 schema_did,
             ).await?;
@@ -792,6 +792,38 @@ mod tests {
             }
             _ => assert!(false, "revocation check failed with unexpected error"),
         };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "plugin-did-sidetree")]
+    async fn helper_can_create_self_issued_credential() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: "test",
+            signer: "remote|http://127.0.0.1:7070/key/sign",
+        })?;
+        let credential_subject_str = r#"{
+            "id": "did:evan:EiAJqjQKlTF4lsgUKL1Tvmvgm3ECXtyVA08Optz8k_W6Lg",
+            "data": {
+                "email": "value@x.com"
+            }
+        }"#;
+        let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+        let bbs_private_key = r#""16bd56948ba09a626551b3f39093da305b347ef4ef2182b2e667dfa5aaa0d4cd""#;
+
+        let credential = vade_evan
+            .helper_create_self_issued_credential(
+                SCHEMA_DID,
+                credential_subject_str,
+                bbs_secret,
+                bbs_private_key,
+                Some(""),
+                Some(""),
+                Some(""),
+            ) .await?;
+
+        assert!(credential.contains("did"));
 
         Ok(())
     }
