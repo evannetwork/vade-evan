@@ -8,7 +8,7 @@
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _equs_vade_wasm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @equs/vade-wasm */ \"./vade-wasm/vade_evan.js\");\n// import * as wasm from \"hello-wasm-pack\";\n\n// wasm.greet();\n\n\n\n\n(async () => {\n  console.log(await _equs_vade_wasm__WEBPACK_IMPORTED_MODULE_0__[\"did_resolve\"]('did:evan:EiBDJiRJJjgZktlNbF3IP27RxddqRDHM7l1dMLfj95T_xg'));\n})();\n\n\n//# sourceURL=webpack:///./index.js?");
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _equs_vade_wasm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @equs/vade-wasm */ \"./vade-wasm/vade_evan.js\");\n// import * as wasm from \"hello-wasm-pack\";\n\n// wasm.greet();\n\n\n\n\n(async () => {\n  console.log(await _equs_vade_wasm__WEBPACK_IMPORTED_MODULE_0__[\"did_resolve\"]('did:evan:EiBDJiRJJjgZktlNbF3IP27RxddqRDHM7l1dMLfj95T_xg'));\n  window.vade_evan = _equs_vade_wasm__WEBPACK_IMPORTED_MODULE_0__;\n})();\n\n\n//# sourceURL=webpack:///./index.js?");
 
 /***/ }),
 
