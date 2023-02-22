@@ -1,6 +1,13 @@
 use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
+use std::collections::HashMap;
+use crate::chrono::{
+    prelude::*,
+    offset::Utc,
+    DateTime
+};
+use std::time::SystemTime;
 
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
@@ -11,12 +18,13 @@ use bbs::{
 use flate2::read::GzDecoder;
 use serde::de::DeserializeOwned;
 use serde_json::{value::Value, Map};
+use serde::{Deserialize, Serialize};
 use ssi::{
     jsonld::{json_to_dataset, JsonLdOptions, StaticLoader},
     urdna2015::normalize,
 };
 use thiserror::Error;
-use vade_evan_bbs::{BbsCredential, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, OfferCredentialPayload, RevocationListCredential, UnsignedBbsCredential};
+use vade_evan_bbs::{BbsCredential, BbsCredentialOffer, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, IssueCredentialPayload, OfferCredentialPayload, RevocationListCredential, UnsignedBbsCredential};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 
@@ -126,6 +134,17 @@ pub fn is_revoked(
 
 pub struct Credential<'a> {
     vade_evan: &'a mut VadeEvan,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RequestWithContext {
+    #[serde(rename(serialize = "@context", deserialize = "@context"))]
+    pub context: Vec<String>,
+    pub schema: String,
+    pub r#type: String,
+    pub blind_signature_context: String,
+    pub credential_values: HashMap<String, String>,
 }
 
 impl<'a> Credential<'a> {
@@ -271,108 +290,106 @@ impl<'a> Credential<'a> {
         exp_date: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
+        let credential_subject_copy: CredentialSubject = serde_json::from_str(credential_subject_str)?;
         let subject_did = credential_subject.id.unwrap_or("did:evan:default".to_string());
+        let subject_did_copy = subject_did.clone();
         let subject_did_str = subject_did.as_str();
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
             .await?;
+        let issuer_public_key_str = serde_json::to_string(issuer_public_key.as_str())?;
         let use_valid_until= if exp_date.is_some() { true } else { false };
-        let offer = self
-            .create_credential_offer(
-                schema_did,
-                use_valid_until,
-                subject_did_str,
-                Option::from(subject_did_str),
+        let exp_date_str = exp_date.unwrap_or("");
+
+        let date_now = SystemTime::now();
+        let datetime: DateTime<Utc> = date_now.into();
+        let date_now_str = datetime.format("%d/%m/%Y %T");
+
+        // create credential offer
+        let unsigned_credential = UnsignedBbsCredential {
+            context: vec![
+                "https://www.w3.org/2018/credentials/v1".to_string(),
+                "https://schema.org/".to_string(),
+                "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
+            ],
+            id: "uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string(),
+            r#type: vec!["VerifiableCredential".to_string()],
+            issuer: subject_did,
+            valid_until: if use_valid_until {
+                Some(exp_date_str.to_string())
+            } else {
+                None
+            },
+            issuance_date: date_now_str.to_string(),
+            credential_subject: credential_subject_copy,
+            credential_schema: CredentialSchemaReference {
+                id: schema.id,
+                r#type: schema.r#type,
+            },
+            credential_status: CredentialStatus {
+                id: "did:evan:zkp:placeholder_status#0".to_string(),
+                r#type: "RevocationList2020Status".to_string(),
+                revocation_list_index: "0".to_string(),
+                revocation_list_credential: "did:evan:zkp:placeholder_status".to_string(),
+            },
+        };
+        let unsigned_credential_str = serde_json::to_string(&unsigned_credential)?;
+        let nquads = convert_to_nquads(&unsigned_credential_str).await?;
+
+        let payload = OfferCredentialPayload {
+            issuer: issuer_did.to_string(),
+            subject: Option::from(subject_did_copy),
+            nquad_count: nquads.len(),
+        };
+        let offer_str = self
+            .vade_evan
+            .vc_zkp_create_credential_offer(
+                EVAN_METHOD,
+                TYPE_OPTIONS,
+                &serde_json::to_string(&payload)?,
             )
-            .await?;
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+
+        // Create credential request
         let credential_values_str = serde_json::to_string(&credential_subject.data)?;
         let request_str = self
             .create_credential_request(
-                issuer_public_key.as_str(),
-                bbs_secret,
+                serde_json::to_string(&(issuer_public_key.as_str()))?.as_str(),
+                serde_json::to_string(bbs_secret)?.as_str(),
                 credential_values_str.as_str(),
-                offer.as_str(),
+                offer_str.as_str(),
                 schema_did,
             ).await?;
-        let request: BbsCredentialRequest = serde_json::from_str(request_str.as_str())?;
+        let (request, _key) : (BbsCredentialRequest, String) = serde_json::from_str(request_str.as_str())?;
+        let request_copy = request.clone();
+        let indices = vec![0];
 
-        /*
-        /// * `issuer_did` - DID of the issuer
-    /// * `subject_did` - DID of the subject
-    /// * `credential_offer` - Credential offer object sent by the issuer
-    /// * `credential_request` - Credential request object sent by the subject
-    /// * `issuer_public_key_id` - DID of the public key associated with the created signature
-    /// * `issuer_public_key` - Public key associated with the created signature
-    /// * `issuer_secret_key` - Secret key to create the signature with
-    /// * `credential_schema` - Credential schema to be used as specified by the credential request
-    /// * `required_indices` - Indices of the nquads representing the properties that need to be revealed when creating proofs
-    /// * `nquads` - The properties that need to be signed as nquads. Usually should include the whole document, not only the credential_subject part.
-    /// * `revocation_list_did` - DID of the associated revocation list
-    /// * `revocation_list_id` - ID of the revoation list to assign to this credential
-                issuer_did: &str,
-        subject_did: &str,
-        credential_offer: &BbsCredentialOffer,
-        credential_request: &BbsCredentialRequest,
-        issuer_public_key_id: &str,
-        issuer_public_key: &DeterministicPublicKey,
-        issuer_secret_key: &SecretKey,
-        credential_schema: CredentialSchema,
-        required_indices: Vec<u32>,
-        nquads: Vec<String>,
-        revocation_list_did: &str,
-        revocation_list_id: &str,
-        valid_until: Option<String>,
-         */
-        let payload= format!(
-            r#"{{
-                "issuer": {},
-                "subject": {},
-                "credentialOffer": {},
-                "credentialRequest": {},
-                "issuerPublicKeyId": {},
-                "issuerPublicKey": {},
-                "issuerSecretKey": {},
-                "credentialSchema": {},
-                "requiredIndices": {},
-                "nquads": {},
-                "revocationListDid": {},
-                "revocationListId": {},
-            }}"#,
-            subject_did_str,
-            subject_did_str,
-            offer,
-            request_str,
-            "#bbs-key-1",
+        // Issue credentials
+        let offer: BbsCredentialOffer = serde_json::from_str(offer_str.as_str())?;
+        let pload = IssueCredentialPayload {
+            unsigned_vc: unsigned_credential,
+            nquads,
+            issuer_public_key_id: r##"#bbs-key-1"##.to_string(),
             issuer_public_key,
-            bbs_private_key,
-            serde_json::to_string(&schema)?.as_str(),
-            stringify!(vec![0,1]),
-            stringify!(convert_to_nquads(&credential_values_str)?),
-            credential_revocation_did.unwrap_or(""),
-            credential_revocation_id.unwrap_or(""),
-        );
+            issuer_secret_key: bbs_secret.to_string(),
+            credential_request: request_copy,
+            credential_offer: offer,
+            required_indices: indices,
+        };
+        let pload_str = serde_json::to_string(&pload)?;
         let credential_str = self
             .vade_evan
-            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &payload)
+            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &pload_str.as_str())
             .await
             .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
-        /*
-            /// * `unfinished_credential` - The credential received from the issuer
-    /// * `master_secret` - The master secret to be incorporated as a blinded value to be signed by the issuer
-    /// * `nquads` - The credential, minus the proof part, transformed to nquads
-    /// * `issuer_public_key` - Public key of the issuer
-    /// * `blinding` - Blinding previously created by the prover during credential request creation
-                unfinished_credential: &UnfinishedBbsCredential,
-        master_secret: &SignatureMessage,
-        nquads: &Vec<String>,
-        issuer_public_key: &DeterministicPublicKey,
-        blinding: &SignatureBlinding,
-         */
+
+        // Finish credentials
         let mut parsed_credential: Map<String, Value> = serde_json::from_str(credential_str.as_str())?;
         parsed_credential.remove("proof");
         let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
-        let did_doc_nquads = stringify!(convert_to_nquads(&_credential_without_proof).await?);
+        let did_doc_nquads = convert_to_nquads(&_credential_without_proof).await?;
         let payload_finish = format!(
             r#"{{
                 "unfinishedCredential": {},
@@ -382,10 +399,10 @@ impl<'a> Credential<'a> {
                 "blinding": {}
             }}"#,
             credential_str,
-            bbs_secret,
-            did_doc_nquads,
-            issuer_public_key,
-            request.blind_signature_context,
+            serde_json::to_string(bbs_secret)?.as_str(),
+            serde_json::to_string(&did_doc_nquads)?.as_str(),
+            serde_json::to_string(issuer_public_key_str.as_str())?.as_str(),
+            request_with_context.blind_signature_context,
         );
         let result = self
             .vade_evan
@@ -809,18 +826,19 @@ mod tests {
                 "email": "value@x.com"
             }
         }"#;
-        let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
-        let bbs_private_key = r#""16bd56948ba09a626551b3f39093da305b347ef4ef2182b2e667dfa5aaa0d4cd""#;
+        let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
+        let bbs_private_key = r#"16bd56948ba09a626551b3f39093da305b347ef4ef2182b2e667dfa5aaa0d4cd"#;
+        let schema_did = r#"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw"#;
 
         let credential = vade_evan
             .helper_create_self_issued_credential(
-                SCHEMA_DID,
+                schema_did,
                 credential_subject_str,
                 bbs_secret,
                 bbs_private_key,
-                Some(""),
-                Some(""),
-                Some(""),
+                None,
+                None,
+                None,
             ) .await?;
 
         assert!(credential.contains("did"));
