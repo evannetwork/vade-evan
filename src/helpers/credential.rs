@@ -291,7 +291,7 @@ impl<'a> Credential<'a> {
     ) -> Result<String, CredentialError> {
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
         let credential_subject_copy: CredentialSubject = serde_json::from_str(credential_subject_str)?;
-        let subject_did = credential_subject.id.unwrap_or("did:evan:default".to_string());
+        let subject_did = credential_subject.id.ok_or("no subject did found".to_string()).unwrap();
         let subject_did_copy = subject_did.clone();
         let subject_did_str = subject_did_copy.as_str();
         let subject_did_str_copy = subject_did_str.clone();
