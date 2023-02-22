@@ -299,7 +299,7 @@ impl<'a> Credential<'a> {
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
             .await?;
-        let issuer_public_key_str = serde_json::to_string(issuer_public_key.as_str())?;
+        let issuer_public_key_copy= issuer_public_key.clone();
         let use_valid_until= if exp_date.is_some() { true } else { false };
         let exp_date_str = exp_date.unwrap_or("");
 
@@ -397,7 +397,7 @@ impl<'a> Credential<'a> {
             credential,
             master_secret: bbs_secret.to_string(),
             nquads: did_doc_nquads,
-            issuer_public_key: issuer_public_key_str.as_str().to_string(),
+            issuer_public_key: issuer_public_key_copy,
             blinding: request.blind_signature_context,
         };
         let payload_finish_str = serde_json::to_string(&payload_finish)?;
