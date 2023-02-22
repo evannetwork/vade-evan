@@ -2,12 +2,12 @@ use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
 use std::collections::HashMap;
-use crate::chrono::{
-    prelude::*,
-    offset::Utc,
-    DateTime
-};
-use std::time::SystemTime;
+// use crate::chrono::{
+//     prelude::*,
+//     offset::Utc,
+//     DateTime
+// };
+// use std::time::SystemTime;
 
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
@@ -24,7 +24,7 @@ use ssi::{
     urdna2015::normalize,
 };
 use thiserror::Error;
-use vade_evan_bbs::{BbsCredential, BbsCredentialOffer, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, IssueCredentialPayload, OfferCredentialPayload, RevocationListCredential, UnsignedBbsCredential};
+use vade_evan_bbs::{BbsCredential, BbsCredentialOffer, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, FinishCredentialPayload, IssueCredentialPayload, OfferCredentialPayload, RevocationListCredential, UnfinishedBbsCredential, UnsignedBbsCredential};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 
@@ -293,7 +293,8 @@ impl<'a> Credential<'a> {
         let credential_subject_copy: CredentialSubject = serde_json::from_str(credential_subject_str)?;
         let subject_did = credential_subject.id.unwrap_or("did:evan:default".to_string());
         let subject_did_copy = subject_did.clone();
-        let subject_did_str = subject_did.as_str();
+        let subject_did_str = subject_did_copy.as_str();
+        let subject_did_str_copy = subject_did_str.clone();
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
@@ -302,9 +303,10 @@ impl<'a> Credential<'a> {
         let use_valid_until= if exp_date.is_some() { true } else { false };
         let exp_date_str = exp_date.unwrap_or("");
 
-        let date_now = SystemTime::now();
-        let datetime: DateTime<Utc> = date_now.into();
-        let date_now_str = datetime.format("%d/%m/%Y %T");
+        // need to add chrono crate
+        // let date_now = SystemTime::now();
+        // let datetime: DateTime<Utc> = date_now.into();
+        // let date_now_str = datetime.format("%d/%m/%Y %T");
 
         // create credential offer
         let unsigned_credential = UnsignedBbsCredential {
@@ -321,7 +323,7 @@ impl<'a> Credential<'a> {
             } else {
                 None
             },
-            issuance_date: date_now_str.to_string(),
+            issuance_date: "2023-02-22T00:00:00.000Z".to_string(), //date_now_str.to_string(),
             credential_subject: credential_subject_copy,
             credential_schema: CredentialSchemaReference {
                 id: schema.id,
@@ -338,7 +340,7 @@ impl<'a> Credential<'a> {
         let nquads = convert_to_nquads(&unsigned_credential_str).await?;
 
         let payload = OfferCredentialPayload {
-            issuer: issuer_did.to_string(),
+            issuer: subject_did_str_copy.to_string(),
             subject: Option::from(subject_did_copy),
             nquad_count: nquads.len(),
         };
@@ -390,23 +392,18 @@ impl<'a> Credential<'a> {
         parsed_credential.remove("proof");
         let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
         let did_doc_nquads = convert_to_nquads(&_credential_without_proof).await?;
-        let payload_finish = format!(
-            r#"{{
-                "unfinishedCredential": {},
-                "masterSecret": {}
-                "nquads": {},
-                "issuerPublicKey": {},
-                "blinding": {}
-            }}"#,
-            credential_str,
-            serde_json::to_string(bbs_secret)?.as_str(),
-            serde_json::to_string(&did_doc_nquads)?.as_str(),
-            serde_json::to_string(issuer_public_key_str.as_str())?.as_str(),
-            request_with_context.blind_signature_context,
-        );
+        let credential: UnfinishedBbsCredential = serde_json::from_str(credential_str.as_str())?;
+        let payload_finish = FinishCredentialPayload {
+            credential,
+            master_secret: bbs_secret.to_string(),
+            nquads: did_doc_nquads,
+            issuer_public_key: issuer_public_key_str.as_str().to_string(),
+            blinding: request.blind_signature_context,
+        };
+        let payload_finish_str = serde_json::to_string(&payload_finish)?;
         let result = self
             .vade_evan
-            .vc_zkp_finish_credential(EVAN_METHOD, TYPE_OPTIONS, &payload_finish)
+            .vc_zkp_finish_credential(EVAN_METHOD, TYPE_OPTIONS, payload_finish_str.as_str())
             .await
             .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
 
