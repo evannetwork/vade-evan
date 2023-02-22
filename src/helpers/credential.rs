@@ -393,12 +393,13 @@ impl<'a> Credential<'a> {
         let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
         let did_doc_nquads = convert_to_nquads(&_credential_without_proof).await?;
         let credential: UnfinishedBbsCredential = serde_json::from_str(credential_str.as_str())?;
+        let credential_copy = credential.clone();
         let payload_finish = FinishCredentialPayload {
             credential,
             master_secret: bbs_secret.to_string(),
             nquads: did_doc_nquads,
             issuer_public_key: issuer_public_key_copy,
-            blinding: request.blind_signature_context,
+            blinding: credential_copy.proof.blind_signature,
         };
         let payload_finish_str = serde_json::to_string(&payload_finish)?;
         let result = self
