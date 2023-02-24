@@ -274,7 +274,7 @@ impl<'a> Credential<'a> {
     /// # Arguments
     /// * `credential_str` - credential to be revoked in seralized string format
     /// * `updated_key_jwk` - public key in jwk format to sign did update
-    /// * `private_key` - bbs private key to sign revocaton request 
+    /// * `private_key` - bbs private key to sign revocaton request
     ///
     /// # Returns
     /// * `String` - the result of updated revocation list doc after credential revocation
