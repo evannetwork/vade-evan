@@ -491,7 +491,7 @@ impl VadeEvan {
     /// # Arguments
     ///
     /// * `credential` - credential to be revovked as serialized JSON
-    /// * `update_key_jwk` - update key  in jwk format as serialized JSON
+    /// * `update_key_jwk` - update key in jwk format as serialized JSON
     /// * `private_key` - optional private key for local signer to be used for signing
     ///
     /// # Example
