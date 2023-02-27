@@ -283,17 +283,14 @@ impl<'a> Credential<'a> {
         &mut self,
         credential_str: &str,
         update_key_jwk: &str,
-        private_key: Option<&str>,
+        private_key: &str,
     ) -> Result<String, CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
         let revocation_list: RevocationListCredential = self
             .get_did_document(&credential.credential_status.revocation_list_credential)
             .await?;
 
-        let proving_key = match private_key {
-            Some(key) => key,
-            None => &credential.issuer,
-        };
+        let proving_key = private_key;
         let payload = RevokeCredentialPayload {
             issuer: credential.issuer.clone(),
             revocation_list: revocation_list.clone(),
@@ -768,7 +765,7 @@ mod tests {
             .helper_revoke_credential(
                 &serde_json::to_string(&credential)?,
                 &serde_json::to_string(&update_key)?,
-                Some("dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106"),
+                "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106",
             )
             .await;
         assert!(revoke_result.is_ok());

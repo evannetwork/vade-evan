@@ -236,7 +236,7 @@ async fn main() -> Result<()> {
                     .helper_revoke_credential(
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "update_key", None),
-                        get_optional_argument_value(sub_m, "private_key")
+                        get_argument_value(sub_m, "private_key", None),
                     )
                     .await?;
                 "".to_string()
@@ -822,7 +822,8 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "private_key" => Arg::with_name("private_key")
             .long("private_key")
             .value_name("private_key")
-            .help("optional private key to be supplied for local signer")
+            .required(true)
+            .help("private key to be supplied for local signer")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);

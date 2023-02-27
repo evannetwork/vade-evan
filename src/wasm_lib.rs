@@ -239,14 +239,14 @@ cfg_if::cfg_if! {
         pub async fn helper_revoke_credential(
             credential: String,
             update_key_jwk: String,
-            private_key: Option<String>,
+            private_key: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             vade_evan
                 .helper_revoke_credential(
                     &credential,
                     &update_key_jwk,
-                    private_key.as_ref().map(|x| x.as_ref())
+                    &private_key,
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())
