@@ -600,10 +600,6 @@ pub extern "C" fn execute_vade(
                         request_function_callback,
                 )
                     .map_err(stringify_generic_error)?;
-                let use_valid_until = match arguments_vec.get(1) {
-                    Some(value) => value.to_lowercase() == "true",
-                    None => false,
-                };
                 vade_evan
                     .helper_create_self_issued_credential(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),

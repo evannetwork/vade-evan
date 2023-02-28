@@ -329,8 +329,8 @@ impl<'a> Credential<'a> {
             id: schema.id,
             r#type: schema.r#type,
         };
-        let revocation_list_index = credential_revocation_id.unwrap_or(r#"0"#).to_string();
-        let revocation_list_credential = credential_revocation_did.unwrap_or(r#"did:evan:zkp:placeholder_status"#).to_string();
+        let revocation_list_index = credential_revocation_id.unwrap_or("0").to_string();
+        let revocation_list_credential = credential_revocation_did.unwrap_or("did:evan:zkp:placeholder_status").to_string();
         let status_id = [revocation_list_credential.clone(), revocation_list_index.clone()].join("#");
         let credential_status = CredentialStatus {
             id: status_id,
@@ -384,7 +384,7 @@ impl<'a> Credential<'a> {
         let pload = IssueCredentialPayload {
             unsigned_vc: unsigned_credential,
             nquads: nquads_vc,
-            issuer_public_key_id: r##"#bbs-key-1"##.to_string(),
+            issuer_public_key_id: "#bbs-key-1".to_string(),
             issuer_public_key: issuer_public_key.clone(),
             issuer_secret_key: bbs_private_key.to_string(),
             credential_request: request.clone(),
@@ -897,9 +897,9 @@ mod tests {
                 "email": "value@x.com"
             }
         }"#;
-        let bbs_secret = r#"GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc="#;
-        let bbs_private_key = r#"WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I="#;
-        let schema_did = r#"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw"#;
+        let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
+        let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
+        let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
 
         let credential = vade_evan
             .helper_create_self_issued_credential(
@@ -912,7 +912,7 @@ mod tests {
                 None,
             ) .await?;
 
-        assert!(credential.contains(r##"type":["VerifiableCredential"],"issuer":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA"##));
+        assert!(credential.contains(r#"type":["VerifiableCredential"],"issuer":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA"#));
         assert!(credential.contains(r##"credentialSubject":{"id":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA","data":{"email":"value@x.com"}},"credentialSchema":{"id":"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw","type":"EvanVCSchema"},"credentialStatus":{"id":"did:evan:zkp:placeholder_status#0","type":"RevocationList2020Status","revocationListIndex":"0","revocationListCredential":"did:evan:zkp:placeholder_status"},"proof":{"type":"BbsBlsSignature2020"##));
 
         Ok(())

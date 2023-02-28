@@ -493,8 +493,12 @@ impl VadeEvan {
     /// # Arguments
     ///
     /// * `schema_did` - schema to create the credential
-    /// * `issuer_did` - DID of issuer
-    /// * `subject_did` - DID of subject
+    /// * `credential_subject_str` - JSON string of CredentialSubject structure
+    /// * `bbs_secret` - BBS secret
+    /// * `bbs_private_key` - BBS private key
+    /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
+    /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
+    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -507,9 +511,14 @@ impl VadeEvan {
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
     ///         const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-    ///         const CREDENTIAL_SUBJECT_STR: &str = "{\"id\":\"did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f\", \"data\":{\"test\":\"value\"}";
-    ///         const BBS_SECRET: &str = "bbssecret";
-    ///         const BBS_PRIVATE_KEY: &str = "bbsprivkey";
+    ///         const CREDENTIAL_SUBJECT_STR: &str = r#"{
+    ///                                                  "id":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
+    ///                                                  "data":{
+    ///                                                           "email":"value@x.com"
+    ///                                                         }
+    ///                                                }"#;
+    ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
+    ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
     ///
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
@@ -519,9 +528,9 @@ impl VadeEvan {
     ///                     CREDENTIAL_SUBJECT_STR,
     ///                     BBS_SECRET,
     ///                     BBS_PRIVATE_KEY,
-    ///                     Some(""),
-    ///                     Some(""),
-    ///                     Some(""),
+    ///                     None,
+    ///                     None,
+    ///                     None,
     ///                 )
     ///                 .await?;
     ///
