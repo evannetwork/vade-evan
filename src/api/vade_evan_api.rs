@@ -486,6 +486,95 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
+    /// Revokes a given credential with the help of vade and updates revocation list credential
+    ///
+    /// # Arguments
+    ///
+    /// * `credential` - credential to be revovked as serialized JSON
+    /// * `update_key_jwk` - update key in jwk format as serialized JSON
+    /// * `private_key` - private key for local signer to be used for signing
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let credential = r###"{
+    ///                 "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+    ///                 "type": [
+    ///                     "VerifiableCredential"
+    ///                 ],
+    ///                 "proof": {
+    ///                     "type": "BbsBlsSignature2020",
+    ///                     "created": "2023-02-01T14:08:17.000Z",
+    ///                     "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+    ///                     "proofPurpose": "assertionMethod",
+    ///                     "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+    ///                     "credentialMessageCount": 13,
+    ///                     "requiredRevealStatements": []
+    ///                 },
+    ///                 "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                 "@context": [
+    ///                     "https://www.w3.org/2018/credentials/v1",
+    ///                     "https://schema.org/",
+    ///                     "https://w3id.org/vc-revocation-list-2020/v1"
+    ///                 ],
+    ///                 "issuanceDate": "2023-02-01T14:08:09.849Z",
+    ///                 "credentialSchema": {
+    ///                     "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+    ///                     "type": "EvanVCSchema"
+    ///                 },
+    ///                 "credentialStatus": {
+    ///                     "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+    ///                     "type": "RevocationList2020Status",
+    ///                     "revocationListIndex": "4",
+    ///                     "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+    ///                 },
+    ///                 "credentialSubject": {
+    ///                     "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                     "data": {
+    ///                         "bio": "biography"
+    ///                     }
+    ///                 }
+    ///             }"###;
+    ///             let update_key_jwk = r###"{
+    ///                 "kty": "EC",
+    ///                 "crv": "secp256k1",
+    ///                 "x": "n194_Pew6DvVr1vFsInIP5XlJESYIj_h3-_5XJ5Fudw",
+    ///                 "y": "Z-o5enGPMVFi4U4oA2prWLYDcyATXtHvkEO2yvsOBbI",
+    ///                 "d": "AtmtD2JOaydG5WAHrjkYS_VzFkWo2B0Ok-8T3uClFt4"
+    ///             }"###;
+    ///
+    ///             // revoke the credential issuer
+    ///             vade_evan
+    ///                 .helper_revoke_credential(credential, update_key_jwk, "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106")
+    ///                 .await?;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    pub async fn helper_revoke_credential(
+        &mut self,
+        credential: &str,
+        update_key_jwk: &str,
+        private_key: &str,
+    ) -> Result<String, VadeEvanError> {
+        let mut credential_helper = Credential::new(self)?;
+        credential_helper
+            .revoke_credential(credential, update_key_jwk, private_key)
+            .await
+            .map_err(|err| err.into())
+    }
+
     /// Runs a custom function, this allows to use `Vade`s API for custom calls, that do not belong
     /// to `Vade`s core functionality but may be required for a projects use cases.
     ///
@@ -1122,7 +1211,7 @@ impl VadeEvan {
     /// ```
     /// cfg_if::cfg_if! {
     /// if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
-    /// 
+    ///
     ///     use anyhow::Result;
     ///     use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///

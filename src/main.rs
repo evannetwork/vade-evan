@@ -230,6 +230,17 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
+            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            ("revoke_credential", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_revoke_credential(
+                        get_argument_value(sub_m, "credential", None),
+                        get_argument_value(sub_m, "update_key", None),
+                        get_argument_value(sub_m, "private_key", None),
+                    )
+                    .await?;
+                "".to_string()
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -323,6 +334,17 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         } else {}
     }
 
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("revoke_credential")
+                    .about("Revokes a given credential with vade and updates the revocation list credential.")
+                    .arg(get_clap_argument("credential")?)
+                    .arg(get_clap_argument("update_key")?)
+                    .arg(get_clap_argument("private_key")?)
+            );
+        } else {}
+    }
     Ok(app.subcommand(subcommand))
 }
 
@@ -796,6 +818,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("master_secret")
             .required(true)
             .help("master secret incorporated as a blinded value into the proof of the credential")
+            .takes_value(true),
+        "private_key" => Arg::with_name("private_key")
+            .long("private_key")
+            .value_name("private_key")
+            .required(true)
+            .help("private key to be supplied for local signer")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
