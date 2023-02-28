@@ -442,15 +442,20 @@ impl<'a> Credential<'a> {
             .verify(&signature_messages, &pk)
             .map_err(|err| CredentialError::BbsValidationError(err.to_string()))?;
 
-        dbg!(&is_valid);
-
-        Ok(())
+        match is_valid {
+            true => Ok(()),
+            false => Err(CredentialError::BbsValidationError(
+                "signature invalid".to_string(),
+            )),
+        }
     }
 }
 
 #[cfg(test)]
 #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
 mod tests {
+    use crate::helpers::credential::is_revoked;
+
     cfg_if::cfg_if! {
         if #[cfg(feature = "plugin-did-sidetree")] {
             use anyhow::Result;
@@ -470,6 +475,44 @@ mod tests {
                     "type": "BbsBlsSignature2020",
                     "created": "2023-02-01T14:08:17.000Z",
                     "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+                    "proofPurpose": "assertionMethod",
+                    "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+                    "credentialMessageCount": 13,
+                    "requiredRevealStatements": []
+                },
+                "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://schema.org/",
+                    "https://w3id.org/vc-revocation-list-2020/v1"
+                ],
+                "issuanceDate": "2023-02-01T14:08:09.849Z",
+                "credentialSchema": {
+                    "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+                    "type": "EvanVCSchema"
+                },
+                "credentialStatus": {
+                    "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+                    "type": "RevocationList2020Status",
+                    "revocationListIndex": "4",
+                    "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+                },
+                "credentialSubject": {
+                    "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                    "data": {
+                        "bio": "biography"
+                    }
+                }
+            }"###;
+            const CREDENTIAL_INVALID_PROOF_SIGNATURE: &str = r###"{
+                "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+                "type": [
+                    "VerifiableCredential"
+                ],
+                "proof": {
+                    "type": "BbsBlsSignature2020",
+                    "created": "2023-02-01T14:08:17.000Z",
+                    "signature": "Zm9vYmFy",
                     "proofPurpose": "assertionMethod",
                     "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
                     "credentialMessageCount": 13,
@@ -751,6 +794,15 @@ mod tests {
             )
             .await;
         assert!(did_update_result.is_ok());
+
+        // check is credential is not revoked
+        match is_revoked(&credential.credential_status, &revocation_list)? {
+            false => assert!(true, "credential is active and not revoked as expected"),
+            true => assert!(
+                false,
+                "credential should be active and not revoked at this stage"
+            ),
+        };
         // Get update key for next update to remove key
         let mut update_key = did_create_result.update_key.clone();
         let mut nonce = update_key
@@ -769,17 +821,46 @@ mod tests {
             )
             .await;
         assert!(revoke_result.is_ok());
-        let mut credential_helper = Credential::new(&mut vade_evan)?;
+
+        //fetch revocation list after revocation
+        let did_result_str = vade_evan
+            .did_resolve(&credential.credential_status.revocation_list_credential)
+            .await?;
+        let did_result_value: DidDocumentResult<RevocationListCredential> =
+            serde_json::from_str(&did_result_str)?;
+        revocation_list = did_result_value.did_document;
+
         // verify credential
-        match credential_helper
-            .verify_credential(&serde_json::to_string(&credential)?, MASTER_SECRET)
+        match is_revoked(&credential.credential_status, &revocation_list)? {
+            false => assert!(false, "credential should have been detected as revoked"),
+            true => assert!(true, "credential revoked as expected"),
+        };
+
+        Ok(())
+    }
+    #[tokio::test]
+    #[cfg(feature = "plugin-did-sidetree")]
+    async fn helper_can_detect_a_credential_with_an_invalid_proof_signature() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        // verify the credential issuer
+        match credential
+            .verify_credential(CREDENTIAL_INVALID_PROOF_SIGNATURE, MASTER_SECRET)
             .await
         {
             Ok(_) => assert!(false, "credential should have been detected as revoked"),
-            Err(CredentialError::CredentialRevoked) => {
-                assert!(true, "credential revoked as expected")
+            Err(credential_error) => {
+                assert_eq!(
+                    credential_error.to_string(),
+                    "an error has occurred during bbs signature validation: signature invalid"
+                        .to_string()
+                );
             }
-            _ => assert!(false, "revocation check failed with unexpected error"),
         };
 
         Ok(())
