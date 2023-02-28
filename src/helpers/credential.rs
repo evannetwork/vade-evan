@@ -287,7 +287,7 @@ impl<'a> Credential<'a> {
         exp_date: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
-        let subject_did = credential_subject.id.ok_or("no subject did found".to_string()).unwrap();
+        let subject_did = credential_subject.clone().id.ok_or("no subject did found".to_string()).unwrap();
         let subject_did_str = subject_did.as_str();
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let issuer_public_key = self
@@ -295,7 +295,7 @@ impl<'a> Credential<'a> {
             .await?;
         let use_valid_until= if exp_date.is_some() { true } else { false };
         let exp_date_str = exp_date.unwrap_or("");
-        let credential_values_str = serde_json::to_string(&credential_subject.data)?;
+        let credential_values_str = serde_json::to_string(&credential_subject.clone().data)?;
 
 
         // create credential offer
@@ -320,7 +320,10 @@ impl<'a> Credential<'a> {
             data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
                 .properties
                 .into_iter()
-                .map(|(name, _schema_property)| (name, String::new()))
+                .map(
+                    |(name, _schema_property) |
+                        (name.clone(),
+                         credential_subject.data.get(&(name.clone())).unwrap_or(&"invalid credential value".to_string()).to_string()))
                 .collect(),
         };
         let credential_schema = CredentialSchemaReference {
@@ -375,7 +378,7 @@ impl<'a> Credential<'a> {
                 schema_did,
             ).await?;
         let (request, blinding_key) : (BbsCredentialRequest, String) = serde_json::from_str(request_str.as_str())?;
-        let indices = vec![0];
+        let indices = vec![0,1];
 
         // Issue credentials
         let offer: BbsCredentialOffer = serde_json::from_str(offer_str.as_str())?;
@@ -911,7 +914,7 @@ mod tests {
             ) .await?;
 
         assert!(credential.contains(r##"type":["VerifiableCredential"],"issuer":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA"##));
-        assert!(credential.contains(r##"credentialSubject":{"id":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA","data":{"email":""}},"credentialSchema":{"id":"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw","type":"EvanVCSchema"},"credentialStatus":{"id":"did:evan:zkp:placeholder_status#0","type":"RevocationList2020Status","revocationListIndex":"0","revocationListCredential":"did:evan:zkp:placeholder_status"},"proof":{"type":"BbsBlsSignature2020"##));
+        assert!(credential.contains(r##"credentialSubject":{"id":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA","data":{"email":"value@x.com"}},"credentialSchema":{"id":"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw","type":"EvanVCSchema"},"credentialStatus":{"id":"did:evan:zkp:placeholder_status#0","type":"RevocationList2020Status","revocationListIndex":"0","revocationListCredential":"did:evan:zkp:placeholder_status"},"proof":{"type":"BbsBlsSignature2020"##));
 
         Ok(())
     }
