@@ -294,7 +294,6 @@ impl<'a> Credential<'a> {
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
             .await?;
         let use_valid_until= if exp_date.is_some() { true } else { false };
-        let exp_date_str = exp_date.unwrap_or("");
         let credential_values_str = serde_json::to_string(&credential_subject.clone().data)?;
 
 
@@ -308,7 +307,7 @@ impl<'a> Credential<'a> {
         let r#type = vec!["VerifiableCredential".to_string()];
         let issuer = subject_did.clone();
         let valid_until = if use_valid_until {
-            Some(exp_date_str.to_string())
+            Some(exp_date.unwrap_or("").to_string())
         } else {
             None
         };
