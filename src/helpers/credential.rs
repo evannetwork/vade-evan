@@ -890,13 +890,13 @@ mod tests {
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let credential_subject_str = r#"{
-            "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+            "id": "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
             "data": {
                 "email": "value@x.com"
             }
         }"#;
-        let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
-        let bbs_private_key = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
+        let bbs_secret = r#"GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc="#;
+        let bbs_private_key = r#"WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I="#;
         let schema_did = r#"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw"#;
 
         let credential = vade_evan
@@ -910,7 +910,8 @@ mod tests {
                 None,
             ) .await?;
 
-        assert!(credential.contains("did"));
+        assert!(credential.contains(r##"type":["VerifiableCredential"],"issuer":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA"##));
+        assert!(credential.contains(r##"credentialSubject":{"id":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA","data":{"email":""}},"credentialSchema":{"id":"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw","type":"EvanVCSchema"},"credentialStatus":{"id":"did:evan:zkp:placeholder_status#0","type":"RevocationList2020Status","revocationListIndex":"0","revocationListCredential":"did:evan:zkp:placeholder_status"},"proof":{"type":"BbsBlsSignature2020"##));
 
         Ok(())
     }
