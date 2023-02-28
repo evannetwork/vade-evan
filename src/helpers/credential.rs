@@ -1,14 +1,7 @@
 use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
-use std::collections::HashMap;
 use std::time::SystemTime;
-// use crate::chrono::{
-//     prelude::*,
-//     offset::Utc,
-//     DateTime
-// };
-// use std::time::SystemTime;
 
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
@@ -20,14 +13,26 @@ use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
 use serde::de::DeserializeOwned;
 use serde_json::{value::Value, Map};
-use serde::{Deserialize, Serialize};
 use ssi::{
     jsonld::{json_to_dataset, JsonLdOptions, StaticLoader},
     urdna2015::normalize,
 };
 use thiserror::Error;
 use uuid::Uuid;
-use vade_evan_bbs::{BbsCredential, BbsCredentialOffer, BbsCredentialRequest, CredentialSchema, CredentialSchemaReference, CredentialStatus, CredentialSubject, FinishCredentialPayload, IssueCredentialPayload, OfferCredentialPayload, RevocationListCredential, UnfinishedBbsCredential, UnsignedBbsCredential};
+use vade_evan_bbs::{
+    BbsCredential,
+    BbsCredentialOffer,
+    BbsCredentialRequest,
+    CredentialSchema,
+    CredentialSchemaReference,
+    CredentialStatus,
+    CredentialSubject,
+    FinishCredentialPayload,
+    IssueCredentialPayload,
+    OfferCredentialPayload,
+    RevocationListCredential,
+    UnfinishedBbsCredential,
+    UnsignedBbsCredential};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 
@@ -137,17 +142,6 @@ pub fn is_revoked(
 
 pub struct Credential<'a> {
     vade_evan: &'a mut VadeEvan,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct RequestWithContext {
-    #[serde(rename(serialize = "@context", deserialize = "@context"))]
-    pub context: Vec<String>,
-    pub schema: String,
-    pub r#type: String,
-    pub blind_signature_context: String,
-    pub credential_values: HashMap<String, String>,
 }
 
 impl<'a> Credential<'a> {
@@ -320,7 +314,6 @@ impl<'a> Credential<'a> {
         };
         let date_now = SystemTime::now();
         let datetime: DateTime<Utc> = date_now.into();
-        //"2021-01-01T00:00:00.000Z"
         let issuance_date = datetime.format("%Y-%m-%dT%TZ").to_string();
         let credential_subject = CredentialSubject {
             id: Option::from(subject_did.clone()).map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
@@ -549,9 +542,10 @@ impl<'a> Credential<'a> {
             .verify(&signature_messages, &pk)
             .map_err(|err| CredentialError::BbsValidationError(err.to_string()))?;
 
-        dbg!(&is_valid);
-
-        Ok(())
+        match is_valid {
+            true => Ok(()),
+            false => Err(CredentialError::BbsValidationError("signature invalid".to_string())),
+        }
     }
 }
 
@@ -576,6 +570,44 @@ mod tests {
                     "type": "BbsBlsSignature2020",
                     "created": "2023-02-01T14:08:17.000Z",
                     "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+                    "proofPurpose": "assertionMethod",
+                    "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+                    "credentialMessageCount": 13,
+                    "requiredRevealStatements": []
+                },
+                "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://schema.org/",
+                    "https://w3id.org/vc-revocation-list-2020/v1"
+                ],
+                "issuanceDate": "2023-02-01T14:08:09.849Z",
+                "credentialSchema": {
+                    "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+                    "type": "EvanVCSchema"
+                },
+                "credentialStatus": {
+                    "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+                    "type": "RevocationList2020Status",
+                    "revocationListIndex": "4",
+                    "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+                },
+                "credentialSubject": {
+                    "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+                    "data": {
+                        "bio": "biography"
+                    }
+                }
+            }"###;
+            const CREDENTIAL_INVALID_PROOF_SIGNATURE: &str = r###"{
+                "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+                "type": [
+                    "VerifiableCredential"
+                ],
+                "proof": {
+                    "type": "BbsBlsSignature2020",
+                    "created": "2023-02-01T14:08:17.000Z",
+                    "signature": "Zm9vYmFy",
                     "proofPurpose": "assertionMethod",
                     "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
                     "credentialMessageCount": 13,
@@ -828,6 +860,30 @@ mod tests {
 
     #[tokio::test]
     #[cfg(feature = "plugin-did-sidetree")]
+    async fn helper_can_detect_a_credential_with_an_invalid_proof_signature() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        // verify the credential issuer
+        match credential
+            .verify_credential(CREDENTIAL_INVALID_PROOF_SIGNATURE, MASTER_SECRET)
+            .await
+        {
+            Ok(_) => assert!(false, "credential should have been detected as revoked"),
+            Err(credential_error) => {
+                assert_eq!(credential_error.to_string(), "an error has occurred during bbs signature validation: signature invalid".to_string());
+            }
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "plugin-did-sidetree")]
     async fn helper_can_create_self_issued_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -840,7 +896,7 @@ mod tests {
             }
         }"#;
         let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
-        let bbs_private_key = r#"lqKrWCzOaeL4qRRyhN4555I5/A/TmKQ9iJUvA+34pwNfh4rBLFxKlLwJK5dfuQjrDZ+0EWSK8X+e7Jv9cWjOZ+v/t3lgT3nFczMtfPjgFe4a3iWKCRUi1HM6h1+c6HY+C0j0QOB606TTXe2EInb+WQ=="#;
+        let bbs_private_key = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
         let schema_did = r#"did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw"#;
 
         let credential = vade_evan
