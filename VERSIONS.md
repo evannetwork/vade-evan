@@ -12,6 +12,7 @@
 - add `helper_verify_credential` helper function
 - add `helper_did_create` and `helper_did_update` functions
 - add `helper_revoke_credential` function
+- add `helper_create_self_issued_credential` helper function
 
 ### Fixes
 
