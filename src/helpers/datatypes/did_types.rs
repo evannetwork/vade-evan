@@ -26,6 +26,7 @@ pub enum DIDOperationType {
     RemoveKey,
     AddServiceEnpoint,
     RemoveServiceEnpoint,
+    ReplaceDidDoc
 }
 
 impl FromStr for DIDOperationType {
@@ -36,6 +37,7 @@ impl FromStr for DIDOperationType {
             "RemoveKey" => Ok(DIDOperationType::RemoveKey),
             "AddServiceEnpoint" => Ok(DIDOperationType::AddServiceEnpoint),
             "RemoveServiceEnpoint" => Ok(DIDOperationType::RemoveServiceEnpoint),
+            "ReplaceDidDoc" => Ok(DIDOperationType::ReplaceDidDoc),
             _ => Err(()),
         }
     }
@@ -64,6 +66,8 @@ pub struct VerificationMethod {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PublicKeyJwk {
+    pub crv: String,
+    pub kty: String,
     pub x: String,
     pub y: Option<String>,
 }

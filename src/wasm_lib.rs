@@ -234,6 +234,24 @@ cfg_if::cfg_if! {
             Ok(credential_result)
         }
 
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_revoke_credential(
+            credential: String,
+            update_key_jwk: String,
+            private_key: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_revoke_credential(
+                    &credential,
+                    &update_key_jwk,
+                    &private_key,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
+        }
+
         #[cfg(feature = "plugin-vc-zkp-bbs")]
         #[wasm_bindgen]
         pub async fn helper_verify_credential(
