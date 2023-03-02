@@ -1,4 +1,4 @@
-#[cfg(feature = "plugin-vc-zkp-bbs")]
+#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 use crate::helpers::CredentialError;
 use thiserror::Error;
 
@@ -10,7 +10,7 @@ pub enum VadeEvanError {
     InternalError { source_message: String },
     #[error("vade call returned no results")]
     NoResults,
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     #[error(transparent)]
     CredentialError(#[from] CredentialError),
 }

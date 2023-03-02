@@ -18,7 +18,7 @@
 use std::os::raw::c_void;
 use vade::Vade;
 
-#[cfg(feature = "plugin-vc-zkp-bbs")]
+#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 use crate::helpers::Credential;
 #[cfg(feature = "plugin-did-sidetree")]
 use crate::helpers::Did;
@@ -318,7 +318,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_create_credential_offer(
         &mut self,
         schema_did: &str,
@@ -382,7 +382,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_create_credential_request(
         &mut self,
         issuer_public_key: &str,
@@ -473,7 +473,7 @@ impl VadeEvan {
     ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_verify_credential(
         &mut self,
         credential: &str,
@@ -631,7 +631,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_create_self_issued_credential(
         &mut self,
         schema_did: &str,
@@ -644,8 +644,15 @@ impl VadeEvan {
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
-            .create_self_issued_credential(schema_did, credential_subject_str, bbs_secret, bbs_private_key,
-                                           credential_revocation_did, credential_revocation_id, exp_date )
+            .create_self_issued_credential(
+                schema_did,
+                credential_subject_str,
+                bbs_secret,
+                bbs_private_key,
+                credential_revocation_did,
+                credential_revocation_id,
+                exp_date,
+            )
             .await
             .map_err(|err| err.into())
     }
