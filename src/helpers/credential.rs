@@ -7,8 +7,7 @@ use super::datatypes::{DidDocumentResult, IdentityDidDocument};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
-    HashElem,
-    SignatureMessage,
+    HashElem, SignatureMessage,
 };
 use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
@@ -21,20 +20,10 @@ use ssi::{
 use thiserror::Error;
 use uuid::Uuid;
 use vade_evan_bbs::{
-    BbsCredential,
-    BbsCredentialOffer,
-    BbsCredentialRequest,
-    CredentialSchema,
-    CredentialSchemaReference,
-    CredentialStatus,
-    CredentialSubject,
-    FinishCredentialPayload,
-    IssueCredentialPayload,
-    OfferCredentialPayload,
-    RevocationListCredential,
-    RevokeCredentialPayload,
-    UnfinishedBbsCredential,
-    UnsignedBbsCredential,
+    BbsCredential, BbsCredentialOffer, BbsCredentialRequest, CredentialSchema,
+    CredentialSchemaReference, CredentialStatus, CredentialSubject, FinishCredentialPayload,
+    IssueCredentialPayload, OfferCredentialPayload, RevocationListCredential,
+    RevokeCredentialPayload, UnfinishedBbsCredential, UnsignedBbsCredential,
 };
 
 #[derive(Error, Debug)]
@@ -358,14 +347,12 @@ impl<'a> Credential<'a> {
         let subject_did = credential_subject
             .clone()
             .id
-            .ok_or("no subject did found".to_string())
-            .unwrap();
-        let subject_did_str = subject_did.as_str();
+            .unwrap_or_else(|| "no subject did found".to_string());
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
             .await?;
-        let use_valid_until = if exp_date.is_some() { true } else { false };
+        let use_valid_until = exp_date.is_some();
         let credential_values_str = serde_json::to_string(&credential_subject.clone().data)?;
 
         // create credential offer
@@ -386,7 +373,7 @@ impl<'a> Credential<'a> {
         let datetime: DateTime<Utc> = date_now.into();
         let issuance_date = datetime.format("%Y-%m-%dT%TZ").to_string();
         let credential_subject = CredentialSubject {
-            id: Option::from(subject_did.clone()).map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
+            id: Some(subject_did.clone()), // subject.id stays optional, defined by create_offer call
             data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
                 .properties
                 .into_iter()
@@ -436,8 +423,8 @@ impl<'a> Credential<'a> {
         let nquads_vc = convert_to_nquads(&unsigned_credential_str).await?;
 
         let payload = OfferCredentialPayload {
-            issuer: subject_did_str.to_string(),
-            subject: Option::from(subject_did.clone()),
+            issuer: subject_did.clone(),
+            subject: Some(subject_did.clone()),
             nquad_count: nquads_vc.len(),
         };
         let offer_str = self
@@ -453,8 +440,8 @@ impl<'a> Credential<'a> {
         // Create credential request
         let request_str = self
             .create_credential_request(
-                serde_json::to_string(&(issuer_public_key.clone().as_str()))?.as_str(),
-                serde_json::to_string(bbs_secret)?.as_str(),
+                &issuer_public_key,
+                bbs_secret,
                 &credential_values_str,
                 &offer_str,
                 schema_did,
@@ -465,8 +452,8 @@ impl<'a> Credential<'a> {
         let indices = vec![0, 1];
 
         // Issue credentials
-        let offer: BbsCredentialOffer = serde_json::from_str(offer_str.as_str())?;
-        let pload = IssueCredentialPayload {
+        let offer: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
+        let payload = IssueCredentialPayload {
             unsigned_vc: unsigned_credential,
             nquads: nquads_vc,
             issuer_public_key_id: "#bbs-key-1".to_string(),
@@ -476,20 +463,19 @@ impl<'a> Credential<'a> {
             credential_offer: offer,
             required_indices: indices,
         };
-        let pload_str = serde_json::to_string(&pload)?;
+        let payload_str = serde_json::to_string(&payload)?;
         let credential_str = self
             .vade_evan
-            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &pload_str.as_str())
+            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &payload_str)
             .await
             .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
 
         // Finish credentials
-        let mut parsed_credential: Map<String, Value> =
-            serde_json::from_str(credential_str.as_str())?;
+        let mut parsed_credential: Map<String, Value> = serde_json::from_str(&credential_str)?;
         parsed_credential.remove("proof");
         let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
         let did_doc_nquads = convert_to_nquads(&_credential_without_proof).await?;
-        let credential: UnfinishedBbsCredential = serde_json::from_str(credential_str.as_str())?;
+        let credential: UnfinishedBbsCredential = serde_json::from_str(&credential_str)?;
         let payload_finish = FinishCredentialPayload {
             credential,
             master_secret: bbs_secret.to_string(),
