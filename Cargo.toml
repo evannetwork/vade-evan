@@ -59,7 +59,7 @@ capability-did-read = []
 capability-did-write = []
 
 # enable sdk related features
-capability-sdk = []
+capability-sdk = ["vade-sidetree/sdk"]
 
 # enable vc related functiosn in targets
 capability-vc-zkp = []
