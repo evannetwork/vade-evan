@@ -96,7 +96,7 @@ jobs:
         run: wasm-pack build --release --target web -- --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
 
       - name: Build binaries
-        if: ${{ matrix.feature_target != 'target-wasm'}}
+        if: ${{ matrix.feature_target != 'target-wasm' && !(matrix.feature_bundle == 'bundle-sdk' && matrix.feature_target == 'target-cli') }}
         run: cargo build --release --target=${{ matrix.target }} --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
 
       - name: Run tests
