@@ -440,8 +440,8 @@ impl<'a> Credential<'a> {
         // Create credential request
         let request_str = self
             .create_credential_request(
-                &issuer_public_key,
-                bbs_secret,
+                &format!("\"{}\"", issuer_public_key),
+                &format!("\"{}\"", bbs_secret),
                 &credential_values_str,
                 &offer_str,
                 schema_did,
@@ -475,7 +475,7 @@ impl<'a> Credential<'a> {
         parsed_credential.remove("proof");
         let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
         let did_doc_nquads = convert_to_nquads(&_credential_without_proof).await?;
-        let credential: UnfinishedBbsCredential = serde_json::from_str(&credential_str)?;
+        let credential: UnfinishedBbsCredential = serde_json::from_str(credential_str.as_str())?;
         let payload_finish = FinishCredentialPayload {
             credential,
             master_secret: bbs_secret.to_string(),
