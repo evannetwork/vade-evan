@@ -61,6 +61,9 @@ Features can be adjusted to support integration with IN3 SDK by enabling `bundle
 ```sh
 cargo build --release --no-default-features --features bundle-sdk,target-c-lib
 ```
+#### Limitations of bundle-sdk feature
+
+bundle-sdk feature can't be used with `target-wasm`, `target-java-lib` and `target-cli` as in3 sdk specific request list pointers are integrated only with `target-c-lib` as parameters in c-lib interface. If someone has specific need to use sdk request list pointers with targets  other than `target-c-lib`, it will have to be done separately by editing wasm or java interfaces.
 
 ### WASM
 
