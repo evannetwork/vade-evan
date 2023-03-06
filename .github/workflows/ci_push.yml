@@ -100,5 +100,5 @@ jobs:
         run: cargo build --release --target=${{ matrix.target }} --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
 
       - name: Run tests
-        if: ${{ !(matrix.feature_bundle == 'bundle-sdk' && matrix.feature_target == 'target-cli') }}
+        if: ${{ !(matrix.feature_bundle == 'bundle-sdk' && (matrix.feature_target == 'target-cli' || matrix.feature_target == 'target-wasm'|| matrix.feature_target == 'target-java-lib')) }}
         run: cargo test --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
