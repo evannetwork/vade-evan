@@ -13,6 +13,7 @@
 - add `helper_did_create` and `helper_did_update` functions
 - add `helper_revoke_credential` function
 - pass sdk feature to vade-sidtree plugin
+- remove getrandom from dependencies
 
 ### Fixes
 
