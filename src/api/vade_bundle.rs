@@ -44,7 +44,7 @@ pub fn get_vade(
     signer: &str,
     #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] request_id: *const c_void,
     #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
-    _request_function_callback: ResolveHttpRequest,
+    request_function_callback: ResolveHttpRequest,
 ) -> Result<Vade, Box<dyn Error>> {
     let mut vade = Vade::new();
 
@@ -66,6 +66,8 @@ pub fn get_vade(
     vade.register_plugin(Box::from(get_vade_sidetree(
         #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
         request_id,
+        #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+        request_function_callback,
     )?));
     #[cfg(feature = "plugin-vc-zkp-bbs")]
     vade.register_plugin(Box::from(get_vade_evan_bbs(
@@ -133,7 +135,15 @@ fn get_vade_universal_resolver(
 
 #[cfg(feature = "plugin-did-sidetree")]
 fn get_vade_sidetree(
-    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] _request_id: *const c_void,
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))] request_id: *const c_void,
+    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+    request_function_callback: ResolveHttpRequest,
 ) -> Result<VadeSidetree, Box<dyn Error>> {
-    Ok(VadeSidetree::new(std::env::var("SIDETREE_API_URL").ok()))
+    Ok(VadeSidetree::new(
+        #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+        request_id,
+        #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+        request_function_callback,
+        std::env::var("SIDETREE_API_URL").ok()
+    ))
 }

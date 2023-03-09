@@ -59,7 +59,7 @@ capability-did-read = []
 capability-did-write = []
 
 # enable sdk related features
-capability-sdk = []
+capability-sdk = ["vade-sidetree/sdk"]
 
 # enable vc related functiosn in targets
 capability-vc-zkp = []
@@ -170,7 +170,6 @@ openssl = { version = "*", features = ["vendored"] }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
 console_log = { version = "0.2", features = ["color"] }
-getrandom = { version = "0.1", features = ["wasm-bindgen"] }
 log = "0.4.17"
 serde_derive = "1.0.114"
 serde-wasm-bindgen = "0.4.5"
