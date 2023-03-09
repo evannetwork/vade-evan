@@ -395,7 +395,7 @@ impl<'a> Credential<'a> {
         };
         let revocation_list_index = credential_revocation_id.unwrap_or("0").to_string();
         let revocation_list_credential = credential_revocation_did
-            .unwrap_or("did:evan:zkp:placeholder_status")
+            .unwrap_or("no_status")
             .to_string();
         let status_id = [
             revocation_list_credential.clone(),
@@ -419,6 +419,14 @@ impl<'a> Credential<'a> {
             credential_schema,
             credential_status,
         };
+
+        // leave default "0" index, but remove credential_status if credential_revocation_did was empty
+        if (credential_status.id.contains("no_status")) {
+            // unsigned_credential.credential_status.delete();  is it even possible in Rust?
+            // looked for it, two possible solutions - either custom serialization, or refactoring UnsignedBbsCredential
+            // Please advise! -- DVG --
+        }
+
         let unsigned_credential_str = serde_json::to_string(&unsigned_credential)?;
         let nquads_vc = convert_to_nquads(&unsigned_credential_str).await?;
 
