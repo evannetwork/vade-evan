@@ -249,8 +249,8 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "credential_subject", None),
                         get_argument_value(sub_m, "bbs_secret", None),
                         get_argument_value(sub_m, "bbs_private_key", None),
-                        get_optional_argument_value(sub_m, "credential_revocation_did"),
-                        get_optional_argument_value(sub_m, "credential_revocation_id"),
+                        get_argument_value(sub_m, "credential_revocation_did", None),
+                        get_argument_value(sub_m, "credential_revocation_id", None),
                         get_optional_argument_value(sub_m, "exp_date"),
                     )
                     .await?;

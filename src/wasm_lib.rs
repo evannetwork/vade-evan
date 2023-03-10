@@ -275,8 +275,8 @@ cfg_if::cfg_if! {
             credential_subject_str: String,
             bbs_secret: String,
             bbs_private_key: String,
-            credential_revocation_did: Option<String>,
-            credential_revocation_id: Option<String>,
+            credential_revocation_did: String,
+            credential_revocation_id: String,
             exp_date: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -286,8 +286,8 @@ cfg_if::cfg_if! {
                     &credential_subject_str,
                     &bbs_secret,
                     &bbs_private_key,
-                    credential_revocation_did.as_deref(),
-                    credential_revocation_id.as_deref(),
+                    &credential_revocation_did,
+                    &credential_revocation_id,
                     exp_date.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?;
