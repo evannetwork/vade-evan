@@ -193,7 +193,7 @@ cfg_if::cfg_if! {
             Ok(Some(did_update_key))
         }
 
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_credential_offer(
             schema_did: String,
@@ -213,7 +213,7 @@ cfg_if::cfg_if! {
             Ok(offer)
         }
 
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_credential_request(
             issuer_public_key: String,
@@ -252,7 +252,7 @@ cfg_if::cfg_if! {
             Ok("".to_string())
         }
 
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_verify_credential(
             credential: String,
@@ -263,6 +263,32 @@ cfg_if::cfg_if! {
                 .helper_verify_credential(
                     &credential,
                     &master_secret,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
+        }
+
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_self_issued_credential(
+            schema_did: String,
+            credential_subject_str: String,
+            bbs_secret: String,
+            bbs_private_key: String,
+            credential_revocation_did: String,
+            credential_revocation_id: String,
+            exp_date: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_create_self_issued_credential(
+                    &schema_did,
+                    &credential_subject_str,
+                    &bbs_secret,
+                    &bbs_private_key,
+                    &credential_revocation_did,
+                    &credential_revocation_id,
+                    exp_date.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())

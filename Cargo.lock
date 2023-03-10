@@ -5127,6 +5127,7 @@ dependencies = [
  "base64 0.13.1",
  "bbs",
  "cfg-if 0.1.10",
+ "chrono",
  "clap",
  "console_error_panic_hook",
  "console_log",

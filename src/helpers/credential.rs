@@ -1,5 +1,6 @@
 use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
+use std::time::SystemTime;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
@@ -9,6 +10,7 @@ use bbs::{
     HashElem,
     SignatureMessage,
 };
+use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
 use serde::de::DeserializeOwned;
 use serde_json::{value::Value, Map};
@@ -17,15 +19,21 @@ use ssi::{
     urdna2015::normalize,
 };
 use thiserror::Error;
+use uuid::Uuid;
 use vade_evan_bbs::{
     BbsCredential,
+    BbsCredentialOffer,
+    BbsCredentialRequest,
     CredentialSchema,
     CredentialSchemaReference,
     CredentialStatus,
     CredentialSubject,
+    FinishCredentialPayload,
+    IssueCredentialPayload,
     OfferCredentialPayload,
     RevocationListCredential,
     RevokeCredentialPayload,
+    UnfinishedBbsCredential,
     UnsignedBbsCredential,
 };
 
@@ -319,6 +327,175 @@ impl<'a> Credential<'a> {
         Ok(update_result)
     }
 
+    /// Creates a new zero-knowledge proof self issued credential.
+    /// `create_self_issued_credential` function combines `vc_zkp_create_credential_offer`,
+    /// `vc_zkp_create_credential_request`, `vc_zkp_issue_credential` and `vc_zkp_finish_credential`
+    /// and produces self-issued credential with blind signature.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - schema to create the credential
+    /// * `credential_subject_str` - JSON string of CredentialSubject structure
+    /// * `bbs_secret` - BBS secret
+    /// * `bbs_private_key` - BBS private key
+    /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
+    /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
+    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
+    ///
+    /// # Returns
+    /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
+    pub async fn create_self_issued_credential(
+        &mut self,
+        schema_did: &str,
+        credential_subject_str: &str,
+        bbs_secret: &str,
+        bbs_private_key: &str,
+        credential_revocation_did: &str,
+        credential_revocation_id: &str,
+        exp_date: Option<&str>,
+    ) -> Result<String, CredentialError> {
+        let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
+        let subject_did = credential_subject
+            .clone()
+            .id
+            .unwrap_or_else(|| "no subject did found".to_string());
+        let schema: CredentialSchema = self.get_did_document(schema_did).await?;
+        let issuer_public_key = self
+            .get_issuer_public_key(&subject_did, "#bbs-key-1")
+            .await?;
+        let use_valid_until = exp_date.is_some();
+        let credential_values_str = serde_json::to_string(&credential_subject.clone().data)?;
+
+        // create credential offer
+        let context = vec![
+            "https://www.w3.org/2018/credentials/v1".to_string(),
+            "https://schema.org/".to_string(),
+            "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
+        ];
+        let id = Uuid::new_v4().to_string();
+        let r#type = vec!["VerifiableCredential".to_string()];
+        let issuer = subject_did.clone();
+        let valid_until = if use_valid_until {
+            Some(exp_date.unwrap_or("").to_string())
+        } else {
+            None
+        };
+        let date_now = SystemTime::now();
+        let datetime: DateTime<Utc> = date_now.into();
+        let issuance_date = datetime.format("%Y-%m-%dT%TZ").to_string();
+        let credential_subject = CredentialSubject {
+            id: Some(subject_did.clone()), // subject.id stays optional, defined by create_offer call
+            data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
+                .properties
+                .into_iter()
+                .map(|(name, _schema_property)| {
+                    (
+                        name.clone(),
+                        credential_subject
+                            .data
+                            .get(&(name.clone()))
+                            .unwrap_or(&"invalid credential value".to_string())
+                            .to_string(),
+                    )
+                })
+                .collect(),
+        };
+        let credential_schema = CredentialSchemaReference {
+            id: schema.id,
+            r#type: schema.r#type,
+        };
+        let credential_status = CredentialStatus {
+            id: format!("{}#{}", credential_revocation_did, credential_revocation_id),
+            r#type: "RevocationList2020Status".to_string(),
+            revocation_list_index: credential_revocation_id.to_string(),
+            revocation_list_credential: credential_revocation_did.to_string(),
+        };
+        let unsigned_credential = UnsignedBbsCredential {
+            context,
+            id,
+            r#type,
+            issuer,
+            valid_until,
+            issuance_date,
+            credential_subject,
+            credential_schema,
+            credential_status,
+        };
+
+        let unsigned_credential_str = serde_json::to_string(&unsigned_credential)?;
+        let nquads_vc = convert_to_nquads(&unsigned_credential_str).await?;
+
+        let payload = OfferCredentialPayload {
+            issuer: subject_did.clone(),
+            subject: Some(subject_did.clone()),
+            nquad_count: nquads_vc.len(),
+        };
+        let offer_str = self
+            .vade_evan
+            .vc_zkp_create_credential_offer(
+                EVAN_METHOD,
+                TYPE_OPTIONS,
+                &serde_json::to_string(&payload)?,
+            )
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+
+        // Create credential request
+        let request_str = self
+            .create_credential_request(
+                &format!("\"{}\"", issuer_public_key),
+                &format!("\"{}\"", bbs_secret),
+                &credential_values_str,
+                &offer_str,
+                schema_did,
+            )
+            .await?;
+        let (request, blinding_key): (BbsCredentialRequest, String) =
+            serde_json::from_str(request_str.as_str())?;
+        let indices = vec![0, 1];
+
+        // Issue credentials
+        let offer: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
+        let payload = IssueCredentialPayload {
+            unsigned_vc: unsigned_credential,
+            nquads: nquads_vc,
+            issuer_public_key_id: "#bbs-key-1".to_string(),
+            issuer_public_key: issuer_public_key.clone(),
+            issuer_secret_key: bbs_private_key.to_string(),
+            credential_request: request.clone(),
+            credential_offer: offer,
+            required_indices: indices,
+        };
+        let payload_str = serde_json::to_string(&payload)?;
+        let credential_str = self
+            .vade_evan
+            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &payload_str)
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+
+        // Finish credentials
+        let mut parsed_credential: Map<String, Value> = serde_json::from_str(&credential_str)?;
+        parsed_credential.remove("proof");
+        let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
+        let did_doc_nquads = convert_to_nquads(&_credential_without_proof).await?;
+        let credential: UnfinishedBbsCredential = serde_json::from_str(credential_str.as_str())?;
+        let payload_finish = FinishCredentialPayload {
+            credential,
+            master_secret: bbs_secret.to_string(),
+            nquads: did_doc_nquads,
+            issuer_public_key: issuer_public_key.clone(),
+            blinding: blinding_key,
+        };
+        let payload_finish_str = serde_json::to_string(&payload_finish)?;
+        let result = self
+            .vade_evan
+            .vc_zkp_finish_credential(EVAN_METHOD, TYPE_OPTIONS, payload_finish_str.as_str())
+            .await
+            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+
+        Ok(result)
+    }
+
     async fn create_empty_unsigned_credential(
         &mut self,
         schema_did: &str,
@@ -387,7 +564,7 @@ impl<'a> Credential<'a> {
     /// * `verification_method_id` - id of verification method to extract the pub key
     ///
     /// # Returns
-    /// * `CredentialProposal` - The message to be sent to an issuer
+    /// * `publicKey` - pub key of the issuer
     async fn get_issuer_public_key(
         &mut self,
         issuer_did: &str,
@@ -861,6 +1038,47 @@ mod tests {
                         .to_string()
                 );
             }
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "plugin-did-sidetree")]
+    async fn helper_can_create_self_issued_credential() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: "test",
+            signer: "remote|http://127.0.0.1:7070/key/sign",
+        })?;
+        let credential_subject_str = r#"{
+            "id": "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
+            "data": {
+                "email": "value@x.com"
+            }
+        }"#;
+        let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
+        let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
+        let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        match credential
+            .create_self_issued_credential(
+                schema_did,
+                credential_subject_str,
+                bbs_secret,
+                bbs_private_key,
+                "did:revoc:12345",
+                "1",
+                None,
+            )
+            .await
+        {
+            Ok(_) => assert!(true, "credential should have been successfully self issued"),
+            Err(_) => assert!(
+                false,
+                "error occured when creating the self issued credential"
+            ),
         };
 
         Ok(())

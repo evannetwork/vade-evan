@@ -14,6 +14,7 @@
 - add `helper_revoke_credential` function
 - pass sdk feature to vade-sidtree plugin
 - remove getrandom from dependencies
+- add `helper_create_self_issued_credential` helper function
 
 ### Fixes
 
