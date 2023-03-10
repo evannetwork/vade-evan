@@ -195,9 +195,9 @@ impl<'a> Credential<'a> {
         let payload = format!(
             r#"{{
                 "credentialOffering": {},
-                "masterSecret": {},
+                "masterSecret": "{}",
                 "credentialValues": {},
-                "issuerPubKey": {},
+                "issuerPubKey": "{}",
                 "credentialSchema": {}
             }}"#,
             credential_offer,
@@ -443,8 +443,8 @@ impl<'a> Credential<'a> {
         // Create credential request
         let request_str = self
             .create_credential_request(
-                &format!("\"{}\"", issuer_public_key),
-                &format!("\"{}\"", bbs_secret),
+                &issuer_public_key,
+                &bbs_secret,
                 &credential_values_str,
                 &offer_str,
                 schema_did,
@@ -806,11 +806,11 @@ mod tests {
         "nonce": "QqJR4o6joiApYVXX7JLbRIZBQ9QprlFpewo8GbojIKY=",
         "credentialMessageCount": 2
     }"#;
-        let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+        let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
         let credential_values = r#"{
         "email": "value@x.com"
     }"#;
-        let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
+        let issuer_pub_key = r#"jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o"#;
 
         let credential_request = vade_evan
             .helper_create_credential_request(
