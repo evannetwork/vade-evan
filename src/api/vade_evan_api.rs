@@ -618,8 +618,8 @@ impl VadeEvan {
     ///                     CREDENTIAL_SUBJECT_STR,
     ///                     BBS_SECRET,
     ///                     BBS_PRIVATE_KEY,
-    ///                     None,
-    ///                     None,
+    ///                     "did:revoc:12345",
+    ///                     "1",
     ///                     None,
     ///                 )
     ///                 .await?;
