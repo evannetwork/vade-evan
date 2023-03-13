@@ -112,18 +112,15 @@ jobs:
           if [ "$RUNNER_OS" == "Linux" ]; then
                sudo apt install -y clang
           fi
-        shell: 
-        
+        shell: bash
       - name: Install wasm-pack (with workaround for Linux)
         # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
         # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: cargo install --git https://github.com/frewsxcv/wasm-pack.git --branch patch-2
-
       - name: Install wasm-pack (with official script)
         if: ${{ matrix.os != 'ubuntu-latest'}}
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
       - name: wasm-build
         run: wasm-pack build --release --target nodejs -- --no-default-features --features bundle-default,target-wasm --target-dir=target/
       - name: bundle-sdk build
