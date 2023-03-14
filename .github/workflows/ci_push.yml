@@ -133,6 +133,7 @@ jobs:
         if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'x86_64-pc-windows-msvc' || matrix.target == 'x86_64-pc-windows-gnu'}}
         run: cargo build --release --no-default-features --features bundle-sdk,target-c-lib --target-dir=target/ --target=${{ matrix.target }}
       - name: bundle-sdk cross build
+         if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'aarch64-unknown-linux-gnu' && matrix.target != 'aarch64-apple-darwin' && matrix.target != 'x86_64-apple-darwin' && matrix.target != 'x86_64-pc-windows-msvc' && matrix.target != 'x86_64-pc-windows-gnu'}}
         run: cross build --release --no-default-features --features bundle-sdk,target-c-lib --target-dir target/ --target ${{ matrix.target }}
       - name: Run tests
         run: cargo test --verbose

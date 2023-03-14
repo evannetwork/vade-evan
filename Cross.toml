@@ -1,0 +1,8 @@
+[target.arm-unknown-linux-gnueabihf]
+dockerfile = "./dockerfiles/Dockerfile.arm-unknown-linux-gnueabihf"
+
+[target.aarch64-linux-android]
+dockerfile = "./dockerfiles/Dockerfile.aarch64-linux-android"
+
+[target.i686-linux-android]
+dockerfile = "./dockerfiles/Dockerfile.i686-linux-android"
