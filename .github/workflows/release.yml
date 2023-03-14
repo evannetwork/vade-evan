@@ -123,6 +123,8 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: wasm-build
         run: wasm-pack build --release --target nodejs -- --no-default-features --features bundle-default,target-wasm --target-dir=target/
+      - name: install cross
+        run: cargo install -f cross
       - name: bundle-sdk build
         run: cargo build --release --no-default-features --features bundle-sdk,target-c-lib --target-dir=target/ --target=${{ matrix.target }}
       - name: Run tests

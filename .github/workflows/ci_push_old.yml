@@ -1,0 +1,104 @@
+name: Build & Test - MacOS & Linux
+
+on:
+  push:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          # - macos-latest
+          - ubuntu-latest
+          # - windows-latest
+
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - x86_64-pc-windows-msvc
+
+        toolchain:
+          - stable
+
+        feature_bundle:
+          - bundle-default
+          - bundle-sdk
+          - plugin-did-sidetree
+          - plugin-did-substrate
+          - plugin-didcomm
+          - plugin-jwt-vc
+          - plugin-vc-zkp-bbs
+
+        feature_target:
+          - target-c-lib
+          - target-cli
+          - target-java-lib
+          - target-wasm
+
+        exclude:
+          # Don't test linux/windows targets on macos
+          - os: macos-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: x86_64-pc-windows-msvc
+          # Don't test darwin/windows targets on ubuntu
+          - os: ubuntu-latest
+            target: x86_64-apple-darwin
+          - os: ubuntu-latest
+            target: aarch64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-pc-windows-msvc
+          # Don't test darwin/linux targets on windows
+          - os: windows-latest
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-unknown-linux-gnu
+
+    runs-on: ${{ matrix.os }}
+
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+          target: ${{ matrix.target }}
+          override: true
+
+      - run: rustup target add ${{ matrix.target }}
+
+      - name: Install clang for ubuntu
+        if: ${{ matrix.os == 'ubuntu-latest'}}
+        shell: bash
+        run: sudo apt install -y clang
+
+      - name: Install wasm-pack (with workaround for Linux)
+        # see https://github.com/rustwasm/wasm-pack/issues/781#issuecomment-1242611389
+        # and https://github.com/rustwasm/wasm-pack/issues/823#issuecomment-1242611318
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.feature_target == 'target-wasm'}}
+        run: cargo install --git https://github.com/frewsxcv/wasm-pack.git --branch patch-2
+
+      - name: Install wasm-pack (with official script)
+        if: ${{ matrix.os != 'ubuntu-latest' && matrix.feature_target == 'target-wasm'}}
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM file with wasm-pack
+        if: ${{ matrix.feature_target == 'target-wasm' && matrix.feature_bundle != 'bundle-sdk' }}
+        run: wasm-pack build --release --target web -- --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
+
+      - name: Build binaries
+        if: ${{ matrix.feature_target != 'target-wasm' && !(matrix.feature_bundle == 'bundle-sdk' && (matrix.feature_target == 'target-cli' || matrix.feature_target == 'target-java-lib')) }}
+        run: cargo build --release --target=${{ matrix.target }} --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
+
+      - name: Run tests
+        if: ${{ !(matrix.feature_bundle == 'bundle-sdk' && (matrix.feature_target == 'target-cli' || matrix.feature_target == 'target-wasm'|| matrix.feature_target == 'target-java-lib')) }}
+        run: cargo test --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
