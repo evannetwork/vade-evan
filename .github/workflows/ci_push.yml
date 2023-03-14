@@ -1,9 +1,7 @@
-name: Release
+name: Build & Test - MacOS & Linux
 
 on:
   push:
-    tags:
-      - "*"
 
 env:
   CARGO_TERM_COLOR: always
