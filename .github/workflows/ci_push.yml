@@ -46,6 +46,8 @@ jobs:
           - os: macos-latest
             target: x86_64-pc-windows-msvc
           - os: macos-latest
+            target: x86_64-pc-windows-gnu
+          - os: macos-latest
             target: aarch64-linux-android
           - os: macos-latest
             target: armv7-linux-androideabi
@@ -53,12 +55,12 @@ jobs:
             target: x86_64-linux-android
           - os: macos-latest
             target: i686-linux-android
-          - os: macos-latest
-            target: aarch64-apple-ios
-          - os: macos-latest
-            target:  x86_64-apple-ios
-          - os: macos-latest
-            target: aarch64-apple-ios-sim
+         # - os: macos-latest
+         #   target: aarch64-apple-ios
+        #  - os: macos-latest
+        #    target:  x86_64-apple-ios
+        #  - os: macos-latest
+       #     target: aarch64-apple-ios-sim
           # Don't test darwin/windows/ios targets on ubuntu
           - os: ubuntu-latest
             target: x86_64-apple-darwin
