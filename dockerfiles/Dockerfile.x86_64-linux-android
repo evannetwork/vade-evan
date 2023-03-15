@@ -1,0 +1,2 @@
+FROM ghcr.io/cross-rs/x86_64-linux-android:main
+RUN apt -y update && apt -y upgrade && apt -y install libunwind-dev
