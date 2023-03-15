@@ -10,9 +10,6 @@ dockerfile = "./dockerfiles/Dockerfile.aarch64-linux-android"
 [target.i686-linux-android]
 dockerfile = "./dockerfiles/Dockerfile.i686-linux-android"
 
-#[target.x86_64-pc-windows-gnu]
-#dockerfile = "./dockerfiles/Dockerfile.x86_64-pc-windows-gnu"
-
 [target.x86_64-linux-android]
 dockerfile = "./dockerfiles/Dockerfile.x86_64-linux-android"
 

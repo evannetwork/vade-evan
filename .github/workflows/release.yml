@@ -38,7 +38,7 @@ jobs:
           ]
         toolchain: [stable]
         exclude:
-          # Don't test linux/windows/android targets on macos
+          # Don't test linux/windows/android/ios targets on macos
           - os: macos-latest
             target: x86_64-unknown-linux-gnu
           - os: macos-latest
@@ -65,14 +65,14 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-pc-windows-msvc
           - os: ubuntu-latest
-            target: x86_64-pc-windows-gnu
-          - os: ubuntu-latest
             target: aarch64-apple-ios
           - os: ubuntu-latest
             target:  x86_64-apple-ios
           - os: ubuntu-latest
             target: aarch64-apple-ios-sim
           # Don't test darwin/linux/android/ios targets on windows
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
           - os: windows-latest
             target: x86_64-unknown-linux-gnu
           - os: windows-latest
@@ -125,20 +125,18 @@ jobs:
         run: wasm-pack build --release --target nodejs -- --no-default-features --features bundle-default,target-wasm --target-dir=target/
       - name: install cross
         run: cargo install -f cross
-      - name: bundle-sdk build
+      - name: bundle-sdk native build
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'x86_64-pc-windows-msvc' }}
         run: cargo build --release --no-default-features --features bundle-sdk,target-c-lib --target-dir=target/ --target=${{ matrix.target }}
+      - name: bundle-sdk cross build
+        if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'aarch64-apple-darwin' && matrix.target != 'x86_64-apple-darwin' && matrix.target != 'x86_64-pc-windows-msvc' }}
+        run: cross build --release --no-default-features --features bundle-sdk,target-c-lib --target-dir target/ --target ${{ matrix.target }}
       - name: Run tests
         run: cargo test --verbose
-      - uses: haya14busa/action-cond@v1
-        id: files
-        with:
-          cond: ${{ matrix.os == 'windows-latest' }}
-          if_true: "vade_evan_cli.exe"
-          if_false: "vade_evan_cli"
       - name: Compress files
         uses: vimtor/action-zip@v1
         with:
-          files: target/${{ matrix.target }}/release/${{ steps.files.outputs.value }} target/wasm32-unknown-unknown
+          files: target/${{ matrix.target }}/release/ target/wasm32-unknown-unknown
           dest: target/${{ matrix.target }}.zip
       - name: Create Github Release
         uses: ncipollo/release-action@v1
