@@ -15,10 +15,12 @@
 - pass sdk feature to vade-sidtree plugin
 - remove getrandom from dependencies
 - update release ci to build and upload artifacts for android, ios, wasm, linux, macos and windows targets
+- add `helper_create_self_issued_credential` helper function
 
 ### Fixes
 
 - add `payload` argument to did_create in CLI
+- align key format for master secrets and public keys (no extra double quotes)
 
 ### Deprecation
 

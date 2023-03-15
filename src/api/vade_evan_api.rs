@@ -18,7 +18,7 @@
 use std::os::raw::c_void;
 use vade::Vade;
 
-#[cfg(feature = "plugin-vc-zkp-bbs")]
+#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 use crate::helpers::Credential;
 #[cfg(feature = "plugin-did-sidetree")]
 use crate::helpers::Did;
@@ -318,7 +318,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_create_credential_offer(
         &mut self,
         schema_did: &str,
@@ -359,11 +359,11 @@ impl VadeEvan {
     ///                "nonce": "QqJR4o6joiApYVXX7JLbRIZBQ9QprlFpewo8GbojIKY=",
     ///                "credentialMessageCount": 2
     ///            }"#;
-    ///            let bbs_secret = r#""OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI=""#;
+    ///            let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
     ///            let credential_values = r#"{
     ///                "email": "value@x.com"
     ///            }"#;
-    ///            let issuer_pub_key = r#""jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o""#;
+    ///            let issuer_pub_key = r#"jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o"#;
     ///
     ///            let credential_request = vade_evan
     ///                .helper_create_credential_request(
@@ -382,7 +382,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_create_credential_request(
         &mut self,
         issuer_public_key: &str,
@@ -473,7 +473,7 @@ impl VadeEvan {
     ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(feature = "plugin-vc-zkp-bbs")]
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     pub async fn helper_verify_credential(
         &mut self,
         credential: &str,
@@ -571,6 +571,88 @@ impl VadeEvan {
         let mut credential_helper = Credential::new(self)?;
         credential_helper
             .revoke_credential(credential, update_key_jwk, private_key)
+            .await
+            .map_err(|err| err.into())
+    }
+
+    /// Creates a new zero-knowledge proof self issued credential.
+    /// `create_self_issued_credential` function combines `vc_zkp_create_credential_offer`,
+    /// `vc_zkp_create_credential_request`, `vc_zkp_issue_credential` and `vc_zkp_finish_credential`
+    /// and produces self-issued credential with blind signature.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - schema to create the credential
+    /// * `credential_subject_str` - JSON string of CredentialSubject structure
+    /// * `bbs_secret` - BBS secret
+    /// * `bbs_private_key` - BBS private key
+    /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
+    /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
+    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
+    ///
+    /// # Returns
+    /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+    ///         const CREDENTIAL_SUBJECT_STR: &str = r#"{
+    ///                                                  "id":"did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
+    ///                                                  "data":{
+    ///                                                           "email":"value@x.com"
+    ///                                                         }
+    ///                                                }"#;
+    ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
+    ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let offer_str = vade_evan
+    ///                 .helper_create_self_issued_credential(
+    ///                     SCHEMA_DID,
+    ///                     CREDENTIAL_SUBJECT_STR,
+    ///                     BBS_SECRET,
+    ///                     BBS_PRIVATE_KEY,
+    ///                     "did:revoc:12345",
+    ///                     "1",
+    ///                     None,
+    ///                 )
+    ///                 .await?;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
+    /// }
+    /// ```
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    pub async fn helper_create_self_issued_credential(
+        &mut self,
+        schema_did: &str,
+        credential_subject_str: &str,
+        bbs_secret: &str,
+        bbs_private_key: &str,
+        credential_revocation_did: &str,
+        credential_revocation_id: &str,
+        exp_date: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        let mut credential = Credential::new(self)?;
+        credential
+            .create_self_issued_credential(
+                schema_did,
+                credential_subject_str,
+                bbs_secret,
+                bbs_private_key,
+                credential_revocation_did,
+                credential_revocation_id,
+                exp_date,
+            )
             .await
             .map_err(|err| err.into())
     }
@@ -1169,7 +1251,7 @@ impl VadeEvan {
     ///         let bbs_public_key =  "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
     ///         let signing_key = None;
     ///         let service_url = "www.example.service";
-    ///      
+    ///
     ///         let create_response = vade_evan
     ///            .helper_did_create(
     ///                Some(bbs_public_key),
