@@ -5135,6 +5135,7 @@ dependencies = [
  "jni",
  "log",
  "openssl",
+ "regex",
  "serde",
  "serde-wasm-bindgen 0.4.5",
  "serde_derive",

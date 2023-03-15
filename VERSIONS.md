@@ -15,6 +15,7 @@
 - pass sdk feature to vade-sidtree plugin
 - remove getrandom from dependencies
 - add `helper_create_self_issued_credential` helper function
+- add `helper_create_proof_request`
 
 ### Fixes
 

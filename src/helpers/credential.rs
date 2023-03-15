@@ -4,6 +4,7 @@ use std::time::SystemTime;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
+use super::shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
@@ -14,10 +15,6 @@ use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
 use serde::de::DeserializeOwned;
 use serde_json::{value::Value, Map};
-use ssi::{
-    jsonld::{json_to_dataset, JsonLdOptions, StaticLoader},
-    urdna2015::normalize,
-};
 use thiserror::Error;
 use uuid::Uuid;
 use vade_evan_bbs::{
@@ -47,8 +44,10 @@ pub enum CredentialError {
     InvalidVerificationMethod(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
-    #[error("JSON-ld handling failed, {0}")]
-    JsonLdHandling(String),
+    // #[error("JSON-ld handling failed, {0}")]
+    // JsonLdHandling(String),
+    #[error("{0}")]
+    JsonLdHandling(#[from] SharedError), // for now only one type of error from shared helper, so just re-package it
     #[error("base64 decoding failed")]
     Base64DecodingFailed(#[from] base64::DecodeError),
     #[error("an error has occurred during bbs signature validation: {0}")]
@@ -66,33 +65,6 @@ pub enum CredentialError {
 // Master secret is always incorporated, without being mentioned in the credential schema
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
-
-async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, CredentialError> {
-    let mut loader = StaticLoader;
-    let options = JsonLdOptions {
-        base: None,           // -b, Base IRI
-        expand_context: None, // -c, IRI for expandContext option
-        ..Default::default()
-    };
-    let dataset = json_to_dataset(
-        &document_string,
-        None, // will be patched into @context, e.g. Some(&r#"["https://schema.org/"]"#.to_string()),
-        false,
-        Some(&options),
-        &mut loader,
-    )
-    .await
-    .map_err(|err| CredentialError::JsonLdHandling(err.to_string()))?;
-    let dataset_normalized = normalize(&dataset).unwrap();
-    let normalized = dataset_normalized.to_nquads().unwrap();
-    let non_empty_lines = normalized
-        .split("\n")
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
-        .collect();
-
-    Ok(non_empty_lines)
-}
 
 fn get_public_key_generator(
     public_key: &str,
@@ -504,42 +476,11 @@ impl<'a> Credential<'a> {
     ) -> Result<UnsignedBbsCredential, CredentialError> {
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
 
-        let credential = UnsignedBbsCredential {
-            context: vec![
-                "https://www.w3.org/2018/credentials/v1".to_string(),
-                "https://schema.org/".to_string(),
-                "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
-            ],
-            id: "uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string(),
-            r#type: vec!["VerifiableCredential".to_string()],
-            issuer: "did:evan:testcore:placeholder_issuer".to_string(),
-            valid_until: if use_valid_until {
-                Some("2031-01-01T00:00:00.000Z".to_string())
-            } else {
-                None
-            },
-            issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
-            credential_subject: CredentialSubject {
-                id: subject_did.map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
-                data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
-                    .properties
-                    .into_iter()
-                    .map(|(name, _schema_property)| (name, String::new()))
-                    .collect(),
-            },
-            credential_schema: CredentialSchemaReference {
-                id: schema.id,
-                r#type: schema.r#type,
-            },
-            credential_status: CredentialStatus {
-                id: "did:evan:zkp:placeholder_status#0".to_string(),
-                r#type: "RevocationList2020Status".to_string(),
-                revocation_list_index: "0".to_string(),
-                revocation_list_credential: "did:evan:zkp:placeholder_status".to_string(),
-            },
-        };
-
-        Ok(credential)
+        Ok(create_draft_credential_from_schema(
+            use_valid_until,
+            subject_did,
+            schema,
+        ))
     }
 
     async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
