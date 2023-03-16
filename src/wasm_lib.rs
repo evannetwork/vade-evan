@@ -293,6 +293,22 @@ cfg_if::cfg_if! {
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())
         }
+
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_proof_request(
+            schema_did: String,
+            revealed_attributes: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_create_proof_request(
+                    &schema_did,
+                    &revealed_attributes,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
+        }
     } else {
     }
 }

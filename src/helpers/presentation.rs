@@ -22,8 +22,31 @@ pub enum PresentationError {
     InvalidRevealedAttributes(String),
     #[error("internal error occurred; {0}")]
     InternalError(String),
-    #[error("JSON (de)serialization failed")]
-    JsonDeSerialization(#[from] serde_json::Error),
+    #[error(r#"JSON serialization of {0} failed due to "{1}""#)]
+    JsonSerialization(String, String),
+    #[error(r#"JSON deserialization of {0} failed due to "{1}" on: {2}"#)]
+    JsonDeserialization(String, String, String),
+}
+
+impl PresentationError {
+    fn to_serialization_error(
+        parsed_object: &str,
+    ) -> impl Fn(serde_json::Error) -> PresentationError + '_ {
+        move |err| PresentationError::JsonSerialization(parsed_object.to_string(), err.to_string())
+    }
+
+    fn to_deserialization_error<'a>(
+        to_parse_name: &'a str,
+        to_parse_value: &'a str,
+    ) -> impl Fn(serde_json::Error) -> PresentationError + 'a {
+        move |err| {
+            PresentationError::JsonDeserialization(
+                to_parse_name.to_string(),
+                err.to_string(),
+                to_parse_value.to_string(),
+            )
+        }
+    }
 }
 
 // Master secret is always incorporated, without being mentioned in the credential schema
@@ -43,19 +66,24 @@ impl<'a> Presentation<'a> {
     pub async fn create_proof_request(
         &mut self,
         schema_did: &str,
-        revealed_attributes: &[&str],
+        revealed_attributes: &str,
     ) -> Result<String, PresentationError> {
-        let mut reveal_attributes = HashMap::new();
-        reveal_attributes.insert(schema_did.to_string(), revealed_attributes.to_vec());
+        let revealed_attributes_parsed: Vec<String> = serde_json::from_str(revealed_attributes)
+            .map_err(PresentationError::to_deserialization_error(
+                "revealed attributes",
+                revealed_attributes,
+            ))?;
         let proof_request_payload = RequestProofPayload {
             verifier_did: None,
             schemas: vec![schema_did.to_string()],
             reveal_attributes: self
-                .get_reveal_attributes_map(schema_did, revealed_attributes)
+                .get_reveal_attributes_map(schema_did, &revealed_attributes_parsed)
                 .await?,
         };
 
-        let proof_request_json = serde_json::to_string(&proof_request_payload)?;
+        let proof_request_json = serde_json::to_string(&proof_request_payload).map_err(
+            PresentationError::to_serialization_error("RequestProofPayload"),
+        )?;
 
         self.vade_evan
             .vc_zkp_request_proof(EVAN_METHOD, TYPE_OPTIONS, &proof_request_json)
@@ -72,7 +100,10 @@ impl<'a> Presentation<'a> {
             .did_resolve(did)
             .await
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
-        let did_result_value: DidDocumentResult<T> = serde_json::from_str(&did_result_str)?;
+        let did_result_value: DidDocumentResult<T> =
+            serde_json::from_str(&did_result_str).map_err(
+                PresentationError::to_deserialization_error("DID document", &did_result_str),
+            )?;
 
         Ok(did_result_value.did_document)
     }
@@ -80,7 +111,7 @@ impl<'a> Presentation<'a> {
     async fn get_reveal_attributes_map(
         &mut self,
         schema_did: &str,
-        revealed_attributes: &[&str],
+        revealed_attributes: &Vec<String>,
     ) -> Result<HashMap<String, Vec<usize>>, PresentationError> {
         let regex = Regex::new(NQUAD_REGEX).map_err(|err| {
             PresentationError::InternalError(format!("regex for nquads invalid; {0}", &err))
@@ -90,7 +121,9 @@ impl<'a> Presentation<'a> {
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let credential_draft =
             create_draft_credential_from_schema(false, Some("did:placeholder"), schema);
-        let credential_draft_str = serde_json::to_string(&credential_draft)?;
+        let credential_draft_str = serde_json::to_string(&credential_draft).map_err(
+            PresentationError::to_serialization_error("UnsignedBbsCredential"),
+        )?;
         let nquads = convert_to_nquads(&credential_draft_str).await?;
 
         // avoid duplicated regex applications, so build property to index map beforehand
@@ -107,7 +140,7 @@ impl<'a> Presentation<'a> {
         let mut attribute_indices: Vec<usize> = vec![];
         let mut missing_attributes: Vec<&str> = vec![];
         for attribute_name in revealed_attributes.iter() {
-            if let Some(index) = name_to_index_map.get(attribute_name) {
+            if let Some(index) = name_to_index_map.get(attribute_name.as_str()) {
                 attribute_indices.push(*index + ADDITIONAL_HIDDEN_MESSAGES_COUNT);
             } else {
                 missing_attributes.push(attribute_name);
@@ -132,6 +165,8 @@ mod tests_proof_request {
 
     use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
 
+    use super::Presentation;
+
     // evan.address
     const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg";
 
@@ -142,9 +177,10 @@ mod tests_proof_request {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
         })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
 
-        let result = vade_evan
-            .helper_create_proof_request(SCHEMA_DID, &["zip", "country"])
+        let result = presentation
+            .create_proof_request(SCHEMA_DID, r#"["zip", "country"]"#)
             .await;
 
         assert!(result.is_ok());

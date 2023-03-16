@@ -508,7 +508,7 @@ impl VadeEvan {
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///             let schema_did = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg";
-    ///             let revealed_attributes = ["zip", "country"];
+    ///             let revealed_attributes = r#"["zip", "country"]"#;
     ///
     ///             vade_evan
     ///                 .helper_create_proof_request(schema_did, &revealed_attributes)
@@ -524,7 +524,7 @@ impl VadeEvan {
     pub async fn helper_create_proof_request(
         &mut self,
         schema_did: &str,
-        revealed_attributes: &[&str],
+        revealed_attributes: &str,
     ) -> Result<String, VadeEvanError> {
         use crate::helpers::Presentation;
 

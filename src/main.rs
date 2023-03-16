@@ -256,6 +256,15 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
+            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            ("create_proof_request", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_proof_request(
+                        get_argument_value(sub_m, "schema_did", None),
+                        get_argument_value(sub_m, "revealed_attributes", None),
+                    )
+                    .await?
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -374,6 +383,17 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("credential_revocation_did")?)
                     .arg(get_clap_argument("credential_revocation_id")?)
                     .arg(get_clap_argument("exp_date")?)
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_proof_request")
+                    .about("Requests a proof for a credential.")
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("revealed_attributes")?)
             );
         } else {}
     }
@@ -856,6 +876,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("private_key")
             .required(true)
             .help("private key to be supplied for local signer")
+            .takes_value(true),
+        "revealed_attributes" => Arg::with_name("revealed_attributes")
+            .long("revealed_attributes")
+            .value_name("revealed_attributes")
+            .required(true)
+            .help("list of names of revealed attributes in specified schema")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
