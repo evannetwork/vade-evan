@@ -18,7 +18,7 @@ pub enum PresentationError {
     VadeEvanError(String),
     #[error("{0}")]
     JsonLdHandling(#[from] SharedError), // for now only one type of error from shared helper, so just re-package it
-    #[error("could not find revealed attributes in nquads; {0}")]
+    #[error("could not find revealed attributes in nquads: {0}")]
     InvalidRevealedAttributes(String),
     #[error("internal error occurred; {0}")]
     InternalError(String),
@@ -26,6 +26,10 @@ pub enum PresentationError {
     JsonSerialization(String, String),
     #[error(r#"JSON deserialization of {0} failed due to "{1}" on: {2}"#)]
     JsonDeserialization(String, String, String),
+    #[error(r#"schema with DID "{0}" does not seem to be a valid schema: {1}"#)]
+    SchemaInvalid(String, String),
+    #[error(r#"schema with DID "{0}" could not be found"#)]
+    SchemaNotFound(String),
 }
 
 impl PresentationError {
@@ -100,10 +104,21 @@ impl<'a> Presentation<'a> {
             .did_resolve(did)
             .await
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
-        let did_result_value: DidDocumentResult<T> =
-            serde_json::from_str(&did_result_str).map_err(
-                PresentationError::to_deserialization_error("DID document", &did_result_str),
-            )?;
+
+        if did_result_str == "Not Found" {
+            return Err(PresentationError::SchemaNotFound(did.to_string()));
+        }
+
+        let did_result_value: DidDocumentResult<T> = serde_json::from_str(&did_result_str)
+            .map_err(|err| {
+                PresentationError::SchemaInvalid(
+                    did.to_string(),
+                    PresentationError::to_deserialization_error("DID document", &did_result_str)(
+                        err,
+                    )
+                    .to_string(),
+                )
+            })?;
 
         Ok(did_result_value.did_document)
     }
@@ -149,7 +164,11 @@ impl<'a> Presentation<'a> {
 
         if missing_attributes.len() > 0 {
             return Err(PresentationError::InvalidRevealedAttributes(
-                missing_attributes.join(", "),
+                missing_attributes
+                    .iter()
+                    .map(|ma| format!(r#""{}""#, &ma))
+                    .collect::<Vec<String>>()
+                    .join(", "),
             ));
         }
 
@@ -167,11 +186,11 @@ mod tests_proof_request {
 
     use super::Presentation;
 
-    // evan.address
-    const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg";
+    const NOT_A_SCHEMA_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA"; // some identity DID
+    const NOT_FOUND_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvgfoobar";
+    const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
 
     #[tokio::test]
-
     async fn helper_can_create_proof_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -188,6 +207,74 @@ mod tests_proof_request {
         assert_eq!(parsed.r#type, "BBS");
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID);
         assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [16, 14]);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_returns_an_error_if_schema_did_cannot_be_resolved() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let result = presentation
+            .create_proof_request(NOT_FOUND_DID, r#"["zip", "country"]"#)
+            .await;
+
+        match result {
+            Ok(_) => assert!(false, "got unexpected result instead of error"),
+            Err(err) => assert_eq!(
+                err.to_string(),
+                format!("schema with DID \"{}\" could not be found", &NOT_FOUND_DID),
+            ),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_returns_an_error_if_schema_did_resolves_to_non_schema() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let result = presentation
+            .create_proof_request(NOT_A_SCHEMA_DID, r#"["zip", "country"]"#)
+            .await;
+
+        match result {
+            Ok(_) => assert!(false, "got unexpected result instead of error"),
+            Err(err) => assert!(
+                err.to_string().starts_with(&format!(r#"schema with DID "{}" does not seem to be a valid schema: JSON deserialization of DID document failed due to "#, NOT_A_SCHEMA_DID)),
+            ),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_detect_invalid_properties() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let result = presentation
+            .create_proof_request(SCHEMA_DID, r#"["zip", "country", "foo", "bar"]"#)
+            .await;
+
+        match result {
+            Ok(_) => assert!(false, "got unexpected result instead of error"),
+            Err(err) => assert_eq!(
+                err.to_string(),
+                r#"could not find revealed attributes in nquads: "foo", "bar""#
+            ),
+        };
 
         Ok(())
     }
