@@ -635,12 +635,13 @@ impl VadeEvan {
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
     /// * `bbs_secret` - BBS secret
     /// * `bbs_private_key` - BBS private key
-    /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
-    /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
+    /// * `credential_revocation_did` - revocation list DID
+    /// * `credential_revocation_id` - index in revocation list
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
+    ///
     /// # Example
     ///
     /// ```
