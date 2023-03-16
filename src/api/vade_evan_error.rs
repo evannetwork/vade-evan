@@ -1,5 +1,6 @@
 #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 use crate::helpers::CredentialError;
+#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 use crate::helpers::PresentationError;
 use thiserror::Error;
 
