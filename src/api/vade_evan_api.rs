@@ -492,7 +492,7 @@ impl VadeEvan {
     /// # Arguments
     ///
     /// * `schema_did` - DID of schema to request proof for
-    /// * `revealed_attributes` - list of names of revealed attributes in specified schema
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema, reveals all if omitted
     ///
     /// # Returns
     /// * `Option<String>` - A `ProofRequest` as JSON
@@ -508,10 +508,10 @@ impl VadeEvan {
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///             let schema_did = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg";
-    ///             let revealed_attributes = r#"["zip", "country"]"#;
+    ///             let revealed_attributes = Some(r#"["zip", "country"]"#);
     ///
     ///             vade_evan
-    ///                 .helper_create_proof_request(schema_did, &revealed_attributes)
+    ///                 .helper_create_proof_request(schema_did, revealed_attributes)
     ///                 .await?;
     ///
     ///             Ok(())
@@ -524,7 +524,7 @@ impl VadeEvan {
     pub async fn helper_create_proof_request(
         &mut self,
         schema_did: &str,
-        revealed_attributes: &str,
+        revealed_attributes: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         use crate::helpers::Presentation;
 

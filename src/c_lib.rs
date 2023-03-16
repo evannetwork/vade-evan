@@ -651,7 +651,7 @@ pub extern "C" fn execute_vade(
                 vade_evan
                     .helper_create_proof_request(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),
-                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).map(|v| v.as_str()),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)

@@ -261,7 +261,7 @@ async fn main() -> Result<()> {
                 get_vade_evan(sub_m)?
                     .helper_create_proof_request(
                         get_argument_value(sub_m, "schema_did", None),
-                        get_argument_value(sub_m, "revealed_attributes", None),
+                        get_optional_argument_value(sub_m, "revealed_attributes"),
                     )
                     .await?
             }
@@ -904,8 +904,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "revealed_attributes" => Arg::with_name("revealed_attributes")
             .long("revealed_attributes")
             .value_name("revealed_attributes")
-            .required(true)
-            .help("list of names of revealed attributes in specified schema")
+            .help("list of names of revealed attributes in specified schema, reveals all if omitted")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);

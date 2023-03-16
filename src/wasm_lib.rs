@@ -298,13 +298,13 @@ cfg_if::cfg_if! {
         #[wasm_bindgen]
         pub async fn helper_create_proof_request(
             schema_did: String,
-            revealed_attributes: String,
+            revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             vade_evan
                 .helper_create_proof_request(
                     &schema_did,
-                    &revealed_attributes,
+                    revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())

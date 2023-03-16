@@ -70,18 +70,21 @@ impl<'a> Presentation<'a> {
     pub async fn create_proof_request(
         &mut self,
         schema_did: &str,
-        revealed_attributes: &str,
+        revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
-        let revealed_attributes_parsed: Vec<String> = serde_json::from_str(revealed_attributes)
-            .map_err(PresentationError::to_deserialization_error(
-                "revealed attributes",
-                revealed_attributes,
-            ))?;
+        let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
+            .map(|ras| {
+                serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
+                    "revealed attributes",
+                    ras,
+                ))
+            })
+            .transpose()?;
         let proof_request_payload = RequestProofPayload {
             verifier_did: None,
             schemas: vec![schema_did.to_string()],
             reveal_attributes: self
-                .get_reveal_attributes_map(schema_did, &revealed_attributes_parsed)
+                .get_reveal_attributes_map(schema_did, revealed_attributes_parsed)
                 .await?,
         };
 
@@ -126,14 +129,23 @@ impl<'a> Presentation<'a> {
     async fn get_reveal_attributes_map(
         &mut self,
         schema_did: &str,
-        revealed_attributes: &Vec<String>,
+        revealed_attributes: Option<Vec<String>>,
     ) -> Result<HashMap<String, Vec<usize>>, PresentationError> {
         let regex = Regex::new(NQUAD_REGEX).map_err(|err| {
             PresentationError::InternalError(format!("regex for nquads invalid; {0}", &err))
         })?;
 
-        // get nquads for schema
+        // get parsed schema and "clone" it due to move occurring below
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
+        let schema_clone: CredentialSchema = serde_json::from_str(
+            &serde_json::to_string(&schema)
+                .map_err(PresentationError::to_serialization_error("schema document"))?,
+        )
+        .map_err(PresentationError::to_deserialization_error(
+            "schema document",
+            &format!("document of {}", &schema_did),
+        ))?;
+        // get nquads for schema
         let credential_draft =
             create_draft_credential_from_schema(false, Some("did:placeholder"), schema);
         let credential_draft_str = serde_json::to_string(&credential_draft).map_err(
@@ -151,10 +163,18 @@ impl<'a> Presentation<'a> {
             }
         }
 
+        let attribute_names = revealed_attributes.unwrap_or_else(|| {
+            schema_clone
+                .properties
+                .keys()
+                .map(|p| p.to_string())
+                .collect()
+        });
+
         // collect indices for attributes we have and collect missing ones
         let mut attribute_indices: Vec<usize> = vec![];
         let mut missing_attributes: Vec<&str> = vec![];
-        for attribute_name in revealed_attributes.iter() {
+        for attribute_name in attribute_names.iter() {
             if let Some(index) = name_to_index_map.get(attribute_name.as_str()) {
                 attribute_indices.push(*index + ADDITIONAL_HIDDEN_MESSAGES_COUNT);
             } else {
@@ -199,14 +219,15 @@ mod tests_proof_request {
         let mut presentation = Presentation::new(&mut vade_evan)?;
 
         let result = presentation
-            .create_proof_request(SCHEMA_DID, r#"["zip", "country"]"#)
+            .create_proof_request(SCHEMA_DID, Some(r#"["zip", "country"]"#))
             .await;
 
         assert!(result.is_ok());
-        let parsed: BbsProofRequest = serde_json::from_str(&result?)?;
+        let mut parsed: BbsProofRequest = serde_json::from_str(&result?)?;
         assert_eq!(parsed.r#type, "BBS");
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID);
-        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [16, 14]);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [14, 16],);
 
         Ok(())
     }
@@ -220,7 +241,7 @@ mod tests_proof_request {
         let mut presentation = Presentation::new(&mut vade_evan)?;
 
         let result = presentation
-            .create_proof_request(NOT_FOUND_DID, r#"["zip", "country"]"#)
+            .create_proof_request(NOT_FOUND_DID, Some(r#"["zip", "country"]"#))
             .await;
 
         match result {
@@ -243,7 +264,7 @@ mod tests_proof_request {
         let mut presentation = Presentation::new(&mut vade_evan)?;
 
         let result = presentation
-            .create_proof_request(NOT_A_SCHEMA_DID, r#"["zip", "country"]"#)
+            .create_proof_request(NOT_A_SCHEMA_DID, Some(r#"["zip", "country"]"#))
             .await;
 
         match result {
@@ -265,7 +286,7 @@ mod tests_proof_request {
         let mut presentation = Presentation::new(&mut vade_evan)?;
 
         let result = presentation
-            .create_proof_request(SCHEMA_DID, r#"["zip", "country", "foo", "bar"]"#)
+            .create_proof_request(SCHEMA_DID, Some(r#"["zip", "country", "foo", "bar"]"#))
             .await;
 
         match result {
@@ -275,6 +296,29 @@ mod tests_proof_request {
                 r#"could not find revealed attributes in nquads: "foo", "bar""#
             ),
         };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_requests_all_attributes_if_none_are_specified() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let result = presentation.create_proof_request(SCHEMA_DID, None).await;
+
+        assert!(result.is_ok());
+        let mut parsed: BbsProofRequest = serde_json::from_str(&result?)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(
+            parsed.sub_proof_requests[0].revealed_attributes,
+            [12, 13, 14, 15, 16],
+        );
 
         Ok(())
     }
