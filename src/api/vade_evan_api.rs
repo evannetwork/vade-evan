@@ -1351,7 +1351,7 @@ impl VadeEvan {
     ///         let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///         let did = "did:evan:0x123334233232";
     ///         let update_key = r#"{"kty":"EC","crv":"secp256k1","x":"W8rj8Dko_f0KgqY-nzCvzy_pNbVmYyiaY1GpiuvZKsw","y":"E2cKPqGtq55iiyZIdTCe59HgeQ1bdnMcNdbf9tI5ogo","d":"yZv5g_rjyC0nnUii7pxEh7V2M6XZHeJCu5OjfLMNlSI"}"#;
-    ///         let operation = r#"AddServiceEnpoint"#;
+    ///         let operation = r#"AddServiceEndpoint"#;
     ///         let service = r#"{"id":"sds","r#type":"SecureDataStrore","service_endpoint":"www.google.com"}"#;
     ///         let payload = &serde_json::to_string(&service)?;
     ///         let update_response = vade_evan

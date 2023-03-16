@@ -193,7 +193,7 @@ impl<'a> Did<'a> {
                     ids: vec![key_id_to_remove],
                 });
             }
-            DIDOperationType::AddServiceEnpoint => {
+            DIDOperationType::AddServiceEndpoint => {
                 let service: Service =
                     serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
                         source_message: err.to_string(),
@@ -204,7 +204,7 @@ impl<'a> Did<'a> {
                 });
             }
 
-            DIDOperationType::RemoveServiceEnpoint => {
+            DIDOperationType::RemoveServiceEndpoint => {
                 let service_id_to_remove = payload.to_owned();
 
                 patch = Patch::RemoveServices(RemoveServices {
@@ -212,7 +212,8 @@ impl<'a> Did<'a> {
                 });
             }
             DIDOperationType::ReplaceDidDoc => {
-                let updated_did_doc = serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
+                let updated_did_doc =
+                    serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
                         source_message: err.to_string(),
                     })?;
                 let ietf_json_patch = IetfJsonPatch {
@@ -357,7 +358,7 @@ mod tests {
         let did_update_result = vade_evan
             .helper_did_update(
                 &did_create_result.did.did_document.id,
-                "AddServiceEnpoint",
+                "AddServiceEndpoint",
                 &serde_json::to_string(&did_create_result.update_key)?,
                 &serde_json::to_string(&service)?,
             )
@@ -394,7 +395,7 @@ mod tests {
         let did_update_result = vade_evan
             .helper_did_update(
                 &did_create_result.did.did_document.id,
-                "AddServiceEnpoint",
+                "AddServiceEndpoint",
                 &serde_json::to_string(&did_create_result.update_key)?,
                 &serde_json::to_string(&service)?,
             )
@@ -422,7 +423,7 @@ mod tests {
         let did_update_result = vade_evan
             .helper_did_update(
                 &did_create_result.did.did_document.id,
-                "RemoveServiceEnpoint",
+                "RemoveServiceEndpoint",
                 &serde_json::to_string(&update_key)?,
                 "sds",
             )

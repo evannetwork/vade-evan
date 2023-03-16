@@ -843,7 +843,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .long("operation")
             .value_name("operation")
             .required(true)
-            .help("Operation type AddKey/RemoveKey/AddServiceEnpoint/RemoveServiceEnpoint")
+            .help("Operation type AddKey/RemoveKey/AddServiceEndpoint/RemoveServiceEndpoint")
             .takes_value(true),
         "update_key" => Arg::with_name("update_key")
             .long("update_key")

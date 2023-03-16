@@ -13,8 +13,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[cfg(feature = "plugin-did-sidetree")]
 pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", "waitForCompletion":true }"#;
@@ -24,9 +24,9 @@ pub const EVAN_METHOD: &str = "did:evan";
 pub enum DIDOperationType {
     AddKey,
     RemoveKey,
-    AddServiceEnpoint,
-    RemoveServiceEnpoint,
-    ReplaceDidDoc
+    AddServiceEndpoint,
+    RemoveServiceEndpoint,
+    ReplaceDidDoc,
 }
 
 impl FromStr for DIDOperationType {
@@ -35,8 +35,8 @@ impl FromStr for DIDOperationType {
         match input {
             "AddKey" => Ok(DIDOperationType::AddKey),
             "RemoveKey" => Ok(DIDOperationType::RemoveKey),
-            "AddServiceEnpoint" => Ok(DIDOperationType::AddServiceEnpoint),
-            "RemoveServiceEnpoint" => Ok(DIDOperationType::RemoveServiceEnpoint),
+            "AddServiceEndpoint" => Ok(DIDOperationType::AddServiceEndpoint),
+            "RemoveServiceEndpoint" => Ok(DIDOperationType::RemoveServiceEndpoint),
             "ReplaceDidDoc" => Ok(DIDOperationType::ReplaceDidDoc),
             _ => Err(()),
         }
