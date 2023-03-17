@@ -44,8 +44,6 @@ pub enum CredentialError {
     InvalidVerificationMethod(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
-    // #[error("JSON-ld handling failed, {0}")]
-    // JsonLdHandling(String),
     #[error("{0}")]
     JsonLdHandling(#[from] SharedError), // for now only one type of error from shared helper, so just re-package it
     #[error("base64 decoding failed")]
