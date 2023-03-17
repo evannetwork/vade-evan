@@ -479,7 +479,7 @@ impl<'a> Credential<'a> {
         Ok(create_draft_credential_from_schema(
             use_valid_until,
             subject_did,
-            schema,
+            &schema,
         ))
     }
 

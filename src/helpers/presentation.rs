@@ -137,17 +137,9 @@ impl<'a> Presentation<'a> {
 
         // get parsed schema and "clone" it due to move occurring below
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
-        let schema_clone: CredentialSchema = serde_json::from_str(
-            &serde_json::to_string(&schema)
-                .map_err(PresentationError::to_serialization_error("schema document"))?,
-        )
-        .map_err(PresentationError::to_deserialization_error(
-            "schema document",
-            &format!("document of {}", &schema_did),
-        ))?;
         // get nquads for schema
         let credential_draft =
-            create_draft_credential_from_schema(false, Some("did:placeholder"), schema);
+            create_draft_credential_from_schema(false, Some("did:placeholder"), &schema);
         let credential_draft_str = serde_json::to_string(&credential_draft).map_err(
             PresentationError::to_serialization_error("UnsignedBbsCredential"),
         )?;
@@ -163,13 +155,8 @@ impl<'a> Presentation<'a> {
             }
         }
 
-        let attribute_names = revealed_attributes.unwrap_or_else(|| {
-            schema_clone
-                .properties
-                .keys()
-                .map(|p| p.to_string())
-                .collect()
-        });
+        let attribute_names = revealed_attributes
+            .unwrap_or_else(|| schema.properties.keys().map(|p| p.to_string()).collect());
 
         // collect indices for attributes we have and collect missing ones
         let mut attribute_indices: Vec<usize> = vec![];
