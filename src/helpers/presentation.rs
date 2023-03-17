@@ -67,6 +67,16 @@ impl<'a> Presentation<'a> {
         Ok(Self { vade_evan })
     }
 
+    /// Requests a proof for a credential.
+    /// The proof request consists of the fields the verifier wants to be revealed per schema.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - DID of schema to request proof for
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema, reveals all if omitted
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofRequest` as JSON
     pub async fn create_proof_request(
         &mut self,
         schema_did: &str,
