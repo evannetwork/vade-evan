@@ -486,11 +486,60 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
+    /// Requests a proof for a credential.
+    /// The proof request consists of the fields the verifier wants to be revealed per schema.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - DID of schema to request proof for
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema, reveals all if omitted
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofRequest` as JSON
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let schema_did = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg";
+    ///             let revealed_attributes = Some(r#"["zip", "country"]"#);
+    ///
+    ///             vade_evan
+    ///                 .helper_create_proof_request(schema_did, revealed_attributes)
+    ///                 .await?;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    pub async fn helper_create_proof_request(
+        &mut self,
+        schema_did: &str,
+        revealed_attributes: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        use crate::helpers::Presentation;
+
+        let mut presentation_helper = Presentation::new(self)?;
+        presentation_helper
+            .create_proof_request(schema_did, revealed_attributes)
+            .await
+            .map_err(|err| err.into())
+    }
+
     /// Revokes a given credential with the help of vade and updates revocation list credential
     ///
     /// # Arguments
     ///
-    /// * `credential` - credential to be revovked as serialized JSON
+    /// * `credential` - credential to be revoked as serialized JSON
     /// * `update_key_jwk` - update key in jwk format as serialized JSON
     /// * `private_key` - private key for local signer to be used for signing
     ///
@@ -586,12 +635,13 @@ impl VadeEvan {
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
     /// * `bbs_secret` - BBS secret
     /// * `bbs_private_key` - BBS private key
-    /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
-    /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
+    /// * `credential_revocation_did` - revocation list DID
+    /// * `credential_revocation_id` - index in revocation list
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
+    ///
     /// # Example
     ///
     /// ```
@@ -1301,7 +1351,7 @@ impl VadeEvan {
     ///         let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///         let did = "did:evan:0x123334233232";
     ///         let update_key = r#"{"kty":"EC","crv":"secp256k1","x":"W8rj8Dko_f0KgqY-nzCvzy_pNbVmYyiaY1GpiuvZKsw","y":"E2cKPqGtq55iiyZIdTCe59HgeQ1bdnMcNdbf9tI5ogo","d":"yZv5g_rjyC0nnUii7pxEh7V2M6XZHeJCu5OjfLMNlSI"}"#;
-    ///         let operation = r#"AddServiceEnpoint"#;
+    ///         let operation = r#"AddServiceEndpoint"#;
     ///         let service = r#"{"id":"sds","r#type":"SecureDataStrore","service_endpoint":"www.google.com"}"#;
     ///         let payload = &serde_json::to_string(&service)?;
     ///         let update_response = vade_evan

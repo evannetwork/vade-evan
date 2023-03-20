@@ -1,5 +1,7 @@
 #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
 use crate::helpers::CredentialError;
+#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+use crate::helpers::PresentationError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -13,6 +15,9 @@ pub enum VadeEvanError {
     #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
     #[error(transparent)]
     CredentialError(#[from] CredentialError),
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[error(transparent)]
+    PresentationError(#[from] PresentationError),
 }
 
 impl From<Box<dyn std::error::Error>> for VadeEvanError {

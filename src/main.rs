@@ -248,13 +248,22 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "schema_did", None),
                         get_argument_value(sub_m, "credential_subject", None),
                         get_argument_value(sub_m, "bbs_secret", None),
-                        get_argument_value(sub_m, "bbs_private_key", None),
+                        get_argument_value(sub_m, "private_key", None),
                         get_argument_value(sub_m, "credential_revocation_did", None),
                         get_argument_value(sub_m, "credential_revocation_id", None),
                         get_optional_argument_value(sub_m, "exp_date"),
                     )
                     .await?;
                 "".to_string()
+            }
+            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            ("create_proof_request", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_proof_request(
+                        get_argument_value(sub_m, "schema_did", None),
+                        get_optional_argument_value(sub_m, "revealed_attributes"),
+                    )
+                    .await?
             }
             _ => {
                 bail!("invalid subcommand");
@@ -370,10 +379,21 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("credential_subject")?)
                     .arg(get_clap_argument("bbs_secret")?)
-                    .arg(get_clap_argument("bbs_private_key")?)
+                    .arg(get_clap_argument("private_key")?)
                     .arg(get_clap_argument("credential_revocation_did")?)
                     .arg(get_clap_argument("credential_revocation_id")?)
                     .arg(get_clap_argument("exp_date")?)
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_proof_request")
+                    .about("Requests a proof for a credential.")
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("revealed_attributes")?)
             );
         } else {}
     }
@@ -813,11 +833,17 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("subject_did")
             .help("DID of subject")
             .takes_value(true),
+        "credential_subject" => Arg::with_name("credential_subject") // same as above, but mandatory
+            .long("credential_subject")
+            .value_name("credential_subject")
+            .required(true)
+            .help("DID of subject")
+            .takes_value(true),
         "operation" => Arg::with_name("operation")
             .long("operation")
             .value_name("operation")
             .required(true)
-            .help("Operation type AddKey/RemoveKey/AddServiceEnpoint/RemoveServiceEnpoint")
+            .help("Operation type AddKey/RemoveKey/AddServiceEndpoint/RemoveServiceEndpoint")
             .takes_value(true),
         "update_key" => Arg::with_name("update_key")
             .long("update_key")
@@ -856,6 +882,29 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("private_key")
             .required(true)
             .help("private key to be supplied for local signer")
+            .takes_value(true),
+        "credential_revocation_did" => Arg::with_name("credential_revocation_did")
+            .long("credential_revocation_did")
+            .value_name("credential_revocation_did")
+            .required(true)
+            .help("revocation list DID")
+            .takes_value(true),
+        "credential_revocation_id" => Arg::with_name("credential_revocation_id")
+            .long("credential_revocation_id")
+            .value_name("credential_revocation_id")
+            .required(true)
+            .help("index in revocation list")
+            .takes_value(true),
+        "exp_date" => Arg::with_name("exp_date")
+            .long("exp_date")
+            .value_name("exp_date")
+            .required(true)
+            .help(r#"expiration date, string, e.g. "1722-12-03T14:23:42.120Z""#)
+            .takes_value(true),
+        "revealed_attributes" => Arg::with_name("revealed_attributes")
+            .long("revealed_attributes")
+            .value_name("revealed_attributes")
+            .help("list of names of revealed attributes in specified schema, reveals all if omitted")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
