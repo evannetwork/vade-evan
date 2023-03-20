@@ -1,0 +1,2 @@
+FROM ghcr.io/cross-rs/armv7-linux-androideabi:main
+RUN apt -y update && apt -y upgrade && apt -y install libunwind-dev

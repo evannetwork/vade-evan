@@ -14,6 +14,7 @@
 - add `helper_revoke_credential` function
 - pass sdk feature to vade-sidtree plugin
 - remove getrandom from dependencies
+- update release ci to build and upload artifacts for android, ios, wasm, linux, macos and windows targets
 - add `helper_create_self_issued_credential` helper function
 
 ### Fixes

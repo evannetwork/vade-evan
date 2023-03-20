@@ -1,0 +1,3 @@
+FROM ghcr.io/cross-rs/arm-unknown-linux-gnueabihf:main
+
+RUN apt -y update && apt -y upgrade
