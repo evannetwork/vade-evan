@@ -94,7 +94,7 @@ impl<'a> Presentation<'a> {
             verifier_did: None,
             schemas: vec![schema_did.to_string()],
             reveal_attributes: self
-                .get_reveal_attributes_map(schema_did, revealed_attributes_parsed)
+                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
                 .await?,
         };
 
@@ -136,7 +136,7 @@ impl<'a> Presentation<'a> {
         Ok(did_result_value.did_document)
     }
 
-    async fn get_reveal_attributes_map(
+    async fn get_reveal_attributes_indices_map(
         &mut self,
         schema_did: &str,
         revealed_attributes: Option<Vec<String>>,
