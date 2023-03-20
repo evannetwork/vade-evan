@@ -1,6 +1,6 @@
 [package]
 name = "vade-evan"
-version = "0.4.0"
+version = "0.5.0-rc.1"
 authors = ["evan GmbH"]
 edition = "2018"
 license-file = "LICENSE.txt"
