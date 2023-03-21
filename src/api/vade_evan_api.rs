@@ -1287,6 +1287,8 @@ impl VadeEvan {
     /// * `bbs_public_key` - base64 encoded bbs public key (Bls12381G2Key2020)
     /// * `signing_key` - base64 encoded public key (JsonWebKey2020)
     /// * `service_endpoint` - service endpoint url
+    /// * `update_key` - JSON string containing update key for did in JWK format,
+    /// * `recovery_key` - JSON string containing recovery key for did in JWK format,
     ///
     /// # Example
     ///
@@ -1307,6 +1309,8 @@ impl VadeEvan {
     ///                Some(bbs_public_key),
     ///                signing_key,
     ///                Some(service_url),
+    ///                None,
+    ///                None,
     ///            )
     ///            .await?;
     ///         println!("did create response: {}", create_response);
@@ -1323,10 +1327,18 @@ impl VadeEvan {
         bbs_public_key: Option<&str>,
         signing_key: Option<&str>,
         service_endpoint: Option<&str>,
+        update_key: Option<&str>,
+        recovery_key: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let did = Did::new(self)?;
-        did.create(bbs_public_key, signing_key, service_endpoint)
-            .await
+        did.create(
+            bbs_public_key,
+            signing_key,
+            service_endpoint,
+            update_key,
+            recovery_key,
+        )
+        .await
     }
 
     /// Updates a did (add/remove public key jwk and add/remove service endpoint)

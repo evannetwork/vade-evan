@@ -887,7 +887,9 @@ mod tests {
             signer: "local",
         })?;
         // create did
-        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, None, None, None)
+            .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
         let mut credential: BbsCredential = serde_json::from_str(CREDENTIAL_ACTIVE)?;
 
