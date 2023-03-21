@@ -204,7 +204,7 @@ async fn main() -> Result<()> {
                 get_vade_evan(sub_m)?
                     .helper_did_create(
                         get_optional_argument_value(sub_m, "bbs_public_key"),
-                        get_optional_argument_value(sub_m, "signign_key"),
+                        get_optional_argument_value(sub_m, "signing_key"),
                         get_optional_argument_value(sub_m, "service_endpoint"),
                         get_optional_argument_value(sub_m, "update_key"),
                         get_optional_argument_value(sub_m, "recovery_key"),
