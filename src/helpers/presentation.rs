@@ -108,6 +108,53 @@ impl<'a> Presentation<'a> {
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
     }
 
+    /// Creates a presentation.
+    /// The presentation has proof and requested credentials.
+    ///
+    /// # Arguments
+    ///
+    /// * `proof_request` - proof request for presentation
+    /// * `credential` - credential to be shared in presentation
+    /// * `master_secret` - user's master secret
+    /// * `signing_key` - users secp256k1 signing key
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema,
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `Presentation` as JSON
+    pub async fn create_presentation(
+        &mut self,
+        proof_request: &str,
+        credential: &str,
+        master_secret: &str,
+        signing_key: &str,
+        revealed_attributes: Option<&str>,
+    ) -> Result<String, PresentationError> {
+        let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
+            .map(|ras| {
+                serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
+                    "revealed attributes",
+                    ras,
+                ))
+            })
+            .transpose()?;
+        let proof_request_payload = RequestProofPayload {
+            verifier_did: None,
+            schemas: vec![schema_did.to_string()],
+            reveal_attributes: self
+                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+                .await?,
+        };
+
+        let proof_request_json = serde_json::to_string(&proof_request_payload).map_err(
+            PresentationError::to_serialization_error("RequestProofPayload"),
+        )?;
+
+        self.vade_evan
+            .vc_zkp_request_proof(EVAN_METHOD, TYPE_OPTIONS, &proof_request_json)
+            .await
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
+    }
+
     async fn get_did_document<T>(&mut self, did: &str) -> Result<T, PresentationError>
     where
         T: DeserializeOwned,
