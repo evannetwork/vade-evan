@@ -42,8 +42,27 @@ impl<'a> Did<'a> {
         bbs_public_key: Option<&str>,
         signing_key: Option<&str>,
         service_endpoint: Option<&str>,
+        update_key: Option<&str>,
+        recovery_key: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut public_keys: Vec<PublicKey> = vec![];
+        let update_key: Option<JsonWebKey> = match update_key {
+            None => None,
+            Some(json_web_key) => {
+                serde_json::from_str(json_web_key).map_err(|err| VadeEvanError::InternalError {
+                    source_message: err.to_string(),
+                })?
+            }
+        };
+        let recovery_key: Option<JsonWebKey> = match recovery_key {
+            None => None,
+            Some(json_web_key) => {
+                serde_json::from_str(json_web_key).map_err(|err| VadeEvanError::InternalError {
+                    source_message: err.to_string(),
+                })?
+            }
+        };
+
         match bbs_public_key {
             Some(val) => public_keys.push(PublicKey {
                 id: format!("bbs-key#{}", Uuid::new_v4().to_simple().to_string()),
@@ -109,8 +128,8 @@ impl<'a> Did<'a> {
         }
 
         let mut create_payload: CreateDidPayload = CreateDidPayload {
-            update_key: None,
-            recovery_key: None,
+            update_key,
+            recovery_key,
             public_keys: None,
             services: None,
         };
@@ -262,6 +281,34 @@ mod tests {
 
     #[tokio::test]
     #[serial]
+    async fn helper_did_can_create_did_with_update_and_recovery_keys() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, None, None, None)
+            .await;
+
+        assert!(did_create_result.is_ok());
+        let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result?)?;
+
+        let did_create_result = vade_evan
+            .helper_did_create(
+                None,
+                None,
+                None,
+                Some(&serde_json::to_string(&did_create_result.update_key)?),
+                Some(&serde_json::to_string(&did_create_result.recovery_key)?),
+            )
+            .await;
+        assert!(did_create_result.is_ok());
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
     async fn helper_did_can_create_did_with_bbs_public_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -271,7 +318,7 @@ mod tests {
         let base64_encoded_bbs_public_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
 
         let did_create_result = vade_evan
-            .helper_did_create(Some(base64_encoded_bbs_public_key), None, None)
+            .helper_did_create(Some(base64_encoded_bbs_public_key), None, None, None, None)
             .await;
 
         assert!(did_create_result.is_ok());
@@ -289,7 +336,7 @@ mod tests {
         let service_endpoint = "www.example.service";
 
         let did_create_result = vade_evan
-            .helper_did_create(None, None, Some(service_endpoint))
+            .helper_did_create(None, None, Some(service_endpoint), None, None)
             .await;
         assert!(did_create_result.is_ok());
         assert!(did_create_result?.contains(service_endpoint));
@@ -304,7 +351,9 @@ mod tests {
             signer: DEFAULT_SIGNER,
         })?;
 
-        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, None, None, None)
+            .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
 
         let base64_encoded_bbs_public_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";
@@ -344,7 +393,9 @@ mod tests {
             signer: DEFAULT_SIGNER,
         })?;
 
-        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, None, None, None)
+            .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
 
         let service_endpoint = "https://w3id.org/did-resolution/v1".to_string();
@@ -381,7 +432,9 @@ mod tests {
             signer: DEFAULT_SIGNER,
         })?;
 
-        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, None, None, None)
+            .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
 
         let service_endpoint = "https://www.google.de".to_string();
@@ -449,7 +502,9 @@ mod tests {
             signer: DEFAULT_SIGNER,
         })?;
 
-        let did_create_result = vade_evan.helper_did_create(None, None, None).await?;
+        let did_create_result = vade_evan
+            .helper_did_create(None, None, None, None, None)
+            .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
 
         let base64_encoded_bbs_public_key = "LwDjc3acetrEsbccFI4zSy1+AFqUbkEUf6Sm0OxIdhU=";

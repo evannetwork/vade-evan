@@ -159,6 +159,8 @@ cfg_if::cfg_if! {
             bbs_public_key: Option<String>,
             signing_key: Option<String>,
             service_endpoint: Option<String>,
+            update_key: Option<String>,
+            recovery_key: Option<String>,
         ) -> Result<Option<String>, JsValue> {
 
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -166,7 +168,9 @@ cfg_if::cfg_if! {
             .helper_did_create(
                 bbs_public_key.as_ref().map(|x| x.as_ref()),
                 signing_key.as_ref().map(|x| x.as_ref()),
-                service_endpoint.as_ref().map(|x| x.as_ref())
+                service_endpoint.as_ref().map(|x| x.as_ref()),
+                update_key.as_ref().map(|x| x.as_ref()),
+                recovery_key.as_ref().map(|x| x.as_ref())
             ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(Some(did_create_result))

@@ -284,6 +284,8 @@ pub extern "C" fn execute_vade(
                         arguments_vec.get(0).map(|x| &**x),
                         arguments_vec.get(1).map(|x| &**x),
                         arguments_vec.get(2).map(|x| &**x),
+                        arguments_vec.get(3).map(|x| &**x),
+                        arguments_vec.get(4).map(|x| &**x),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)

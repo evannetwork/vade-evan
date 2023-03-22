@@ -204,8 +204,10 @@ async fn main() -> Result<()> {
                 get_vade_evan(sub_m)?
                     .helper_did_create(
                         get_optional_argument_value(sub_m, "bbs_public_key"),
-                        get_optional_argument_value(sub_m, "signign_key"),
+                        get_optional_argument_value(sub_m, "signing_key"),
                         get_optional_argument_value(sub_m, "service_endpoint"),
+                        get_optional_argument_value(sub_m, "update_key_did_create"),
+                        get_optional_argument_value(sub_m, "recovery_key"),
                     )
                     .await?
             }
@@ -327,6 +329,8 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                         .arg(get_clap_argument("bbs_public_key")?)
                         .arg(get_clap_argument("signing_key")?)
                         .arg(get_clap_argument("service_endpoint")?)
+                        .arg(get_clap_argument("update_key_did_create")?)
+                        .arg(get_clap_argument("recovery_key")?)
                         .arg(get_clap_argument("target")?)
                         .arg(get_clap_argument("signer")?),
                 );
@@ -850,6 +854,16 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("update_key")
             .required(true)
             .help("Update key for did update in JWK format")
+            .takes_value(true),
+        "update_key_did_create" => Arg::with_name("update_key_did_create")
+            .long("update_key_did_create")
+            .value_name("update_key_did_create")
+            .help("Optional Update key for did create in JWK format")
+            .takes_value(true),
+        "recovery_key" => Arg::with_name("recovery_key")
+            .long("recovery_key")
+            .value_name("recovery_key")
+            .help("Recovery key for did in JWK format")
             .takes_value(true),
         "bbs_public_key" => Arg::with_name("bbs_public_key")
             .long("bbs_public_key")
