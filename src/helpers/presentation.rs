@@ -1,9 +1,15 @@
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
-
+use serde_json::{value::Value, Map};
 use thiserror::Error;
-use vade_evan_bbs::{CredentialSchema, RequestProofPayload};
+use vade_evan_bbs::{
+    BbsCredential,
+    BbsProofRequest,
+    CredentialSchema,
+    PresentProofPayload,
+    RequestProofPayload,
+};
 
 use super::{
     datatypes::DidDocumentResult,
@@ -123,12 +129,16 @@ impl<'a> Presentation<'a> {
     /// * `Option<String>` - A `Presentation` as JSON
     pub async fn create_presentation(
         &mut self,
-        proof_request: &str,
-        credential: &str,
+        proof_request_str: &str,
+        credential_str: &str,
         master_secret: &str,
         signing_key: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
+            PresentationError::to_deserialization_error("credential", credential_str),
+        )?;
+        let schema_did = &credential.credential_schema.id;
         let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
             .map(|ras| {
                 serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
@@ -137,20 +147,51 @@ impl<'a> Presentation<'a> {
                 ))
             })
             .transpose()?;
-        let proof_request_payload = RequestProofPayload {
-            verifier_did: None,
-            schemas: vec![schema_did.to_string()],
-            reveal_attributes: self
-                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
-                .await?,
-        };
+        let reveal_attributes = self
+        .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+        .await?;
 
-        let proof_request_json = serde_json::to_string(&proof_request_payload).map_err(
-            PresentationError::to_serialization_error("RequestProofPayload"),
+
+        let proof_request: BbsProofRequest = serde_json::from_str(proof_request_str).map_err(
+            PresentationError::to_deserialization_error("proof request", proof_request_str),
         )?;
 
+        // get nquads
+        let mut parsed_credential: Map<String, Value> = serde_json::from_str(credential_str).map_err(
+            PresentationError::to_deserialization_error("credential", credential_str),
+        )?;
+        parsed_credential.remove("proof");
+        let credential_without_proof = serde_json::to_string(&parsed_credential).map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let nquads = convert_to_nquads(&credential_without_proof).await?;
+
+        let mut nquads_schema_map = HashMap::new();
+        nquads_schema_map.insert(schema_did.to_owned(), nquads);
+
+        // credential_schema_map
+        let mut credential_schema_map = HashMap::new();
+        credential_schema_map.insert(schema_did.to_owned(), credential.clone());
+
+        // revealed_properties_schema_map 
+        let mut revealed_properties_schema_map = HashMap::new();
+        let revealed = credential.credential_subject.clone();
+        revealed_properties_schema_map.insert(schema_did.to_owned(), revealed);
+
+        let present_proof_payload = PresentProofPayload {
+            proof_request,
+            credential_schema_map,
+            revealed_properties_schema_map,
+            public_key_schema_map: todo!(),
+            nquads_schema_map,
+            master_secret: master_secret.to_owned(),
+            prover_did: todo!(),
+            prover_public_key_did: todo!(),
+            prover_proving_key: todo!(),
+        };
+
+        let payload = serde_json::to_string(&present_proof_payload)
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
         self.vade_evan
-            .vc_zkp_request_proof(EVAN_METHOD, TYPE_OPTIONS, &proof_request_json)
+            .vc_zkp_present_proof(EVAN_METHOD, TYPE_OPTIONS, &payload)
             .await
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
     }
