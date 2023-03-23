@@ -23,6 +23,7 @@
 
 - add `payload` argument to did_create in CLI
 - align key format for master secrets and public keys (no extra double quotes)
+- fix optional params did_create
 
 ### Deprecation
 
