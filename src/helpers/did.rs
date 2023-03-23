@@ -3,7 +3,6 @@ use std::str::FromStr;
 use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{DIDOperationType, EVAN_METHOD, TYPE_SIDETREE_OPTIONS};
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use uuid::Uuid;
 
 use vade_sidetree::{
     datatypes::{
@@ -49,81 +48,109 @@ impl<'a> Did<'a> {
         let update_key: Option<JsonWebKey> = match update_key {
             None => None,
             Some(json_web_key) => {
-                serde_json::from_str(json_web_key).map_err(|err| VadeEvanError::InternalError {
-                    source_message: err.to_string(),
-                })?
+                if json_web_key.is_empty() {
+                    None
+                } else {
+                    serde_json::from_str(json_web_key).map_err(|err| {
+                        VadeEvanError::InternalError {
+                            source_message: err.to_string(),
+                        }
+                    })?
+                }
             }
         };
         let recovery_key: Option<JsonWebKey> = match recovery_key {
             None => None,
             Some(json_web_key) => {
-                serde_json::from_str(json_web_key).map_err(|err| VadeEvanError::InternalError {
-                    source_message: err.to_string(),
-                })?
+                if json_web_key.is_empty() {
+                    None
+                } else {
+                    serde_json::from_str(json_web_key).map_err(|err| {
+                        VadeEvanError::InternalError {
+                            source_message: err.to_string(),
+                        }
+                    })?
+                }
             }
         };
 
         match bbs_public_key {
-            Some(val) => public_keys.push(PublicKey {
-                id: format!("bbs-key#{}", Uuid::new_v4().to_simple().to_string()),
-                key_type: TYPE_BBS_KEY.to_owned(),
-                public_key_jwk: Some(JsonWebKey {
-                    key_type: "EC".to_owned(),
-                    curve: "BLS12381_G2".to_owned(),
-                    x: val.to_owned(),
-                    y: None,
-                    d: None,
-                    nonce: None,
-                }),
-                purposes: Some(vec![
-                    Purpose::Authentication,
-                    Purpose::AssertionMethod,
-                    Purpose::CapabilityInvocation,
-                    Purpose::CapabilityDelegation,
-                    Purpose::KeyAgreement,
-                ]),
-                controller: None,
-            }),
+            Some(val) => {
+                if val.is_empty() {
+                    {}
+                } else {
+                    public_keys.push(PublicKey {
+                        id: "bbs-key-1".to_owned(),
+                        key_type: TYPE_BBS_KEY.to_owned(),
+                        public_key_jwk: Some(JsonWebKey {
+                            key_type: "EC".to_owned(),
+                            curve: "BLS12381_G2".to_owned(),
+                            x: val.to_owned(),
+                            y: None,
+                            d: None,
+                            nonce: None,
+                        }),
+                        purposes: Some(vec![
+                            Purpose::Authentication,
+                            Purpose::AssertionMethod,
+                            Purpose::CapabilityInvocation,
+                            Purpose::CapabilityDelegation,
+                            Purpose::KeyAgreement,
+                        ]),
+                        controller: None,
+                    })
+                }
+            }
             None => {}
         };
         match signing_key {
             Some(val) => {
-                let pub_key = decode_config(val, URL_SAFE_NO_PAD).map_err(|err| {
-                    VadeEvanError::InternalError {
-                        source_message: err.to_string(),
-                    }
-                })?;
-                public_keys.push(PublicKey {
-                    id: format!("signing-key-1#{}", Uuid::new_v4().to_simple().to_string()),
-                    key_type: TYPE_JSONWEB_KEY.to_owned(),
-                    public_key_jwk: Some(JsonWebKey {
-                        key_type: "EC".to_owned(),
-                        curve: "secp256k1".to_owned(),
-                        x: encode_config(pub_key[1..33].as_ref(), URL_SAFE_NO_PAD),
-                        y: Some(encode_config(pub_key[33..65].as_ref(), URL_SAFE_NO_PAD)),
-                        d: None,
-                        nonce: None,
-                    }),
-                    purposes: Some(vec![
-                        Purpose::Authentication,
-                        Purpose::AssertionMethod,
-                        Purpose::CapabilityInvocation,
-                        Purpose::CapabilityDelegation,
-                        Purpose::KeyAgreement,
-                    ]),
-                    controller: None,
-                })
+                if val.is_empty() {
+                    {}
+                } else {
+                    let pub_key = decode_config(val, URL_SAFE_NO_PAD).map_err(|err| {
+                        VadeEvanError::InternalError {
+                            source_message: err.to_string(),
+                        }
+                    })?;
+                    public_keys.push(PublicKey {
+                        id: "signing-key-1".to_owned(),
+                        key_type: TYPE_JSONWEB_KEY.to_owned(),
+                        public_key_jwk: Some(JsonWebKey {
+                            key_type: "EC".to_owned(),
+                            curve: "secp256k1".to_owned(),
+                            x: encode_config(pub_key[1..33].as_ref(), URL_SAFE_NO_PAD),
+                            y: Some(encode_config(pub_key[33..65].as_ref(), URL_SAFE_NO_PAD)),
+                            d: None,
+                            nonce: None,
+                        }),
+                        purposes: Some(vec![
+                            Purpose::Authentication,
+                            Purpose::AssertionMethod,
+                            Purpose::CapabilityInvocation,
+                            Purpose::CapabilityDelegation,
+                            Purpose::KeyAgreement,
+                        ]),
+                        controller: None,
+                    })
+                }
             }
             None => {}
         };
 
         let mut services: Vec<Service> = vec![];
         match service_endpoint {
-            Some(val) => services.push(Service {
-                id: "service#1".to_owned(),
-                service_endpoint: val.to_owned(),
-                service_type: "CustomService".to_owned(),
-            }),
+            Some(val) => {
+                if val.is_empty() {
+                    {}
+                } else {
+                    services.push(Service {
+                        id: "service1".to_owned(),
+                        service_endpoint: val.to_owned(),
+                        service_type: "CustomService".to_owned(),
+                    })
+                }
+            }
             None => {}
         }
 
@@ -192,7 +219,7 @@ impl<'a> Did<'a> {
                     serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
                         source_message: err.to_string(),
                     })?;
-                let id = format!("key#{}", Uuid::new_v4().to_simple().to_string());
+                let id = "key#1".to_owned();
 
                 let public_key_to_add = PublicKey {
                     id,
