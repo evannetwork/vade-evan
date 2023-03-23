@@ -3,7 +3,6 @@ use std::str::FromStr;
 use crate::api::{VadeEvan, VadeEvanError};
 use crate::helpers::datatypes::{DIDOperationType, EVAN_METHOD, TYPE_SIDETREE_OPTIONS};
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use uuid::Uuid;
 
 use vade_sidetree::{
     datatypes::{
@@ -65,7 +64,7 @@ impl<'a> Did<'a> {
 
         match bbs_public_key {
             Some(val) => public_keys.push(PublicKey {
-                id: format!("bbs-key#{}", Uuid::new_v4().to_simple().to_string()),
+                id: "bbs-key-1".to_owned(),
                 key_type: TYPE_BBS_KEY.to_owned(),
                 public_key_jwk: Some(JsonWebKey {
                     key_type: "EC".to_owned(),
@@ -94,7 +93,7 @@ impl<'a> Did<'a> {
                     }
                 })?;
                 public_keys.push(PublicKey {
-                    id: format!("signing-key-1#{}", Uuid::new_v4().to_simple().to_string()),
+                    id: "signing-key-1".to_owned(),
                     key_type: TYPE_JSONWEB_KEY.to_owned(),
                     public_key_jwk: Some(JsonWebKey {
                         key_type: "EC".to_owned(),
@@ -120,7 +119,7 @@ impl<'a> Did<'a> {
         let mut services: Vec<Service> = vec![];
         match service_endpoint {
             Some(val) => services.push(Service {
-                id: "service#1".to_owned(),
+                id: "service1".to_owned(),
                 service_endpoint: val.to_owned(),
                 service_type: "CustomService".to_owned(),
             }),
@@ -192,7 +191,7 @@ impl<'a> Did<'a> {
                     serde_json::from_str(payload).map_err(|err| VadeEvanError::InternalError {
                         source_message: err.to_string(),
                     })?;
-                let id = format!("key#{}", Uuid::new_v4().to_simple().to_string());
+                let id = "key#1".to_owned();
 
                 let public_key_to_add = PublicKey {
                     id,
