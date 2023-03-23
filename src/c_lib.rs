@@ -207,11 +207,16 @@ pub extern "C" fn execute_vade(
     let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
     let args_array: &[*const c_char] =
         unsafe { slice::from_raw_parts(arguments, num_of_args as usize) };
-
     // convert each element to a Rust string
     let arguments_vec: Vec<_> = args_array
         .iter()
-        .map(|&v| unsafe { CStr::from_ptr(v).to_string_lossy().into_owned() })
+        .map(|&v| {
+            if !v.is_null() {
+                unsafe { CStr::from_ptr(v).to_string_lossy().into_owned() }
+            } else {
+                String::new()
+            }
+        })
         .collect();
 
     let mut str_options = String::new();
