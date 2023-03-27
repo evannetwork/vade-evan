@@ -139,10 +139,16 @@ jobs:
         run: cross build --release --no-default-features --features bundle-sdk,target-c-lib --target-dir target/ --target ${{ matrix.target }}
       - name: Run tests
         run: cargo test --verbose
+      - uses: haya14busa/action-cond@v1
+        id: files
+        with:
+          cond: ${{ matrix.target == 'wasm32-unknown-unknown' }}
+          if_true: "release"
+          if_false: "release/libvade_evan.a"
       - name: Compress files
         uses: vimtor/action-zip@v1
         with:
-          files: target/${{ matrix.target }}/release/libvade_evan.a
+          files: target/${{ matrix.target }}/${{ steps.files.outputs.value }}
           dest: target/${{ matrix.target }}.zip
       - name: Create Github Release
         uses: ncipollo/release-action@v1
