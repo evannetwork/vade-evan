@@ -1,11 +1,12 @@
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use std::collections::HashMap;
 use serde_json::{value::Value, Map};
+use std::collections::HashMap;
 use thiserror::Error;
 use vade_evan_bbs::{
     BbsCredential,
     BbsProofRequest,
+    BbsSubProofRequest,
     CredentialSchema,
     PresentProofPayload,
     RequestProofPayload,
@@ -16,6 +17,7 @@ use super::{
     shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError},
 };
 use crate::api::VadeEvan;
+use crate::helpers::credential::Credential;
 use crate::helpers::datatypes::EVAN_METHOD;
 
 #[derive(Error, Debug)]
@@ -122,7 +124,7 @@ impl<'a> Presentation<'a> {
     /// * `proof_request` - proof request for presentation
     /// * `credential` - credential to be shared in presentation
     /// * `master_secret` - user's master secret
-    /// * `signing_key` - users secp256k1 signing key
+    /// * `signing_key` - users secp256k1 private signing key
     /// * `revealed_attributes` - list of names of revealed attributes in specified schema,
     ///
     /// # Returns
@@ -139,29 +141,54 @@ impl<'a> Presentation<'a> {
             PresentationError::to_deserialization_error("credential", credential_str),
         )?;
         let schema_did = &credential.credential_schema.id;
-        let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
-            .map(|ras| {
-                serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
-                    "revealed attributes",
-                    ras,
-                ))
-            })
-            .transpose()?;
-        let reveal_attributes = self
-        .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
-        .await?;
 
-
-        let proof_request: BbsProofRequest = serde_json::from_str(proof_request_str).map_err(
+        let mut proof_request: BbsProofRequest = serde_json::from_str(proof_request_str).map_err(
             PresentationError::to_deserialization_error("proof request", proof_request_str),
         )?;
+        let matched_schema = proof_request
+            .sub_proof_requests
+            .clone()
+            .into_iter()
+            .filter(|sub_proof| &sub_proof.schema == schema_did)
+            .collect::<Vec<BbsSubProofRequest>>();
 
+        if matched_schema.len() <= 0 {
+            return Err(PresentationError::SchemaInvalid(
+                schema_did.to_string(),
+                "Proof request schema doesn't match with Credential schema".to_owned(),
+            ));
+        }
+
+        if revealed_attributes.is_some() {
+            let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
+                .map(|ras| {
+                    serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
+                        "revealed attributes",
+                        ras,
+                    ))
+                })
+                .transpose()?;
+            let reveal_attributes = self
+                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+                .await?;
+            for sub_proof in proof_request.sub_proof_requests.iter_mut() {
+                if &sub_proof.schema == schema_did {
+                    sub_proof.revealed_attributes = reveal_attributes
+                        .get(schema_did)
+                        .ok_or("schema attribute indices missing")
+                        .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?
+                        .to_owned();
+                }
+            }
+        }
         // get nquads
-        let mut parsed_credential: Map<String, Value> = serde_json::from_str(credential_str).map_err(
-            PresentationError::to_deserialization_error("credential", credential_str),
-        )?;
+        let mut parsed_credential: Map<String, Value> =
+            serde_json::from_str(credential_str).map_err(
+                PresentationError::to_deserialization_error("credential", credential_str),
+            )?;
         parsed_credential.remove("proof");
-        let credential_without_proof = serde_json::to_string(&parsed_credential).map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let credential_without_proof = serde_json::to_string(&parsed_credential)
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
         let nquads = convert_to_nquads(&credential_without_proof).await?;
 
         let mut nquads_schema_map = HashMap::new();
@@ -171,21 +198,39 @@ impl<'a> Presentation<'a> {
         let mut credential_schema_map = HashMap::new();
         credential_schema_map.insert(schema_did.to_owned(), credential.clone());
 
-        // revealed_properties_schema_map 
+        // revealed_properties_schema_map
         let mut revealed_properties_schema_map = HashMap::new();
         let revealed = credential.credential_subject.clone();
         revealed_properties_schema_map.insert(schema_did.to_owned(), revealed);
+
+        // get prover did
+        let prover = credential
+            .credential_subject
+            .id
+            .clone()
+            .ok_or("prover did required")
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+
+        let mut helper_credential = Credential::new(self.vade_evan)
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let public_key_issuer = helper_credential
+            .get_issuer_public_key(&credential.issuer, "#bbs-key-1")
+            .await
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let mut public_key_schema_map = HashMap::new();
+
+        public_key_schema_map.insert(schema_did.to_owned(), public_key_issuer);
 
         let present_proof_payload = PresentProofPayload {
             proof_request,
             credential_schema_map,
             revealed_properties_schema_map,
-            public_key_schema_map: todo!(),
+            public_key_schema_map,
             nquads_schema_map,
             master_secret: master_secret.to_owned(),
-            prover_did: todo!(),
-            prover_public_key_did: todo!(),
-            prover_proving_key: todo!(),
+            prover_did: prover.clone(),
+            prover_public_key_did: format!("{}#key-1", prover),
+            prover_proving_key: signing_key.to_owned(),
         };
 
         let payload = serde_json::to_string(&present_proof_payload)
@@ -292,10 +337,51 @@ mod tests_proof_request {
 
     use super::Presentation;
 
+    const SIGNER_PRIVATE_KEY: &str =
+        "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
+    const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
     const NOT_A_SCHEMA_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA"; // some identity DID
     const NOT_FOUND_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvgfoobar";
     const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
-
+    const SCHEMA_DID_2: &str = "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg";
+    const CREDENTIAL: &str = r###"{
+        "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+        "type": [
+            "VerifiableCredential"
+        ],
+        "proof": {
+            "type": "BbsBlsSignature2020",
+            "created": "2023-02-01T14:08:17.000Z",
+            "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+            "credentialMessageCount": 13,
+            "requiredRevealStatements": []
+        },
+        "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://schema.org/",
+            "https://w3id.org/vc-revocation-list-2020/v1"
+        ],
+        "issuanceDate": "2023-02-01T14:08:09.849Z",
+        "credentialSchema": {
+            "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+            "type": "EvanVCSchema"
+        },
+        "credentialStatus": {
+            "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+            "type": "RevocationList2020Status",
+            "revocationListIndex": "4",
+            "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+        },
+        "credentialSubject": {
+            "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+            "data": {
+                "bio": "biography"
+            }
+        }
+    }"###;
     #[tokio::test]
     async fn helper_can_create_proof_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -406,6 +492,71 @@ mod tests_proof_request {
             [12, 13, 14, 15, 16],
         );
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_create_presentation() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let proof_request_result = presentation
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["bio"]"#))
+            .await;
+
+        assert!(proof_request_result.is_ok());
+        let proof_request_str = &proof_request_result?;
+        let mut parsed: BbsProofRequest = serde_json::from_str(proof_request_str)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [12],);
+
+        let presentation_result = presentation
+            .create_presentation(
+                proof_request_str,
+                CREDENTIAL,
+                MASTER_SECRET,
+                SIGNER_PRIVATE_KEY,
+                None,
+            )
+            .await;
+        assert!(presentation_result.is_ok());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_returns_an_error_if_credential_schema_and_proof_request_schema_mismatch(
+    ) -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+        let proof_request_result = presentation
+            .create_proof_request(SCHEMA_DID, Some(r#"["zip", "country"]"#))
+            .await;
+        assert!(proof_request_result.is_ok());
+        let presentation_result = presentation
+            .create_presentation(
+                &proof_request_result?,
+                CREDENTIAL,
+                MASTER_SECRET,
+                SIGNER_PRIVATE_KEY,
+                None,
+            )
+            .await;
+
+        match presentation_result {
+            Ok(_) => assert!(false, "got unexpected result instead of error"),
+            Err(err) => assert!(err
+                .to_string()
+                .ends_with(r#"Proof request schema doesn't match with Credential schema"#)),
+        };
         Ok(())
     }
 }
