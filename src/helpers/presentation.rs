@@ -152,7 +152,7 @@ impl<'a> Presentation<'a> {
             .filter(|sub_proof| &sub_proof.schema == schema_did)
             .collect::<Vec<BbsSubProofRequest>>();
 
-        if matched_schema.len() <= 0 {
+        if matched_schema.is_empty() {
             return Err(PresentationError::SchemaInvalid(
                 schema_did.to_string(),
                 "Proof request schema doesn't match with Credential schema".to_owned(),
