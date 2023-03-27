@@ -175,9 +175,13 @@ impl<'a> Presentation<'a> {
                 if &sub_proof.schema == schema_did {
                     sub_proof.revealed_attributes = reveal_attributes
                         .get(schema_did)
-                        .ok_or("schema attribute indices missing")
-                        .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?
-                        .to_owned();
+                        .ok_or_else(|| {
+                            PresentationError::InternalError(format!(
+                                "RevealedAttributes not found for schema {}",
+                                schema_did
+                            ))
+                        })?
+                        .to_owned()
                 }
             }
         }
@@ -187,8 +191,13 @@ impl<'a> Presentation<'a> {
                 PresentationError::to_deserialization_error("credential", credential_str),
             )?;
         parsed_credential.remove("proof");
-        let credential_without_proof = serde_json::to_string(&parsed_credential)
-            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let credential_without_proof =
+            serde_json::to_string(&parsed_credential).map_err(|err| {
+                PresentationError::JsonSerialization(
+                    "credential_without_proof".to_owned(),
+                    err.to_string(),
+                )
+            })?;
         let nquads = convert_to_nquads(&credential_without_proof).await?;
 
         let mut nquads_schema_map = HashMap::new();
@@ -204,19 +213,16 @@ impl<'a> Presentation<'a> {
         revealed_properties_schema_map.insert(schema_did.to_owned(), revealed);
 
         // get prover did
-        let prover = credential
-            .credential_subject
-            .id
-            .clone()
-            .ok_or("prover did required")
-            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let prover = credential.credential_subject.id.clone().ok_or_else(|| {
+            PresentationError::InternalError("CredentialSubject doesn't contain did".to_owned())
+        })?;
 
         let mut helper_credential = Credential::new(self.vade_evan)
-            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+            .map_err(|err| PresentationError::InternalError(err.to_string()))?;
         let public_key_issuer = helper_credential
             .get_issuer_public_key(&credential.issuer, "#bbs-key-1")
             .await
-            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+            .map_err(|err| PresentationError::InternalError(err.to_string()))?;
         let mut public_key_schema_map = HashMap::new();
 
         public_key_schema_map.insert(schema_did.to_owned(), public_key_issuer);
@@ -233,8 +239,9 @@ impl<'a> Presentation<'a> {
             prover_proving_key: signing_key.to_owned(),
         };
 
-        let payload = serde_json::to_string(&present_proof_payload)
-            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))?;
+        let payload = serde_json::to_string(&present_proof_payload).map_err(|err| {
+            PresentationError::JsonSerialization("PresentProofPayload".to_owned(), err.to_string())
+        })?;
         self.vade_evan
             .vc_zkp_present_proof(EVAN_METHOD, TYPE_OPTIONS, &payload)
             .await
