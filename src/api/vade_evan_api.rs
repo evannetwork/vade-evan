@@ -535,6 +535,114 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
+    /// Creates a presentation.
+    /// The presentation has proof and requested credentials.
+    ///
+    /// # Arguments
+    ///
+    /// * `proof_request` - proof request for presentation
+    /// * `credential` - credential to be shared in presentation
+    /// * `master_secret` - user's master secret
+    /// * `signing_key` - users secp256k1 private signing key
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema,
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         const SIGNER_PRIVATE_KEY: &str =
+    ///         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
+    ///         const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
+    ///         
+    ///         const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
+    ///         const CREDENTIAL: &str = r###"{
+    ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+    ///             "type": [
+    ///                 "VerifiableCredential"
+    ///             ],
+    ///             "proof": {
+    ///                 "type": "BbsBlsSignature2020",
+    ///                 "created": "2023-02-01T14:08:17.000Z",
+    ///                 "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+    ///                 "proofPurpose": "assertionMethod",
+    ///                 "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+    ///                 "credentialMessageCount": 13,
+    ///                 "requiredRevealStatements": []
+    ///             },
+    ///             "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///             "@context": [
+    ///                 "https://www.w3.org/2018/credentials/v1",
+    ///                 "https://schema.org/",
+    ///                 "https://w3id.org/vc-revocation-list-2020/v1"
+    ///             ],
+    ///             "issuanceDate": "2023-02-01T14:08:09.849Z",
+    ///             "credentialSchema": {
+    ///                 "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+    ///                 "type": "EvanVCSchema"
+    ///             },
+    ///             "credentialStatus": {
+    ///                 "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+    ///                 "type": "RevocationList2020Status",
+    ///                 "revocationListIndex": "4",
+    ///                 "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+    ///             },
+    ///             "credentialSubject": {
+    ///                 "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                 "data": {
+    ///                     "bio": "biography"
+    ///                 }
+    ///             }
+    ///         }"###;
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let revealed_attributes = Some(r#"["zip", "country"]"#);
+    ///             let proof_request_str = vade_evan
+    ///                 .helper_create_proof_request(SCHEMA_DID, revealed_attributes)
+    ///                 .await?;
+    ///
+    ///             let presentation_result = vade_evan
+    ///               .helper_create_presentation(
+    ///                   &proof_request_str,
+    ///                   CREDENTIAL,
+    ///                   MASTER_SECRET,
+    ///                   SIGNER_PRIVATE_KEY,
+    ///                   None,
+    ///                )
+    ///                .await;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    pub async fn helper_create_presentation(
+        &mut self,
+        proof_request_str: &str,
+        credential_str: &str,
+        master_secret: &str,
+        signing_key: &str,
+        revealed_attributes: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        use crate::helpers::Presentation;
+
+        let mut presentation_helper = Presentation::new(self)?;
+        presentation_helper
+            .create_presentation(
+                proof_request_str,
+                credential_str,
+                master_secret,
+                signing_key,
+                revealed_attributes,
+            )
+            .await
+            .map_err(|err| err.into())
+    }
     /// Revokes a given credential with the help of vade and updates revocation list credential
     ///
     /// # Arguments

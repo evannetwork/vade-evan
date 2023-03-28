@@ -313,6 +313,28 @@ cfg_if::cfg_if! {
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())
         }
+
+        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_presentation(
+            proof_request_str:String,
+            credential_str: String,
+            master_secret: String,
+            signing_key: String,
+            revealed_attributes: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_create_presentation(
+                    &proof_request_str,
+                    &credential_str,
+                    &master_secret,
+                    &signing_key,
+                    revealed_attributes.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
+        }
     } else {
     }
 }

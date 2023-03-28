@@ -504,7 +504,7 @@ impl<'a> Credential<'a> {
     ///
     /// # Returns
     /// * `publicKey` - pub key of the issuer
-    async fn get_issuer_public_key(
+    pub async fn get_issuer_public_key(
         &mut self,
         issuer_did: &str,
         verification_method_id: &str,

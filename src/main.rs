@@ -267,6 +267,18 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            ("create_presentation", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_presentation(
+                        get_argument_value(sub_m, "proof_request", None),
+                        get_argument_value(sub_m, "credential", None),
+                        get_argument_value(sub_m, "master_secret", None),
+                        get_argument_value(sub_m, "private_key", None),
+                        get_optional_argument_value(sub_m, "revealed_attributes"),
+                    )
+                    .await?
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -397,6 +409,19 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                 SubCommand::with_name("create_proof_request")
                     .about("Requests a proof for a credential.")
                     .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("revealed_attributes")?)
+            );
+        } else {}
+    }
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_presentation")
+                    .about("Creates a presentation for a proof request.")
+                    .arg(get_clap_argument("proof_request")?)
+                    .arg(get_clap_argument("credential")?)
+                    .arg(get_clap_argument("master_secret")?)
+                    .arg(get_clap_argument("private_key")?)
                     .arg(get_clap_argument("revealed_attributes")?)
             );
         } else {}
@@ -919,6 +944,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .long("revealed_attributes")
             .value_name("revealed_attributes")
             .help("list of names of revealed attributes in specified schema, reveals all if omitted")
+            .takes_value(true),
+        "proof_request" => Arg::with_name("proof_request")
+            .long("proof_request")
+            .value_name("proof_request")
+            .required(true)
+            .help("bbs proof request for presentation sharing")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);

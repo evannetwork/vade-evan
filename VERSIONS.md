@@ -18,6 +18,7 @@
 - add `helper_create_self_issued_credential` helper function
 - add `helper_create_proof_request`
 - add optional params `update_key` and `recovery_key` to `did_create`
+- add `helper_create_presentation`
 
 ### Fixes
 
