@@ -322,13 +322,15 @@ impl VadeEvan {
     pub async fn helper_create_credential_offer(
         &mut self,
         schema_did: &str,
-        use_valid_until: bool,
+        // TODO: update in bindings
+        _use_valid_until: bool,
         issuer_did: &str,
         subject_did: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
+        // TODO: update use_valid_until -> valid_until in bindings
         credential
-            .create_credential_offer(schema_did, use_valid_until, issuer_did, subject_did)
+            .create_credential_offer(schema_did, None, issuer_did, subject_did)
             .await
             .map_err(|err| err.into())
     }
@@ -387,7 +389,8 @@ impl VadeEvan {
         &mut self,
         issuer_public_key: &str,
         bbs_secret: &str,
-        credential_values: &str,
+        // TODO: update in bindings
+        _credential_values: &str,
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, VadeEvanError> {
@@ -396,7 +399,6 @@ impl VadeEvan {
             .create_credential_request(
                 issuer_public_key,
                 bbs_secret,
-                credential_values,
                 credential_offer,
                 credential_schema_did,
             )
@@ -557,7 +559,7 @@ impl VadeEvan {
     ///         const SIGNER_PRIVATE_KEY: &str =
     ///         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
     ///         const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    ///         
+    ///
     ///         const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     ///         const CREDENTIAL: &str = r###"{
     ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",

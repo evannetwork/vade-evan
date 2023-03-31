@@ -232,7 +232,6 @@ impl<'a> Presentation<'a> {
             credential_schema_map,
             revealed_properties_schema_map,
             public_key_schema_map,
-            nquads_schema_map,
             master_secret: master_secret.to_owned(),
             prover_did: prover.clone(),
             prover_public_key_did: format!("{}#key-1", prover),
@@ -531,6 +530,7 @@ mod tests_proof_request {
                 None,
             )
             .await;
+        dbg!(&presentation_result);
         assert!(presentation_result.is_ok());
 
         Ok(())
