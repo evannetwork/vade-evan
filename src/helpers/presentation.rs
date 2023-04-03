@@ -116,6 +116,66 @@ impl<'a> Presentation<'a> {
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
     }
 
+    /// Verifies a presentation.
+    ///
+    /// The function checks if the presentation is valid against the provided proof request.
+    ///
+    /// # Arguments
+    ///
+    /// * `presentation_str` - verifiable presentation from the holder as JSON string
+    /// * `proof_request_str` - proof request from the verifier as JSON string
+    ///
+    /// # Returns
+    /// * `Result<bool, VerificationError>` - A boolean indicating the success of the verification process,
+    ///   wrapped in a `Result` along with a potential `VerificationError`
+    pub async fn verify_presentation(
+        &mut self,
+        presentation_str: &str,
+        proof_request_str: &str,
+    ) -> Result<bool, VerificationError> {
+        let presentation: BbsCredential = serde_json::from_str(presentation_str).map_err(
+            VerificationError::to_deserialization_error("presentation", presentation_str),
+        )?;
+        let proof_request: BbsProofRequest = serde_json::from_str(proof_request_str).map_err(
+            VerificationError::to_deserialization_error("proof request", proof_request_str),
+        )?;
+
+        let issuer_did = &presentation.issuer;
+        let mut helper_credential = Credential::new(self.vade_evan)
+            .map_err(|err| VerificationError::InternalError(err.to_string()))?;
+
+        let public_key_issuer = helper_credential
+            .get_issuer_public_key(issuer_did, "#bbs-key-1")
+            .await
+            .map_err(|err| VerificationError::InternalError(err.to_string()))?;
+
+        let revocation_did = presentation
+            .credential_status
+            .as_ref()
+            .and_then(|status| status.id.as_ref())
+            .ok_or_else(|| {
+                VerificationError::InternalError(
+                    "Credential doesn't contain a revocation DID".to_owned(),
+                )
+            })?;
+
+        let verification_payload = json!({
+            "presentation": presentation,
+            "proofRequest": proof_request,
+            "publicKey": public_key_issuer,
+            "revocationDID": revocation_did
+        });
+
+        let payload = serde_json::to_string(&verification_payload).map_err(|err| {
+            VerificationError::JsonSerialization("VerificationPayload".to_owned(), err.to_string())
+        })?;
+
+        self.vade_evan
+            .vc_zkp_verify_proof(EVAN_METHOD, TYPE_OPTIONS, &payload)
+            .await
+            .map_err(|err| VerificationError::VadeEvanError(err.to_string()))
+    }
+
     /// Creates a presentation.
     /// The presentation has proof and requested credentials.
     ///
