@@ -16,7 +16,7 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[cfg(feature = "plugin-did-sidetree")]
+#[cfg(feature = "did-sidetree")]
 pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", "waitForCompletion":true }"#;
 pub const EVAN_METHOD: &str = "did:evan";
 

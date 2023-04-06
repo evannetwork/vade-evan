@@ -18,9 +18,9 @@
 use std::os::raw::c_void;
 use vade::Vade;
 
-#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+#[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
 use crate::helpers::Credential;
-#[cfg(feature = "plugin-did-sidetree")]
+#[cfg(feature = "did-sidetree")]
 use crate::helpers::Did;
 #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
@@ -318,7 +318,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_credential_offer(
         &mut self,
         schema_did: &str,
@@ -382,7 +382,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_credential_request(
         &mut self,
         issuer_public_key: &str,
@@ -473,7 +473,7 @@ impl VadeEvan {
     ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_verify_credential(
         &mut self,
         credential: &str,
@@ -520,7 +520,7 @@ impl VadeEvan {
     ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_proof_request(
         &mut self,
         schema_did: &str,
@@ -620,7 +620,7 @@ impl VadeEvan {
     ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_presentation(
         &mut self,
         proof_request_str: &str,
@@ -718,7 +718,7 @@ impl VadeEvan {
     ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_revoke_credential(
         &mut self,
         credential: &str,
@@ -789,7 +789,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_self_issued_credential(
         &mut self,
         schema_did: &str,
@@ -1429,7 +1429,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     pub async fn helper_did_create(
         &mut self,
         bbs_public_key: Option<&str>,
@@ -1485,7 +1485,7 @@ impl VadeEvan {
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     pub async fn helper_did_update(
         &mut self,
         did: &str,

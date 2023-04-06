@@ -1,7 +1,11 @@
-name: Build & Test - MacOS & Linux
+name: Build & Test - all build targets
 
 on:
-  push:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,9 +15,9 @@ jobs:
     strategy:
       matrix:
         os:
-          # - macos-latest
+          - macos-latest
           - ubuntu-latest
-          # - windows-latest
+          - windows-latest
 
         target:
           - x86_64-unknown-linux-gnu
@@ -24,16 +28,8 @@ jobs:
         toolchain:
           - stable
 
-        feature_bundle:
-          - bundle-default
-          - bundle-sdk
-          - plugin-did-sidetree
-          - plugin-did-substrate
-          - plugin-didcomm
-          - plugin-jwt-vc
-          - plugin-vc-zkp-bbs
-
         feature_target:
+          - target-c-sdk
           - target-c-lib
           - target-cli
           - target-java-lib
@@ -92,13 +88,13 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build WASM file with wasm-pack
-        if: ${{ matrix.feature_target == 'target-wasm' && matrix.feature_bundle != 'bundle-sdk' }}
-        run: wasm-pack build --release --target web -- --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
+        if: ${{ matrix.feature_target == 'target-wasm' }}
+        run: wasm-pack build --release --target web -- --no-default-features --features=${{ matrix.feature_target }}
 
       - name: Build binaries
-        if: ${{ matrix.feature_target != 'target-wasm' && !(matrix.feature_bundle == 'bundle-sdk' && (matrix.feature_target == 'target-cli' || matrix.feature_target == 'target-java-lib')) }}
-        run: cargo build --release --target=${{ matrix.target }} --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
+        if: ${{ matrix.feature_target != 'target-wasm' }}
+        run: cargo build --release --target=${{ matrix.target }} --no-default-features --features=${{ matrix.feature_target }}
 
       - name: Run tests
-        if: ${{ !(matrix.feature_bundle == 'bundle-sdk' && (matrix.feature_target == 'target-cli' || matrix.feature_target == 'target-wasm'|| matrix.feature_target == 'target-java-lib')) }}
-        run: cargo test --no-default-features --features=${{ matrix.feature_bundle }},${{ matrix.feature_target }}
+        if: ${{ matrix.feature_target != 'target-c-sdk' }}
+        run: cargo test --no-default-features --features=${{ matrix.feature_target }}

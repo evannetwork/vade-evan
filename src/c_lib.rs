@@ -273,7 +273,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(feature = "plugin-did-sidetree")]
+        #[cfg(feature = "did-sidetree")]
         "helper_did_create" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -310,7 +310,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(feature = "plugin-did-sidetree")]
+        #[cfg(feature = "did-sidetree")]
         "helper_did_update" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -358,7 +358,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_offer" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_offer,
@@ -372,7 +372,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_proposal" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_proposal,
@@ -386,7 +386,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_schema" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_schema,
@@ -400,7 +400,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_revocation_registry_definition" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_revocation_registry_definition,
@@ -414,7 +414,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_update_revocation_registry" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_update_revocation_registry,
@@ -442,7 +442,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_finish_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_finish_credential,
@@ -456,7 +456,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_present_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_present_proof,
@@ -470,7 +470,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_request_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_credential,
@@ -484,7 +484,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_request_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_proof,
@@ -498,7 +498,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_revoke_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_revoke_credential,
@@ -526,7 +526,7 @@ pub extern "C" fn execute_vade(
                 request_function_callback
             )
         }),
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_credential_offer" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -552,7 +552,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_credential_request" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -575,7 +575,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_verify_credential" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -597,7 +597,7 @@ pub extern "C" fn execute_vade(
             }
         }),
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_revoke_credential" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -619,7 +619,7 @@ pub extern "C" fn execute_vade(
                 Ok("".to_string())
             }
         }),
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_self_issued_credential" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -644,7 +644,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_proof_request" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -664,7 +664,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_presentation" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -687,7 +687,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(any(feature = "plugin-vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "run_custom_function" => runtime.block_on({
             execute_vade_function!(
                 run_custom_function,
