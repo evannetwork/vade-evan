@@ -95,14 +95,14 @@ pub fn set_log_level(log_level: String) {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-did-read")] {
+    if #[cfg(feature = "did-read")] {
         create_function!(did_resolve, did_or_method, config);
     } else {
     }
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-did-write")] {
+    if #[cfg(feature = "did-write")] {
         create_function!(did_create, did_or_method, options, payload, config);
         create_function!(did_update, did_or_method, options, payload, config);
     } else {
@@ -110,7 +110,7 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-didcomm")] {
+    if #[cfg(feature = "didcomm")] {
         create_function!(didcomm_receive, options, payload, config);
         create_function!(didcomm_send, options, payload, config);
     } else {
@@ -118,7 +118,7 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-vc-zkp")] {
+    if #[cfg(feature = "vc-zkp")] {
         #[cfg(feature = "vc-zkp-bbs")]
         create_function!(run_custom_function, did_or_method, custom_func_name, options, payload, config);
         #[cfg(feature = "vc-zkp-bbs")]
@@ -428,20 +428,20 @@ pub async fn execute_vade(
     config: JsValue,
 ) -> String {
     let result: Result<String, JsValue> = match func_name.as_str() {
-        #[cfg(feature = "capability-did-read")]
+        #[cfg(feature = "did-read")]
         "did_resolve" =>
             did_resolve(did_or_method, config).await,
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "did-write")]
         "did_create" =>
             did_create(did_or_method, options, payload, config).await,
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "did-write")]
         "did_update" =>
             did_update(did_or_method, options, payload, config).await,
 
-        #[cfg(feature = "capability-didcomm")]
+        #[cfg(feature = "didcomm")]
         "didcomm_receive" =>
             didcomm_receive(options, payload, config).await,
-        #[cfg(feature = "capability-didcomm")]
+        #[cfg(feature = "didcomm")]
         "didcomm_send" =>
             didcomm_send(options, payload, config).await,
 

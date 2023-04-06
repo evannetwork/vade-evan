@@ -131,10 +131,10 @@ jobs:
         run: wasm-pack build --release --target nodejs -- --no-default-features --features target-wasm --target-dir=target/
       - name: install cross
         run: cargo install -f cross
-      - name: bundle-sdk native build
+      - name: target-c-sdk native build
         if: ${{ matrix.target != 'wasm32-unknown-unknown' && (matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'x86_64-pc-windows-msvc') }}
         run: cargo build --release --no-default-features --features target-c-sdk --target-dir=target/ --target=${{ matrix.target }}
-      - name: bundle-sdk cross build
+      - name: target-c-sdk cross build
         if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'aarch64-apple-darwin' && matrix.target != 'x86_64-apple-darwin' && matrix.target != 'x86_64-pc-windows-msvc' && matrix.target != 'wasm32-unknown-unknown' }}
         run: cross build --release --no-default-features --features target-c-sdk --target-dir target/ --target ${{ matrix.target }}
       - name: Run tests

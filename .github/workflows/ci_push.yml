@@ -1,11 +1,7 @@
-name: Build & Test - all build targets
+name: Build & Test - MacOS & Linux
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - ready_for_review
+  push:
 
 env:
   CARGO_TERM_COLOR: always

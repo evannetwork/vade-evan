@@ -46,7 +46,7 @@ macro_rules! wrap_vade3 {
     }};
 }
 
-#[cfg(any(feature = "capability-didcomm", feature = "vc-zkp-bbs"))]
+#[cfg(any(feature = "didcomm", feature = "vc-zkp-bbs"))]
 const EVAN_METHOD: &str = "did:evan";
 
 #[tokio::main]
@@ -54,9 +54,9 @@ async fn main() -> Result<()> {
     let matches = get_argument_matches()?;
 
     let result = match matches.subcommand() {
-        #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))]
+        #[cfg(any(feature = "did-read", feature = "did-write"))]
         ("did", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(feature = "capability-did-write")]
+            #[cfg(feature = "did-write")]
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -65,12 +65,12 @@ async fn main() -> Result<()> {
                     .did_create(&method, &options, &payload)
                     .await?
             }
-            #[cfg(feature = "capability-did-read")]
+            #[cfg(feature = "did-read")]
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 get_vade_evan(&sub_m)?.did_resolve(&did).await?
             }
-            #[cfg(feature = "capability-did-write")]
+            #[cfg(feature = "did-write")]
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
                 bail!("invalid subcommand");
             }
         },
-        #[cfg(feature = "capability-didcomm")]
+        #[cfg(feature = "didcomm")]
         ("didcomm", Some(sub_m)) => match sub_m.subcommand() {
             ("send", Some(sub_m)) => {
                 wrap_vade2!(didcomm_send, sub_m)
@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
                 bail!("invalid subcommand");
             }
         },
-        #[cfg(feature = "capability-vc-zkp")]
+        #[cfg(feature = "vc-zkp")]
         ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
             #[cfg(feature = "vc-zkp-bbs")]
             ("create_credential_schema", Some(sub_m)) => {
@@ -440,7 +440,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-did-read")] {
+        if #[cfg(feature = "did-read")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("resolve")
                     .about("Fetch data about a DID, which returns this DID's DID document.")
@@ -452,7 +452,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-did-read")] {
+        if #[cfg(feature = "did-read")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create")
                     .about("Creates a new DID.")
@@ -722,19 +722,19 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
         );
 
     cfg_if::cfg_if! {
-        if #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))] {
+        if #[cfg(any(feature = "did-read", feature = "did-write"))] {
             app = add_subcommand_did(app)?;
         } else {}
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-didcomm")] {
+        if #[cfg(feature = "didcomm")] {
             app = add_subcommand_didcomm(app)?;
         } else {}
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-vc-zkp")] {
+        if #[cfg(feature = "vc-zkp")] {
             app = add_subcommand_vc_zkp(app)?;
         } else {}
     }

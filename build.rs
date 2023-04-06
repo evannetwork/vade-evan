@@ -54,23 +54,22 @@ fn main() {
     append_features![
         output,
         "default",
-        "bundle-default",
-        "bundle-sdk",
         "did-sidetree",
         "did-substrate",
         "didcomm",
         "jwt-vc",
         "signer",
         "vc-zkp-bbs",
-        "capability-didcomm",
-        "capability-did-read",
-        "capability-did-write",
-        "capability-sdk",
-        "capability-vc-zkp",
-        "capability-target-c-lib",
-        "capability-target-cli",
-        "capability-target-java-lib",
-        "capability-target-wasm"
+        "did-read",
+        "did-write",
+        "c-lib",
+        "cli",
+        "vc-zkp",
+        "target-c-sdk",
+        "target-c-lib",
+        "target-cli",
+        "target-java-lib",
+        "target-wasm"
     ];
 
     write!(f, "{}", &output).unwrap();
