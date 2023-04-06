@@ -568,7 +568,7 @@ impl<'a> Credential<'a> {
 }
 
 #[cfg(test)]
-#[cfg(not(all(feature = "target-c-lib", feature = "target-c-sdk")))]
+#[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 mod tests {
     use crate::helpers::credential::is_revoked;
 
@@ -710,7 +710,7 @@ mod tests {
     #[tokio::test]
     #[cfg(all(
         feature = "did-sidetree",
-        not(all(feature = "target-c-lib", feature = "target-c-sdk"))
+        not(all(feature = "c-lib", feature = "target-c-sdk"))
     ))]
     async fn helper_can_create_credential_offer() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {

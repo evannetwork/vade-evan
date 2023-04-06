@@ -187,18 +187,14 @@ fn get_config_values(
 ///
 /// About the `config` argument setup used here:
 ///
-/// - if built for C and having sdk capability enabled: type is `*const c_void`
+/// - if built for C and having sdk target enabled: type is `*const c_void`
 /// - for any other build: type is `*const c_char`
-/// - if built for Java and having sdk capability enabled: it is an unused argument,
-///   so prefix it with `_`
 #[no_mangle]
 pub extern "C" fn execute_vade(
     func_name: *const c_char,
     arguments: *const *const c_char,
     num_of_args: usize,
     options: *const c_char,
-    #[cfg(all(feature = "target-java-lib", not(feature = "target-c-sdk")))] config: *const c_char,
-    #[cfg(all(feature = "target-java-lib", feature = "target-c-sdk"))] _config: *const c_char,
     #[cfg(all(feature = "c-lib", not(feature = "target-c-sdk")))] config: *const c_char,
     #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] config: *const c_void,
     #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
