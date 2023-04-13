@@ -1064,7 +1064,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_self_issued_credential_without_credential_status() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
