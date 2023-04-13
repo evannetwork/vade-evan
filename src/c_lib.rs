@@ -632,8 +632,8 @@ pub extern "C" fn execute_vade(
                         arguments_vec.get(1).unwrap_or_else(|| &no_args),
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),
                         arguments_vec.get(3).unwrap_or_else(|| &no_args),
-                        arguments_vec.get(4).unwrap_or_else(|| &no_args),
-                        arguments_vec.get(5).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(4).map(|v| v.as_str()),
+                        arguments_vec.get(5).map(|v| v.as_str()),
                         arguments_vec.get(6).map(|v| v.as_str()),
                     )
                     .await

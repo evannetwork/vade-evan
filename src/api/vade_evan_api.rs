@@ -776,8 +776,8 @@ impl VadeEvan {
     ///                     CREDENTIAL_SUBJECT_STR,
     ///                     BBS_SECRET,
     ///                     BBS_PRIVATE_KEY,
-    ///                     "did:revoc:12345",
-    ///                     "1",
+    ///                     Some("did:revoc:12345"),
+    ///                     Some("1"),
     ///                     None,
     ///                 )
     ///                 .await?;
@@ -796,8 +796,8 @@ impl VadeEvan {
         credential_subject_str: &str,
         bbs_secret: &str,
         bbs_private_key: &str,
-        credential_revocation_did: &str,
-        credential_revocation_id: &str,
+        credential_revocation_did: Option<&str>,
+        credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
