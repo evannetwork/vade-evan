@@ -4910,7 +4910,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/adjust-vade-evan-bbs-credentials-for-optional-credential-status#000b86c50b5f167c406a58b7f8f523e3961d9168"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#ba83a3f7c29251b2581e0b16bfb04bf2f2a4dcf7"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
