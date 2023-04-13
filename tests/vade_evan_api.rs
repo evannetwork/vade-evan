@@ -1,10 +1,10 @@
 cfg_if::cfg_if! {
-    if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
         use anyhow::Result;
         use vade_evan::{VadeEvan, VadeEvanConfig};
 
         #[test]
-        #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+        #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
         fn can_get_version_info() -> Result<()> {
             let vade_evan = VadeEvan::new(VadeEvanConfig {
                 target: "test",
@@ -17,6 +17,6 @@ cfg_if::cfg_if! {
             Ok(())
         }
     } else {
-        // currently no example for capability-sdk and target-c-lib/target-java-lib
+        // currently no example for target-c-sdk and c-lib/target-java-lib
     }
 }

@@ -267,7 +267,7 @@ impl<'a> Credential<'a> {
     ///
     /// # Returns
     /// * `String` - the result of updated revocation list doc after credential revocation
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     pub async fn revoke_credential(
         &mut self,
         credential_str: &str,
@@ -600,12 +600,12 @@ impl<'a> Credential<'a> {
 }
 
 #[cfg(test)]
-#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+#[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 mod tests {
     use crate::helpers::credential::is_revoked;
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-did-sidetree")] {
+        if #[cfg(feature = "did-sidetree")] {
             use anyhow::Result;
             use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
             use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
@@ -741,8 +741,8 @@ mod tests {
 
     #[tokio::test]
     #[cfg(all(
-        feature = "plugin-did-sidetree",
-        not(all(feature = "target-c-lib", feature = "capability-sdk"))
+        feature = "did-sidetree",
+        not(all(feature = "c-lib", feature = "target-c-sdk"))
     ))]
     async fn helper_can_create_credential_offer() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -765,7 +765,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_credential_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -799,7 +799,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn can_get_issuer_pub_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -817,7 +817,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn will_throw_when_pub_key_not_found() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -838,7 +838,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_verify_valid_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -856,7 +856,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_rejects_credentials_with_invalid_message_count() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -886,7 +886,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_detect_a_broken_credential() -> Result<()> {
         use super::CredentialError;
 
@@ -912,7 +912,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_revoke_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -995,7 +995,7 @@ mod tests {
         Ok(())
     }
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_detect_a_credential_with_an_invalid_proof_signature() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -1023,7 +1023,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_self_issued_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",

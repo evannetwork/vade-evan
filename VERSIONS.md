@@ -20,6 +20,7 @@
 - add optional params `update_key` and `recovery_key` to `did_create`
 - add `helper_create_presentation`
 - adjust `credential_status` property in `BbsCredential` to be optional
+- refactor features to use target specific(c-lib, c-sdk, wasm, cli, java) builds
 
 ### Fixes
 

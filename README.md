@@ -19,36 +19,38 @@ cargo build --release
 
 ### Default Features
 
-By default features `bundle-default`, `target-cli` are used, so a default feature bundle is used and compiled to a command line interface, so basically using the default feature setup (like above) builds the same as:
+By default features `did-sidetree`, `did-substrate`, `didcomm`, `jwt-vc`, `vc-zkp-bbs`, `cli` are used, so a default feature bundle is used and compiled to a command line interface, so basically using the default feature setup (like above) builds the same as:
 
 ```sh
-cargo build --release --no-default-features --features bundle-default,target-cli
+cargo build --release --no-default-features --features did-sidetree, did-substrate, didcomm, jwt-vc, vc-zkp-bbs, cli
 ```
 
-When building `vade-evan`, you usually combine a `bundle-` feature and a `target-` feature, which means that you want to include a certain set of features and want to make it available for a certain target/platform.
-
-### Bundles
-
-Bundles define which plugins you want to include in your `vade-evan` build, which usually has an impact on the available functions and utilized plugins to handle them.
-
-Bundles are not mandatory as you can also create the same plugin setup by just defining the plugins. Bundle `bundle-default` for example includes `plugin-did-sidetree`, `plugin-did-substrate`, `plugin-didcomm`, `plugin-jwt-vc`, and `plugin-vc-zkp-bbs`. Those can be recombined if desired, e.g. if no DIDComm support is desired, `plugin-didcomm` can be omitted:
-
-```sh
-cargo build --release --no-default-features --features plugin-did-sidetree,plugin-did-substrate,plugin-jwt-vc,plugin-vc-zkp-bbs,target-cli
-```
-
-Note that `plugin-vc-zkp-bbs` relies on `plugin-did-sidetree` to persist data in some steps, so omitting it would impart some of the `plugin-vc-zkp-bbs` functionalities.
-
-At the moment two bundles are offered by `vade-evan`: `bundle-default` and `bundle-sdk`.
+When building `vade-evan`, you usually use `target-` feature, which means that you want to include a certain set of features and want to make it available for a certain target/platform.
 
 ### Targets
 
 Targets define for which platform you want to build a vade package. Also more building for more than one target is not supported. Currently these targets are available:
 
+- `target-c-sdk` - build for usage in IN3 SDK with request list
+```sh
+cargo build --release --no-default-features --features target-c-sdk
+```
 - `target-c-lib` - build for usage in C
+```sh
+cargo build --release --no-default-features --features target-c-lib
+```
 - `target-cli` - build command line interface --> `./target/release/vade_evan_cli`
+```sh
+cargo build --release --no-default-features --features target-cli
+```
 - `target-java-lib` - build for usage in Java
+```sh
+cargo build --release --no-default-features --features target-java-lib
+```
 - `target-wasm` - in combination with `wasm-pack`, build for usage in WASM (see below)
+```sh
+wasm-pack build --release --target web -- --no-default-features --features=target-wasm
+```
 
 One (and only one) target must be provided when building without default features.
 
@@ -56,14 +58,14 @@ One (and only one) target must be provided when building without default feature
 
 ### C builds with sdk feature
 
-Features can be adjusted to support integration with IN3 SDK by enabling `bundle-sdk` feature. `bundle-sdk` feature in combination with `target-c-lib` feature enables `HTTP` request/response managed via IN3 SDK.
+Features can be adjusted to support integration with IN3 SDK by enabling `target-c-sdk` feature. `target-c-sdk` feature enables `HTTP` request/response managed via IN3 SDK.
 
 ```sh
-cargo build --release --no-default-features --features bundle-sdk,target-c-lib
+cargo build --release --no-default-features --features target-c-sdk
 ```
-#### Limitations of bundle-sdk feature
+#### Limitations of target-c-sdk feature
 
-bundle-sdk feature can't be used with `target-wasm`, `target-java-lib` and `target-cli` as in3 sdk specific request list pointers are integrated only with `target-c-lib` as parameters in c-lib interface. If someone has specific need to use sdk request list pointers with targets  other than `target-c-lib`, it will have to be done separately by editing wasm or java interfaces.
+`target-c-sdk` feature can't be used with `target-wasm`, `target-java-lib` and `target-cli` as in3 sdk specific request list pointers are integrated only with `target-c-sdk` as parameters in c-lib interface. If someone has specific need to use sdk request list pointers with targets  other than `target-c-sdk`, it will have to be done separately by editing wasm or java interfaces.
 
 ### WASM
 
@@ -74,13 +76,13 @@ To compile `vade-evan` for wasm, use wasm-pack, you can specify whether to build
 nodejs:
 
 ```sh
-wasm-pack build --release --target nodejs -- --no-default-features --features bundle-default,target-wasm
+wasm-pack build --release --target nodejs -- --no-default-features --features target-wasm
 ```
 
 browser:
 
 ```sh
-wasm-pack build --release --target web -- --no-default-features --features bundle-default,target-wasm
+wasm-pack build --release --target web -- --no-default-features --features target-wasm
 ```
 
 #### Wrapper for WASM pack
@@ -107,28 +109,24 @@ This example will generate a new DID, assign a document to it and update it afte
 
 Features in this project follow a naming schema that looks as following:
 
-- `bundle-` features decide which (`VadePlugin`) plugins to include
-- `target-` features decide which build target (CLI, WASM, etc.) to build for
-- `plugin-` feature take care, that plugins and related dependencies are present
-- `capability-` features control which functionalities a `plugin-` may offer
+- `target-` features decide which build target (CLI, WASM, SDK, etc.) to build for
 
-`bundle-`, `target-` and `plugin-` are intended to be used for build/run commands. `capability-` should only be used from within `Cargo.toml` to allow including functionalities in the source files.
+`target-` features are intended to be used for build/run commands. Others should only be used from within `Cargo.toml` to allow including functionalities in the source files.
 
 ### Feature overview
 
 | feature              | default | contents                             |
 |----------------------|:-------:|--------------------------------------|
-| bundle-default       |    x    | include default plugins              |
-| bundle-sdk           |         | include plugins for sdk              |
+| target-c-sdk         |         | build for usage in SDK request_list  |
 | target-c-lib         |         | build for usage in C                 |
 | target-cli           |    x    | build command line interface         |
 | target-java-lib      |         | build for usage in Java              |
 | target-wasm          |         | build for usage in WASM              |
-| plugin-did-sidetree  |    x    | add support for using sidetree DIDs  |
-| plugin-did-substrate |    x    | add support for using substrate DIDs |
-| plugin-didcomm       |    x    | add DIDComm support                  |
-| plugin-jwt-vc        |    x    | add support for JWT VCs              |
-| plugin-vc-zkp-bbs    |    x    | add support for BBS VCs              |
+| did-sidetree         |    x    | add support for using sidetree DIDs  |
+| did-substrate        |    x    | add support for using substrate DIDs |
+| didcomm              |    x    | add DIDComm support                  |
+| jwt-vc               |    x    | add support for JWT VCs              |
+| vc-zkp-bbs           |    x    | add support for BBS VCs              |
 
 ## Dependencies
 

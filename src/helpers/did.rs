@@ -298,8 +298,8 @@ impl<'a> Did<'a> {
 }
 
 #[cfg(test)]
-#[cfg(feature = "plugin-did-sidetree")]
-#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+#[cfg(feature = "did-sidetree")]
+#[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 mod tests {
     use crate::{VadeEvan, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
     use anyhow::Result;
