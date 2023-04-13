@@ -275,7 +275,7 @@ impl<'a> Credential<'a> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
         let credential_status = &credential.credential_status.ok_or_else(|| {
             CredentialError::InvalidCredentialStatus(
-                "Error in parsing credential_status".to_string(),
+                "credentialStatus is required for revocation".to_string(),
             )
         })?;
 
