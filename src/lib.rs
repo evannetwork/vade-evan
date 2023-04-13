@@ -14,10 +14,10 @@
   limitations under the License.
 */
 
-#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+#[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 mod in3_request_list;
 
-#[cfg(feature = "capability-c-lib")]
+#[cfg(feature = "c-lib")]
 mod c_lib;
 #[cfg(feature = "target-java-lib")]
 mod java_lib;

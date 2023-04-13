@@ -46,7 +46,7 @@ macro_rules! wrap_vade3 {
     }};
 }
 
-#[cfg(any(feature = "capability-didcomm", feature = "plugin-vc-zkp-bbs"))]
+#[cfg(any(feature = "didcomm", feature = "vc-zkp-bbs"))]
 const EVAN_METHOD: &str = "did:evan";
 
 #[tokio::main]
@@ -54,9 +54,9 @@ async fn main() -> Result<()> {
     let matches = get_argument_matches()?;
 
     let result = match matches.subcommand() {
-        #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))]
+        #[cfg(any(feature = "did-read", feature = "did-write"))]
         ("did", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(feature = "capability-did-write")]
+            #[cfg(feature = "did-write")]
             ("create", Some(sub_m)) => {
                 let method = get_argument_value(&sub_m, "method", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -65,12 +65,12 @@ async fn main() -> Result<()> {
                     .did_create(&method, &options, &payload)
                     .await?
             }
-            #[cfg(feature = "capability-did-read")]
+            #[cfg(feature = "did-read")]
             ("resolve", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 get_vade_evan(&sub_m)?.did_resolve(&did).await?
             }
-            #[cfg(feature = "capability-did-write")]
+            #[cfg(feature = "did-write")]
             ("update", Some(sub_m)) => {
                 let did = get_argument_value(&sub_m, "did", None);
                 let options = get_argument_value(&sub_m, "options", None);
@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
                 bail!("invalid subcommand");
             }
         },
-        #[cfg(feature = "capability-didcomm")]
+        #[cfg(feature = "didcomm")]
         ("didcomm", Some(sub_m)) => match sub_m.subcommand() {
             ("send", Some(sub_m)) => {
                 wrap_vade2!(didcomm_send, sub_m)
@@ -106,24 +106,24 @@ async fn main() -> Result<()> {
                 bail!("invalid subcommand");
             }
         },
-        #[cfg(feature = "capability-vc-zkp")]
+        #[cfg(feature = "vc-zkp")]
         ("vc_zkp", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_credential_schema", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_schema, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_master_secret", Some(sub_m)) => {
                 let options = get_argument_value(sub_m, "options", None);
                 get_vade_evan(&sub_m)?
                     .run_custom_function(EVAN_METHOD, "create_master_secret", options, "")
                     .await?
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_revocation_registry_definition", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_revocation_registry_definition, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_new_keys", Some(sub_m)) => {
                 let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
@@ -131,39 +131,39 @@ async fn main() -> Result<()> {
                     .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
                     .await?
             }
-            #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))]
+            #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vct"))]
             ("issue_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_issue_credential, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("finish_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_finish_credential, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_credential_offer", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_offer, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("present_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_present_proof, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("create_credential_proposal", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_create_credential_proposal, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("request_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("request_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
-            #[cfg(feature = "plugin-vc-zkp-bbs")]
+            #[cfg(feature = "vc-zkp-bbs")]
             ("revoke_credential", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_revoke_credential, sub_m)
             }
-            #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vct"))]
+            #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vct"))]
             ("verify_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_verify_proof, sub_m)
             }
@@ -172,7 +172,7 @@ async fn main() -> Result<()> {
             }
         },
         ("helper", Some(sub_m)) => match sub_m.subcommand() {
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_credential_offer", Some(sub_m)) => {
                 let use_valid_until = match get_optional_argument_value(sub_m, "use_valid_until") {
                     Some(value) => value.to_lowercase() == "true",
@@ -187,7 +187,7 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_credential_request", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_create_credential_request(
@@ -199,7 +199,7 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
-            #[cfg(feature = "plugin-did-sidetree")]
+            #[cfg(feature = "did-sidetree")]
             ("did_create", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_did_create(
@@ -211,7 +211,7 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
-            #[cfg(feature = "plugin-did-sidetree")]
+            #[cfg(feature = "did-sidetree")]
             ("did_update", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_did_update(
@@ -222,7 +222,7 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("verify_credential", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_verify_credential(
@@ -232,7 +232,7 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("revoke_credential", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_revoke_credential(
@@ -243,7 +243,7 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_self_issued_credential", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_create_self_issued_credential(
@@ -258,7 +258,7 @@ async fn main() -> Result<()> {
                     .await?;
                 "".to_string()
             }
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_proof_request", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_create_proof_request(
@@ -267,7 +267,7 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
-            #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_presentation", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_create_presentation(
@@ -305,7 +305,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_offer")
                     .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema the issuer is capable and willing to use for credential issuance.")
@@ -318,7 +318,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_request")
                     .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
@@ -334,7 +334,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-            if #[cfg(feature = "plugin-did-sidetree")] {
+            if #[cfg(feature = "did-sidetree")] {
                 subcommand = subcommand.subcommand(
                     SubCommand::with_name("did_create")
                         .about("Creates a did, take optional arguments for predefined keys and service endpoints")
@@ -350,7 +350,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-            if #[cfg(feature = "plugin-did-sidetree")] {
+            if #[cfg(feature = "did-sidetree")] {
                 subcommand = subcommand.subcommand(
                     SubCommand::with_name("did_update")
                         .about("Updates a did (add/remove publickey and add/remove service_endpoint)")
@@ -365,7 +365,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("verify_credential")
                     .about("Verifies a given credential by checking if given master secret was incorporated into proof and if proof was signed with issuers public key.")
@@ -376,7 +376,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("revoke_credential")
                     .about("Revokes a given credential with vade and updates the revocation list credential.")
@@ -388,7 +388,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_self_issued_credential")
                     .about("Creates a self issued credential.")
@@ -404,7 +404,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_proof_request")
                     .about("Requests a proof for a credential.")
@@ -414,7 +414,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         } else {}
     }
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_presentation")
                     .about("Creates a presentation for a proof request.")
@@ -440,7 +440,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-did-read")] {
+        if #[cfg(feature = "did-read")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("resolve")
                     .about("Fetch data about a DID, which returns this DID's DID document.")
@@ -452,7 +452,7 @@ fn add_subcommand_did<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-did-read")] {
+        if #[cfg(feature = "did-read")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create")
                     .about("Creates a new DID.")
@@ -529,7 +529,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_master_secret")
                     .about("Creates a new master secret.")
@@ -539,7 +539,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_new_keys")
                     .about("Creates a new key pair and stores it in the DID document.")
@@ -551,7 +551,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_schema")
                     .about("Creates a new zero-knowledge proof credential schema.")
@@ -565,7 +565,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_revocation_registry_definition")
                     .about("Creates a new revocation registry definition and stores it on-chain. The definition consists of a public and a private part. The public part holds the cryptographic material needed to create non-revocation proofs. The private part needs to reside with the registry owner and is used to revoke credentials")
@@ -579,7 +579,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vc"))] {
+        if #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("issue_credential")
                     .about("Issues a new credential.")
@@ -593,7 +593,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("finish_credential")
                     .about("Finishes a credential by incorporating the prover's master secret into the credential signature after issuance.")
@@ -607,7 +607,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_offer")
                     .about("Creates a `CredentialOffer` message. A `CredentialOffer` is sent by an issuer and is the response to a `CredentialProposal`. The `CredentialOffer` specifies which schema the issuer is capable and willing to use for credential issuance.")
@@ -621,7 +621,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("present_proof")
                     .about("Presents a proof for one or more credentials. A proof presentation is the response to a proof request. The proof needs to incorporate all required fields from all required schemas requested in the proof request.")
@@ -635,7 +635,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_credential_proposal")
                     .about("Creates a new zero-knowledge proof credential proposal. This message is the first in the credential issuance flow and is sent by the potential credential holder to the credential issuer.")
@@ -648,7 +648,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
         } else {}
     }
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("request_credential")
                     .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
@@ -662,7 +662,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("request_proof")
                     .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
@@ -676,7 +676,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-vc-zkp-bbs")] {
+        if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("revoke_credential")
                     .about("Revokes a credential. After revocation the published revocation registry needs to be updated with information returned by this function. To revoke a credential, tbe revoker must be in possession of the private key associated with the credential's revocation registry. After revocation, the published revocation registry must be updated. Only then is the credential truly revoked.")
@@ -690,7 +690,7 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vc"))] {
+        if #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("verify_proof")
                     .about("Verifies a one or multiple proofs sent in a proof presentation.")
@@ -722,19 +722,19 @@ fn get_app<'a>() -> Result<App<'a, 'a>> {
         );
 
     cfg_if::cfg_if! {
-        if #[cfg(any(feature = "capability-did-read", feature = "capability-did-write"))] {
+        if #[cfg(any(feature = "did-read", feature = "did-write"))] {
             app = add_subcommand_did(app)?;
         } else {}
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-didcomm")] {
+        if #[cfg(feature = "didcomm")] {
             app = add_subcommand_didcomm(app)?;
         } else {}
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "capability-vc-zkp")] {
+        if #[cfg(feature = "vc-zkp")] {
             app = add_subcommand_vc_zkp(app)?;
         } else {}
     }
@@ -764,7 +764,7 @@ fn get_argument_value<'a>(
     }
 }
 
-#[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+#[cfg(any(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
 fn get_optional_argument_value<'a>(matches: &'a ArgMatches, arg_name: &'a str) -> Option<&'a str> {
     matches.value_of(arg_name)
 }
