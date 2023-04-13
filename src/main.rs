@@ -251,8 +251,8 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "credential_subject", None),
                         get_argument_value(sub_m, "bbs_secret", None),
                         get_argument_value(sub_m, "private_key", None),
-                        get_argument_value(sub_m, "credential_revocation_did", None),
-                        get_argument_value(sub_m, "credential_revocation_id", None),
+                        get_optional_argument_value(sub_m, "credential_revocation_did"),
+                        get_optional_argument_value(sub_m, "credential_revocation_id"),
                         get_optional_argument_value(sub_m, "exp_date"),
                     )
                     .await?;
@@ -925,13 +925,11 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "credential_revocation_did" => Arg::with_name("credential_revocation_did")
             .long("credential_revocation_did")
             .value_name("credential_revocation_did")
-            .required(true)
             .help("revocation list DID")
             .takes_value(true),
         "credential_revocation_id" => Arg::with_name("credential_revocation_id")
             .long("credential_revocation_id")
             .value_name("credential_revocation_id")
-            .required(true)
             .help("index in revocation list")
             .takes_value(true),
         "exp_date" => Arg::with_name("exp_date")
