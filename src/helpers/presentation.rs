@@ -9,6 +9,7 @@ use vade_evan_bbs::{
     BbsSubProofRequest,
     CredentialSchema,
     PresentProofPayload,
+    ProofPresentation,
     RequestProofPayload,
 };
 
@@ -30,6 +31,8 @@ pub enum PresentationError {
     InvalidRevealedAttributes(String),
     #[error("internal error occurred; {0}")]
     InternalError(String),
+    #[error("invalid presentation provided; {0}")]
+    InvalidPresentationError(String),
     #[error(r#"JSON serialization of {0} failed due to "{1}""#)]
     JsonSerialization(String, String),
     #[error(r#"JSON deserialization of {0} failed due to "{1}" on: {2}"#)]
@@ -126,49 +129,27 @@ impl<'a> Presentation<'a> {
     /// * `proof_request_str` - proof request from the verifier as JSON string
     ///
     /// # Returns
-    /// * `Result<bool, VerificationError>` - A boolean indicating the success of the verification process,
-    ///   wrapped in a `Result` along with a potential `VerificationError`
+    /// * `Result<bool, PresentationError>` - A boolean indicating the success of the verification process,
+    ///   wrapped in a `Result` along with a potential `PresentationError`
     pub async fn verify_presentation(
         &mut self,
         presentation_str: &str,
         proof_request_str: &str,
-    ) -> Result<bool, VerificationError> {
-        let presentation: BbsCredential = serde_json::from_str(presentation_str).map_err(
-            VerificationError::to_deserialization_error("presentation", presentation_str),
+    ) -> Result<bool, PresentationError> {
+        let presentation: ProofPresentation = serde_json::from_str(presentation_str).map_err(
+            PresentationError::to_deserialization_error("presentation", presentation_str),
         )?;
         let proof_request: BbsProofRequest = serde_json::from_str(proof_request_str).map_err(
-            VerificationError::to_deserialization_error("proof request", proof_request_str),
+            PresentationError::to_deserialization_error("proof request", proof_request_str),
         )?;
 
-        let issuer_did = &presentation.issuer;
-        let mut helper_credential = Credential::new(self.vade_evan)
-            .map_err(|err| VerificationError::InternalError(err.to_string()))?;
-
-        let public_key_issuer = helper_credential
-            .get_issuer_public_key(issuer_did, "#bbs-key-1")
-            .await
-            .map_err(|err| VerificationError::InternalError(err.to_string()))?;
-
-        let revocation_did = presentation
-            .credential_status
-            .as_ref()
-            .and_then(|status| status.id.as_ref())
-            .ok_or_else(|| {
-                VerificationError::InternalError(
-                    "Credential doesn't contain a revocation DID".to_owned(),
-                )
-            })?;
-
-        let verification_payload = json!({
-            "presentation": presentation,
-            "proofRequest": proof_request,
-            "publicKey": public_key_issuer,
-            "revocationDID": revocation_did
-        });
-
-        let payload = serde_json::to_string(&verification_payload).map_err(|err| {
-            VerificationError::JsonSerialization("VerificationPayload".to_owned(), err.to_string())
+        let issuer_did = &presentation.verifiable_credential.get(0).ok_or_else(|| {
+            PresentationError::InvalidPresentationError(
+                "Credentail not found in presentation".to_owned(),
+            )
         })?;
+
+        
 
         self.vade_evan
             .vc_zkp_verify_proof(EVAN_METHOD, TYPE_OPTIONS, &payload)
