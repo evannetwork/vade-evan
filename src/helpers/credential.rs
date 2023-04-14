@@ -513,7 +513,7 @@ impl<'a> Credential<'a> {
         ))
     }
 
-    async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
+    pub async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
     where
         T: DeserializeOwned,
     {
