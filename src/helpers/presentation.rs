@@ -375,7 +375,7 @@ impl<'a> Presentation<'a> {
 }
 
 #[cfg(test)]
-#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+#[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 mod tests_proof_request {
 
     use anyhow::Result;

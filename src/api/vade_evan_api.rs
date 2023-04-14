@@ -14,15 +14,15 @@
   limitations under the License.
 */
 
-#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+#[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 use std::os::raw::c_void;
 use vade::Vade;
 
-#[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+#[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
 use crate::helpers::Credential;
-#[cfg(feature = "plugin-did-sidetree")]
+#[cfg(feature = "did-sidetree")]
 use crate::helpers::Did;
-#[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+#[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
     api::{vade_bundle::get_vade, vade_evan_error::VadeEvanError},
@@ -45,9 +45,9 @@ fn get_first_result(results: Vec<Option<String>>) -> Result<String, VadeEvanErro
 pub struct VadeEvanConfig<'a> {
     pub target: &'a str,
     pub signer: &'a str,
-    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
     pub request_id: *const c_void,
-    #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
     pub request_function_callback: ResolveHttpRequest,
 }
 
@@ -62,9 +62,9 @@ impl VadeEvan {
         match get_vade(
             &config.target,
             &config.signer,
-            #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+            #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
             config.request_id,
-            #[cfg(all(feature = "target-c-lib", feature = "capability-sdk"))]
+            #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
             config.request_function_callback,
         ) {
             Ok(vade) => Ok(Self { vade }),
@@ -86,7 +86,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -97,7 +97,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -120,7 +120,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -131,7 +131,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -151,7 +151,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -162,7 +162,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -189,7 +189,7 @@ impl VadeEvan {
     /// # Example
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -200,7 +200,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -225,7 +225,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -236,7 +236,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -256,7 +256,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -267,7 +267,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -292,7 +292,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -314,11 +314,11 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_credential_offer(
         &mut self,
         schema_did: &str,
@@ -347,7 +347,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -378,11 +378,11 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_credential_request(
         &mut self,
         issuer_public_key: &str,
@@ -416,7 +416,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -470,10 +470,10 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_verify_credential(
         &mut self,
         credential: &str,
@@ -501,7 +501,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -517,10 +517,10 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_proof_request(
         &mut self,
         schema_did: &str,
@@ -550,7 +550,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -617,10 +617,10 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_presentation(
         &mut self,
         proof_request_str: &str,
@@ -655,7 +655,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -715,10 +715,10 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_revoke_credential(
         &mut self,
         credential: &str,
@@ -754,7 +754,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -776,8 +776,8 @@ impl VadeEvan {
     ///                     CREDENTIAL_SUBJECT_STR,
     ///                     BBS_SECRET,
     ///                     BBS_PRIVATE_KEY,
-    ///                     "did:revoc:12345",
-    ///                     "1",
+    ///                     Some("did:revoc:12345"),
+    ///                     Some("1"),
     ///                     None,
     ///                 )
     ///                 .await?;
@@ -785,19 +785,19 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
-    #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
     pub async fn helper_create_self_issued_credential(
         &mut self,
         schema_did: &str,
         credential_subject_str: &str,
         bbs_secret: &str,
         bbs_private_key: &str,
-        credential_revocation_did: &str,
-        credential_revocation_id: &str,
+        credential_revocation_did: Option<&str>,
+        credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
@@ -829,7 +829,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -840,7 +840,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -872,7 +872,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -883,7 +883,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -912,7 +912,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -923,7 +923,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -953,7 +953,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -964,7 +964,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -994,7 +994,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1005,7 +1005,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1036,7 +1036,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1047,7 +1047,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1077,7 +1077,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1088,7 +1088,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1118,7 +1118,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1129,7 +1129,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1158,7 +1158,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1169,7 +1169,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1199,7 +1199,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1210,7 +1210,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1239,7 +1239,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1250,7 +1250,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1279,7 +1279,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1290,7 +1290,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1320,7 +1320,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1331,7 +1331,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1360,7 +1360,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    ///     if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///         use anyhow::Result;
     ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1371,7 +1371,7 @@ impl VadeEvan {
     ///             Ok(())
     ///         }
     ///     } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
@@ -1402,7 +1402,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    /// if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    /// if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///     use anyhow::Result;
     ///     use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
     ///
@@ -1425,11 +1425,11 @@ impl VadeEvan {
     ///         Ok(())
     ///        }
     ///    } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     pub async fn helper_did_create(
         &mut self,
         bbs_public_key: Option<&str>,
@@ -1462,7 +1462,7 @@ impl VadeEvan {
     ///
     /// ```
     /// cfg_if::cfg_if! {
-    /// if #[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))] {
+    /// if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
     ///
     ///     use anyhow::Result;
     ///     use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
@@ -1481,11 +1481,11 @@ impl VadeEvan {
     ///         Ok(())
     ///        }
     ///    } else {
-    ///         // currently no example for capability-sdk and target-c-lib/target-java-lib
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
     /// ```
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     pub async fn helper_did_update(
         &mut self,
         did: &str,
@@ -1499,7 +1499,7 @@ impl VadeEvan {
     }
 }
 
-#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+#[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 #[cfg(test)]
 mod tests {
     use crate::{VadeEvan, VadeEvanConfig};

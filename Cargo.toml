@@ -26,55 +26,49 @@ required-features = ["target-cli"]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["bundle-default", "target-cli"]
+default = ["did-sidetree", "did-substrate", "didcomm", "jwt-vc", "vc-zkp-bbs", "cli"]
 
-# plugins we want to be enabled by default
-bundle-default = ["plugin-did-sidetree", "plugin-did-substrate", "plugin-didcomm", "plugin-jwt-vc", "plugin-vc-zkp-bbs"]
+did-sidetree = ["base64", "did-read", "did-write", "vade-sidetree", "uuid"]
 
-# plugins for sdk build, this feature should be enabled when plugin is compiled for IN3 sdk
-bundle-sdk = ["capability-sdk", "plugin-did-sidetree", "plugin-vc-zkp-bbs"]
+did-substrate = ["did-read", "did-write", "signer", "vade-evan-substrate"]
 
-plugin-did-sidetree = ["base64", "capability-did-read", "capability-did-write", "vade-sidetree", "uuid"]
+didcomm = ["vade-didcomm"]
 
-plugin-did-substrate = ["capability-did-read", "capability-did-write", "plugin-signer", "vade-evan-substrate"]
+jwt-vc = ["vc-zkp", "signer", "vade-jwt-vc"]
 
-plugin-didcomm = ["capability-didcomm", "vade-didcomm"]
+signer = ["vade-signer"]
 
-plugin-jwt-vc = ["capability-vc-zkp", "plugin-signer", "vade-jwt-vc"]
+vc-zkp-bbs = ["base64", "bbs", "vc-zkp", "flate2", "signer", "regex", "ssi", "vade-evan-bbs"]
 
-plugin-signer = ["vade-signer"]
-
-plugin-vc-zkp-bbs = ["base64", "bbs", "capability-vc-zkp", "flate2", "plugin-signer", "regex", "ssi", "vade-evan-bbs"]
+# build for cli to interact with vade plugins with commands
+cli  = ["anyhow", "clap", "tokio", "vade-didcomm/portable"]
 
 # enable support for using the `c_lib` module to process requests
-capability-c-lib = ["tokio", "vade-didcomm/portable"]
-
-# enable didcomm related functions in targets
-capability-didcomm = []
+c-lib = ["tokio", "vade-didcomm/portable"]
 
 # enable did resolve in targets
-capability-did-read = []
+did-read = []
 
 # enable did create and update in targets
-capability-did-write = []
-
-# enable sdk related features
-capability-sdk = ["vade-sidetree/sdk"]
+did-write = []
 
 # enable vc related functiosn in targets
-capability-vc-zkp = []
+vc-zkp = []
+
+# build for sdk integration with request list
+target-c-sdk = ["c-lib", "vade-sidetree/sdk", "did-substrate", "jwt-vc", "vc-zkp-bbs", "uuid"]
 
 # build for consuming vade-evan from C
-target-c-lib = ["capability-c-lib"]
+target-c-lib = ["c-lib", "default"]
 
 # build for command line usage
-target-cli = ["anyhow", "clap", "tokio", "vade-didcomm/portable"]
+target-cli = ["default"]
 
 # build for consuming vade-evan from Java
-target-java-lib = ["capability-c-lib"]
+target-java-lib = ["c-lib", "default"]
 
 # build for usage in wasm
-target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm"]
+target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc"]
 
 ############################################################################### generic dependencies
 [dependencies]
@@ -88,7 +82,7 @@ vade = "0.1.0"
 chrono = "0.4.23"
 
 ###################################################################### feature specific dependencies
-# plugin-did-sidetree
+# did-sidetree
 [dependencies.uuid]
 version = "0.8.2"
 optional = true
@@ -100,33 +94,33 @@ branch = "develop"
 version = "0.0.3"
 optional = true
 
-# plugin-did-substrate
+# did-substrate
 [dependencies.vade-evan-substrate]
 version = "0.2.0"
 optional = true
 
-# plugin-didcomm
+# didcomm
 [dependencies.vade-didcomm]
 git = "https://github.com/evannetwork/vade-didcomm.git"
 branch = "develop"
 optional = true
 
-# plugin-jwt-vc
+# jwt-vc
 [dependencies.vade-jwt-vc]
 version = "0.2.0"
 optional = true
 
-# plugin-signer
+# signer
 [dependencies.vade-signer]
 version = "0.0.1"
 optional = true
 
-# plugin-universal-resolver
+# universal-resolver
 [dependencies.vade-universal-resolver]
 version = "0.0.4"
 optional = true
 
-# plugin-vc-zkp-bbs
+# vc-zkp-bbs
 [dependencies.base64]
 version = "0.13.0"
 optional = true
@@ -149,6 +143,8 @@ version = "0.5.0"
 optional = true
 
 [dependencies.vade-evan-bbs]
+git = "https://github.com/evannetwork/vade-evan-bbs.git"
+branch = "develop"
 version = "0.3.0"
 optional = true
 default-features = false

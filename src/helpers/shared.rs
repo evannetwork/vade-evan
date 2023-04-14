@@ -77,12 +77,12 @@ pub fn create_draft_credential_from_schema(
             id: schema.id.to_owned(),
             r#type: schema.r#type.to_owned(),
         },
-        credential_status: CredentialStatus {
+        credential_status: Some(CredentialStatus {
             id: "did:evan:zkp:placeholder_status#0".to_string(),
             r#type: "RevocationList2020Status".to_string(),
             revocation_list_index: "0".to_string(),
             revocation_list_credential: "did:evan:zkp:placeholder_status".to_string(),
-        },
+        }),
     };
     credential
 }

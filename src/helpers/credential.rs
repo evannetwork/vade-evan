@@ -42,6 +42,8 @@ pub enum CredentialError {
     InvalidDidDocument(String),
     #[error("pubkey for verification method not found, {0}")]
     InvalidVerificationMethod(String),
+    #[error("credential_status is invalid, {0}")]
+    InvalidCredentialStatus(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
     #[error("{0}")]
@@ -54,6 +56,8 @@ pub enum CredentialError {
     PublicKeyParsingError(String),
     #[error("revocation list invalid; {0}")]
     RevocationListInvalid(String),
+    #[error("revocation index invalid; {0}")]
+    RevocationIndexInvalid(String),
     #[error("credential has been revoked")]
     CredentialRevoked,
     #[error("wrong number of messages in credential, got {0} but proof was created for {1}")]
@@ -235,13 +239,20 @@ impl<'a> Credential<'a> {
         )
         .await?;
 
-        // resolve the did and extract the did document out of it
-        let revocation_list: RevocationListCredential = self
-            .get_did_document(&credential.credential_status.revocation_list_credential)
-            .await?;
-        let credential_revoked = is_revoked(&credential.credential_status, &revocation_list)?;
-        if credential_revoked {
-            return Err(CredentialError::CredentialRevoked);
+        if credential.credential_status.is_some() {
+            let credential_status = &credential.credential_status.ok_or_else(|| {
+                CredentialError::InvalidCredentialStatus(
+                    "Error in parsing credential_status".to_string(),
+                )
+            })?;
+            // resolve the did and extract the did document out of it
+            let revocation_list: RevocationListCredential = self
+                .get_did_document(&credential_status.revocation_list_credential)
+                .await?;
+            let credential_revoked = is_revoked(credential_status, &revocation_list)?;
+            if credential_revoked {
+                return Err(CredentialError::CredentialRevoked);
+            }
         }
 
         Ok(())
@@ -256,7 +267,7 @@ impl<'a> Credential<'a> {
     ///
     /// # Returns
     /// * `String` - the result of updated revocation list doc after credential revocation
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     pub async fn revoke_credential(
         &mut self,
         credential_str: &str,
@@ -264,15 +275,21 @@ impl<'a> Credential<'a> {
         private_key: &str,
     ) -> Result<String, CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
+        let credential_status = &credential.credential_status.ok_or_else(|| {
+            CredentialError::InvalidCredentialStatus(
+                "credentialStatus is required for revocation".to_string(),
+            )
+        })?;
+
         let revocation_list: RevocationListCredential = self
-            .get_did_document(&credential.credential_status.revocation_list_credential)
+            .get_did_document(&credential_status.revocation_list_credential)
             .await?;
 
         let proving_key = private_key;
         let payload = RevokeCredentialPayload {
             issuer: credential.issuer.clone(),
             revocation_list: revocation_list.clone(),
-            revocation_id: credential.credential_status.revocation_list_index,
+            revocation_id: credential_status.revocation_list_index.to_owned(),
             issuer_public_key_did: credential.issuer.clone(),
             issuer_proving_key: proving_key.to_owned(),
         };
@@ -320,8 +337,8 @@ impl<'a> Credential<'a> {
         credential_subject_str: &str,
         bbs_secret: &str,
         bbs_private_key: &str,
-        credential_revocation_did: &str,
-        credential_revocation_id: &str,
+        credential_revocation_did: Option<&str>,
+        credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
@@ -374,12 +391,27 @@ impl<'a> Credential<'a> {
             id: schema.id,
             r#type: schema.r#type,
         };
-        let credential_status = CredentialStatus {
-            id: format!("{}#{}", credential_revocation_did, credential_revocation_id),
-            r#type: "RevocationList2020Status".to_string(),
-            revocation_list_index: credential_revocation_id.to_string(),
-            revocation_list_credential: credential_revocation_did.to_string(),
-        };
+        let mut credential_status = None;
+
+        if credential_revocation_did.is_some() && credential_revocation_id.is_some() {
+            let credential_revocation_id = credential_revocation_id.ok_or_else(|| {
+                CredentialError::RevocationIndexInvalid(
+                    "credential_revocation_id is required for CredentialStatus".to_string(),
+                )
+            })?;
+            let credential_revocation_did = credential_revocation_did.ok_or_else(|| {
+                CredentialError::RevocationIndexInvalid(
+                    "credential_revocation_did is required for CredentialStatus".to_string(),
+                )
+            })?;
+
+            credential_status = Some(CredentialStatus {
+                id: format!("{}#{}", credential_revocation_did, credential_revocation_id),
+                r#type: "RevocationList2020Status".to_string(),
+                revocation_list_index: credential_revocation_id.to_string(),
+                revocation_list_credential: credential_revocation_did.to_string(),
+            });
+        }
         let unsigned_credential = UnsignedBbsCredential {
             context,
             id,
@@ -568,12 +600,12 @@ impl<'a> Credential<'a> {
 }
 
 #[cfg(test)]
-#[cfg(not(all(feature = "target-c-lib", feature = "capability-sdk")))]
+#[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 mod tests {
     use crate::helpers::credential::is_revoked;
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "plugin-did-sidetree")] {
+        if #[cfg(feature = "did-sidetree")] {
             use anyhow::Result;
             use vade_evan_bbs::{BbsCredential, BbsCredentialOffer};
             use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
@@ -709,8 +741,8 @@ mod tests {
 
     #[tokio::test]
     #[cfg(all(
-        feature = "plugin-did-sidetree",
-        not(all(feature = "target-c-lib", feature = "capability-sdk"))
+        feature = "did-sidetree",
+        not(all(feature = "c-lib", feature = "target-c-sdk"))
     ))]
     async fn helper_can_create_credential_offer() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -733,7 +765,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_credential_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -767,7 +799,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn can_get_issuer_pub_key() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -785,7 +817,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn will_throw_when_pub_key_not_found() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -806,7 +838,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_verify_valid_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -824,7 +856,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_rejects_credentials_with_invalid_message_count() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -854,7 +886,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_detect_a_broken_credential() -> Result<()> {
         use super::CredentialError;
 
@@ -880,7 +912,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_revoke_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -892,16 +924,22 @@ mod tests {
             .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
         let mut credential: BbsCredential = serde_json::from_str(CREDENTIAL_ACTIVE)?;
+        let mut credential_status = &mut credential.credential_status.ok_or_else(|| {
+            CredentialError::InvalidCredentialStatus(
+                "Error in parsing credential_status".to_string(),
+            )
+        })?;
 
         let did_result_str = vade_evan
-            .did_resolve(&credential.credential_status.revocation_list_credential)
+            .did_resolve(&credential_status.revocation_list_credential)
             .await?;
         let did_result_value: DidDocumentResult<RevocationListCredential> =
             serde_json::from_str(&did_result_str)?;
         let mut revocation_list = did_result_value.did_document;
         revocation_list.id = did_create_result.did.did_document.id.clone();
 
-        credential.credential_status.revocation_list_credential = revocation_list.id.clone();
+        credential_status.revocation_list_credential = revocation_list.id.clone();
+        credential.credential_status = Some(credential_status.to_owned());
         // Replace did doc with revocation list
         let did_update_result = vade_evan
             .helper_did_update(
@@ -914,7 +952,7 @@ mod tests {
         assert!(did_update_result.is_ok());
 
         // check is credential is not revoked
-        match is_revoked(&credential.credential_status, &revocation_list)? {
+        match is_revoked(credential_status, &revocation_list)? {
             false => assert!(true, "credential is active and not revoked as expected"),
             true => assert!(
                 false,
@@ -942,14 +980,14 @@ mod tests {
 
         //fetch revocation list after revocation
         let did_result_str = vade_evan
-            .did_resolve(&credential.credential_status.revocation_list_credential)
+            .did_resolve(credential_status.revocation_list_credential.as_str())
             .await?;
         let did_result_value: DidDocumentResult<RevocationListCredential> =
             serde_json::from_str(&did_result_str)?;
         revocation_list = did_result_value.did_document;
 
         // verify credential
-        match is_revoked(&credential.credential_status, &revocation_list)? {
+        match is_revoked(credential_status, &revocation_list)? {
             false => assert!(false, "credential should have been detected as revoked"),
             true => assert!(true, "credential revoked as expected"),
         };
@@ -957,7 +995,7 @@ mod tests {
         Ok(())
     }
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_detect_a_credential_with_an_invalid_proof_signature() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
@@ -985,7 +1023,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "plugin-did-sidetree")]
+    #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_self_issued_credential() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
@@ -1009,13 +1047,61 @@ mod tests {
                 credential_subject_str,
                 bbs_secret,
                 bbs_private_key,
-                "did:revoc:12345",
-                "1",
+                Some("did:revoc:12345"),
+                Some("1"),
                 None,
             )
             .await
         {
             Ok(_) => assert!(true, "credential should have been successfully self issued"),
+            Err(_) => assert!(
+                false,
+                "error occured when creating the self issued credential"
+            ),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "did-sidetree")]
+    async fn helper_can_create_self_issued_credential_without_credential_status() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: "test",
+            signer: "remote|http://127.0.0.1:7070/key/sign",
+        })?;
+        let credential_subject_str = r#"{
+            "id": "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
+            "data": {
+                "email": "value@x.com"
+            }
+        }"#;
+        let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
+        let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
+        let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
+
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        match credential
+            .create_self_issued_credential(
+                schema_did,
+                credential_subject_str,
+                bbs_secret,
+                bbs_private_key,
+                None,
+                None,
+                None,
+            )
+            .await
+        {
+            Ok(issued_credential) => {
+                assert!(true, "credential should have been successfully self issued");
+                let issue_credential: BbsCredential = serde_json::from_str(&issued_credential)?;
+                assert!(
+                    issue_credential.credential_status.is_none(),
+                    "credential_status should not be present"
+                );
+            }
             Err(_) => assert!(
                 false,
                 "error occured when creating the self issued credential"

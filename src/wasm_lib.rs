@@ -95,14 +95,14 @@ pub fn set_log_level(log_level: String) {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-did-read")] {
+    if #[cfg(feature = "did-read")] {
         create_function!(did_resolve, did_or_method, config);
     } else {
     }
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-did-write")] {
+    if #[cfg(feature = "did-write")] {
         create_function!(did_create, did_or_method, options, payload, config);
         create_function!(did_update, did_or_method, options, payload, config);
     } else {
@@ -110,7 +110,7 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-didcomm")] {
+    if #[cfg(feature = "didcomm")] {
         create_function!(didcomm_receive, options, payload, config);
         create_function!(didcomm_send, options, payload, config);
     } else {
@@ -118,32 +118,32 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "capability-vc-zkp")] {
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+    if #[cfg(feature = "vc-zkp")] {
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(run_custom_function, did_or_method, custom_func_name, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_credential_offer, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_credential_proposal, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_credential_schema, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_revocation_registry_definition, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_update_revocation_registry, did_or_method, options, payload, config);
-        #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vc"))]
+        #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc"))]
         create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_finish_credential, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
-        #[cfg(any(feature = "plugin-vc-zkp-bbs", feature = "plugin-jwt-vc"))]
+        #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc"))]
         create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
 
         #[wasm_bindgen]
@@ -153,7 +153,7 @@ cfg_if::cfg_if! {
             Ok(Some(version_info))
         }
 
-        #[cfg(feature = "plugin-did-sidetree")]
+        #[cfg(feature = "did-sidetree")]
         #[wasm_bindgen]
         pub async fn helper_did_create(
             bbs_public_key: Option<String>,
@@ -176,7 +176,7 @@ cfg_if::cfg_if! {
             Ok(Some(did_create_result))
         }
 
-        #[cfg(feature = "plugin-did-sidetree")]
+        #[cfg(feature = "did-sidetree")]
         #[wasm_bindgen]
         pub async fn helper_did_update(
             did: String,
@@ -197,7 +197,7 @@ cfg_if::cfg_if! {
             Ok(Some(did_update_key))
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_credential_offer(
             schema_did: String,
@@ -217,7 +217,7 @@ cfg_if::cfg_if! {
             Ok(offer)
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_credential_request(
             issuer_public_key: String,
@@ -238,7 +238,7 @@ cfg_if::cfg_if! {
             Ok(credential_result)
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_revoke_credential(
             credential: String,
@@ -256,7 +256,7 @@ cfg_if::cfg_if! {
             Ok("".to_string())
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_verify_credential(
             credential: String,
@@ -272,15 +272,15 @@ cfg_if::cfg_if! {
             Ok("".to_string())
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_self_issued_credential(
             schema_did: String,
             credential_subject_str: String,
             bbs_secret: String,
             bbs_private_key: String,
-            credential_revocation_did: String,
-            credential_revocation_id: String,
+            credential_revocation_did: Option<String>,
+            credential_revocation_id: Option<String>,
             exp_date: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -290,15 +290,15 @@ cfg_if::cfg_if! {
                     &credential_subject_str,
                     &bbs_secret,
                     &bbs_private_key,
-                    &credential_revocation_did,
-                    &credential_revocation_id,
+                    credential_revocation_did.as_deref(),
+                    credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_proof_request(
             schema_did: String,
@@ -314,7 +314,7 @@ cfg_if::cfg_if! {
             Ok("".to_string())
         }
 
-        #[cfg(all(feature = "plugin-vc-zkp-bbs", feature = "plugin-did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_presentation(
             proof_request_str:String,
@@ -428,57 +428,57 @@ pub async fn execute_vade(
     config: JsValue,
 ) -> String {
     let result: Result<String, JsValue> = match func_name.as_str() {
-        #[cfg(feature = "capability-did-read")]
+        #[cfg(feature = "did-read")]
         "did_resolve" =>
             did_resolve(did_or_method, config).await,
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "did-write")]
         "did_create" =>
             did_create(did_or_method, options, payload, config).await,
-        #[cfg(feature = "capability-did-write")]
+        #[cfg(feature = "did-write")]
         "did_update" =>
             did_update(did_or_method, options, payload, config).await,
 
-        #[cfg(feature = "capability-didcomm")]
+        #[cfg(feature = "didcomm")]
         "didcomm_receive" =>
             didcomm_receive(options, payload, config).await,
-        #[cfg(feature = "capability-didcomm")]
+        #[cfg(feature = "didcomm")]
         "didcomm_send" =>
             didcomm_send(options, payload, config).await,
 
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "run_custom_function" =>
             run_custom_function(did_or_method, custom_func_name, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_create_credential_offer" =>
             vc_zkp_create_credential_offer(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_create_credential_proposal" =>
             vc_zkp_create_credential_proposal(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_create_credential_schema" =>
             vc_zkp_create_credential_schema(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_create_revocation_registry_definition" =>
             vc_zkp_create_revocation_registry_definition(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_update_revocation_registry" =>
             vc_zkp_update_revocation_registry(did_or_method, options, payload, config).await,
         #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
         "vc_zkp_issue_credential" =>
             vc_zkp_issue_credential(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_finish_credential" =>
             vc_zkp_finish_credential(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_present_proof" =>
             vc_zkp_present_proof(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_request_credential" =>
             vc_zkp_request_credential(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_request_proof" =>
             vc_zkp_request_proof(did_or_method, options, payload, config).await,
-        #[cfg(feature = "plugin-vc-zkp-bbs")]
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_revoke_credential" =>
             vc_zkp_revoke_credential(did_or_method, options, payload, config).await,
         #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
