@@ -621,6 +621,7 @@ pub extern "C" fn execute_vade(
                 let mut vade_evan = get_vade_evan(
                     Some(&str_config),
                     #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                   
                     ptr_request_list,
                     #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                     request_function_callback,
@@ -678,6 +679,26 @@ pub extern "C" fn execute_vade(
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),
                         arguments_vec.get(3).unwrap_or_else(|| &no_args),
                         arguments_vec.get(4).map(|v| v.as_str()),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_verify_presentation" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_verify_presentation(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)
