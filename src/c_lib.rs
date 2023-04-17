@@ -621,7 +621,6 @@ pub extern "C" fn execute_vade(
                 let mut vade_evan = get_vade_evan(
                     Some(&str_config),
                     #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
-                   
                     ptr_request_list,
                     #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                     request_function_callback,
