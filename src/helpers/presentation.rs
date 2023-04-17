@@ -16,7 +16,6 @@ use vade_evan_bbs::{
 };
 
 use super::{
-    credential,
     datatypes::DidDocumentResult,
     shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError},
 };
@@ -153,21 +152,21 @@ impl<'a> Presentation<'a> {
         })?;
 
         let schema_did = &credential.credential_schema.id;
-        let credential_str = serde_json::to_string(&credential)
-            .map_err(PresentationError::to_serialization_error("credential"))?;
-        let mut parsed_credential: Map<String, Value> =
-            serde_json::from_str(&credential_str).map_err(
-                PresentationError::to_deserialization_error("credential", &credential_str),
-            )?;
-        parsed_credential.remove("proof");
-        let credential_without_proof =
-            serde_json::to_string(&parsed_credential).map_err(|err| {
-                PresentationError::JsonSerialization(
-                    "credential_without_proof".to_owned(),
-                    err.to_string(),
-                )
-            })?;
-        let nquads = convert_to_nquads(&credential_without_proof).await?;
+
+        let mut map_for_nquads: Map<String, Value> = Map::new();
+        map_for_nquads.insert("@context".to_owned(), credential.context.to_owned().into());
+
+        for (k, v) in credential.credential_subject.data.to_owned() {
+            map_for_nquads.insert(k, serde_json::Value::String(v));
+        }
+
+        let map_for_nquads_str = serde_json::to_string(&map_for_nquads).map_err(|err| {
+            PresentationError::JsonSerialization(
+                "credential_without_proof".to_owned(),
+                err.to_string(),
+            )
+        })?;
+        let nquads = convert_to_nquads(&map_for_nquads_str).await?;
 
         let mut nquads_to_schema_map = HashMap::new();
         nquads_to_schema_map.insert(schema_did.to_owned(), nquads);
@@ -209,16 +208,17 @@ impl<'a> Presentation<'a> {
                 PresentationError::InternalError("Error in parsing presentation proof".to_string())
             })?;
 
-        let (signer_address, _) =
-            recover_address_and_data(presentation_value_without_proof["jws"].as_str().ok_or_else(
-                || {
+        let (signer_address, _) = recover_address_and_data(
+            presentation_value_without_proof["jws"]
+                .as_str()
+                .ok_or_else(|| {
                     PresentationError::InternalError(
                         "Error in parsing presentation proof".to_string(),
                     )
-                },
-            )?)
-            .map_err(|err| PresentationError::InternalError(err.to_string()))?;
-        let signer_address = format!("0x{}",signer_address);
+                })?,
+        )
+        .map_err(|err| PresentationError::InternalError(err.to_string()))?;
+        let signer_address = format!("0x{}", signer_address);
         let proof_request = VerifyProofPayload {
             presentation: presentation.clone(),
             proof_request,
@@ -675,7 +675,6 @@ mod tests_proof_request {
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
         parsed.sub_proof_requests[0].revealed_attributes.sort();
 
-
         let presentation_result = presentation
             .create_presentation(
                 proof_request_str,
@@ -691,12 +690,11 @@ mod tests_proof_request {
         let verify_result = presentation
             .verify_presentation(presentation_str, proof_request_str)
             .await;
-        let verify_result = &verify_result?;
-        println!("{}",verify_result);
-        // assert!(verify_result.is_ok());
-        let proof_verification: BbsProofVerification = serde_json::from_str(verify_result)?;
 
-        // assert_eq!(proof_verification.status, "rejected".to_string());
+        assert!(verify_result.is_ok());
+        let proof_verification: BbsProofVerification = serde_json::from_str(&verify_result?)?;
+
+        assert_eq!(proof_verification.status, "verified".to_string());
         Ok(())
     }
 
