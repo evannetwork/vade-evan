@@ -56,7 +56,7 @@ did-write = []
 vc-zkp = []
 
 # build for sdk integration with request list
-target-c-sdk = ["c-lib", "vade-sidetree/sdk", "did-substrate", "jwt-vc", "vc-zkp-bbs", "uuid"]
+target-c-sdk = ["c-lib", "vade-sidetree/sdk", "didcomm", "did-sidetree", "did-substrate", "jwt-vc", "vc-zkp-bbs"]
 
 # build for consuming vade-evan from C
 target-c-lib = ["c-lib", "default"]
