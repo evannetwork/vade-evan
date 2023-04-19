@@ -21,6 +21,7 @@
 - add `helper_create_presentation`
 - adjust `credential_status` property in `BbsCredential` to be optional
 - refactor features to use target specific(c-lib, c-sdk, wasm, cli, java) builds
+- add `helper_verify_presentation`
 
 ### Fixes
 
