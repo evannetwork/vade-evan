@@ -4,7 +4,12 @@ use std::time::SystemTime;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
-use super::shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError};
+use super::shared::{
+    check_for_empty_optional_param,
+    convert_to_nquads,
+    create_draft_credential_from_schema,
+    SharedError,
+};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
@@ -341,6 +346,9 @@ impl<'a> Credential<'a> {
         credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
     ) -> Result<String, CredentialError> {
+        let credential_revocation_did = check_for_empty_optional_param(credential_revocation_did);
+        let credential_revocation_id = check_for_empty_optional_param(credential_revocation_id);
+        let exp_date = check_for_empty_optional_param(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
         let subject_did = credential_subject
             .clone()

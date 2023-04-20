@@ -17,7 +17,12 @@ use vade_evan_bbs::{
 
 use super::{
     datatypes::DidDocumentResult,
-    shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError},
+    shared::{
+        check_for_empty_optional_param,
+        convert_to_nquads,
+        create_draft_credential_from_schema,
+        SharedError,
+    },
 };
 use crate::api::VadeEvan;
 use crate::helpers::credential::Credential;
@@ -95,6 +100,8 @@ impl<'a> Presentation<'a> {
         schema_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        // Check if revealed_attributes is_empty string (required for c-sdk interface)
+        let revealed_attributes = check_for_empty_optional_param(revealed_attributes);
         let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
             .map(|ras| {
                 serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
@@ -278,7 +285,8 @@ impl<'a> Presentation<'a> {
                 "Proof request schema doesn't match with Credential schema".to_owned(),
             ));
         }
-
+        // Check if revealed_attributes is_empty string (required for c-sdk interface)
+        let revealed_attributes = check_for_empty_optional_param(revealed_attributes);
         if revealed_attributes.is_some() {
             let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
                 .map(|ras| {
