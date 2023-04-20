@@ -28,6 +28,7 @@
 - add `payload` argument to did_create in CLI
 - align key format for master secrets and public keys (no extra double quotes)
 - fix optional params for did_create
+- fix wasm release and `target-c-sdk` build options
 
 ### Deprecation
 
