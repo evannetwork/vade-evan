@@ -203,7 +203,6 @@ cfg_if::cfg_if! {
             schema_did: String,
             use_valid_until: bool,
             issuer_did: String,
-            subject_did: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let offer = vade_evan
@@ -211,7 +210,6 @@ cfg_if::cfg_if! {
                     &schema_did,
                     use_valid_until,
                     &issuer_did,
-                    subject_did.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(offer)
@@ -282,6 +280,7 @@ cfg_if::cfg_if! {
             credential_revocation_did: Option<String>,
             credential_revocation_id: Option<String>,
             exp_date: Option<String>,
+            subject_did: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             vade_evan
@@ -293,6 +292,7 @@ cfg_if::cfg_if! {
                     credential_revocation_did.as_deref(),
                     credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
+                    &subject_did,
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok("".to_string())
@@ -321,6 +321,7 @@ cfg_if::cfg_if! {
             credential_str: String,
             master_secret: String,
             signing_key: String,
+            prover_did: String,
             revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -330,6 +331,7 @@ cfg_if::cfg_if! {
                     &credential_str,
                     &master_secret,
                     &signing_key,
+                    &prover_did,
                     revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?;

@@ -129,17 +129,15 @@ impl<'a> Credential<'a> {
         schema_did: &str,
         use_valid_until: bool,
         issuer_did: &str,
-        subject_did: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential_draft = self
-            .create_empty_unsigned_credential(schema_did, subject_did.as_deref(), use_valid_until)
+            .create_empty_unsigned_credential(schema_did, use_valid_until)
             .await?;
         let credential_draft_str = serde_json::to_string(&credential_draft)?;
         let nquads = convert_to_nquads(&credential_draft_str).await?;
 
         let payload = OfferCredentialPayload {
             issuer: issuer_did.to_string(),
-            subject: subject_did.map(|v| v.to_string()),
             nquad_count: nquads.len(),
         };
         let result = self
@@ -328,6 +326,7 @@ impl<'a> Credential<'a> {
     /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
     /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
+    /// * `subject_did` - subject did for self issued credential 
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -340,12 +339,9 @@ impl<'a> Credential<'a> {
         credential_revocation_did: Option<&str>,
         credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
+        subject_did: &str,
     ) -> Result<String, CredentialError> {
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
-        let subject_did = credential_subject
-            .clone()
-            .id
-            .unwrap_or_else(|| "no subject did found".to_string());
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
@@ -371,7 +367,6 @@ impl<'a> Credential<'a> {
         let datetime: DateTime<Utc> = date_now.into();
         let issuance_date = datetime.format("%Y-%m-%dT%TZ").to_string();
         let credential_subject = CredentialSubject {
-            id: Some(subject_did.clone()), // subject.id stays optional, defined by create_offer call
             data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
                 .properties
                 .into_iter()
@@ -416,7 +411,7 @@ impl<'a> Credential<'a> {
             context,
             id,
             r#type,
-            issuer,
+            issuer: issuer.to_owned(),
             valid_until,
             issuance_date,
             credential_subject,
@@ -428,8 +423,7 @@ impl<'a> Credential<'a> {
         let nquads_vc = convert_to_nquads(&unsigned_credential_str).await?;
 
         let payload = OfferCredentialPayload {
-            issuer: subject_did.clone(),
-            subject: Some(subject_did.clone()),
+            issuer: issuer.to_owned(),
             nquad_count: nquads_vc.len(),
         };
         let offer_str = self
@@ -501,14 +495,12 @@ impl<'a> Credential<'a> {
     async fn create_empty_unsigned_credential(
         &mut self,
         schema_did: &str,
-        subject_did: Option<&str>,
         use_valid_until: bool,
     ) -> Result<UnsignedBbsCredential, CredentialError> {
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
 
         Ok(create_draft_credential_from_schema(
             use_valid_until,
-            subject_did,
             &schema,
         ))
     }
@@ -733,7 +725,6 @@ mod tests {
             const PUBLIC_KEY: &str = "qWZ7EGhzYsSlBq4mLhNal6cHXBD88ZfncdbEWQoue6SaAbZ7k56IxsjcvuXD6LGYDgMgtjTHnBraaMRiwJVBJenXgOT8nto7ZUTO/TvCXwtyPMzGrLM5JNJdEaPP4QJN";
             const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
             const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-            const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
             const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";
         } else {
         }
@@ -752,12 +743,11 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
-            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, Some(SUBJECT_DID))
+            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID)
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
         assert_eq!(offer_obj.issuer, ISSUER_DID);
-        assert_eq!(offer_obj.subject, Some(SUBJECT_DID.to_string()));
         assert_eq!(offer_obj.credential_message_count, CREDENTIAL_MESSAGE_COUNT);
         assert!(!offer_obj.nonce.is_empty());
 
@@ -1030,11 +1020,11 @@ mod tests {
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let credential_subject_str = r#"{
-            "id": "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
             "data": {
                 "email": "value@x.com"
             }
         }"#;
+        let subject_id = "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA";
         let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
         let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
         let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
@@ -1050,6 +1040,7 @@ mod tests {
                 Some("did:revoc:12345"),
                 Some("1"),
                 None,
+                subject_id
             )
             .await
         {
@@ -1076,6 +1067,7 @@ mod tests {
                 "email": "value@x.com"
             }
         }"#;
+        let subject_id = "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA";
         let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
         let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
         let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
@@ -1091,6 +1083,7 @@ mod tests {
                 None,
                 None,
                 None,
+                subject_id                
             )
             .await
         {

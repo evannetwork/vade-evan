@@ -183,7 +183,6 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "schema_did", None),
                         use_valid_until,
                         get_argument_value(sub_m, "issuer_did", None),
-                        get_optional_argument_value(sub_m, "subject_did"),
                     )
                     .await?
             }
@@ -254,6 +253,7 @@ async fn main() -> Result<()> {
                         get_optional_argument_value(sub_m, "credential_revocation_did"),
                         get_optional_argument_value(sub_m, "credential_revocation_id"),
                         get_optional_argument_value(sub_m, "exp_date"),
+                        get_argument_value(sub_m, "subject_did", None),
                     )
                     .await?;
                 "".to_string()
@@ -275,6 +275,7 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "master_secret", None),
                         get_argument_value(sub_m, "private_key", None),
+                        get_argument_value(sub_m, "subject_did", None),
                         get_optional_argument_value(sub_m, "revealed_attributes"),
                     )
                     .await?
@@ -312,7 +313,6 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("use_valid_until")?)
                     .arg(get_clap_argument("issuer_did")?)
-                    .arg(get_clap_argument("subject_did")?),
             );
         } else {}
     }
@@ -399,6 +399,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("credential_revocation_did")?)
                     .arg(get_clap_argument("credential_revocation_id")?)
                     .arg(get_clap_argument("exp_date")?)
+                    .arg(get_clap_argument("subject_did")?)
             );
         } else {}
     }
@@ -422,6 +423,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("credential")?)
                     .arg(get_clap_argument("master_secret")?)
                     .arg(get_clap_argument("private_key")?)
+                    .arg(get_clap_argument("subject_did")?)
                     .arg(get_clap_argument("revealed_attributes")?)
             );
         } else {}
@@ -860,7 +862,8 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "subject_did" => Arg::with_name("subject_did")
             .long("subject_did")
             .value_name("subject_did")
-            .help("DID of subject")
+            .required(true)
+            .help("DID of subject/holder/prover")
             .takes_value(true),
         "credential_subject" => Arg::with_name("credential_subject") // same as above, but mandatory
             .long("credential_subject")

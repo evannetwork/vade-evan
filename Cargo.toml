@@ -107,6 +107,8 @@ optional = true
 
 # jwt-vc
 [dependencies.vade-jwt-vc]
+git = "https://github.com/evannetwork/vade-jwt-vc.git"
+branch = "feature/remove-credential-subject-id"
 version = "0.2.0"
 optional = true
 
@@ -144,7 +146,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "develop"
+branch = "feature/remove-credential-subject-id"
 version = "0.3.0"
 optional = true
 default-features = false

@@ -46,7 +46,6 @@ pub async fn convert_to_nquads(document_string: &str) -> Result<Vec<String>, Sha
 
 pub fn create_draft_credential_from_schema(
     use_valid_until: bool,
-    subject_did: Option<&str>,
     schema: &CredentialSchema,
 ) -> UnsignedBbsCredential {
     let credential = UnsignedBbsCredential {
@@ -65,7 +64,6 @@ pub fn create_draft_credential_from_schema(
         },
         issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
         credential_subject: CredentialSubject {
-            id: subject_did.map(|s| s.to_owned()), // subject.id stays optional, defined by create_offer call
             data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
                 .properties
                 .clone()

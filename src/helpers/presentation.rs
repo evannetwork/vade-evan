@@ -63,7 +63,7 @@ impl PresentationError {
 
 // Master secret is always incorporated, without being mentioned in the credential schema
 const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
-const NQUAD_REGEX: &str = r"^_:c14n0 <http://schema.org/([^>]+?)>";
+const NQUAD_REGEX: &str = r"^_:c14n[0-9]* <http://schema.org/([^>]+?)>";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
 
 pub struct Presentation<'a> {
@@ -125,6 +125,7 @@ impl<'a> Presentation<'a> {
     /// * `credential` - credential to be shared in presentation
     /// * `master_secret` - user's master secret
     /// * `signing_key` - users secp256k1 private signing key
+    /// * `prover_did` - did of prover/holder
     /// * `revealed_attributes` - list of names of revealed attributes in specified schema,
     ///
     /// # Returns
@@ -135,6 +136,7 @@ impl<'a> Presentation<'a> {
         credential_str: &str,
         master_secret: &str,
         signing_key: &str,
+        prover_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
         let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
@@ -212,11 +214,6 @@ impl<'a> Presentation<'a> {
         let revealed = credential.credential_subject.clone();
         revealed_properties_schema_map.insert(schema_did.to_owned(), revealed);
 
-        // get prover did
-        let prover = credential.credential_subject.id.clone().ok_or_else(|| {
-            PresentationError::InternalError("CredentialSubject doesn't contain did".to_owned())
-        })?;
-
         let mut helper_credential = Credential::new(self.vade_evan)
             .map_err(|err| PresentationError::InternalError(err.to_string()))?;
         let public_key_issuer = helper_credential
@@ -234,8 +231,8 @@ impl<'a> Presentation<'a> {
             public_key_schema_map,
             nquads_schema_map,
             master_secret: master_secret.to_owned(),
-            prover_did: prover.clone(),
-            prover_public_key_did: format!("{}#key-1", prover),
+            prover_did: prover_did.to_owned(),
+            prover_public_key_did: format!("{}#key-1", prover_did.to_owned()),
             prover_proving_key: signing_key.to_owned(),
         };
 
@@ -288,8 +285,7 @@ impl<'a> Presentation<'a> {
         // get parsed schema and "clone" it due to move occurring below
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         // get nquads for schema
-        let credential_draft =
-            create_draft_credential_from_schema(false, Some("did:placeholder"), &schema);
+        let credential_draft = create_draft_credential_from_schema(false, &schema);
         let credential_draft_str = serde_json::to_string(&credential_draft).map_err(
             PresentationError::to_serialization_error("UnsignedBbsCredential"),
         )?;
@@ -351,44 +347,45 @@ mod tests_proof_request {
     const NOT_FOUND_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvgfoobar";
     const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     const SCHEMA_DID_2: &str = "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg";
+    const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     const CREDENTIAL: &str = r###"{
-        "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
-        "type": [
-            "VerifiableCredential"
-        ],
-        "proof": {
-            "type": "BbsBlsSignature2020",
-            "created": "2023-02-01T14:08:17.000Z",
-            "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
-            "proofPurpose": "assertionMethod",
-            "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
-            "credentialMessageCount": 13,
-            "requiredRevealStatements": []
-        },
-        "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-        "@context": [
-            "https://www.w3.org/2018/credentials/v1",
-            "https://schema.org/",
-            "https://w3id.org/vc-revocation-list-2020/v1"
-        ],
-        "issuanceDate": "2023-02-01T14:08:09.849Z",
-        "credentialSchema": {
-            "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
-            "type": "EvanVCSchema"
-        },
-        "credentialStatus": {
-            "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
-            "type": "RevocationList2020Status",
-            "revocationListIndex": "4",
-            "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
-        },
-        "credentialSubject": {
-            "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-            "data": {
-                "bio": "biography"
-            }
+    "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+    "type": [
+        "VerifiableCredential"
+    ],
+    "proof": {
+        "type": "BbsBlsSignature2020",
+        "created": "2023-02-01T14:08:17.000Z",
+        "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
+        "credentialMessageCount": 13,
+        "requiredRevealStatements": []
+    },
+    "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://schema.org/",
+        "https://w3id.org/vc-revocation-list-2020/v1"
+    ],
+    "issuanceDate": "2023-02-01T14:08:09.849Z",
+    "credentialSchema": {
+        "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+        "type": "EvanVCSchema"
+    },
+    "credentialStatus": {
+        "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+        "type": "RevocationList2020Status",
+        "revocationListIndex": "4",
+        "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+    },
+    "credentialSubject": {
+        "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+        "data": {
+            "bio": "biography"
         }
-    }"###;
+    }
+}"###;
     #[tokio::test]
     async fn helper_can_create_proof_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -406,7 +403,7 @@ mod tests_proof_request {
         assert_eq!(parsed.r#type, "BBS");
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID);
         parsed.sub_proof_requests[0].revealed_attributes.sort();
-        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [14, 16],);
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [13, 15],);
 
         Ok(())
     }
@@ -496,7 +493,7 @@ mod tests_proof_request {
         parsed.sub_proof_requests[0].revealed_attributes.sort();
         assert_eq!(
             parsed.sub_proof_requests[0].revealed_attributes,
-            [12, 13, 14, 15, 16],
+            [11, 12, 13, 14, 15],
         );
 
         Ok(())
@@ -520,7 +517,10 @@ mod tests_proof_request {
         assert_eq!(parsed.r#type, "BBS");
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
         parsed.sub_proof_requests[0].revealed_attributes.sort();
-        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [12],);
+        assert_eq!(
+            parsed.sub_proof_requests[0].revealed_attributes,
+            [12],
+        );
 
         let presentation_result = presentation
             .create_presentation(
@@ -528,6 +528,7 @@ mod tests_proof_request {
                 CREDENTIAL,
                 MASTER_SECRET,
                 SIGNER_PRIVATE_KEY,
+                SUBJECT_DID,
                 None,
             )
             .await;
@@ -554,6 +555,7 @@ mod tests_proof_request {
                 CREDENTIAL,
                 MASTER_SECRET,
                 SIGNER_PRIVATE_KEY,
+                SUBJECT_DID,
                 None,
             )
             .await;
