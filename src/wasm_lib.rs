@@ -431,62 +431,72 @@ pub async fn execute_vade(
 ) -> String {
     let result: Result<String, JsValue> = match func_name.as_str() {
         #[cfg(feature = "did-read")]
-        "did_resolve" =>
-            did_resolve(did_or_method, config).await,
+        "did_resolve" => did_resolve(did_or_method, config).await,
         #[cfg(feature = "did-write")]
-        "did_create" =>
-            did_create(did_or_method, options, payload, config).await,
+        "did_create" => did_create(did_or_method, options, payload, config).await,
         #[cfg(feature = "did-write")]
-        "did_update" =>
-            did_update(did_or_method, options, payload, config).await,
+        "did_update" => did_update(did_or_method, options, payload, config).await,
 
         #[cfg(feature = "didcomm")]
-        "didcomm_receive" =>
-            didcomm_receive(options, payload, config).await,
+        "didcomm_receive" => didcomm_receive(options, payload, config).await,
         #[cfg(feature = "didcomm")]
-        "didcomm_send" =>
-            didcomm_send(options, payload, config).await,
+        "didcomm_send" => didcomm_send(options, payload, config).await,
 
         #[cfg(feature = "vc-zkp-bbs")]
-        "run_custom_function" =>
-            run_custom_function(did_or_method, custom_func_name, options, payload, config).await,
+        "run_custom_function" => {
+            run_custom_function(did_or_method, custom_func_name, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_create_credential_offer" =>
-            vc_zkp_create_credential_offer(did_or_method, options, payload, config).await,
+        "vc_zkp_create_credential_offer" => {
+            vc_zkp_create_credential_offer(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_create_credential_proposal" =>
-            vc_zkp_create_credential_proposal(did_or_method, options, payload, config).await,
+        "vc_zkp_create_credential_proposal" => {
+            vc_zkp_create_credential_proposal(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_create_credential_schema" =>
-            vc_zkp_create_credential_schema(did_or_method, options, payload, config).await,
+        "vc_zkp_create_credential_schema" => {
+            vc_zkp_create_credential_schema(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_create_revocation_registry_definition" =>
-            vc_zkp_create_revocation_registry_definition(did_or_method, options, payload, config).await,
+        "vc_zkp_create_revocation_registry_definition" => {
+            vc_zkp_create_revocation_registry_definition(did_or_method, options, payload, config)
+                .await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_update_revocation_registry" =>
-            vc_zkp_update_revocation_registry(did_or_method, options, payload, config).await,
+        "vc_zkp_update_revocation_registry" => {
+            vc_zkp_update_revocation_registry(did_or_method, options, payload, config).await
+        }
         #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
-        "vc_zkp_issue_credential" =>
-            vc_zkp_issue_credential(did_or_method, options, payload, config).await,
+        "vc_zkp_issue_credential" => {
+            vc_zkp_issue_credential(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_finish_credential" =>
-            vc_zkp_finish_credential(did_or_method, options, payload, config).await,
+        "vc_zkp_finish_credential" => {
+            vc_zkp_finish_credential(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_present_proof" =>
-            vc_zkp_present_proof(did_or_method, options, payload, config).await,
+        "vc_zkp_present_proof" => {
+            vc_zkp_present_proof(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_request_credential" =>
-            vc_zkp_request_credential(did_or_method, options, payload, config).await,
+        "vc_zkp_request_credential" => {
+            vc_zkp_request_credential(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_request_proof" =>
-            vc_zkp_request_proof(did_or_method, options, payload, config).await,
+        "vc_zkp_request_proof" => {
+            vc_zkp_request_proof(did_or_method, options, payload, config).await
+        }
         #[cfg(feature = "vc-zkp-bbs")]
-        "vc_zkp_revoke_credential" =>
-            vc_zkp_revoke_credential(did_or_method, options, payload, config).await,
+        "vc_zkp_revoke_credential" => {
+            vc_zkp_revoke_credential(did_or_method, options, payload, config).await
+        }
         #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
-        "vc_zkp_verify_proof" =>
-            vc_zkp_verify_proof(did_or_method, options, payload, config).await,
-        _ => Err(JsValue::from(format!("invalid command for execute_vade: {}", &func_name))),
+        "vc_zkp_verify_proof" => vc_zkp_verify_proof(did_or_method, options, payload, config).await,
+        _ => Err(JsValue::from(format!(
+            "invalid command for execute_vade: {}",
+            &func_name
+        ))),
     };
 
     let response = match result {

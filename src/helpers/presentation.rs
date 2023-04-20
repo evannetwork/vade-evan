@@ -517,10 +517,7 @@ mod tests_proof_request {
         assert_eq!(parsed.r#type, "BBS");
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
         parsed.sub_proof_requests[0].revealed_attributes.sort();
-        assert_eq!(
-            parsed.sub_proof_requests[0].revealed_attributes,
-            [12],
-        );
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [12],);
 
         let presentation_result = presentation
             .create_presentation(

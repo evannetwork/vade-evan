@@ -326,7 +326,7 @@ impl<'a> Credential<'a> {
     /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
     /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
-    /// * `subject_did` - subject did for self issued credential 
+    /// * `subject_did` - subject did for self issued credential
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -1040,7 +1040,7 @@ mod tests {
                 Some("did:revoc:12345"),
                 Some("1"),
                 None,
-                subject_id
+                subject_id,
             )
             .await
         {
@@ -1083,7 +1083,7 @@ mod tests {
                 None,
                 None,
                 None,
-                subject_id                
+                subject_id,
             )
             .await
         {
