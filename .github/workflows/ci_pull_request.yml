@@ -24,6 +24,7 @@ jobs:
           - x86_64-apple-darwin
           - aarch64-apple-darwin
           - x86_64-pc-windows-msvc
+          - x86_64-pc-windows-gnu,
 
         toolchain:
           - stable
@@ -36,11 +37,12 @@ jobs:
           - target-wasm
 
         exclude:
-          # Don't test linux/windows targets on macos
           - os: macos-latest
             target: x86_64-unknown-linux-gnu
           - os: macos-latest
             target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-pc-windows-gnu
           # Don't test darwin/windows targets on ubuntu
           - os: ubuntu-latest
             target: x86_64-apple-darwin
@@ -49,6 +51,8 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-pc-windows-msvc
           # Don't test darwin/linux targets on windows
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
           - os: windows-latest
             target: x86_64-apple-darwin
           - os: windows-latest
@@ -91,9 +95,14 @@ jobs:
         if: ${{ matrix.feature_target == 'target-wasm' }}
         run: wasm-pack build --release --target web -- --no-default-features --features=${{ matrix.feature_target }}
 
-      - name: Build binaries
-        if: ${{ matrix.feature_target != 'target-wasm' }}
-        run: cargo build --release --target=${{ matrix.target }} --no-default-features --features=${{ matrix.feature_target }}
+      - name: install cross
+        run: cargo install -f cross
+      - name: target-c-sdk native build
+        if: ${{ matrix.target != 'wasm32-unknown-unknown' && (matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'x86_64-pc-windows-msvc') }}
+        run: cargo build --release --no-default-features --features target-c-sdk --target-dir=target/ --target=${{ matrix.target }}
+      - name: target-c-sdk cross build
+        if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'aarch64-apple-darwin' && matrix.target != 'x86_64-apple-darwin' && matrix.target != 'x86_64-pc-windows-msvc' && matrix.target != 'wasm32-unknown-unknown' }}
+        run: cross build --release --no-default-features --features target-c-sdk --target-dir target/ --target ${{ matrix.target }}
 
       - name: Run tests
         if: ${{ matrix.feature_target != 'target-c-sdk' }}
