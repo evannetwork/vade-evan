@@ -163,8 +163,6 @@ version = "=1.7.1"
 optional = true
 features = ["rt-multi-thread", "macros", "net", "time"]
 
-[dependencies.ntapi]
-ntapi = "0.4.1"
 ####################################################################### target specific dependencies
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
 openssl = { version = "*", features = ["vendored"] }
@@ -193,3 +191,7 @@ wasm-bindgen-test = "0.3.12"
 serde = "1.0"
 serde_derive = "1.0.114"
 toml = "0.5.10"
+
+################################################################################# build dependencies
+[patch.'https://git.crates-io']
+ntapi = "0.4.1"
