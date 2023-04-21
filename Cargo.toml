@@ -192,8 +192,11 @@ serde = "1.0"
 serde_derive = "1.0.114"
 toml = "0.5.10"
 
-################################################################################# build dependencies
+################################################################################# patch dependencies
 [patch.crates-io.ntapi]
 git = "https://github.com/MSxDOS/ntapi.git"
 branch = "master"
 version = "0.4.1"
+
+[patch.'https://github.com/MSxDOS/ntapi']
+ntapi = { git = 'https:///github.com//MSxDOS/ntapi.git', branch = 'master' }

@@ -5497,4 +5497,9 @@ dependencies = [
 [[patch.unused]]
 name = "ntapi"
 version = "0.4.1"
+source = "git+https://github.com//MSxDOS/ntapi.git?branch=master#f93504e6b71f2ba6355e0fbc0a703da5656fb3bf"
+
+[[patch.unused]]
+name = "ntapi"
+version = "0.4.1"
 source = "git+https://github.com/MSxDOS/ntapi.git?branch=master#f93504e6b71f2ba6355e0fbc0a703da5656fb3bf"
