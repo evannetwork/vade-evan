@@ -2485,7 +2485,7 @@ dependencies = [
  "libc",
  "log",
  "miow 0.3.7",
- "ntapi",
+ "ntapi 0.3.7",
  "winapi 0.3.9",
 ]
 
@@ -2654,6 +2654,14 @@ name = "ntapi"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c28774a7fd2fbb4f0babd8237ce554b73af68021b5f695a3cebd6c59bac0980f"
+dependencies = [
+ "winapi 0.3.9",
+]
+
+[[package]]
+name = "ntapi"
+version = "0.4.1"
+source = "git+https://github.com/MSxDOS/ntapi.git?branch=master#f93504e6b71f2ba6355e0fbc0a703da5656fb3bf"
 dependencies = [
  "winapi 0.3.9",
 ]
@@ -4899,6 +4907,7 @@ dependencies = [
  "flate2",
  "jni",
  "log",
+ "ntapi 0.4.1",
  "openssl",
  "regex",
  "serde",
@@ -5495,11 +5504,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "ntapi"
-version = "0.4.1"
-source = "git+https://github.com//MSxDOS/ntapi.git?branch=master#f93504e6b71f2ba6355e0fbc0a703da5656fb3bf"
-
-[[patch.unused]]
-name = "ntapi"
-version = "0.4.1"
-source = "git+https://github.com/MSxDOS/ntapi.git?branch=master#f93504e6b71f2ba6355e0fbc0a703da5656fb3bf"
+name = "mio"
+version = "0.8.6"
+source = "git+https://github.com/tokio-rs/mio.git?branch=master#200f66202c4cf1414960569660c1449993d9c71a"

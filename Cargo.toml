@@ -163,6 +163,10 @@ version = "=1.7.1"
 optional = true
 features = ["rt-multi-thread", "macros", "net", "time"]
 
+[dependencies.ntapi]
+version = "0.4.1"
+optional = true
+
 ####################################################################### target specific dependencies
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
 openssl = { version = "*", features = ["vendored"] }
@@ -193,10 +197,11 @@ serde_derive = "1.0.114"
 toml = "0.5.10"
 
 ################################################################################# patch dependencies
+[patch.crates-io.mio]
+git = "https://github.com/tokio-rs/mio.git"
+branch = "master"
+
 [patch.crates-io.ntapi]
 git = "https://github.com/MSxDOS/ntapi.git"
 branch = "master"
 version = "0.4.1"
-
-[patch.'https://github.com/MSxDOS/ntapi']
-ntapi = { git = 'https:///github.com//MSxDOS/ntapi.git', branch = 'master' }
