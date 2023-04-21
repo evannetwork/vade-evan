@@ -163,12 +163,11 @@ version = "=1.7.1"
 optional = true
 features = ["rt-multi-thread", "macros", "net", "time"]
 
+[dependencies.ntapi]
+ntapi = "0.4.1"
 ####################################################################### target specific dependencies
 [target.'cfg(any(target_arch = "x86_64-unknown-linux-gnu", target_arch = "x86_64-apple-darwin", target_arch = "aarch64-apple-darwin", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
 openssl = { version = "*", features = ["vendored"] }
-
-[target.'cfg(any(target_arch = "x86_64-pc-windows-gnu", target_arch = "x86_64-pc-windows-msvc"))'.dependencies]
-proc-macro-crate = "1.3.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
