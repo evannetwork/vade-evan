@@ -23,7 +23,7 @@ jobs:
           - x86_64-unknown-linux-gnu
           - x86_64-apple-darwin
           - aarch64-apple-darwin
-          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
 
         toolchain:
           - stable
@@ -41,8 +41,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - os: macos-latest
             target: x86_64-pc-windows-msvc
-          - os: macos-latest
-            target: x86_64-pc-windows-gnu
           # Don't test darwin/windows targets on ubuntu
           - os: ubuntu-latest
             target: x86_64-apple-darwin
@@ -51,8 +49,6 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-pc-windows-msvc
           # Don't test darwin/linux targets on windows
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
           - os: windows-latest
             target: x86_64-apple-darwin
           - os: windows-latest
