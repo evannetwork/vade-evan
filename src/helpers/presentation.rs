@@ -18,6 +18,7 @@ use vade_evan_bbs::{
 use super::{
     datatypes::DidDocumentResult,
     shared::{
+        check_for_optional_empty_params,
         convert_to_nquads,
         create_draft_credential_from_schema,
         SharedError,
@@ -99,6 +100,7 @@ impl<'a> Presentation<'a> {
         schema_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
             .map(|ras| {
                 serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
@@ -261,6 +263,7 @@ impl<'a> Presentation<'a> {
         signing_key: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
             PresentationError::to_deserialization_error("credential", credential_str),
         )?;
