@@ -191,3 +191,6 @@ wasm-bindgen-test = "0.3.12"
 serde = "1.0"
 serde_derive = "1.0.114"
 toml = "0.5.10"
+################################################################################# patch dependencies
+[patch.crates-io]
+ntapi = { path = "builds/rust/ntapi" }

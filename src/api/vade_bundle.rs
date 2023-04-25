@@ -20,11 +20,7 @@ use vade_universal_resolver::VadeUniversalResolver;
 #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 
-#[cfg(any(
-    feature = "vc-zkp-bbs",
-    feature = "jwt-vc",
-    feature = "did-substrate"
-))]
+#[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc", feature = "did-substrate"))]
 fn get_signer(signer: &str) -> Box<dyn Signer> {
     if signer.starts_with("remote") {
         Box::new(RemoteSigner::new(
@@ -144,6 +140,6 @@ fn get_vade_sidetree(
         request_id,
         #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
         request_function_callback,
-        std::env::var("SIDETREE_API_URL").ok()
+        std::env::var("SIDETREE_API_URL").ok(),
     ))
 }
