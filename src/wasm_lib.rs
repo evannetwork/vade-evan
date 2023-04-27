@@ -618,9 +618,9 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_credential_offer(
-                        &payload.schema_did,
+                        payload.schema_did,
                         payload.use_valid_until,
-                        &payload.issuer_did,
+                        payload.issuer_did,
                         payload.subject_did,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
@@ -632,11 +632,11 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_credential_request(
-                        &issuer_public_key,
-                        &payload.bbs_secret,
-                        &payload.credential_values,
-                        &payload.credential_offer,
-                        &payload.credential_schema,
+                        payload.issuer_public_key,
+                        payload.bbs_secret,
+                        payload.credential_values,
+                        payload.credential_offer,
+                        payload.credential_schema,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
@@ -647,9 +647,9 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_revoke_credential(
-                        &payload.credential,
-                        &payload.update_key_jwk,
-                        &payload.private_key,
+                        payload.credential,
+                        payload.update_key_jwk,
+                        payload.private_key,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
@@ -660,8 +660,8 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_verify_credential(
-                    &payload.credential,
-                    &payload.master_secret,
+                    payload.credential,
+                    payload.master_secret,
                 ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
@@ -672,10 +672,10 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_self_issued_credential(
-                        &payload.schema_did,
-                        &payload.credential_subject_str,
-                        &payload.bbs_secret,
-                        &payload.bbs_private_key,
+                        payload.schema_did,
+                        payload.credential_subject_str,
+                        payload.bbs_secret,
+                        payload.bbs_private_key,
                         payload.credential_revocation_did,
                         payload.credential_revocation_id,
                         payload.exp_date,
@@ -689,7 +689,7 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_proof_request(
-                    &payload.schema_did,
+                    payload.schema_did,
                     payload.revealed_attributes,
                 ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
@@ -701,10 +701,10 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_presentation(
-                    &payload.proof_request_str,
-                    &payload.credential_str,
-                    &payload.master_secret,
-                    &payload.signing_key,
+                    payload.proof_request_str,
+                    payload.credential_str,
+                    payload.master_secret,
+                    payload.signing_key,
                     payload.revealed_attributes,
                 ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),

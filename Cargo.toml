@@ -68,7 +68,7 @@ target-cli = ["default"]
 target-java-lib = ["c-lib", "default"]
 
 # build for usage in wasm
-target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc"]
+target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc", "vc-zkp-bbs"]
 
 ############################################################################### generic dependencies
 [dependencies]
