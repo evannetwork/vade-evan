@@ -4,7 +4,12 @@ use std::time::SystemTime;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
-use super::shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError};
+use super::shared::{
+    check_for_optional_empty_params,
+    convert_to_nquads,
+    create_draft_credential_from_schema,
+    SharedError,
+};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
@@ -341,6 +346,9 @@ impl<'a> Credential<'a> {
         exp_date: Option<&str>,
         subject_did: &str,
     ) -> Result<String, CredentialError> {
+        let credential_revocation_did = check_for_optional_empty_params(credential_revocation_did);
+        let credential_revocation_id = check_for_optional_empty_params(credential_revocation_id);
+        let exp_date = check_for_optional_empty_params(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let issuer_public_key = self
@@ -505,7 +513,7 @@ impl<'a> Credential<'a> {
         ))
     }
 
-    async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
+    pub async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
     where
         T: DeserializeOwned,
     {

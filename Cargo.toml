@@ -68,7 +68,7 @@ target-cli = ["default"]
 target-java-lib = ["c-lib", "default"]
 
 # build for usage in wasm
-target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc"]
+target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc", "vc-zkp-bbs"]
 
 ############################################################################### generic dependencies
 [dependencies]
@@ -193,3 +193,6 @@ wasm-bindgen-test = "0.3.12"
 serde = "1.0"
 serde_derive = "1.0.114"
 toml = "0.5.10"
+################################################################################# patch dependencies
+[patch.crates-io]
+ntapi = { path = "builds/rust/ntapi" }

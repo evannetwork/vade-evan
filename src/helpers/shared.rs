@@ -84,3 +84,16 @@ pub fn create_draft_credential_from_schema(
     };
     credential
 }
+
+pub fn check_for_optional_empty_params(param: Option<&str>) -> Option<&str> {
+    match param {
+        Some(val) => {
+            if val.is_empty() {
+                None
+            } else {
+                Some(val)
+            }
+        }
+        _ => None,
+    }
+}

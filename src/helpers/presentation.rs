@@ -4,17 +4,25 @@ use serde_json::{value::Value, Map};
 use std::collections::HashMap;
 use thiserror::Error;
 use vade_evan_bbs::{
+    recover_address_and_data,
     BbsCredential,
     BbsProofRequest,
     BbsSubProofRequest,
     CredentialSchema,
     PresentProofPayload,
+    ProofPresentation,
     RequestProofPayload,
+    VerifyProofPayload,
 };
 
 use super::{
     datatypes::DidDocumentResult,
-    shared::{convert_to_nquads, create_draft_credential_from_schema, SharedError},
+    shared::{
+        check_for_optional_empty_params,
+        convert_to_nquads,
+        create_draft_credential_from_schema,
+        SharedError,
+    },
 };
 use crate::api::VadeEvan;
 use crate::helpers::credential::Credential;
@@ -30,6 +38,8 @@ pub enum PresentationError {
     InvalidRevealedAttributes(String),
     #[error("internal error occurred; {0}")]
     InternalError(String),
+    #[error("invalid presentation provided; {0}")]
+    InvalidPresentationError(String),
     #[error(r#"JSON serialization of {0} failed due to "{1}""#)]
     JsonSerialization(String, String),
     #[error(r#"JSON deserialization of {0} failed due to "{1}" on: {2}"#)]
@@ -90,6 +100,7 @@ impl<'a> Presentation<'a> {
         schema_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
             .map(|ras| {
                 serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
@@ -112,6 +123,121 @@ impl<'a> Presentation<'a> {
 
         self.vade_evan
             .vc_zkp_request_proof(EVAN_METHOD, TYPE_OPTIONS, &proof_request_json)
+            .await
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
+    }
+
+    /// Verifies a presentation.
+    ///
+    /// The function checks if the presentation is valid against the provided proof request.
+    ///
+    /// # Arguments
+    ///
+    /// * `presentation_str` - verifiable presentation from the holder as JSON string
+    /// * `proof_request_str` - proof request from the verifier as JSON string
+    ///
+    /// # Returns
+    /// * `Result<String, PresentationError>` - A `BbsProofVerification` as JSON
+    ///   wrapped in a `Result` along with a potential `PresentationError`
+    pub async fn verify_presentation(
+        &mut self,
+        presentation_str: &str,
+        proof_request_str: &str,
+    ) -> Result<String, PresentationError> {
+        let presentation: ProofPresentation = serde_json::from_str(presentation_str).map_err(
+            PresentationError::to_deserialization_error("presentation", presentation_str),
+        )?;
+        let proof_request: BbsProofRequest = serde_json::from_str(proof_request_str).map_err(
+            PresentationError::to_deserialization_error("proof request", proof_request_str),
+        )?;
+
+        let credential = presentation.verifiable_credential.get(0).ok_or_else(|| {
+            PresentationError::InvalidPresentationError(
+                "Credentail not found in presentation".to_owned(),
+            )
+        })?;
+
+        let schema_did = &credential.credential_schema.id;
+
+        let mut map_for_nquads: Map<String, Value> = Map::new();
+        map_for_nquads.insert("@context".to_owned(), credential.context.to_owned().into());
+
+        for (k, v) in credential.credential_subject.data.to_owned() {
+            map_for_nquads.insert(k, serde_json::Value::String(v));
+        }
+
+        let map_for_nquads_str = serde_json::to_string(&map_for_nquads).map_err(|err| {
+            PresentationError::JsonSerialization(
+                "credential_without_proof".to_owned(),
+                err.to_string(),
+            )
+        })?;
+        let nquads = convert_to_nquads(&map_for_nquads_str).await?;
+
+        let mut nquads_to_schema_map = HashMap::new();
+        nquads_to_schema_map.insert(schema_did.to_owned(), nquads);
+
+        let mut helper_credential = Credential::new(self.vade_evan)
+            .map_err(|err| PresentationError::InternalError(err.to_string()))?;
+
+        let public_key_issuer = helper_credential
+            .get_issuer_public_key(&credential.issuer, "#bbs-key-1")
+            .await
+            .map_err(|err| PresentationError::InternalError(err.to_string()))?;
+        let mut keys_to_schema_map = HashMap::new();
+        keys_to_schema_map.insert(schema_did.to_owned(), public_key_issuer);
+
+        let mut revocation_list = None;
+        if credential.credential_status.is_some() {
+            let credential_status = &credential.clone().credential_status.ok_or_else(|| {
+                PresentationError::InternalError("Error in parsing credential_status".to_string())
+            })?;
+            revocation_list = helper_credential
+                .get_did_document(&credential_status.revocation_list_credential)
+                .await
+                .map_err(|err| PresentationError::InternalError(err.to_string()))?;
+        }
+
+        // extract signing address
+        let mut presentation_value: Value = serde_json::from_str(presentation_str).map_err(
+            PresentationError::to_deserialization_error("presentation", &presentation_str),
+        )?;
+
+        let presentation_value_with_proof =
+            presentation_value.as_object_mut().ok_or_else(|| {
+                PresentationError::InternalError("Error in parsing presentation proof".to_string())
+            })?;
+
+        let presentation_value_without_proof = presentation_value_with_proof
+            .remove("proof")
+            .ok_or_else(|| {
+                PresentationError::InternalError("Error in parsing presentation proof".to_string())
+            })?;
+
+        let (signer_address, _) = recover_address_and_data(
+            presentation_value_without_proof["jws"]
+                .as_str()
+                .ok_or_else(|| {
+                    PresentationError::InternalError(
+                        "Error in parsing presentation proof".to_string(),
+                    )
+                })?,
+        )
+        .map_err(|err| PresentationError::InternalError(err.to_string()))?;
+        let signer_address = format!("0x{}", signer_address);
+        let proof_request = VerifyProofPayload {
+            presentation: presentation.clone(),
+            proof_request,
+            keys_to_schema_map,
+            signer_address,
+            nquads_to_schema_map,
+            revocation_list,
+        };
+        let payload = serde_json::to_string(&proof_request).map_err(
+            PresentationError::to_serialization_error("VerifyProofPayload"),
+        )?;
+        self.vade_evan
+            .vc_zkp_verify_proof(EVAN_METHOD, TYPE_OPTIONS, &payload)
             .await
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
     }
@@ -139,6 +265,7 @@ impl<'a> Presentation<'a> {
         prover_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
             PresentationError::to_deserialization_error("credential", credential_str),
         )?;
@@ -160,7 +287,6 @@ impl<'a> Presentation<'a> {
                 "Proof request schema doesn't match with Credential schema".to_owned(),
             ));
         }
-
         if revealed_attributes.is_some() {
             let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
                 .map(|ras| {
@@ -334,7 +460,7 @@ impl<'a> Presentation<'a> {
 mod tests_proof_request {
 
     use anyhow::Result;
-    use vade_evan_bbs::BbsProofRequest;
+    use vade_evan_bbs::{BbsProofRequest, BbsProofVerification};
 
     use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
 
@@ -531,6 +657,48 @@ mod tests_proof_request {
             .await;
         assert!(presentation_result.is_ok());
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_verify_presentation() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let proof_request_result = presentation
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["bio"]"#))
+            .await;
+
+        assert!(proof_request_result.is_ok());
+        let proof_request_str = &proof_request_result?;
+        let mut parsed: BbsProofRequest = serde_json::from_str(proof_request_str)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+
+        let presentation_result = presentation
+            .create_presentation(
+                proof_request_str,
+                CREDENTIAL,
+                MASTER_SECRET,
+                SIGNER_PRIVATE_KEY,
+                None,
+            )
+            .await;
+        assert!(presentation_result.is_ok());
+        let presentation_str = &presentation_result?;
+
+        let verify_result = presentation
+            .verify_presentation(presentation_str, proof_request_str)
+            .await;
+
+        assert!(verify_result.is_ok());
+        let proof_verification: BbsProofVerification = serde_json::from_str(&verify_result?)?;
+
+        assert_eq!(proof_verification.status, "verified".to_string());
         Ok(())
     }
 
