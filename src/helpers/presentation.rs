@@ -685,6 +685,7 @@ mod tests_proof_request {
                 CREDENTIAL,
                 MASTER_SECRET,
                 SIGNER_PRIVATE_KEY,
+                SUBJECT_DID,
                 None,
             )
             .await;
