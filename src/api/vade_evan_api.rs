@@ -606,7 +606,7 @@ impl VadeEvan {
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
     ///                   SIGNER_PRIVATE_KEY,
-    ///                   SUBJECT_DID,
+    ///                   PROVER_DID,
     ///                   None,
     ///                )
     ///                .await;
