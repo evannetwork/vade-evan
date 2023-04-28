@@ -380,6 +380,7 @@ mod tests_proof_request {
         "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
     },
     "credentialSubject": {
+        "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
         "data": {
             "bio": "biography"
         }

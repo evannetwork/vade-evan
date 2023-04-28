@@ -1062,7 +1062,6 @@ mod tests {
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let credential_subject_str = r#"{
-            "id": "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA",
             "data": {
                 "email": "value@x.com"
             }
