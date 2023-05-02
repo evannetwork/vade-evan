@@ -656,9 +656,9 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_verify_credential(
-                    payload.credential,
-                    payload.master_secret,
-                ).await,
+                        payload.credential,
+                        payload.master_secret,
+                    ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -685,9 +685,9 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_proof_request(
-                    payload.schema_did,
-                    payload.revealed_attributes,
-                ).await,
+                        payload.schema_did,
+                        payload.revealed_attributes,
+                    ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -697,12 +697,12 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                     helper_create_presentation(
-                    payload.proof_request_str,
-                    payload.credential_str,
-                    payload.master_secret,
-                    payload.signing_key,
-                    payload.revealed_attributes,
-                ).await,
+                        payload.proof_request_str,
+                        payload.credential_str,
+                        payload.master_secret,
+                        payload.signing_key,
+                        payload.revealed_attributes,
+                    ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
