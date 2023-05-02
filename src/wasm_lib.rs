@@ -341,14 +341,13 @@ cfg_if::cfg_if! {
             private_key: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            vade_evan
+            Ok(vade_evan
                 .helper_revoke_credential(
                     &credential,
                     &update_key_jwk,
                     &private_key,
                 ).await
-                .map_err(jsify_vade_evan_error)?;
-            Ok("".to_string())
+                .map_err(jsify_vade_evan_error)?)
         }
 
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
@@ -379,7 +378,7 @@ cfg_if::cfg_if! {
             exp_date: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            vade_evan
+            Ok(vade_evan
                 .helper_create_self_issued_credential(
                     &schema_did,
                     &credential_subject_str,
@@ -389,8 +388,7 @@ cfg_if::cfg_if! {
                     credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
                 ).await
-                .map_err(jsify_vade_evan_error)?;
-            Ok("".to_string())
+                .map_err(jsify_vade_evan_error)?)
         }
 
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
@@ -400,13 +398,12 @@ cfg_if::cfg_if! {
             revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            vade_evan
+            Ok(vade_evan
                 .helper_create_proof_request(
                     &schema_did,
                     revealed_attributes.as_deref(),
                 ).await
-                .map_err(jsify_vade_evan_error)?;
-            Ok("".to_string())
+                .map_err(jsify_vade_evan_error)?)
         }
 
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
@@ -419,7 +416,7 @@ cfg_if::cfg_if! {
             revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            vade_evan
+            Ok(vade_evan
                 .helper_create_presentation(
                     &proof_request_str,
                     &credential_str,
@@ -427,8 +424,7 @@ cfg_if::cfg_if! {
                     &signing_key,
                     revealed_attributes.as_deref(),
                 ).await
-                .map_err(jsify_vade_evan_error)?;
-            Ok("".to_string())
+                .map_err(jsify_vade_evan_error)?)
         }
     } else {
     }
