@@ -279,6 +279,15 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+            ("verify_presentation", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_verify_presentation(
+                        get_argument_value(sub_m, "presentation", None),
+                        get_argument_value(sub_m, "proof_request", None),
+                    )
+                    .await?
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -423,6 +432,16 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("master_secret")?)
                     .arg(get_clap_argument("private_key")?)
                     .arg(get_clap_argument("revealed_attributes")?)
+            );
+        } else {}
+    }
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("verify_presentation")
+                    .about("Verifies a presentation against a proof request.")
+                    .arg(get_clap_argument("presentation")?)
+                    .arg(get_clap_argument("proof_request")?)
             );
         } else {}
     }
@@ -948,6 +967,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("proof_request")
             .required(true)
             .help("bbs proof request for presentation sharing")
+            .takes_value(true),
+        "presentation" => Arg::with_name("presentation")
+            .long("presentation")
+            .value_name("presentation")
+            .required(true)
+            .help("bbs presentation")
             .takes_value(true),
         _ => {
             bail!("invalid arg_name: '{}'", &arg_name);
