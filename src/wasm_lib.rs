@@ -143,6 +143,7 @@ struct HelperCreateSelfIssuedCredentialPayload {
     pub credential_revocation_did: Option<String>,
     pub credential_revocation_id: Option<String>,
     pub exp_date: Option<String>,
+    pub subject_did: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -159,6 +160,7 @@ struct HelperCreatePresentationPayload {
     pub credential_str: String,
     pub master_secret: String,
     pub signing_key: String,
+    pub prover_did: String,
     pub revealed_attributes: Option<String>,
 }
 
@@ -647,7 +649,6 @@ pub async fn execute_vade(
                         payload.schema_did,
                         payload.use_valid_until,
                         payload.issuer_did,
-                        payload.subject_did,
                         payload.is_credential_status_included,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
@@ -706,6 +707,7 @@ pub async fn execute_vade(
                         payload.credential_revocation_did,
                         payload.credential_revocation_id,
                         payload.exp_date,
+                        payload.subject_did
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
@@ -732,6 +734,7 @@ pub async fn execute_vade(
                         payload.credential_str,
                         payload.master_secret,
                         payload.signing_key,
+                        payload.prover_did,
                         payload.revealed_attributes,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
