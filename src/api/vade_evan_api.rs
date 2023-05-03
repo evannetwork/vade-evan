@@ -557,7 +557,7 @@ impl VadeEvan {
     ///         const SIGNER_PRIVATE_KEY: &str =
     ///         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
     ///         const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    ///         
+    ///
     ///         const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     ///         const CREDENTIAL: &str = r###"{
     ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
@@ -663,7 +663,7 @@ impl VadeEvan {
     ///         const SIGNER_PRIVATE_KEY: &str =
     ///         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
     ///         const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    ///         
+    ///
     ///         const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     ///         const CREDENTIAL: &str = r###"{
     ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
