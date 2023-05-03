@@ -12,8 +12,7 @@
 - add `helper_verify_credential` helper function
 - add `helper_did_create` and `helper_did_update` functions
 - add `helper_revoke_credential` function
-- pass sdk feature to vade-sidtree plugin
-- remove getrandom from dependencies
+- pass sdk feature to vade-sidetree plugin
 - update release ci to build and upload artifacts for android, ios, wasm, linux, macos and windows targets
 - add `helper_create_self_issued_credential` helper function
 - add `helper_create_proof_request`

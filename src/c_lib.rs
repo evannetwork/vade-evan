@@ -537,11 +537,16 @@ pub extern "C" fn execute_vade(
                     Some(value) => value.to_lowercase() == "true",
                     None => false,
                 };
+                let is_credential_status_included = match arguments_vec.get(3) {
+                    Some(value) => value.to_lowercase() == "true",
+                    None => false,
+                };
                 vade_evan
                     .helper_create_credential_offer(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),
                         use_valid_until,
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        is_credential_status_included,
                     )
                     .await
                     .map_err(stringify_vade_evan_error)

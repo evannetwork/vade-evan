@@ -178,11 +178,16 @@ async fn main() -> Result<()> {
                     Some(value) => value.to_lowercase() == "true",
                     None => false,
                 };
+                let include_credential_status =  match get_optional_argument_value(sub_m, "include_credential_status") {
+                    Some(value) => value.to_lowercase() == "true",
+                    None => false,
+                };
                 get_vade_evan(sub_m)?
                     .helper_create_credential_offer(
                         get_argument_value(sub_m, "schema_did", None),
                         use_valid_until,
                         get_argument_value(sub_m, "issuer_did", None),
+                        include_credential_status
                     )
                     .await?
             }
@@ -322,6 +327,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("use_valid_until")?)
                     .arg(get_clap_argument("issuer_did")?)
+                    .arg(get_clap_argument("include_credential_status")?)
             );
         } else {}
     }
@@ -871,6 +877,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .long("use_valid_until")
             .value_name("use_valid_until")
             .help("true if `validUntil` will be present in credential")
+            .takes_value(true),
+        "include_credential_status" => Arg::with_name("include_credential_status")
+            .long("include_credential_status")
+            .value_name("include_credential_status")
+            .required(true)
+            .help("true if `credential_status` will be present in credential")
             .takes_value(true),
         "issuer_did" => Arg::with_name("issuer_did")
             .long("issuer_did")

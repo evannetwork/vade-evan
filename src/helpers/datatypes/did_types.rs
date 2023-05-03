@@ -16,7 +16,9 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[cfg(feature = "did-sidetree")]
+#[cfg(all(feature = "did-sidetree", feature = "target-c-sdk"))]
+pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", "waitForCompletion":false }"#;
+#[cfg(all(feature = "did-sidetree", not(feature = "target-c-sdk")))]
 pub const TYPE_SIDETREE_OPTIONS: &str = r#"{ "type": "sidetree", "waitForCompletion":true }"#;
 #[allow(dead_code)]
 pub const EVAN_METHOD: &str = "did:evan";

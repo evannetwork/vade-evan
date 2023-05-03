@@ -166,17 +166,6 @@ impl<'a> Presentation<'a> {
             map_for_nquads.insert(k, serde_json::Value::String(v));
         }
 
-        let map_for_nquads_str = serde_json::to_string(&map_for_nquads).map_err(|err| {
-            PresentationError::JsonSerialization(
-                "credential_without_proof".to_owned(),
-                err.to_string(),
-            )
-        })?;
-        let nquads = convert_to_nquads(&map_for_nquads_str).await?;
-
-        let mut nquads_to_schema_map = HashMap::new();
-        nquads_to_schema_map.insert(schema_did.to_owned(), nquads);
-
         let mut helper_credential = Credential::new(self.vade_evan)
             .map_err(|err| PresentationError::InternalError(err.to_string()))?;
 
@@ -230,7 +219,6 @@ impl<'a> Presentation<'a> {
             proof_request,
             keys_to_schema_map,
             signer_address,
-            nquads_to_schema_map,
             revocation_list,
         };
         let payload = serde_json::to_string(&proof_request).map_err(
@@ -319,17 +307,6 @@ impl<'a> Presentation<'a> {
                 PresentationError::to_deserialization_error("credential", credential_str),
             )?;
         parsed_credential.remove("proof");
-        let credential_without_proof =
-            serde_json::to_string(&parsed_credential).map_err(|err| {
-                PresentationError::JsonSerialization(
-                    "credential_without_proof".to_owned(),
-                    err.to_string(),
-                )
-            })?;
-        let nquads = convert_to_nquads(&credential_without_proof).await?;
-
-        let mut nquads_schema_map = HashMap::new();
-        nquads_schema_map.insert(schema_did.to_owned(), nquads);
 
         // credential_schema_map
         let mut credential_schema_map = HashMap::new();
@@ -355,7 +332,6 @@ impl<'a> Presentation<'a> {
             credential_schema_map,
             revealed_properties_schema_map,
             public_key_schema_map,
-            nquads_schema_map,
             master_secret: master_secret.to_owned(),
             prover_did: prover_did.to_owned(),
             prover_public_key_did: format!("{}#key-1", prover_did.to_owned()),
@@ -468,50 +444,51 @@ mod tests_proof_request {
 
     const SIGNER_PRIVATE_KEY: &str =
         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
-    const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
+    const MASTER_SECRET: &str = "XSAzKjR1cNdvtew13KqfynP2tUEuJ+VkKLHVnrnB0Ig=";
     const NOT_A_SCHEMA_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA"; // some identity DID
     const NOT_FOUND_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvgfoobar";
     const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
-    const SCHEMA_DID_2: &str = "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg";
+    const SCHEMA_DID_2: &str = "did:evan:EiBmiHCHLMbGVn9hllRM5qQOsshvETToEALBAtFqP3PUIg";
     const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     const CREDENTIAL: &str = r###"{
-    "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
-    "type": [
-        "VerifiableCredential"
-    ],
-    "proof": {
-        "type": "BbsBlsSignature2020",
-        "created": "2023-02-01T14:08:17.000Z",
-        "signature": "kvSyi40dnZ5S3/mSxbSUQGKLpyMXDQNLCPtwDGM9GsnNNKF7MtaFHXIbvXaVXku0EY/n2uNMQ2bmK2P0KEmzgbjRHtzUOWVdfAnXnVRy8/UHHIyJR471X6benfZk8KG0qVqy+w67z9g628xRkFGA5Q==",
-        "proofPurpose": "assertionMethod",
-        "verificationMethod": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1",
-        "credentialMessageCount": 13,
-        "requiredRevealStatements": []
-    },
-    "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-    "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://schema.org/",
-        "https://w3id.org/vc-revocation-list-2020/v1"
-    ],
-    "issuanceDate": "2023-02-01T14:08:09.849Z",
-    "credentialSchema": {
-        "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
-        "type": "EvanVCSchema"
-    },
-    "credentialStatus": {
-        "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
-        "type": "RevocationList2020Status",
-        "revocationListIndex": "4",
-        "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
-    },
-    "credentialSubject": {
-        "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
-        "data": {
-            "bio": "biography"
+        "@context":[
+           "https://www.w3.org/2018/credentials/v1",
+           "https://schema.org/",
+           "https://w3id.org/vc-revocation-list-2020/v1"
+        ],
+        "id":"uuid:4ea2335a-a558-4bd4-b1d5-566838ff1e3a",
+        "type":[
+           "VerifiableCredential"
+        ],
+        "issuer":"did:evan:EiDmRkKsOaey8tPzc6RyQrYkMNjpqXXVTj9ggy0EbiXS4g",
+        "issuanceDate":"2023-05-03T15:21:42.000Z",
+        "credentialSubject":{
+           "data":{
+              "test_property_string":"value"
+           }
+        },
+        "credentialSchema":{
+           "id":"did:evan:EiBmiHCHLMbGVn9hllRM5qQOsshvETToEALBAtFqP3PUIg",
+           "type":"EvanVCSchema"
+        },
+        "credentialStatus":{
+           "id":"did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#0",
+           "type":"RevocationList2021Status",
+           "revocationListIndex":"0",
+           "revocationListCredential":"did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+        },
+        "proof":{
+           "type":"BbsBlsSignature2020",
+           "created":"2023-05-03T15:21:42.000Z",
+           "proofPurpose":"assertionMethod",
+           "verificationMethod":"did:evan:EiDmRkKsOaey8tPzc6RyQrYkMNjpqXXVTj9ggy0EbiXS4g#bbs-key-1",
+           "credentialMessageCount":13,
+           "requiredRevealStatements":[
+              1
+           ],
+           "signature":"sZTYWUrmYaVDUGs1L2UM/7f7UlVLSQS2vPQQG1YWU3TQRlcviNXFDx054zztzG8rWc1lw5e+SJNo4c1x+rpOFiXBjjK6IukN3a0zG5c/ayFbIQ6OVjxV7noWX8aTdNXNO5eyVV2Upd1YB4WGAuUO0w=="
         }
-    }
-}"###;
+     }"###;
     #[tokio::test]
     async fn helper_can_create_proof_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -634,7 +611,7 @@ mod tests_proof_request {
         let mut presentation = Presentation::new(&mut vade_evan)?;
 
         let proof_request_result = presentation
-            .create_proof_request(SCHEMA_DID_2, Some(r#"["bio"]"#))
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["test_property_string2"]"#))
             .await;
 
         assert!(proof_request_result.is_ok());
@@ -669,7 +646,7 @@ mod tests_proof_request {
         let mut presentation = Presentation::new(&mut vade_evan)?;
 
         let proof_request_result = presentation
-            .create_proof_request(SCHEMA_DID_2, Some(r#"["bio"]"#))
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["test_property_string2"]"#))
             .await;
 
         assert!(proof_request_result.is_ok());
