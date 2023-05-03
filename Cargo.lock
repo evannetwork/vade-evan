@@ -4879,7 +4879,7 @@ dependencies = [
 
 [[package]]
 name = "vade-evan"
-version = "0.5.0-rc.2"
+version = "0.5.0-rc.6"
 dependencies = [
  "anyhow",
  "async-trait",
