@@ -163,7 +163,7 @@ struct HelperCreatePresentationPayload {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct HelperCreatePresentationPayload {
+struct HelperVerifyPresentationPayload {
     pub presentation_str: String,
     pub proof_request_str: String,
 }
@@ -744,11 +744,8 @@ pub async fn execute_vade(
             match payload_result {
                 Ok(payload) =>
                   helper_verify_presentation(
+                        payload.presentation_str,
                         payload.proof_request_str,
-                        payload.credential_str,
-                        payload.master_secret,
-                        payload.signing_key,
-                        payload.revealed_attributes,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
