@@ -154,11 +154,18 @@ struct HelperCreateProofRequestPayload {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct HelperCreatePresentationPayload {
-    pub proof_request_str:String,
+    pub proof_request_str: String,
     pub credential_str: String,
     pub master_secret: String,
     pub signing_key: String,
     pub revealed_attributes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperVerifyPresentationPayload {
+    pub presentation_str: String,
+    pub proof_request_str: String,
 }
 
 #[wasm_bindgen]
@@ -727,6 +734,18 @@ pub async fn execute_vade(
                         payload.master_secret,
                         payload.signing_key,
                         payload.revealed_attributes,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_verify_presentation" => {
+            let payload_result = parse::<HelperVerifyPresentationPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                  helper_verify_presentation(
+                        payload.presentation_str,
+                        payload.proof_request_str,
                     ).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
