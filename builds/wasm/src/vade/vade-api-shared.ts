@@ -40,7 +40,8 @@ type VadeFunction =
 
 interface VadeOptions {
   identity: string;
-  privateKey: string;
+  remoteSignerUrl?: string;
+  signingKey: string;
 }
 
 /**
@@ -78,7 +79,7 @@ class VadeApiShared {
     { logLevel?: string, signer?: string, substrate?: string },
   ) {
     this.signer = options?.signer || DEFAULT_SIGNER;
-    this.substrate = options?.substrate;
+    this.substrate = options?.substrate || '';
     if (options?.logLevel) {
       wasm.set_log_level(options.logLevel);
     }
@@ -88,17 +89,19 @@ class VadeApiShared {
     {
       command,
       customFunction,
-      method,
-      did,
+      method = 'did:evan',
       options,
       payload,
+      did,
+      signer = this.signer,
     }: {
       command: VadeFunction;
       customFunction?: string;
       method?: string;
-      did?: string;
       options?: O;
       payload?: P;
+      did?: string;
+      signer?: string;
     },
   ): Promise<R> {
     if (!command) {
@@ -110,8 +113,9 @@ class VadeApiShared {
     if (!method && !did && command !== 'run_custom_function') {
       throw new Error('neither `did` nor `method` provided');
     }
+
     const config = {
-      signer: this.signer,
+      signer,
       target: this.substrate,
     };
 

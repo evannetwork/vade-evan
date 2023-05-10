@@ -4,7 +4,30 @@
 
 ### Features
 
+- migrate `Vade` instance creation and plugin bundling to new `VadeEvan` API layer
+- migration C-lib, CLI and WASM wrapper to use `VadeEvan` instead of `Vade`
+- add `get_version_info` helper function
+- add `create_credential_request` helper function
+- add `create_credential_offer` helper function
+- add `helper_verify_credential` helper function
+- add `helper_did_create` and `helper_did_update` functions
+- add `helper_revoke_credential` function
+- pass sdk feature to vade-sidetree plugin
+- update release ci to build and upload artifacts for android, ios, wasm, linux, macos and windows targets
+- add `helper_create_self_issued_credential` helper function
+- add `helper_create_proof_request`
+- add optional params `update_key` and `recovery_key` to `did_create`
+- add `helper_create_presentation`
+- adjust `credential_status` property in `BbsCredential` to be optional
+- refactor features to use target specific(c-lib, c-sdk, wasm, cli, java) builds
+- add `helper_verify_presentation`
+
 ### Fixes
+
+- add `payload` argument to did_create in CLI
+- align key format for master secrets and public keys (no extra double quotes)
+- fix optional params for did_create
+- fix wasm release and `target-c-sdk` build options
 
 ### Deprecation
 
@@ -25,7 +48,6 @@
 - create javascript wrapper for vade-evan
 - setup pipeline for different targets
 - use signing logic from `vade-signer` instead of `vade-evan-substrate`
-
 
 ## v0.3.0
 

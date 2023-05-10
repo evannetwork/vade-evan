@@ -15,12 +15,12 @@
 */
 
 use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
-#[cfg(feature = "sdk")]
+#[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-#[cfg(feature = "sdk")]
+#[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 use std::os::raw::c_void;
 use std::slice;
 use std::{collections::HashMap, error::Error};
@@ -36,13 +36,13 @@ pub struct Response {
 }
 
 macro_rules! execute_vade_function {
-    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $config:expr, #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $request_id:expr, #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config.to_string()),
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -53,13 +53,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $options:expr, $payload:expr, $config:expr,  #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $request_id:expr, #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -70,13 +70,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $options:expr, $payload:expr, $config:expr, #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $request_id:expr, #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -87,13 +87,13 @@ macro_rules! execute_vade_function {
         }
     };
 
-    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(feature = "sdk")] $request_id:expr, #[cfg(feature = "sdk")] $callback:expr) => {
+    ($func_name:ident, $did_or_method:expr, $function:expr, $options:expr, $payload:expr, $config:expr,  #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $request_id:expr, #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] $callback:expr) => {
         async {
             let mut vade_evan = get_vade_evan(
                 Some(&$config),
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $request_id,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 $callback,
             )
             .map_err(stringify_generic_error)?;
@@ -116,8 +116,9 @@ fn stringify_vade_evan_error(err: VadeEvanError) -> String {
 #[allow(unused_variables)] // allow possibly unused variables due to feature mix
 pub fn get_vade_evan(
     config: Option<&String>,
-    #[cfg(feature = "sdk")] request_id: *const c_void,
-    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] request_id: *const c_void,
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+    request_function_callback: ResolveHttpRequest,
 ) -> Result<VadeEvan, Box<dyn Error>> {
     let config_values =
         get_config_values(config, vec!["signer".to_string(), "target".to_string()])?;
@@ -131,9 +132,9 @@ pub fn get_vade_evan(
     return VadeEvan::new(VadeEvanConfig {
         target,
         signer: signer_config,
-        #[cfg(feature = "sdk")]
+        #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
         request_id,
-        #[cfg(feature = "sdk")]
+        #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
         request_function_callback,
     })
     .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
@@ -182,43 +183,55 @@ fn get_config_values(
     Ok(vec)
 }
 
+/// Executes a vade call.
+///
+/// About the `config` argument setup used here:
+///
+/// - if built for C and having sdk target enabled: type is `*const c_void`
+/// - for any other build: type is `*const c_char`
 #[no_mangle]
 pub extern "C" fn execute_vade(
     func_name: *const c_char,
     arguments: *const *const c_char,
     num_of_args: usize,
     options: *const c_char,
-    #[cfg(not(feature = "sdk"))] config: *const c_char,
-    #[cfg(feature = "sdk")] config: *const c_void,
-    #[cfg(feature = "sdk")] request_function_callback: ResolveHttpRequest,
+    #[cfg(all(feature = "c-lib", not(feature = "target-c-sdk")))] config: *const c_char,
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))] config: *const c_void,
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+    request_function_callback: ResolveHttpRequest,
 ) -> *const c_char {
     let func = unsafe { CStr::from_ptr(func_name).to_string_lossy().into_owned() };
     let args_array: &[*const c_char] =
         unsafe { slice::from_raw_parts(arguments, num_of_args as usize) };
-
     // convert each element to a Rust string
     let arguments_vec: Vec<_> = args_array
         .iter()
-        .map(|&v| unsafe { CStr::from_ptr(v).to_string_lossy().into_owned() })
+        .map(|&v| {
+            if !v.is_null() {
+                unsafe { CStr::from_ptr(v).to_string_lossy().into_owned() }
+            } else {
+                String::new()
+            }
+        })
         .collect();
 
     let mut str_options = String::new();
 
-    #[cfg(not(feature = "sdk"))]
+    #[cfg(not(feature = "target-c-sdk"))]
     let mut str_config = String::new();
-    #[cfg(feature = "sdk")]
+    #[cfg(feature = "target-c-sdk")]
     let str_config = String::new();
 
     if !options.is_null() {
         str_options = unsafe { CStr::from_ptr(options).to_string_lossy().into_owned() };
     }
 
-    #[cfg(not(feature = "sdk"))]
+    #[cfg(not(feature = "target-c-sdk"))]
     if !config.is_null() {
         str_config = unsafe { CStr::from_ptr(config).to_string_lossy().into_owned() };
     }
 
-    #[cfg(feature = "sdk")]
+    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
     let ptr_request_list = config as *mut c_void;
 
     let no_args = String::from("");
@@ -236,9 +249,9 @@ pub extern "C" fn execute_vade(
                 did_resolve,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
@@ -250,11 +263,34 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
+        }),
+        #[cfg(feature = "did-sidetree")]
+        "helper_did_create" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_did_create(
+                        arguments_vec.get(0).map(|x| &**x),
+                        arguments_vec.get(1).map(|x| &**x),
+                        arguments_vec.get(2).map(|x| &**x),
+                        arguments_vec.get(3).map(|x| &**x),
+                        arguments_vec.get(4).map(|x| &**x),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
         }),
         #[cfg(feature = "did-write")]
         "did_update" => runtime.block_on({
@@ -264,11 +300,33 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
+        }),
+        #[cfg(feature = "did-sidetree")]
+        "helper_did_update" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_did_update(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
         }),
         #[cfg(feature = "didcomm")]
         "didcomm_receive" => runtime.block_on({
@@ -277,9 +335,9 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
@@ -290,27 +348,13 @@ pub extern "C" fn execute_vade(
                 str_options,
                 arguments_vec.get(0).unwrap_or_else(|| &no_args).to_owned(),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(feature = "vc-zkp-cl")]
-        "vc_zkp_create_credential_definition" => runtime.block_on({
-            execute_vade_function!(
-                vc_zkp_create_credential_definition,
-                arguments_vec.get(0).unwrap_or_else(|| &no_args),
-                &str_options,
-                arguments_vec.get(1).unwrap_or_else(|| &no_args),
-                str_config,
-                #[cfg(feature = "sdk")]
-                ptr_request_list,
-                #[cfg(feature = "sdk")]
-                request_function_callback
-            )
-        }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_offer" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_offer,
@@ -318,13 +362,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_proposal" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_proposal,
@@ -332,13 +376,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_credential_schema" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_credential_schema,
@@ -346,13 +390,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_create_revocation_registry_definition" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_create_revocation_registry_definition,
@@ -360,13 +404,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_update_revocation_registry" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_update_revocation_registry,
@@ -374,13 +418,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+        #[cfg(feature = "vc-zkp")]
         "vc_zkp_issue_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_issue_credential,
@@ -388,13 +432,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_finish_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_finish_credential,
@@ -402,13 +446,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_present_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_present_proof,
@@ -416,13 +460,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_request_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_credential,
@@ -430,13 +474,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_request_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_proof,
@@ -444,13 +488,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_revoke_credential" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_revoke_credential,
@@ -458,13 +502,13 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+        #[cfg(feature = "vc-zkp")]
         "vc_zkp_verify_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_verify_proof,
@@ -472,13 +516,194 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(1).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_credential_offer" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                let use_valid_until = match arguments_vec.get(1) {
+                    Some(value) => value.to_lowercase() == "true",
+                    None => false,
+                };
+                vade_evan
+                    .helper_create_credential_offer(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        use_valid_until,
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).map(|v| v.as_str()),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_credential_request" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_create_credential_request(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(4).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_verify_credential" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_verify_credential(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)?;
+                Ok("".to_string())
+            }
+        }),
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_revoke_credential" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_revoke_credential(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)?;
+                Ok("".to_string())
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_self_issued_credential" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_create_self_issued_credential(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(4).map(|v| v.as_str()),
+                        arguments_vec.get(5).map(|v| v.as_str()),
+                        arguments_vec.get(6).map(|v| v.as_str()),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_proof_request" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_create_proof_request(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).map(|v| v.as_str()),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_presentation" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_create_presentation(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(3).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(4).map(|v| v.as_str()),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_verify_presentation" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_verify_presentation(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "run_custom_function" => runtime.block_on({
             execute_vade_function!(
                 run_custom_function,
@@ -487,17 +712,17 @@ pub extern "C" fn execute_vade(
                 &str_options,
                 arguments_vec.get(2).unwrap_or_else(|| &no_args),
                 str_config,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 ptr_request_list,
-                #[cfg(feature = "sdk")]
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
                 request_function_callback
             )
         }),
         "get_version_info" => get_vade_evan(
             Some(&str_config),
-            #[cfg(feature = "sdk")]
+            #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
             ptr_request_list,
-            #[cfg(feature = "sdk")]
+            #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
             request_function_callback,
         )
         .map_err(stringify_generic_error)

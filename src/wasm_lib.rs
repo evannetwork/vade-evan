@@ -14,21 +14,21 @@
   limitations under the License.
 */
 
+use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 use console_log;
+use serde::{de::DeserializeOwned, {Deserialize, Serialize}};
 use std::{collections::HashMap, error::Error};
 use wasm_bindgen::prelude::*;
-use serde::Serialize;
-use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 
 macro_rules! create_function {
     ($func_name:ident, $did_or_method:ident, $config:ident) => {
         #[wasm_bindgen]
-        pub async fn $func_name(
-            did_or_method: String,
-            config: JsValue,
-        ) -> Result<String, JsValue> {
+        pub async fn $func_name(did_or_method: String, config: JsValue) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            vade_evan.$func_name(&did_or_method).await.map_err(jsify_vade_evan_error)
+            vade_evan
+                .$func_name(&did_or_method)
+                .await
+                .map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -39,7 +39,10 @@ macro_rules! create_function {
             config: JsValue,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            vade_evan.$func_name(&options, &payload).await.map_err(jsify_vade_evan_error)
+            vade_evan
+                .$func_name(&options, &payload)
+                .await
+                .map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -51,7 +54,10 @@ macro_rules! create_function {
             config: JsValue,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(Some(&config)).map_err(jsify_generic_error)?;
-            vade_evan.$func_name(&did_or_method, &options, &payload).await.map_err(jsify_vade_evan_error)
+            vade_evan
+                .$func_name(&did_or_method, &options, &payload)
+                .await
+                .map_err(jsify_vade_evan_error)
         }
     };
     ($func_name:ident, $did_or_method:ident, $function:ident, $options:ident, $payload:ident, $config:ident) => {
@@ -72,6 +78,96 @@ macro_rules! create_function {
     };
 }
 
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperDidCreatePayload {
+    pub bbs_public_key: Option<String>,
+    pub signing_key: Option<String>,
+    pub service_endpoint: Option<String>,
+    pub update_key: Option<String>,
+    pub recovery_key: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperDidUpdatePayload {
+    pub did: String,
+    pub operation: String,
+    pub update_key: String,
+    pub payload: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateCredentialOfferPayload {
+    pub schema_did: String,
+    pub use_valid_until: bool,
+    pub issuer_did: String,
+    pub subject_did: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateCredentialRequestPayload {
+    pub issuer_public_key: String,
+    pub bbs_secret: String,
+    pub credential_values: String,
+    pub credential_offer: String,
+    pub credential_schema: String
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperRevokeCredentialPayload {
+    pub credential: String,
+    pub update_key_jwk: String,
+    pub private_key: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperVerifyCredentialPayload {
+    pub credential: String,
+    pub master_secret: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateSelfIssuedCredentialPayload {
+    pub schema_did: String,
+    pub credential_subject_str: String,
+    pub bbs_secret: String,
+    pub bbs_private_key: String,
+    pub credential_revocation_did: Option<String>,
+    pub credential_revocation_id: Option<String>,
+    pub exp_date: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateProofRequestPayload {
+    pub schema_did: String,
+    pub revealed_attributes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreatePresentationPayload {
+    pub proof_request_str: String,
+    pub credential_str: String,
+    pub master_secret: String,
+    pub signing_key: String,
+    pub revealed_attributes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperVerifyPresentationPayload {
+    pub presentation_str: String,
+    pub proof_request_str: String,
+}
+
 #[wasm_bindgen]
 pub fn set_panic_hook() {
     console_error_panic_hook::set_once();
@@ -86,6 +182,18 @@ pub fn set_log_level(log_level: String) {
         "error" => console_log::init_with_level(log::Level::Error),
         _ => console_log::init_with_level(log::Level::Error),
     };
+}
+
+fn get_parsing_error_message(error: &serde_json::Error, payload: &str,) -> JsValue {
+    return JsValue::from(format!(r#"got error \{}" when parsing payload: {}"#, &error, &payload))
+}
+
+fn parse<T>(payload: &str) -> Result<T, serde_json::Error> where T: DeserializeOwned {
+    serde_json::from_str(payload)
+}
+
+fn none_to_empty_string(optional: Option<String>) -> String {
+    optional.unwrap_or_else(|| "".to_string())
 }
 
 cfg_if::cfg_if! {
@@ -112,35 +220,32 @@ cfg_if::cfg_if! {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))] {
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+    if #[cfg(feature = "vc-zkp")] {
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(run_custom_function, did_or_method, custom_func_name, options, payload, config);
-        #[cfg(feature = "vc-zkp-cl")]
-        create_function!(vc_zkp_create_credential_definition, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_credential_offer, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_credential_proposal, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_credential_schema, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_create_revocation_registry_definition, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_update_revocation_registry, did_or_method, options, payload, config);
-
+        #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc"))]
         create_function!(vc_zkp_issue_credential, did_or_method, options, payload, config);
-
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_finish_credential, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
-
+        #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vc"))]
         create_function!(vc_zkp_verify_proof, did_or_method, options, payload, config);
 
         #[wasm_bindgen]
@@ -148,6 +253,201 @@ cfg_if::cfg_if! {
             let vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let version_info = vade_evan.get_version_info();
             Ok(Some(version_info))
+        }
+
+        #[cfg(feature = "did-sidetree")]
+        #[wasm_bindgen]
+        pub async fn helper_did_create(
+            bbs_public_key: Option<String>,
+            signing_key: Option<String>,
+            service_endpoint: Option<String>,
+            update_key: Option<String>,
+            recovery_key: Option<String>,
+        ) -> Result<Option<String>, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let did_create_result = vade_evan
+                .helper_did_create(
+                    bbs_public_key.as_ref().map(|x| x.as_ref()),
+                    signing_key.as_ref().map(|x| x.as_ref()),
+                    service_endpoint.as_ref().map(|x| x.as_ref()),
+                    update_key.as_ref().map(|x| x.as_ref()),
+                    recovery_key.as_ref().map(|x| x.as_ref())
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(Some(did_create_result))
+        }
+
+        #[cfg(feature = "did-sidetree")]
+        #[wasm_bindgen]
+        pub async fn helper_did_update(
+            did: String,
+            operation: String,
+            update_key: String,
+            payload: String,
+        ) -> Result<Option<String>, JsValue> {
+
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let did_update_key = vade_evan
+                .helper_did_update(
+                    did.as_ref(),
+                    operation.as_ref(),
+                    update_key.as_ref(),
+                    payload.as_ref()
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(Some(did_update_key))
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_credential_offer(
+            schema_did: String,
+            use_valid_until: bool,
+            issuer_did: String,
+            subject_did: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let offer = vade_evan
+                .helper_create_credential_offer(
+                    &schema_did,
+                    use_valid_until,
+                    &issuer_did,
+                    subject_did.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok(offer)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_credential_request(
+            issuer_public_key: String,
+            bbs_secret: String,
+            credential_values: String,
+            credential_offer: String,
+            credential_schema: String
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            let credential_result = vade_evan
+                .helper_create_credential_request(
+                    &issuer_public_key,
+                    &bbs_secret,
+                    &credential_values,
+                    &credential_offer,
+                    &credential_schema).await
+                    .map_err(jsify_vade_evan_error)?;
+            Ok(credential_result)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_revoke_credential(
+            credential: String,
+            update_key_jwk: String,
+            private_key: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_revoke_credential(
+                    &credential,
+                    &update_key_jwk,
+                    &private_key,
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_verify_credential(
+            credential: String,
+            master_secret: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_verify_credential(
+                    &credential,
+                    &master_secret,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_self_issued_credential(
+            schema_did: String,
+            credential_subject_str: String,
+            bbs_secret: String,
+            bbs_private_key: String,
+            credential_revocation_did: Option<String>,
+            credential_revocation_id: Option<String>,
+            exp_date: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_self_issued_credential(
+                    &schema_did,
+                    &credential_subject_str,
+                    &bbs_secret,
+                    &bbs_private_key,
+                    credential_revocation_did.as_deref(),
+                    credential_revocation_id.as_deref(),
+                    exp_date.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_proof_request(
+            schema_did: String,
+            revealed_attributes: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_proof_request(
+                    &schema_did,
+                    revealed_attributes.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_presentation(
+            proof_request_str:String,
+            credential_str: String,
+            master_secret: String,
+            signing_key: String,
+            revealed_attributes: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_presentation(
+                    &proof_request_str,
+                    &credential_str,
+                    &master_secret,
+                    &signing_key,
+                    revealed_attributes.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_verify_presentation(
+            presentation_str: String,
+            proof_request_str:String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_verify_presentation(
+                    &presentation_str,
+                    &proof_request_str,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
         }
     } else {
     }
@@ -164,7 +464,7 @@ fn get_config_values(
     match config {
         Some(value) => {
             if !value.is_undefined() {
-                config_hash_map = value.into_serde()?;
+                config_hash_map = serde_wasm_bindgen::from_value(value.clone())?;
                 config_undefined = false;
             } else {
                 config_hash_map = HashMap::<String, String>::new();
@@ -207,7 +507,11 @@ fn get_vade_evan(config: Option<&JsValue>) -> Result<VadeEvan, Box<dyn Error>> {
         }
     };
 
-    return VadeEvan::new(VadeEvanConfig { target, signer: signer_config }).map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
+    return VadeEvan::new(VadeEvanConfig {
+        target,
+        signer: signer_config,
+    })
+    .map_err(|err| Box::from(format!("could not create VadeEvan instance; {}", &err)));
 }
 
 fn jsify_generic_error(err: Box<dyn Error>) -> JsValue {
@@ -237,68 +541,217 @@ pub async fn execute_vade(
     custom_func_name: String,
     config: JsValue,
 ) -> String {
-    let result = match func_name.as_str() {
+    let result: Result<String, JsValue> = match func_name.as_str() {
         #[cfg(feature = "did-read")]
-        "did_resolve" =>
-            did_resolve(did_or_method, config).await,
+        "did_resolve" => did_resolve(did_or_method, config).await,
         #[cfg(feature = "did-write")]
-        "did_create" =>
-            did_create(did_or_method, options, payload, config).await,
+        "did_create" => did_create(did_or_method, options, payload, config).await,
         #[cfg(feature = "did-write")]
-        "did_update" =>
-            did_update(did_or_method, options, payload, config).await,
+        "did_update" => did_update(did_or_method, options, payload, config).await,
+
         #[cfg(feature = "didcomm")]
-        "didcomm_receive" =>
-            didcomm_receive(options, payload, config).await,
+        "didcomm_receive" => didcomm_receive(options, payload, config).await,
         #[cfg(feature = "didcomm")]
-        "didcomm_send" =>
-            didcomm_send(options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "run_custom_function" =>
-            run_custom_function(did_or_method, custom_func_name, options, payload, config).await,
-        #[cfg(feature = "vc-zkp-cl")]
-        "vc_zkp_create_credential_definition" =>
-            vc_zkp_create_credential_definition(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_create_credential_offer" =>
-            vc_zkp_create_credential_offer(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_create_credential_proposal" =>
-            vc_zkp_create_credential_proposal(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_create_credential_schema" =>
-            vc_zkp_create_credential_schema(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_create_revocation_registry_definition" =>
-            vc_zkp_create_revocation_registry_definition(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_update_revocation_registry" =>
-            vc_zkp_update_revocation_registry(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
-        "vc_zkp_issue_credential" =>
-            vc_zkp_issue_credential(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_finish_credential" =>
-            vc_zkp_finish_credential(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_present_proof" =>
-            vc_zkp_present_proof(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_request_credential" =>
-            vc_zkp_request_credential(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_request_proof" =>
-            vc_zkp_request_proof(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs"))]
-        "vc_zkp_revoke_credential" =>
-            vc_zkp_revoke_credential(did_or_method, options, payload, config).await,
-        #[cfg(any(feature = "vc-zkp-cl", feature = "vc-zkp-bbs", feature = "vc-jwt"))]
-        "vc_zkp_verify_proof" =>
-            vc_zkp_verify_proof(did_or_method, options, payload, config).await,
-        _ => {
-            let empty_result = &String::new();
-            return empty_result.to_string();
+        "didcomm_send" => didcomm_send(options, payload, config).await,
+
+        #[cfg(feature = "vc-zkp-bbs")]
+        "run_custom_function" => {
+            run_custom_function(did_or_method, custom_func_name, options, payload, config).await
         }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_create_credential_offer" => {
+            vc_zkp_create_credential_offer(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_create_credential_proposal" => {
+            vc_zkp_create_credential_proposal(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_create_credential_schema" => {
+            vc_zkp_create_credential_schema(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_create_revocation_registry_definition" => {
+            vc_zkp_create_revocation_registry_definition(did_or_method, options, payload, config)
+                .await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_update_revocation_registry" => {
+            vc_zkp_update_revocation_registry(did_or_method, options, payload, config).await
+        }
+        #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+        "vc_zkp_issue_credential" => {
+            vc_zkp_issue_credential(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_finish_credential" => {
+            vc_zkp_finish_credential(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_present_proof" => {
+            vc_zkp_present_proof(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_request_credential" => {
+            vc_zkp_request_credential(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_request_proof" => {
+            vc_zkp_request_proof(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_revoke_credential" => {
+            vc_zkp_revoke_credential(did_or_method, options, payload, config).await
+        }
+        #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
+        "vc_zkp_verify_proof" => {
+            vc_zkp_verify_proof(did_or_method, options, payload, config).await
+        }
+
+        #[cfg(feature = "did-sidetree")]
+        "helper_did_create" => {
+            let payload_result = parse::<HelperDidCreatePayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_did_create(
+                        payload.bbs_public_key,
+                        payload.signing_key,
+                        payload.service_endpoint,
+                        payload.update_key,
+                        payload.recovery_key,
+                    ).await
+                    .map(none_to_empty_string),
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(feature = "did-sidetree")]
+        "helper_did_update" => {
+            let payload_result = parse::<HelperDidUpdatePayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_did_update(
+                        payload.did,
+                        payload.operation,
+                        payload.update_key,
+                        payload.payload
+                    ).await
+                    .map(none_to_empty_string),
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_credential_offer" => {
+            let payload_result = parse::<HelperCreateCredentialOfferPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_create_credential_offer(
+                        payload.schema_did,
+                        payload.use_valid_until,
+                        payload.issuer_did,
+                        payload.subject_did,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_credential_request" => {
+            let payload_result = parse::<HelperCreateCredentialRequestPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_create_credential_request(
+                        payload.issuer_public_key,
+                        payload.bbs_secret,
+                        payload.credential_values,
+                        payload.credential_offer,
+                        payload.credential_schema,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_revoke_credential" => {
+            let payload_result = parse::<HelperRevokeCredentialPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_revoke_credential(
+                        payload.credential,
+                        payload.update_key_jwk,
+                        payload.private_key,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_verify_credential" => {
+            let payload_result = parse::<HelperVerifyCredentialPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_verify_credential(
+                        payload.credential,
+                        payload.master_secret,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_self_issued_credential" => {
+            let payload_result = parse::<HelperCreateSelfIssuedCredentialPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_create_self_issued_credential(
+                        payload.schema_did,
+                        payload.credential_subject_str,
+                        payload.bbs_secret,
+                        payload.bbs_private_key,
+                        payload.credential_revocation_did,
+                        payload.credential_revocation_id,
+                        payload.exp_date,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_proof_request" => {
+            let payload_result = parse::<HelperCreateProofRequestPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_create_proof_request(
+                        payload.schema_did,
+                        payload.revealed_attributes,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_presentation" => {
+            let payload_result = parse::<HelperCreatePresentationPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_create_presentation(
+                        payload.proof_request_str,
+                        payload.credential_str,
+                        payload.master_secret,
+                        payload.signing_key,
+                        payload.revealed_attributes,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_verify_presentation" => {
+            let payload_result = parse::<HelperVerifyPresentationPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                  helper_verify_presentation(
+                        payload.presentation_str,
+                        payload.proof_request_str,
+                    ).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+
+        _ => Err(JsValue::from(format!("invalid command for execute_vade: {}", &func_name)))
     };
 
     let response = match result {
