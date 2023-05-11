@@ -4921,8 +4921,8 @@ dependencies = [
 
 [[package]]
 name = "vade-evan-bbs"
-version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#c665085799dd6c53d17ec931bd46717e72f33d64"
+version = "0.4.0"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#63ede536e99aa70df7b43139cc986d40a85df15a"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -5009,38 +5009,26 @@ dependencies = [
 
 [[package]]
 name = "vade-sidetree"
-version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#bba28054207770cce53e4ba2a038e7a7347fe1fc"
+version = "0.0.4"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#b308cbb013cb4d6e3468e07b3baf810458e98714"
 dependencies = [
  "async-std",
  "async-trait",
  "base64 0.13.1",
+ "bitflags",
  "cfg-if 0.1.10",
  "env_logger 0.7.1",
- "log",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.9.9",
- "vade",
- "vade-sidetree-client",
-]
-
-[[package]]
-name = "vade-sidetree-client"
-version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#bba28054207770cce53e4ba2a038e7a7347fe1fc"
-dependencies = [
- "base64 0.13.1",
- "bitflags",
  "getrandom 0.2.8",
  "libsecp256k1 0.5.0",
+ "log",
  "multihash 0.13.2",
+ "regex",
+ "reqwest",
  "serde",
  "serde_jcs",
  "serde_json",
  "sha2 0.9.9",
+ "vade",
 ]
 
 [[package]]
