@@ -936,9 +936,9 @@ dependencies = [
 
 [[package]]
 name = "ctor"
-version = "0.1.26"
+version = "0.1.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d2301688392eb071b0bf1a37be05c469d3cc4dbbd95df672fe28ab021e6a096"
+checksum = "f877be4f7c9f246b183111634f75baa039715e3f46ce860677d3b19a69fb229c"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -1714,9 +1714,9 @@ checksum = "ad0a93d233ebf96623465aad4046a8d3aa4da22d4f4beba5388838c8a434bbb4"
 
 [[package]]
 name = "gloo-timers"
-version = "0.2.6"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b995a66bb87bebce9a0f4a95aed01daca4872c050bfcb21653361c03bc35e5c"
+checksum = "98c4a8d6391675c6b2ee1a6c8d06e8e2d03605c44cec1270675985a4c2a5500b"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -4879,7 +4879,7 @@ dependencies = [
 
 [[package]]
 name = "vade-evan"
-version = "0.5.0-rc.7"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5010,38 +5010,26 @@ dependencies = [
 
 [[package]]
 name = "vade-sidetree"
-version = "0.0.3"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#bba28054207770cce53e4ba2a038e7a7347fe1fc"
+version = "0.0.4"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#b308cbb013cb4d6e3468e07b3baf810458e98714"
 dependencies = [
  "async-std",
  "async-trait",
  "base64 0.13.1",
+ "bitflags",
  "cfg-if 0.1.10",
  "env_logger 0.7.1",
- "log",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.9.9",
- "vade",
- "vade-sidetree-client",
-]
-
-[[package]]
-name = "vade-sidetree-client"
-version = "0.1.0"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#bba28054207770cce53e4ba2a038e7a7347fe1fc"
-dependencies = [
- "base64 0.13.1",
- "bitflags",
  "getrandom 0.2.8",
  "libsecp256k1 0.5.0",
+ "log",
  "multihash 0.13.2",
+ "regex",
+ "reqwest",
  "serde",
  "serde_jcs",
  "serde_json",
  "sha2 0.9.9",
+ "vade",
 ]
 
 [[package]]
