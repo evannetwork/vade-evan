@@ -858,7 +858,7 @@ impl VadeEvan {
     /// * `credential_revocation_id` - index in revocation list
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     /// * `required_revealed_statements` - required_revealed_statements indices array in searialized form
-    /// 
+    ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
     ///
@@ -880,7 +880,7 @@ impl VadeEvan {
     ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
     ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
     ///         const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
-    /// 
+    ///
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///             let offer_str = vade_evan

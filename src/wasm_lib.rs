@@ -669,7 +669,7 @@ pub async fn execute_vade(
                         payload.use_valid_until,
                         payload.issuer_did,
                         payload.is_credential_status_included,
-                        payload.required_reveal_statements
+                        payload.required_reveal_statements,
                     )
                     .await
                 }
@@ -732,7 +732,7 @@ pub async fn execute_vade(
                         payload.credential_revocation_id,
                         payload.exp_date,
                         payload.subject_did,
-                        payload.required_reveal_statements
+                        payload.required_reveal_statements,
                     )
                     .await
                 }

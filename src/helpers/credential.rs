@@ -131,7 +131,8 @@ impl<'a> Credential<'a> {
         required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
-        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements).map_err(|err| CredentialError::JsonDeSerialization(err))?;
+        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements)
+            .map_err(|err| CredentialError::JsonDeSerialization(err))?;
         let payload = OfferCredentialPayload {
             draft_credential: schema.to_draft_credential(CredentialDraftOptions {
                 issuer_did: issuer_did.to_string(),
@@ -355,7 +356,8 @@ impl<'a> Credential<'a> {
         let credential_revocation_id = check_for_optional_empty_params(credential_revocation_id);
         let exp_date = check_for_optional_empty_params(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
-        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements).map_err(|err| CredentialError::JsonDeSerialization(err))?;
+        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements)
+            .map_err(|err| CredentialError::JsonDeSerialization(err))?;
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
             .await?;
@@ -1040,7 +1042,7 @@ mod tests {
                 None,
                 None,
                 subject_id,
-                "[1]"
+                "[1]",
             )
             .await
         {
