@@ -4922,7 +4922,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/remove-credential-subject-id#1c524d4b259f6bee74f4efc71fe71542a62778b6"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/implement-correct-handling-for-required-reveal-statements-in-vade#b6daca0b55fa93ceefd199f2a01f7c68a5397a61"
 dependencies = [
  "async-trait",
  "base64 0.13.1",

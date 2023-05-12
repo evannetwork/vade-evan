@@ -285,6 +285,7 @@ impl VadeEvan {
     /// * `use_valid_until` - true if `validUntil` will be present in credential
     /// * `issuer_did` - DID of issuer
     /// * `is_credential_status_included` - true if credentialStatus is included in credential
+    /// * `required_reveal_statements` - required_revealed_statements indices array in searialized form
     ///
     /// # Returns
     /// * credential offer as JSON serialized [`BbsCredentialOffer`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredentialOffer.html)
@@ -307,6 +308,7 @@ impl VadeEvan {
     ///                     false,
     ///                     ISSUER_DID,
     ///                     true,
+    ///                     "[1]",
     ///                 )
     ///                 .await?;
     ///
@@ -324,6 +326,7 @@ impl VadeEvan {
         use_valid_until: bool,
         issuer_did: &str,
         is_credential_status_included: bool,
+        required_reveal_statements: &str,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
@@ -332,6 +335,7 @@ impl VadeEvan {
                 use_valid_until,
                 issuer_did,
                 is_credential_status_included,
+                required_reveal_statements,
             )
             .await
             .map_err(|err| err.into())
@@ -853,7 +857,8 @@ impl VadeEvan {
     /// * `credential_revocation_did` - revocation list DID
     /// * `credential_revocation_id` - index in revocation list
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
-    ///
+    /// * `required_revealed_statements` - required_revealed_statements indices array in searialized form
+    /// 
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
     ///
@@ -875,6 +880,7 @@ impl VadeEvan {
     ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
     ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
     ///         const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
+    /// 
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///             let offer_str = vade_evan
@@ -886,7 +892,8 @@ impl VadeEvan {
     ///                     Some("did:revoc:12345"),
     ///                     Some("1"),
     ///                     None,
-    ///                     SUBJECT_DID
+    ///                     SUBJECT_DID,
+    ///                     "[1]",
     ///                 )
     ///                 .await?;
     ///
@@ -908,6 +915,7 @@ impl VadeEvan {
         credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
         subject_did: &str,
+        required_reveal_statements: &str,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
@@ -920,6 +928,7 @@ impl VadeEvan {
                 credential_revocation_id,
                 exp_date,
                 subject_did,
+                required_reveal_statements,
             )
             .await
             .map_err(|err| err.into())

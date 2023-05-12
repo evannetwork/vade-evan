@@ -128,9 +128,10 @@ impl<'a> Credential<'a> {
         use_valid_until: bool,
         issuer_did: &str,
         is_credential_status_included: bool,
+        required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
-
+        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements).map_err(|err| CredentialError::JsonDeSerialization(err))?;
         let payload = OfferCredentialPayload {
             draft_credential: schema.to_draft_credential(CredentialDraftOptions {
                 issuer_did: issuer_did.to_string(),
@@ -145,6 +146,7 @@ impl<'a> Credential<'a> {
                 true => LdProofVcDetailOptionsCredentialStatusType::RevocationList2021Status,
                 false => LdProofVcDetailOptionsCredentialStatusType::None,
             },
+            required_reveal_statements,
         };
 
         let result = self
@@ -347,11 +349,13 @@ impl<'a> Credential<'a> {
         credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
         subject_did: &str,
+        required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
         let credential_revocation_did = check_for_optional_empty_params(credential_revocation_did);
         let credential_revocation_id = check_for_optional_empty_params(credential_revocation_id);
         let exp_date = check_for_optional_empty_params(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
+        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements).map_err(|err| CredentialError::JsonDeSerialization(err))?;
         let issuer_public_key = self
             .get_issuer_public_key(&subject_did, "#bbs-key-1")
             .await?;
@@ -399,6 +403,7 @@ impl<'a> Credential<'a> {
                 true => LdProofVcDetailOptionsCredentialStatusType::RevocationList2021Status,
                 false => LdProofVcDetailOptionsCredentialStatusType::None,
             },
+            required_reveal_statements,
         };
 
         let offer_str = self
@@ -423,7 +428,6 @@ impl<'a> Credential<'a> {
             .await?;
         let (request, blinding_key): (BbsCredentialRequest, String) =
             serde_json::from_str(request_str.as_str())?;
-        let indices = vec![0, 1];
 
         // Issue credentials
         let payload = IssueCredentialPayload {
@@ -431,7 +435,6 @@ impl<'a> Credential<'a> {
             issuer_public_key: issuer_public_key.clone(),
             issuer_secret_key: bbs_private_key.to_string(),
             credential_request: request.clone(),
-            required_indices: indices,
             credential_status,
         };
         let payload_str = serde_json::to_string(&payload)?;
@@ -699,7 +702,7 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
-            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true)
+            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]")
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
@@ -717,7 +720,7 @@ mod tests {
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let credential_offer = vade_evan
-            .helper_create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true)
+            .helper_create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]")
             .await?;
 
         let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
@@ -994,6 +997,7 @@ mod tests {
                 Some("1"),
                 None,
                 subject_id,
+                "[1]",
             )
             .await
         {
@@ -1036,6 +1040,7 @@ mod tests {
                 None,
                 None,
                 subject_id,
+                "[1]"
             )
             .await
         {
