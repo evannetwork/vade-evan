@@ -462,19 +462,6 @@ impl<'a> Credential<'a> {
         Ok(result)
     }
 
-    // async fn create_empty_unsigned_credential(
-    //     &mut self,
-    //     schema_did: &str,
-    //     use_valid_until: bool,
-    // ) -> Result<UnsignedBbsCredential, CredentialError> {
-    //     let schema: CredentialSchema = self.get_did_document(schema_did).await?;
-
-    //     Ok(create_draft_credential_from_schema(
-    //         use_valid_until,
-    //         &schema,
-    //     ))
-    // }
-
     pub async fn get_did_document<T>(&mut self, did: &str) -> Result<T, CredentialError>
     where
         T: DeserializeOwned,
