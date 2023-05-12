@@ -285,7 +285,7 @@ impl VadeEvan {
     /// * `use_valid_until` - true if `validUntil` will be present in credential
     /// * `issuer_did` - DID of issuer
     /// * `is_credential_status_included` - true if credentialStatus is included in credential
-    /// 
+    ///
     /// # Returns
     /// * credential offer as JSON serialized [`BbsCredentialOffer`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredentialOffer.html)
     /// # Example
@@ -327,7 +327,12 @@ impl VadeEvan {
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
-            .create_credential_offer(schema_did, use_valid_until, issuer_did, is_credential_status_included)
+            .create_credential_offer(
+                schema_did,
+                use_valid_until,
+                issuer_did,
+                is_credential_status_included,
+            )
             .await
             .map_err(|err| err.into())
     }

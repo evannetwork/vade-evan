@@ -178,16 +178,17 @@ async fn main() -> Result<()> {
                     Some(value) => value.to_lowercase() == "true",
                     None => false,
                 };
-                let include_credential_status =  match get_optional_argument_value(sub_m, "include_credential_status") {
-                    Some(value) => value.to_lowercase() == "true",
-                    None => false,
-                };
+                let include_credential_status =
+                    match get_optional_argument_value(sub_m, "include_credential_status") {
+                        Some(value) => value.to_lowercase() == "true",
+                        None => false,
+                    };
                 get_vade_evan(sub_m)?
                     .helper_create_credential_offer(
                         get_argument_value(sub_m, "schema_did", None),
                         use_valid_until,
                         get_argument_value(sub_m, "issuer_did", None),
-                        include_credential_status
+                        include_credential_status,
                     )
                     .await?
             }
