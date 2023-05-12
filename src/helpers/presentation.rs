@@ -488,7 +488,7 @@ mod tests_proof_request {
            ],
            "signature":"sZTYWUrmYaVDUGs1L2UM/7f7UlVLSQS2vPQQG1YWU3TQRlcviNXFDx054zztzG8rWc1lw5e+SJNo4c1x+rpOFiXBjjK6IukN3a0zG5c/ayFbIQ6OVjxV7noWX8aTdNXNO5eyVV2Upd1YB4WGAuUO0w=="
         }
-     }"###;
+    }"###;
     #[tokio::test]
     async fn helper_can_create_proof_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
