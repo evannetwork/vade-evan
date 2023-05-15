@@ -107,6 +107,8 @@ optional = true
 
 # jwt-vc
 [dependencies.vade-jwt-vc]
+git = "https://github.com/evannetwork/vade-jwt-vc.git"
+branch = "develop"
 version = "0.2.0"
 optional = true
 

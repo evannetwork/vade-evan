@@ -16,7 +16,10 @@
 
 use crate::api::{VadeEvan, VadeEvanConfig, VadeEvanError, DEFAULT_SIGNER, DEFAULT_TARGET};
 use console_log;
-use serde::{de::DeserializeOwned, {Deserialize, Serialize}};
+use serde::{
+    de::DeserializeOwned,
+    {Deserialize, Serialize},
+};
 use std::{collections::HashMap, error::Error};
 use wasm_bindgen::prelude::*;
 
@@ -78,7 +81,6 @@ macro_rules! create_function {
     };
 }
 
-
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct HelperDidCreatePayload {
@@ -105,6 +107,7 @@ struct HelperCreateCredentialOfferPayload {
     pub use_valid_until: bool,
     pub issuer_did: String,
     pub subject_did: Option<String>,
+    pub is_credential_status_included: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -114,7 +117,7 @@ struct HelperCreateCredentialRequestPayload {
     pub bbs_secret: String,
     pub credential_values: String,
     pub credential_offer: String,
-    pub credential_schema: String
+    pub credential_schema: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -142,6 +145,7 @@ struct HelperCreateSelfIssuedCredentialPayload {
     pub credential_revocation_did: Option<String>,
     pub credential_revocation_id: Option<String>,
     pub exp_date: Option<String>,
+    pub subject_did: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -158,6 +162,7 @@ struct HelperCreatePresentationPayload {
     pub credential_str: String,
     pub master_secret: String,
     pub signing_key: String,
+    pub prover_did: String,
     pub revealed_attributes: Option<String>,
 }
 
@@ -184,11 +189,17 @@ pub fn set_log_level(log_level: String) {
     };
 }
 
-fn get_parsing_error_message(error: &serde_json::Error, payload: &str,) -> JsValue {
-    return JsValue::from(format!(r#"got error \{}" when parsing payload: {}"#, &error, &payload))
+fn get_parsing_error_message(error: &serde_json::Error, payload: &str) -> JsValue {
+    return JsValue::from(format!(
+        r#"got error \{}" when parsing payload: {}"#,
+        &error, &payload
+    ));
 }
 
-fn parse<T>(payload: &str) -> Result<T, serde_json::Error> where T: DeserializeOwned {
+fn parse<T>(payload: &str) -> Result<T, serde_json::Error>
+where
+    T: DeserializeOwned,
+{
     serde_json::from_str(payload)
 }
 
@@ -305,7 +316,7 @@ cfg_if::cfg_if! {
             schema_did: String,
             use_valid_until: bool,
             issuer_did: String,
-            subject_did: Option<String>,
+            is_credential_status_included: bool,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let offer = vade_evan
@@ -313,7 +324,7 @@ cfg_if::cfg_if! {
                     &schema_did,
                     use_valid_until,
                     &issuer_did,
-                    subject_did.as_deref(),
+                    is_credential_status_included,
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(offer)
@@ -383,6 +394,7 @@ cfg_if::cfg_if! {
             credential_revocation_did: Option<String>,
             credential_revocation_id: Option<String>,
             exp_date: Option<String>,
+            subject_did: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
@@ -394,6 +406,7 @@ cfg_if::cfg_if! {
                     credential_revocation_did.as_deref(),
                     credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
+                    &subject_did,
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -420,6 +433,7 @@ cfg_if::cfg_if! {
             credential_str: String,
             master_secret: String,
             signing_key: String,
+            prover_did: String,
             revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -429,6 +443,7 @@ cfg_if::cfg_if! {
                     &credential_str,
                     &master_secret,
                     &signing_key,
+                    &prover_did,
                     revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
@@ -604,23 +619,21 @@ pub async fn execute_vade(
             vc_zkp_revoke_credential(did_or_method, options, payload, config).await
         }
         #[cfg(any(feature = "vc-zkp-bbs", feature = "vc-jwt"))]
-        "vc_zkp_verify_proof" => {
-            vc_zkp_verify_proof(did_or_method, options, payload, config).await
-        }
+        "vc_zkp_verify_proof" => vc_zkp_verify_proof(did_or_method, options, payload, config).await,
 
         #[cfg(feature = "did-sidetree")]
         "helper_did_create" => {
             let payload_result = parse::<HelperDidCreatePayload>(&payload);
             match payload_result {
-                Ok(payload) =>
-                    helper_did_create(
-                        payload.bbs_public_key,
-                        payload.signing_key,
-                        payload.service_endpoint,
-                        payload.update_key,
-                        payload.recovery_key,
-                    ).await
-                    .map(none_to_empty_string),
+                Ok(payload) => helper_did_create(
+                    payload.bbs_public_key,
+                    payload.signing_key,
+                    payload.service_endpoint,
+                    payload.update_key,
+                    payload.recovery_key,
+                )
+                .await
+                .map(none_to_empty_string),
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -628,14 +641,14 @@ pub async fn execute_vade(
         "helper_did_update" => {
             let payload_result = parse::<HelperDidUpdatePayload>(&payload);
             match payload_result {
-                Ok(payload) =>
-                    helper_did_update(
-                        payload.did,
-                        payload.operation,
-                        payload.update_key,
-                        payload.payload
-                    ).await
-                    .map(none_to_empty_string),
+                Ok(payload) => helper_did_update(
+                    payload.did,
+                    payload.operation,
+                    payload.update_key,
+                    payload.payload,
+                )
+                .await
+                .map(none_to_empty_string),
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -644,13 +657,15 @@ pub async fn execute_vade(
         "helper_create_credential_offer" => {
             let payload_result = parse::<HelperCreateCredentialOfferPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
+                Ok(payload) => {
                     helper_create_credential_offer(
                         payload.schema_did,
                         payload.use_valid_until,
                         payload.issuer_did,
-                        payload.subject_did,
-                    ).await,
+                        payload.is_credential_status_included,
+                    )
+                    .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -658,14 +673,16 @@ pub async fn execute_vade(
         "helper_create_credential_request" => {
             let payload_result = parse::<HelperCreateCredentialRequestPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
+                Ok(payload) => {
                     helper_create_credential_request(
                         payload.issuer_public_key,
                         payload.bbs_secret,
                         payload.credential_values,
                         payload.credential_offer,
                         payload.credential_schema,
-                    ).await,
+                    )
+                    .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -673,12 +690,14 @@ pub async fn execute_vade(
         "helper_revoke_credential" => {
             let payload_result = parse::<HelperRevokeCredentialPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
+                Ok(payload) => {
                     helper_revoke_credential(
                         payload.credential,
                         payload.update_key_jwk,
                         payload.private_key,
-                    ).await,
+                    )
+                    .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -686,11 +705,9 @@ pub async fn execute_vade(
         "helper_verify_credential" => {
             let payload_result = parse::<HelperVerifyCredentialPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
-                    helper_verify_credential(
-                        payload.credential,
-                        payload.master_secret,
-                    ).await,
+                Ok(payload) => {
+                    helper_verify_credential(payload.credential, payload.master_secret).await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -698,7 +715,7 @@ pub async fn execute_vade(
         "helper_create_self_issued_credential" => {
             let payload_result = parse::<HelperCreateSelfIssuedCredentialPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
+                Ok(payload) => {
                     helper_create_self_issued_credential(
                         payload.schema_did,
                         payload.credential_subject_str,
@@ -707,7 +724,10 @@ pub async fn execute_vade(
                         payload.credential_revocation_did,
                         payload.credential_revocation_id,
                         payload.exp_date,
-                    ).await,
+                        payload.subject_did,
+                    )
+                    .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -715,11 +735,10 @@ pub async fn execute_vade(
         "helper_create_proof_request" => {
             let payload_result = parse::<HelperCreateProofRequestPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
-                    helper_create_proof_request(
-                        payload.schema_did,
-                        payload.revealed_attributes,
-                    ).await,
+                Ok(payload) => {
+                    helper_create_proof_request(payload.schema_did, payload.revealed_attributes)
+                        .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -727,14 +746,17 @@ pub async fn execute_vade(
         "helper_create_presentation" => {
             let payload_result = parse::<HelperCreatePresentationPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
+                Ok(payload) => {
                     helper_create_presentation(
                         payload.proof_request_str,
                         payload.credential_str,
                         payload.master_secret,
                         payload.signing_key,
+                        payload.prover_did,
                         payload.revealed_attributes,
-                    ).await,
+                    )
+                    .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -742,16 +764,18 @@ pub async fn execute_vade(
         "helper_verify_presentation" => {
             let payload_result = parse::<HelperVerifyPresentationPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
-                  helper_verify_presentation(
-                        payload.presentation_str,
-                        payload.proof_request_str,
-                    ).await,
+                Ok(payload) => {
+                    helper_verify_presentation(payload.presentation_str, payload.proof_request_str)
+                        .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
 
-        _ => Err(JsValue::from(format!("invalid command for execute_vade: {}", &func_name)))
+        _ => Err(JsValue::from(format!(
+            "invalid command for execute_vade: {}",
+            &func_name
+        ))),
     };
 
     let response = match result {

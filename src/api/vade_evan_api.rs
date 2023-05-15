@@ -284,7 +284,7 @@ impl VadeEvan {
     /// * `schema_did` - schema to create the offer for
     /// * `use_valid_until` - true if `validUntil` will be present in credential
     /// * `issuer_did` - DID of issuer
-    /// * `subject_did` - DID of subject (or `None` no subject id is used)
+    /// * `is_credential_status_included` - true if credentialStatus is included in credential
     ///
     /// # Returns
     /// * credential offer as JSON serialized [`BbsCredentialOffer`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredentialOffer.html)
@@ -298,7 +298,6 @@ impl VadeEvan {
     ///
     ///         const ISSUER_DID: &str = "did:evan:testcore:0x6240cedfc840579b7fdcd686bdc65a9a8c42dea6";
     ///         const SCHEMA_DID: &str = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-    ///         const SUBJECT_DID: &str = "did:evan:testcore:0x67ce8b01b3b75a9ba4a1462139a1edaa0d2f539f";
     ///
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
@@ -307,7 +306,7 @@ impl VadeEvan {
     ///                     SCHEMA_DID,
     ///                     false,
     ///                     ISSUER_DID,
-    ///                     Some(SUBJECT_DID),
+    ///                     true,
     ///                 )
     ///                 .await?;
     ///
@@ -324,11 +323,16 @@ impl VadeEvan {
         schema_did: &str,
         use_valid_until: bool,
         issuer_did: &str,
-        subject_did: Option<&str>,
+        is_credential_status_included: bool,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
-            .create_credential_offer(schema_did, use_valid_until, issuer_did, subject_did)
+            .create_credential_offer(
+                schema_did,
+                use_valid_until,
+                issuer_did,
+                is_credential_status_included,
+            )
             .await
             .map_err(|err| err.into())
     }
@@ -557,7 +561,7 @@ impl VadeEvan {
     ///         const SIGNER_PRIVATE_KEY: &str =
     ///         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
     ///         const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    ///
+    ///         const PROVER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     ///         const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     ///         const CREDENTIAL: &str = r###"{
     ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
@@ -610,6 +614,7 @@ impl VadeEvan {
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
     ///                   SIGNER_PRIVATE_KEY,
+    ///                   PROVER_DID,
     ///                   None,
     ///                )
     ///                .await;
@@ -627,6 +632,7 @@ impl VadeEvan {
         credential_str: &str,
         master_secret: &str,
         signing_key: &str,
+        prover_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         use crate::helpers::Presentation;
@@ -638,6 +644,7 @@ impl VadeEvan {
                 credential_str,
                 master_secret,
                 signing_key,
+                prover_did,
                 revealed_attributes,
             )
             .await
@@ -663,7 +670,7 @@ impl VadeEvan {
     ///         const SIGNER_PRIVATE_KEY: &str =
     ///         "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106";
     ///         const MASTER_SECRET: &str = "QyRmu33oIQFNW+dSI5wex3u858Ra7yx5O1tsxJgQvu8=";
-    ///
+    ///         const PROVER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     ///         const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     ///         const CREDENTIAL: &str = r###"{
     ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
@@ -716,6 +723,7 @@ impl VadeEvan {
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
     ///                   SIGNER_PRIVATE_KEY,
+    ///                   PROVER_DID,
     ///                   None,
     ///                )
     ///                .await?;
@@ -866,7 +874,7 @@ impl VadeEvan {
     ///                                                }"#;
     ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
     ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
-    ///
+    ///         const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
     ///             let offer_str = vade_evan
@@ -878,6 +886,7 @@ impl VadeEvan {
     ///                     Some("did:revoc:12345"),
     ///                     Some("1"),
     ///                     None,
+    ///                     SUBJECT_DID
     ///                 )
     ///                 .await?;
     ///
@@ -898,6 +907,7 @@ impl VadeEvan {
         credential_revocation_did: Option<&str>,
         credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
+        subject_did: &str,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
@@ -909,6 +919,7 @@ impl VadeEvan {
                 credential_revocation_did,
                 credential_revocation_id,
                 exp_date,
+                subject_did,
             )
             .await
             .map_err(|err| err.into())

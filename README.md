@@ -49,7 +49,7 @@ cargo build --release --no-default-features --features target-java-lib
 ```
 - `target-wasm` - in combination with `wasm-pack`, build for usage in WASM (see below)
 ```sh
-wasm-pack build --release --target web -- --no-default-features --features=target-wasm
+wasm-pack build --release --target nodejs -- --no-default-features --features target-wasm
 ```
 
 One (and only one) target must be provided when building without default features.

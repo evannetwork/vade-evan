@@ -4922,7 +4922,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#63ede536e99aa70df7b43139cc986d40a85df15a"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#3a2a97efe81dd26ecfe3186ce5eb5c46171d1121"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -4932,10 +4932,12 @@ dependencies = [
  "hex",
  "js-sys",
  "libsecp256k1 0.3.5",
+ "regex",
  "serde",
  "serde_json",
  "sha2 0.8.2",
  "sha3 0.8.2",
+ "ssi-json-ld",
  "uuid 0.8.2",
  "vade",
  "vade-signer",
@@ -4986,8 +4988,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99b7be7d18bc796039530baad8b901316e2a4142df853946dba09fdb51bbd2be"
+source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=develop#505e58b046a0e2f041dc2887e5a5a8a445778e16"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
