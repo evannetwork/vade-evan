@@ -4988,7 +4988,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.2.0"
-source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=feature/remove-credential-subject-id#ccd46c115641a1c437b9077487a32470a0cce2f6"
+source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=develop#505e58b046a0e2f041dc2887e5a5a8a445778e16"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
