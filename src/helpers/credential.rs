@@ -708,6 +708,13 @@ mod tests {
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
+        assert_eq!(
+            offer_obj
+                .ld_proof_vc_detail
+                .options
+                .required_reveal_statements,
+            vec![1]
+        );
         assert_eq!(offer_obj.ld_proof_vc_detail.credential.issuer, ISSUER_DID);
         assert!(!offer_obj.nonce.is_empty());
 
@@ -1003,7 +1010,11 @@ mod tests {
             )
             .await
         {
-            Ok(_) => assert!(true, "credential should have been successfully self issued"),
+            Ok(issued_credential) => {
+                assert!(true, "credential should have been successfully self issued");
+                let issue_credential: BbsCredential = serde_json::from_str(&issued_credential)?;
+                assert_eq!(issue_credential.proof.required_reveal_statements, vec![1]);
+            }
             Err(_) => assert!(
                 false,
                 "error occured when creating the self issued credential"
@@ -1053,6 +1064,7 @@ mod tests {
                     issue_credential.credential_status.is_none(),
                     "credential_status should not be present"
                 );
+                assert_eq!(issue_credential.proof.required_reveal_statements, vec![1]);
             }
             Err(_) => assert!(
                 false,
