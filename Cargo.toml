@@ -96,7 +96,8 @@ optional = true
 
 # did-substrate
 [dependencies.vade-evan-substrate]
-version = "0.2.0"
+git = "https://github.com/evannetwork/vade-evan-substrate.git"
+branch = "feature/fix-critical-dependency-updates"
 optional = true
 
 # didcomm
@@ -108,13 +109,13 @@ optional = true
 # jwt-vc
 [dependencies.vade-jwt-vc]
 git = "https://github.com/evannetwork/vade-jwt-vc.git"
-branch = "develop"
-version = "0.2.0"
+branch = "feature/fix-critical-dependency-updates"
 optional = true
 
 # signer
 [dependencies.vade-signer]
-version = "0.0.1"
+git = "https://github.com/evannetwork/vade-signer.git"
+branch = "feature/fix-critical-dependency-updates"
 optional = true
 
 # universal-resolver
@@ -146,8 +147,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "develop"
-version = "0.4.0"
+branch = "feature/fix-critical-dependency-updates"
 optional = true
 default-features = false
 
