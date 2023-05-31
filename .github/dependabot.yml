@@ -10,3 +10,13 @@ updates:
     # Labels on pull requests for version updates only
     labels:
       - "cargo dependencies"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Raise pull requests for version updates
+    # to cargo against the `develop` branch
+    target-branch: "develop"
+    # Labels on pull requests for version updates only
+    labels:
+      - "cargo dependencies"
