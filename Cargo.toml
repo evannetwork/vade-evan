@@ -96,7 +96,8 @@ optional = true
 
 # did-substrate
 [dependencies.vade-evan-substrate]
-version = "0.2.0"
+git = "https://github.com/evannetwork/vade-evan-substrate.git"
+branch = "develop"
 optional = true
 
 # didcomm
@@ -114,7 +115,8 @@ optional = true
 
 # signer
 [dependencies.vade-signer]
-version = "0.0.1"
+git = "https://github.com/evannetwork/vade-signer.git"
+branch = "develop"
 optional = true
 
 # universal-resolver
