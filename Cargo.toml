@@ -96,7 +96,8 @@ optional = true
 
 # did-substrate
 [dependencies.vade-evan-substrate]
-version = "0.2.0"
+git = "https://github.com/evannetwork/vade-evan-substrate.git"
+branch = "develop"
 optional = true
 
 # didcomm
@@ -114,7 +115,8 @@ optional = true
 
 # signer
 [dependencies.vade-signer]
-version = "0.0.1"
+git = "https://github.com/evannetwork/vade-signer.git"
+branch = "develop"
 optional = true
 
 # universal-resolver
@@ -146,8 +148,8 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "feature/implement-correct-handling-for-required-reveal-statements-in-vade"
-version = "0.3.0"
+branch = "develop"
+version = "0.4.0"
 optional = true
 default-features = false
 
