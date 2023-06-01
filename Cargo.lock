@@ -935,16 +935,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ctor"
-version = "0.1.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f877be4f7c9f246b183111634f75baa039715e3f46ce860677d3b19a69fb229c"
-dependencies = [
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "ctr"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2430,11 +2420,10 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.17"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
+checksum = "518ef76f2f87365916b142844c16d8fefd85039bc5699050210a7778ee1cd1de"
 dependencies = [
- "cfg-if 1.0.0",
  "value-bag",
 ]
 
@@ -4849,7 +4838,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#cb755022da866b8cc62fb41976377ae2d679ff16"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#edd2e0d1c3d767b91f186aee762062860b04d741"
 dependencies = [
  "async-trait",
  "bs58",
@@ -4922,7 +4911,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/fix-critical-dependency-updates#c4385ac06a79efa1d95c0935b47ddb85f79856bf"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#1acb8202500c0bc86bd837775bcfe43b28351d84"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -4946,7 +4935,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-substrate"
 version = "0.2.0"
-source = "git+https://github.com/evannetwork/vade-evan-substrate.git?branch=feature/fix-critical-dependency-updates#5d4d036b2c7e573c3d7a404e553c7e40fcf0faf3"
+source = "git+https://github.com/evannetwork/vade-evan-substrate.git?branch=develop#e147e7b23e748f755d424cd629a8841ee48ec7aa"
 dependencies = [
  "async-trait",
  "blake2-rfc",
@@ -4987,7 +4976,7 @@ dependencies = [
 [[package]]
 name = "vade-jwt-vc"
 version = "0.2.0"
-source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=feature/fix-critical-dependency-updates#e31c3fa22ca62adafe1c13280e8aabe08ce6e6cb"
+source = "git+https://github.com/evannetwork/vade-jwt-vc.git?branch=develop#3ae247e6d689053126427099bb6f35291c20bc28"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -5010,7 +4999,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.4"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#b308cbb013cb4d6e3468e07b3baf810458e98714"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#60bb27d3413fe7e1d74add1a45b4fdea8126d44f"
 dependencies = [
  "async-std",
  "async-trait",
@@ -5034,7 +5023,7 @@ dependencies = [
 [[package]]
 name = "vade-signer"
 version = "0.0.2"
-source = "git+https://github.com/evannetwork/vade-signer.git?branch=feature/fix-critical-dependency-updates#bfe4c92b035998612abdbc2c8e4cba1ae3c0d2e0"
+source = "git+https://github.com/evannetwork/vade-signer.git?branch=develop#18ff5c6a2b08974e52748e3b34351e8ba53eb7c9"
 dependencies = [
  "async-trait",
  "byteorder",
@@ -5066,13 +5055,9 @@ dependencies = [
 
 [[package]]
 name = "value-bag"
-version = "1.0.0-alpha.9"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2209b78d1249f7e6f3293657c9779fe31ced465df091bbd433a1cf88e916ec55"
-dependencies = [
- "ctor",
- "version_check",
-]
+checksum = "a4d330786735ea358f3bc09eea4caa098569c1c93f342d9aca0514915022fe7e"
 
 [[package]]
 name = "vcpkg"

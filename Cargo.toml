@@ -97,7 +97,7 @@ optional = true
 # did-substrate
 [dependencies.vade-evan-substrate]
 git = "https://github.com/evannetwork/vade-evan-substrate.git"
-branch = "feature/fix-critical-dependency-updates"
+branch = "develop"
 optional = true
 
 # didcomm
@@ -115,7 +115,7 @@ optional = true
 # signer
 [dependencies.vade-signer]
 git = "https://github.com/evannetwork/vade-signer.git"
-branch = "feature/fix-critical-dependency-updates"
+branch = "develop"
 optional = true
 
 # universal-resolver

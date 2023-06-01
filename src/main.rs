@@ -189,6 +189,7 @@ async fn main() -> Result<()> {
                         use_valid_until,
                         get_argument_value(sub_m, "issuer_did", None),
                         include_credential_status,
+                        get_argument_value(sub_m, "required_reveal_statements", None),
                     )
                     .await?
             }
@@ -260,6 +261,7 @@ async fn main() -> Result<()> {
                         get_optional_argument_value(sub_m, "credential_revocation_id"),
                         get_optional_argument_value(sub_m, "exp_date"),
                         get_argument_value(sub_m, "subject_did", None),
+                        get_argument_value(sub_m, "required_reveal_statements", None),
                     )
                     .await?;
                 "".to_string()
@@ -329,6 +331,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("use_valid_until")?)
                     .arg(get_clap_argument("issuer_did")?)
                     .arg(get_clap_argument("include_credential_status")?)
+                    .arg(get_clap_argument("required_reveal_statements")?)
             );
         } else {}
     }
@@ -416,6 +419,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("credential_revocation_id")?)
                     .arg(get_clap_argument("exp_date")?)
                     .arg(get_clap_argument("subject_did")?)
+                    .arg(get_clap_argument("required_reveal_statements")?)
             );
         } else {}
     }
@@ -978,6 +982,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("revealed_attributes")
             .help("list of names of revealed attributes in specified schema, reveals all if omitted")
             .takes_value(true),
+        "required_reveal_statements" => Arg::with_name("required_reveal_statements")
+            .long("required_reveal_statements")
+            .value_name("required_reveal_statements")
+            .help("list of indices to be made as revealed mandatorily in credential presentation")
+            .takes_value(true)
+            .required(true),
         "proof_request" => Arg::with_name("proof_request")
             .long("proof_request")
             .value_name("proof_request")

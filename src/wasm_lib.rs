@@ -108,6 +108,7 @@ struct HelperCreateCredentialOfferPayload {
     pub issuer_did: String,
     pub subject_did: Option<String>,
     pub is_credential_status_included: bool,
+    pub required_reveal_statements: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -146,6 +147,7 @@ struct HelperCreateSelfIssuedCredentialPayload {
     pub credential_revocation_id: Option<String>,
     pub exp_date: Option<String>,
     pub subject_did: String,
+    pub required_reveal_statements: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -317,6 +319,7 @@ cfg_if::cfg_if! {
             use_valid_until: bool,
             issuer_did: String,
             is_credential_status_included: bool,
+            required_reveal_statements: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let offer = vade_evan
@@ -325,6 +328,7 @@ cfg_if::cfg_if! {
                     use_valid_until,
                     &issuer_did,
                     is_credential_status_included,
+                    &required_reveal_statements,
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(offer)
@@ -395,6 +399,7 @@ cfg_if::cfg_if! {
             credential_revocation_id: Option<String>,
             exp_date: Option<String>,
             subject_did: String,
+            required_reveal_statements: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
@@ -407,6 +412,7 @@ cfg_if::cfg_if! {
                     credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
                     &subject_did,
+                    &required_reveal_statements,
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -663,6 +669,7 @@ pub async fn execute_vade(
                         payload.use_valid_until,
                         payload.issuer_did,
                         payload.is_credential_status_included,
+                        payload.required_reveal_statements,
                     )
                     .await
                 }
@@ -725,6 +732,7 @@ pub async fn execute_vade(
                         payload.credential_revocation_id,
                         payload.exp_date,
                         payload.subject_did,
+                        payload.required_reveal_statements,
                     )
                     .await
                 }
