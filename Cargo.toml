@@ -109,7 +109,7 @@ optional = true
 # jwt-vc
 [dependencies.vade-jwt-vc]
 git = "https://github.com/evannetwork/vade-jwt-vc.git"
-branch = "feature/fix-critical-dependency-updates"
+branch = "develop"
 optional = true
 
 # signer
@@ -147,7 +147,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "feature/fix-critical-dependency-updates"
+branch = "develop"
 optional = true
 default-features = false
 
