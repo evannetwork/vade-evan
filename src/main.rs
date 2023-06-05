@@ -255,13 +255,9 @@ async fn main() -> Result<()> {
                     .helper_create_self_issued_credential(
                         get_argument_value(sub_m, "schema_did", None),
                         get_argument_value(sub_m, "credential_subject", None),
-                        get_argument_value(sub_m, "bbs_secret", None),
-                        get_argument_value(sub_m, "private_key", None),
-                        get_optional_argument_value(sub_m, "credential_revocation_did"),
-                        get_optional_argument_value(sub_m, "credential_revocation_id"),
                         get_optional_argument_value(sub_m, "exp_date"),
                         get_argument_value(sub_m, "subject_did", None),
-                        get_argument_value(sub_m, "required_reveal_statements", None),
+
                     )
                     .await?;
                 "".to_string()
@@ -413,13 +409,8 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Creates a self issued credential.")
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("credential_subject")?)
-                    .arg(get_clap_argument("bbs_secret")?)
-                    .arg(get_clap_argument("private_key")?)
-                    .arg(get_clap_argument("credential_revocation_did")?)
-                    .arg(get_clap_argument("credential_revocation_id")?)
                     .arg(get_clap_argument("exp_date")?)
                     .arg(get_clap_argument("subject_did")?)
-                    .arg(get_clap_argument("required_reveal_statements")?)
             );
         } else {}
     }
