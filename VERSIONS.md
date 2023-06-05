@@ -39,6 +39,7 @@
 - align key format for master secrets and public keys (no extra double quotes)
 - fix optional params for did_create
 - fix wasm release and `target-c-sdk` build options
+- update dependencies for critical vulnerabilities
 
 ### Deprecation
 
