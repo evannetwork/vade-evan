@@ -31,6 +31,7 @@
 - adjust functions to remove `credential_subject.id` from `BbsCredential` and other types
 - add `helper_verify_presentation`
 - add support for `required_reveal_statements` in `vade-evan-bbs`
+- adjust `helper_create_self_issued_credential` to create credentials without proof.
 
 ### Fixes
 
