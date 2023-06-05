@@ -110,7 +110,6 @@ optional = true
 [dependencies.vade-jwt-vc]
 git = "https://github.com/evannetwork/vade-jwt-vc.git"
 branch = "develop"
-version = "0.2.0"
 optional = true
 
 # signer
@@ -149,7 +148,6 @@ optional = true
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
 branch = "develop"
-version = "0.4.0"
 optional = true
 default-features = false
 
