@@ -886,11 +886,7 @@ mod tests {
             target: "test",
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
-        let credential_subject_str = r#"{
-            "data": {
-                "email": "value@x.com"
-            }
-        }"#;
+        let credential_subject_str = r#"{"data":{"email":"value@x.com"}}"#;
         let subject_id = "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA";
         let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
 
@@ -904,6 +900,8 @@ mod tests {
                 assert!(true, "credential should have been successfully self issued");
                 let unsigned_credential: UnsignedBbsCredential =
                     serde_json::from_str(&issued_credential)?;
+                let credential_subject = serde_json::to_string(&unsigned_credential.credential_subject)?;
+                assert_eq!(credential_subject_str, credential_subject.as_str());
                 assert_eq!(unsigned_credential.issuer, subject_id);
             }
             Err(_) => assert!(
