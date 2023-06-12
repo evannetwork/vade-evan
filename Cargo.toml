@@ -147,7 +147,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "develop"
+branch = "feature/fix-revoke-credential"
 optional = true
 default-features = false
 
