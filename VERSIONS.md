@@ -30,7 +30,7 @@
 - refactor features to use target specific(c-lib, c-sdk, wasm, cli, java) builds
 - adjust functions to remove `credential_subject.id` from `BbsCredential` and other types
 - add `helper_verify_presentation`
-- add support for `required_reveal_statements` in `vade-evan-bbs`
+- update `vade-evan-bbs` dependency for revocation fix
 
 ### Fixes
 
@@ -39,6 +39,7 @@
 - fix optional params for did_create
 - fix wasm release and `target-c-sdk` build options
 - update dependencies for critical vulnerabilities
+- fix reocation credential size increase with every revocation
 
 ### Deprecation
 
