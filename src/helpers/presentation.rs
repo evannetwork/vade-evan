@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json::{value::Value, Map};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -12,6 +13,7 @@ use vade_evan_bbs::{
     PresentProofPayload,
     ProofPresentation,
     RequestProofPayload,
+    UnsignedBbsCredential,
     VerifyProofPayload,
 };
 
@@ -27,6 +29,7 @@ use super::{
 use crate::api::VadeEvan;
 use crate::helpers::credential::Credential;
 use crate::helpers::datatypes::EVAN_METHOD;
+use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum PresentationError {
@@ -48,6 +51,19 @@ pub enum PresentationError {
     SchemaInvalid(String, String),
     #[error(r#"schema with DID "{0}" could not be found"#)]
     SchemaNotFound(String),
+    #[error(r#"SelfIssuedCredential are unsigned and can not contain proof"#)]
+    SelfIssuedCredentialWithProof(),
+}
+
+/// A
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SelfIssuedPresentation {
+    #[serde(rename(serialize = "@context", deserialize = "@context"))]
+    pub context: Vec<String>,
+    pub id: String,
+    pub r#type: Vec<String>,
+    pub verifiable_credential: Vec<UnsignedBbsCredential>,
 }
 
 impl PresentationError {
@@ -347,6 +363,50 @@ impl<'a> Presentation<'a> {
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
     }
 
+    /// Creates a self issued presentation.
+    /// The presentation has no proof.
+    ///
+    /// # Arguments
+    ///
+    /// * `unsigned_credential` - self issued credential (without proof) to be shared in presentation
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `SelfIssuedPresentation` as JSON
+    pub async fn create_self_issued_presentation(
+        &mut self,
+        unsigned_credential_str: &str,
+    ) -> Result<String, PresentationError> {
+        if unsigned_credential_str.contains("proof") {
+            return Err(PresentationError::SelfIssuedCredentialWithProof());
+        }
+        let unsigned_credential: UnsignedBbsCredential = serde_json::from_str(
+            unsigned_credential_str,
+        )
+        .map_err(PresentationError::to_deserialization_error(
+            "UnsignedCredential",
+            unsigned_credential_str,
+        ))?;
+
+        let self_issued_presentation = SelfIssuedPresentation {
+            context: vec![
+                "https://www.w3.org/2018/credentials/v1".to_owned(),
+                "https://schema.org/".to_owned(),
+                "https://w3id.org/vc-revocation-list-2020/v1".to_owned(),
+            ],
+            id: format!("{}", Uuid::new_v4()),
+            r#type: vec!["VerifiablePresentation".to_owned()],
+            verifiable_credential: vec![unsigned_credential],
+        };
+        let self_issued_presentation_str = serde_json::to_string(&self_issued_presentation)
+            .map_err(|err| {
+                PresentationError::JsonSerialization(
+                    "SelfIssuedPresentation".to_owned(),
+                    err.to_string(),
+                )
+            })?;
+        Ok(self_issued_presentation_str)
+    }
+
     async fn get_did_document<T>(&mut self, did: &str) -> Result<T, PresentationError>
     where
         T: DeserializeOwned,
@@ -487,6 +547,34 @@ mod tests_proof_request {
               1
            ],
            "signature":"sZTYWUrmYaVDUGs1L2UM/7f7UlVLSQS2vPQQG1YWU3TQRlcviNXFDx054zztzG8rWc1lw5e+SJNo4c1x+rpOFiXBjjK6IukN3a0zG5c/ayFbIQ6OVjxV7noWX8aTdNXNO5eyVV2Upd1YB4WGAuUO0w=="
+        }
+    }"###;
+    const UNSIGNED_CREDENTIAL: &str = r###"{
+        "@context":[
+           "https://www.w3.org/2018/credentials/v1",
+           "https://schema.org/",
+           "https://w3id.org/vc-revocation-list-2020/v1"
+        ],
+        "id":"uuid:4ea2335a-a558-4bd4-b1d5-566838ff1e3a",
+        "type":[
+           "VerifiableCredential"
+        ],
+        "issuer":"did:evan:EiDmRkKsOaey8tPzc6RyQrYkMNjpqXXVTj9ggy0EbiXS4g",
+        "issuanceDate":"2023-05-03T15:21:42.000Z",
+        "credentialSubject":{
+           "data":{
+              "test_property_string":"value"
+           }
+        },
+        "credentialSchema":{
+           "id":"did:evan:EiBmiHCHLMbGVn9hllRM5qQOsshvETToEALBAtFqP3PUIg",
+           "type":"EvanVCSchema"
+        },
+        "credentialStatus":{
+           "id":"did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#0",
+           "type":"RevocationList2021Status",
+           "revocationListIndex":"0",
+           "revocationListCredential":"did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
         }
     }"###;
     #[tokio::test]
@@ -633,6 +721,47 @@ mod tests_proof_request {
             )
             .await;
         assert!(presentation_result.is_ok());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_create_self_issued_presentation() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let self_presentation_result = presentation
+            .create_self_issued_presentation(UNSIGNED_CREDENTIAL)
+            .await;
+        assert!(self_presentation_result.is_ok());
+        let self_presentation_result_str = self_presentation_result?;
+        assert!(
+            !self_presentation_result_str.contains("proof"),
+            "Self Issued Presentation cannot contian proof"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_returns_error_if_self_issued_credential_contains_proof() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let self_presentation_result = presentation
+            .create_self_issued_presentation(CREDENTIAL)
+            .await;
+        match self_presentation_result {
+            Ok(_) => assert!(false, "got unexpected result instead of error"),
+            Err(err) => assert!(err
+                .to_string()
+                .ends_with(r#"SelfIssuedCredential are unsigned and can not contain proof"#)),
+        };
 
         Ok(())
     }
