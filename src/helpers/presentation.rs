@@ -740,7 +740,7 @@ mod tests_proof_request {
         let self_presentation_result_str = self_presentation_result?;
         assert!(
             !self_presentation_result_str.contains("proof"),
-            "Self Issued Presentation cannot contian proof"
+            "Self Issued Presentation can not contain proof"
         );
         Ok(())
     }
