@@ -4911,7 +4911,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/fix-revoke-credential#ce27ab5922b09d0cf268ae07e2965656c0257577"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#12b3b175dd9e22bc9564cec7b88e4cf50b19c215"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
