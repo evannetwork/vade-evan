@@ -39,7 +39,7 @@
 - fix optional params for did_create
 - fix wasm release and `target-c-sdk` build options
 - update dependencies for critical vulnerabilities
-- fix reocation credential size increase with every revocation
+- fix revocation credential size increase with every revocation
 
 ### Deprecation
 
