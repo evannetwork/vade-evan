@@ -141,13 +141,8 @@ struct HelperVerifyCredentialPayload {
 struct HelperCreateSelfIssuedCredentialPayload {
     pub schema_did: String,
     pub credential_subject_str: String,
-    pub bbs_secret: String,
-    pub bbs_private_key: String,
-    pub credential_revocation_did: Option<String>,
-    pub credential_revocation_id: Option<String>,
     pub exp_date: Option<String>,
     pub subject_did: String,
-    pub required_reveal_statements: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -393,26 +388,16 @@ cfg_if::cfg_if! {
         pub async fn helper_create_self_issued_credential(
             schema_did: String,
             credential_subject_str: String,
-            bbs_secret: String,
-            bbs_private_key: String,
-            credential_revocation_did: Option<String>,
-            credential_revocation_id: Option<String>,
             exp_date: Option<String>,
             subject_did: String,
-            required_reveal_statements: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
                 .helper_create_self_issued_credential(
                     &schema_did,
                     &credential_subject_str,
-                    &bbs_secret,
-                    &bbs_private_key,
-                    credential_revocation_did.as_deref(),
-                    credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
                     &subject_did,
-                    &required_reveal_statements,
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -726,13 +711,8 @@ pub async fn execute_vade(
                     helper_create_self_issued_credential(
                         payload.schema_did,
                         payload.credential_subject_str,
-                        payload.bbs_secret,
-                        payload.bbs_private_key,
-                        payload.credential_revocation_did,
-                        payload.credential_revocation_id,
                         payload.exp_date,
                         payload.subject_did,
-                        payload.required_reveal_statements,
                     )
                     .await
                 }
