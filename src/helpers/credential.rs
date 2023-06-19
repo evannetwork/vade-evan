@@ -779,7 +779,7 @@ mod tests {
             .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
         let mut credential: BbsCredential = serde_json::from_str(CREDENTIAL_ACTIVE)?;
-        let mut credential_status = &mut credential.credential_status.ok_or_else(|| {
+        let mut credential_status = credential.credential_status.ok_or_else(|| {
             CredentialError::InvalidCredentialStatus(
                 "Error in parsing credential_status".to_string(),
             )
@@ -807,7 +807,7 @@ mod tests {
         assert!(did_update_result.is_ok());
 
         // check is credential is not revoked
-        match is_revoked(credential_status, &revocation_list)? {
+        match is_revoked(&credential_status, &revocation_list)? {
             false => assert!(true, "credential is active and not revoked as expected"),
             true => assert!(
                 false,
@@ -842,7 +842,7 @@ mod tests {
         revocation_list = did_result_value.did_document;
 
         // verify credential
-        match is_revoked(credential_status, &revocation_list)? {
+        match is_revoked(&credential_status, &revocation_list)? {
             false => assert!(false, "credential should have been detected as revoked"),
             true => assert!(true, "credential revoked as expected"),
         };
@@ -900,7 +900,8 @@ mod tests {
                 assert!(true, "credential should have been successfully self issued");
                 let unsigned_credential: UnsignedBbsCredential =
                     serde_json::from_str(&issued_credential)?;
-                let credential_subject = serde_json::to_string(&unsigned_credential.credential_subject)?;
+                let credential_subject =
+                    serde_json::to_string(&unsigned_credential.credential_subject)?;
                 assert_eq!(credential_subject_str, credential_subject.as_str());
                 assert_eq!(unsigned_credential.issuer, subject_id);
             }
