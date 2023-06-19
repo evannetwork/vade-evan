@@ -377,12 +377,12 @@ impl<'a> Presentation<'a> {
         unsigned_credential_str: &str,
     ) -> Result<String, PresentationError> {
         // Check if shared credential is signed instead of unsigned
-        match serde_json::from_str::<BbsCredential>(
-            unsigned_credential_str,
-        ){
-            Ok(_) => return Err(PresentationError::SelfIssuedCredentialWithProof()),
-            Err(_) => {},
-        };
+        let parsed = serde_json::from_str::<Value>(unsigned_credential_str).map_err(|err| {
+            PresentationError::JsonSerialization("unsigned credential".to_owned(), err.to_string())
+        })?;
+        if parsed.get("proof").is_some() {
+            return Err(PresentationError::SelfIssuedCredentialWithProof());
+        }
 
         let unsigned_credential: UnsignedBbsCredential = serde_json::from_str(
             unsigned_credential_str,
