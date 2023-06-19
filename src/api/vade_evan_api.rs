@@ -916,21 +916,15 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
-    /// Creates a new zero-knowledge proof self issued credential.
-    /// `create_self_issued_credential` function combines `vc_zkp_create_credential_offer`,
-    /// `vc_zkp_create_credential_request`, `vc_zkp_issue_credential` and `vc_zkp_finish_credential`
-    /// and produces self-issued credential with blind signature.
+    /// Creates an unsigned self issued credential.
+    /// `create_self_issued_credential` function produces self-issued credential without proof.
     ///
     /// # Arguments
     ///
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
-    /// * `bbs_secret` - BBS secret
-    /// * `bbs_private_key` - BBS private key
-    /// * `credential_revocation_did` - revocation list DID
-    /// * `credential_revocation_id` - index in revocation list
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
-    /// * `required_revealed_statements` - required_revealed_statements indices array in searialized form
+    /// * `subject_did` - subject did for self issued credential
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -950,8 +944,6 @@ impl VadeEvan {
     ///                                                           "email":"value@x.com"
     ///                                                         }
     ///                                                }"#;
-    ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
-    ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
     ///         const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     ///
     ///         async fn example() -> Result<()> {
@@ -960,13 +952,8 @@ impl VadeEvan {
     ///                 .helper_create_self_issued_credential(
     ///                     SCHEMA_DID,
     ///                     CREDENTIAL_SUBJECT_STR,
-    ///                     BBS_SECRET,
-    ///                     BBS_PRIVATE_KEY,
-    ///                     Some("did:revoc:12345"),
-    ///                     Some("1"),
     ///                     None,
     ///                     SUBJECT_DID,
-    ///                     "[1]",
     ///                 )
     ///                 .await?;
     ///
@@ -982,26 +969,16 @@ impl VadeEvan {
         &mut self,
         schema_did: &str,
         credential_subject_str: &str,
-        bbs_secret: &str,
-        bbs_private_key: &str,
-        credential_revocation_did: Option<&str>,
-        credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
         subject_did: &str,
-        required_reveal_statements: &str,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
             .create_self_issued_credential(
                 schema_did,
                 credential_subject_str,
-                bbs_secret,
-                bbs_private_key,
-                credential_revocation_did,
-                credential_revocation_id,
                 exp_date,
                 subject_did,
-                required_reveal_statements,
             )
             .await
             .map_err(|err| err.into())
