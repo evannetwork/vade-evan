@@ -162,6 +162,11 @@ struct HelperCreatePresentationPayload {
     pub prover_did: String,
     pub revealed_attributes: Option<String>,
 }
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateSelftIssuedPresentationPayload {
+    unsigned_credential: String,
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -363,6 +368,20 @@ cfg_if::cfg_if! {
                     &credential,
                     &update_key_jwk,
                     &private_key,
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+
+        #[cfg(all(feature = "vc-zkp-bbs"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_self_issued_presentation(
+            unsigned_credential: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_self_issued_presentation(
+                    &unsigned_credential
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -744,6 +763,16 @@ pub async fn execute_vade(
                         payload.revealed_attributes,
                     )
                     .await
+                }
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs"))]
+        "helper_create_self_issued_presentation" => {
+            let payload_result = parse::<HelperCreateSelftIssuedPresentationPayload>(&payload);
+            match payload_result {
+                Ok(payload) => {
+                    helper_create_self_issued_presentation(payload.unsigned_credential).await
                 }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }

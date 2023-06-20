@@ -32,6 +32,7 @@
 - add `helper_verify_presentation`
 - add support for `required_reveal_statements` in `vade-evan-bbs`
 - adjust `helper_create_self_issued_credential` to create credentials without proof.
+- add helper function `helper_create_self_issued_presentation` function
 
 ### Fixes
 

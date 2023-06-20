@@ -284,6 +284,16 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(all(feature = "vc-zkp-bbs"))]
+            ("create_self_issued_presentation", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_self_issued_presentation(get_argument_value(
+                        sub_m,
+                        "unsigned_credential",
+                        None,
+                    ))
+                    .await?
+            }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("verify_presentation", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
@@ -436,6 +446,15 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("private_key")?)
                     .arg(get_clap_argument("subject_did")?)
                     .arg(get_clap_argument("revealed_attributes")?)
+            );
+        } else {}
+    }
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "vc-zkp-bbs"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_self_issued_presentation")
+                    .about("Creates a self issued presentation.")
+                    .arg(get_clap_argument("unsigned_credential")?)
             );
         } else {}
     }
@@ -939,6 +958,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("credential")
             .required(true)
             .help("credential to verity")
+            .takes_value(true),
+        "unsigned_credential" => Arg::with_name("unsigned_credential")
+            .long("unsigned_credential")
+            .value_name("unsigned_credential")
+            .required(true)
+            .help("Credential without proof")
             .takes_value(true),
         "master_secret" => Arg::with_name("master_secret")
             .long("master_secret")

@@ -655,6 +655,79 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
+    /// Creates a self issued presention.
+    /// The presentation doesn't contain proof.
+    ///
+    /// # Arguments
+    ///
+    /// * `unsigned_credential` - unsigned_credential to be shared in presentation
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///         const UNSIGNED_CREDENTIAL: &str = r###"{
+    ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+    ///             "type": [
+    ///                 "VerifiableCredential"
+    ///             ],
+    ///             "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///             "@context": [
+    ///                 "https://www.w3.org/2018/credentials/v1",
+    ///                 "https://schema.org/",
+    ///                 "https://w3id.org/vc-revocation-list-2020/v1"
+    ///             ],
+    ///             "issuanceDate": "2023-02-01T14:08:09.849Z",
+    ///             "credentialSchema": {
+    ///                 "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+    ///                 "type": "EvanVCSchema"
+    ///             },
+    ///             "credentialStatus": {
+    ///                 "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+    ///                 "type": "RevocationList2020Status",
+    ///                 "revocationListIndex": "4",
+    ///                 "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+    ///             },
+    ///             "credentialSubject": {
+    ///                 "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                 "data": {
+    ///                     "bio": "biography"
+    ///                 }
+    ///             }
+    ///         }"###;
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///
+    ///             let presentation_result = vade_evan
+    ///               .helper_create_self_issued_presentation(
+    ///                  UNSIGNED_CREDENTIAL
+    ///                )
+    ///                .await;
+    ///
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+    pub async fn helper_create_self_issued_presentation(
+        &mut self,
+        unsigned_credential_str: &str,
+    ) -> Result<String, VadeEvanError> {
+        use crate::helpers::Presentation;
+
+        let mut presentation_helper = Presentation::new(self)?;
+        presentation_helper
+            .create_self_issued_presentation(unsigned_credential_str)
+            .await
+            .map_err(|err| err.into())
+    }
+
     /// Verifies a presentation.
     /// The function checks if the presentation is valid against the provided proof request.
     ///

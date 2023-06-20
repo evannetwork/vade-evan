@@ -687,6 +687,25 @@ pub extern "C" fn execute_vade(
             }
         }),
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_self_issued_presentation" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_create_self_issued_presentation(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_verify_presentation" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
