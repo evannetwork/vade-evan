@@ -255,6 +255,8 @@ cfg_if::cfg_if! {
         #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
         #[cfg(feature = "vc-zkp-bbs")]
+        create_function!(vc_zkp_propose_proof, did_or_method, options, payload, config);
+        #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
         #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_revoke_credential, did_or_method, options, payload, config);
@@ -615,6 +617,10 @@ pub async fn execute_vade(
         #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_request_credential" => {
             vc_zkp_request_credential(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_propose_proof" => {
+            vc_zkp_propose_proof(did_or_method, options, payload, config).await
         }
         #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_request_proof" => {

@@ -156,6 +156,10 @@ async fn main() -> Result<()> {
                 wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
             #[cfg(feature = "vc-zkp-bbs")]
+            ("propose_proof", Some(sub_m)) => {
+                wrap_vade3!(vc_zkp_propose_proof, sub_m)
+            }
+            #[cfg(feature = "vc-zkp-bbs")]
             ("request_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
@@ -684,6 +688,20 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("request_credential")
                     .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("propose_proof")
+                    .about("Proposes a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof proposal consists of the fields the verifier wants to be revealed per schema and can be used as input for a proof request.")
                     .arg(get_clap_argument("method")?)
                     .arg(get_clap_argument("options")?)
                     .arg(get_clap_argument("payload")?)

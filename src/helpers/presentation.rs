@@ -12,6 +12,7 @@ use vade_evan_bbs::{
     PresentProofPayload,
     ProofPresentation,
     RequestProofPayload,
+    RequestProofPayloadFromScratch,
     VerifyProofPayload,
 };
 
@@ -109,13 +110,14 @@ impl<'a> Presentation<'a> {
                 ))
             })
             .transpose()?;
-        let proof_request_payload = RequestProofPayload {
-            verifier_did: None,
-            schemas: vec![schema_did.to_string()],
-            reveal_attributes: self
-                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
-                .await?,
-        };
+        let proof_request_payload =
+            RequestProofPayload::FromScratch(RequestProofPayloadFromScratch {
+                verifier_did: None,
+                schemas: vec![schema_did.to_string()],
+                reveal_attributes: self
+                    .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+                    .await?,
+            });
 
         let proof_request_json = serde_json::to_string(&proof_request_payload).map_err(
             PresentationError::to_serialization_error("RequestProofPayload"),

@@ -26,7 +26,7 @@ required-features = ["target-cli"]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["did-sidetree", "did-substrate", "didcomm", "jwt-vc", "vc-zkp-bbs", "cli"]
+default = ["did-sidetree", "did-substrate", "didcomm", "jwt-vc", "vc-zkp-bbs"]
 
 did-sidetree = ["base64", "did-read", "did-write", "vade-sidetree", "uuid"]
 
@@ -62,7 +62,7 @@ target-c-sdk = ["c-lib", "vade-sidetree/sdk", "didcomm", "did-sidetree", "did-su
 target-c-lib = ["c-lib", "default"]
 
 # build for command line usage
-target-cli = ["default"]
+target-cli = ["cli"]
 
 # build for consuming vade-evan from Java
 target-java-lib = ["c-lib", "default"]
@@ -78,7 +78,7 @@ jni = "0.19.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.53", features = ["preserve_order", "raw_value"] }
 thiserror = "1.0.38"
-vade = "0.1.0"
+vade = "0.1.1"
 chrono = "0.4.23"
 
 ###################################################################### feature specific dependencies
@@ -147,7 +147,8 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "develop"
+# branch = "develop"
+branch = "feature/add-proof-proposals"
 optional = true
 default-features = false
 

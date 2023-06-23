@@ -1305,6 +1305,46 @@ impl VadeEvan {
         )
     }
 
+    /// Proposes a zero-knowledge proof for one or more credentials issued under one or more specific schemas.
+    ///
+    /// # Arguments
+    ///
+    /// * `method` - method to propose a proof for (e.g. "did:example")
+    /// * `options` - JSON string with additional information supporting the proposal (e.g. authentication data)
+    /// * `payload` - JSON string with information for the proposal (e.g. actual data to write)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let result = vade_evan.vc_zkp_propose_proof("did:example", "", "").await?;
+    ///             println!("created proof proposal: {}", result);
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
+    ///     }
+    /// }
+    /// ```
+    pub async fn vc_zkp_propose_proof(
+        &mut self,
+        method: &str,
+        options: &str,
+        payload: &str,
+    ) -> Result<String, VadeEvanError> {
+        get_first_result(
+            self.vade
+                .vc_zkp_propose_proof(method, options, payload)
+                .await?,
+        )
+    }
+
     /// Presents a proof for a zero-knowledge proof credential. A proof presentation is the response to a
     /// proof request.
     ///

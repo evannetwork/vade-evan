@@ -481,6 +481,20 @@ pub extern "C" fn execute_vade(
             )
         }),
         #[cfg(any(feature = "vc-zkp-bbs"))]
+        "vc_zkp_propose_proof" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_propose_proof,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config,
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                ptr_request_list,
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                request_function_callback
+            )
+        }),
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_request_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_proof,
