@@ -64,6 +64,7 @@ pub fn create_draft_credential_from_schema(
         },
         issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
         credential_subject: CredentialSubject {
+            id: None,
             data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
                 .properties
                 .clone()
