@@ -41,6 +41,7 @@
 - fix optional params for did_create
 - fix wasm release and `target-c-sdk` build options
 - update dependencies for critical vulnerabilities
+- fix `helper_create_self_issued_credentials` output for cli
 
 ### Deprecation
 
