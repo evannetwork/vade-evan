@@ -257,7 +257,6 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "credential_subject", None),
                         get_optional_argument_value(sub_m, "exp_date"),
                         get_argument_value(sub_m, "subject_did", None),
-
                     )
                     .await?
             }
