@@ -246,8 +246,7 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "update_key", None),
                         get_argument_value(sub_m, "private_key", None),
                     )
-                    .await?;
-                "".to_string()
+                    .await?
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_self_issued_credential", Some(sub_m)) => {
@@ -257,10 +256,8 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "credential_subject", None),
                         get_optional_argument_value(sub_m, "exp_date"),
                         get_argument_value(sub_m, "subject_did", None),
-
                     )
-                    .await?;
-                "".to_string()
+                    .await?
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_proof_request", Some(sub_m)) => {
@@ -990,7 +987,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "exp_date" => Arg::with_name("exp_date")
             .long("exp_date")
             .value_name("exp_date")
-            .required(true)
+            .required(false)
             .help(r#"expiration date, string, e.g. "1722-12-03T14:23:42.120Z""#)
             .takes_value(true),
         "revealed_attributes" => Arg::with_name("revealed_attributes")

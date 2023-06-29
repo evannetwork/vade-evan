@@ -33,6 +33,7 @@
 - add support for `required_reveal_statements` in `vade-evan-bbs`
 - adjust `helper_create_self_issued_credential` to create credentials without proof.
 - add helper function `helper_create_self_issued_presentation` function
+- update `vade-evan-bbs` dependency for revocation fix
 
 ### Fixes
 
@@ -41,6 +42,8 @@
 - fix optional params for did_create
 - fix wasm release and `target-c-sdk` build options
 - update dependencies for critical vulnerabilities
+- fix revocation credential size increase with every revocation
+- fix cli output for commands 
 
 ### Deprecation
 
