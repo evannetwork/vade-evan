@@ -235,7 +235,8 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "master_secret", None),
                     )
-                    .await?
+                    .await?;
+                "".to_string()
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("revoke_credential", Some(sub_m)) => {
