@@ -4911,7 +4911,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/add-proof-proposals#8f64cc6837718bd5867e63bb916bede469da59d6"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/add-proof-proposals#e74425e3025b3ffcbc95fa8b0b34d86f6df04d4f"
 dependencies = [
  "async-trait",
  "base64 0.13.1",

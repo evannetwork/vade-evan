@@ -271,13 +271,33 @@ async fn main() -> Result<()> {
                 "".to_string()
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
-            ("create_proof_request", Some(sub_m)) => {
+            ("create_proof_proposal", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
-                    .helper_create_proof_request(
+                    .helper_create_proof_proposal(
                         get_argument_value(sub_m, "schema_did", None),
                         get_optional_argument_value(sub_m, "revealed_attributes"),
                     )
                     .await?
+            }
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+            ("create_proof_request", Some(sub_m)) => {
+                let proposal = get_optional_argument_value(sub_m, "proof_proposal");
+
+                match proposal {
+                    Some(value) => {
+                        get_vade_evan(sub_m)?
+                            .helper_create_proof_request_from_proposal(value)
+                            .await?
+                    }
+                    None => {
+                        get_vade_evan(sub_m)?
+                            .helper_create_proof_request(
+                                get_argument_value(sub_m, "schema_did", None),
+                                get_optional_argument_value(sub_m, "revealed_attributes"),
+                            )
+                            .await?
+                    }
+                }
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_presentation", Some(sub_m)) => {
@@ -433,8 +453,9 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_proof_request")
                     .about("Requests a proof for a credential.")
-                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("schema_did_optional")?)
                     .arg(get_clap_argument("revealed_attributes")?)
+                    .arg(get_clap_argument("proof_proposal")?)
             );
         } else {}
     }
@@ -896,6 +917,11 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .required(true)
             .help("schema to create the offer for, e.g. 'did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw'")
             .takes_value(true),
+        "schema_did_optional" => Arg::with_name("schema_did")
+            .long("schema_did")
+            .value_name("schema_did")
+            .help("schema to create the offer for, e.g. 'did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw'")
+            .takes_value(true),
         "use_valid_until" => Arg::with_name("use_valid_until")
             .long("use_valid_until")
             .value_name("use_valid_until")
@@ -1006,6 +1032,11 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .help("list of indices to be made as revealed mandatorily in credential presentation")
             .takes_value(true)
             .required(true),
+        "proof_proposal" => Arg::with_name("proof_proposal")
+            .long("proof_proposal")
+            .value_name("proof_proposal")
+            .help("bbs proof proposal for presentation sharing")
+            .takes_value(true),
         "proof_request" => Arg::with_name("proof_request")
             .long("proof_request")
             .value_name("proof_request")

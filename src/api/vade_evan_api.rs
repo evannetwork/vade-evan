@@ -22,6 +22,8 @@ use vade::Vade;
 use crate::helpers::Credential;
 #[cfg(feature = "did-sidetree")]
 use crate::helpers::Did;
+#[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+use crate::helpers::Presentation;
 #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
 use crate::in3_request_list::ResolveHttpRequest;
 use crate::{
@@ -494,6 +496,107 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
+    /// Proposes to share a proof for a credential.
+    /// The proof proposal consists of the fields the verifier wants to be revealed per schema.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - DID of schema to propose proof for
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema, reveals all if omitted
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofProposal` as JSON
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///             let schema_did = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg";
+    ///             let revealed_attributes = Some(r#"["zip", "country"]"#);
+    ///
+    ///             vade_evan
+    ///                 .helper_create_proof_proposal(schema_did, revealed_attributes)
+    ///                 .await?;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+    pub async fn helper_create_proof_proposal(
+        &mut self,
+        schema_did: &str,
+        revealed_attributes: Option<&str>,
+    ) -> Result<String, VadeEvanError> {
+        let mut presentation_helper = Presentation::new(self)?;
+        presentation_helper
+            .create_proof_proposal(schema_did, revealed_attributes)
+            .await
+            .map_err(|err| err.into())
+    }
+
+    /// Requests a proof for a credential by providing a proof proposal.
+    /// The proof request consists of the fields the verifier wants to be revealed per schema.
+    ///
+    /// # Arguments
+    ///
+    /// * `proof_proposal` - proof proposal to use to generate a proof request from
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofRequest` as JSON
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///
+    ///             let proposal = r###"{
+    ///                 "verifier": "verifier",
+    ///                 "createdAt": "createdAt",
+    ///                 "nonce": "nonce",
+    ///                 "type": "BBS",
+    ///                 "subProofRequests": [{
+    ///                     "schema": "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg",
+    ///                     "revealedAttributes": [13, 15]
+    ///                 }]
+    ///             }"###;
+    ///
+    ///             vade_evan
+    ///                 .helper_create_proof_request_from_proposal(proposal)
+    ///                 .await?;
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+    pub async fn helper_create_proof_request_from_proposal(
+        &mut self,
+        proof_proposal: &str,
+    ) -> Result<String, VadeEvanError> {
+        let mut presentation_helper = Presentation::new(self)?;
+        presentation_helper
+            .create_proof_request_from_proposal(proof_proposal)
+            .await
+            .map_err(|err| err.into())
+    }
+
     /// Requests a proof for a credential.
     /// The proof request consists of the fields the verifier wants to be revealed per schema.
     ///
@@ -534,8 +637,6 @@ impl VadeEvan {
         schema_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        use crate::helpers::Presentation;
-
         let mut presentation_helper = Presentation::new(self)?;
         presentation_helper
             .create_proof_request(schema_did, revealed_attributes)
@@ -639,8 +740,6 @@ impl VadeEvan {
         prover_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, VadeEvanError> {
-        use crate::helpers::Presentation;
-
         let mut presentation_helper = Presentation::new(self)?;
         presentation_helper
             .create_presentation(
@@ -745,8 +844,6 @@ impl VadeEvan {
         presentation_str: &str,
         proof_request_str: &str,
     ) -> Result<String, VadeEvanError> {
-        use crate::helpers::Presentation;
-
         let mut presentation_helper = Presentation::new(self)?;
         presentation_helper
             .verify_presentation(presentation_str, proof_request_str)

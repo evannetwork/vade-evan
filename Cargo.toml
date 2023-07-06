@@ -26,7 +26,7 @@ required-features = ["target-cli"]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [features]
-default = ["did-sidetree", "did-substrate", "didcomm", "jwt-vc", "vc-zkp-bbs"]
+default = ["did-sidetree", "did-substrate", "didcomm", "jwt-vc", "vc-zkp-bbs", "target-cli"]
 
 did-sidetree = ["base64", "did-read", "did-write", "vade-sidetree", "uuid"]
 
