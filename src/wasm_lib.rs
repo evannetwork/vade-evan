@@ -153,11 +153,17 @@ struct HelperCreateSelfIssuedCredentialPayload {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct HelperCreateProofRequestFomScratchPayload {
+struct HelperCreateProofProposalPayload {
     pub schema_did: String,
     pub revealed_attributes: Option<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateProofRequestFomScratchPayload {
+    pub schema_did: String,
+    pub revealed_attributes: Option<String>,
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -783,7 +789,7 @@ pub async fn execute_vade(
         }
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_proof_proposal" => {
-            let payload_result = parse::<HelperCreateProofRequestPayload>(&payload);
+            let payload_result = parse::<HelperCreateProofProposalPayload>(&payload);
             match payload_result {
                 Ok(payload) =>
                     helper_create_proof_proposal(payload.schema_did, payload.revealed_attributes).await,
