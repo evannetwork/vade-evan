@@ -42,6 +42,7 @@
 - fix wasm release and `target-c-sdk` build options
 - update dependencies for critical vulnerabilities
 - fix revocation credential size increase with every revocation
+- fix cli output for commands 
 
 ### Deprecation
 
