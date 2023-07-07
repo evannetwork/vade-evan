@@ -497,7 +497,7 @@ impl VadeEvan {
     }
 
     /// Proposes to share a proof for a credential.
-    /// The proof proposal consists of the fields the verifier wants to be revealed per schema.
+    /// The proof proposal consists of the fields the prover wants to reveal per schema.
     ///
     /// # Arguments
     ///
