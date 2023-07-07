@@ -4838,7 +4838,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=feature/update-presentation-proposal-data-format#24fa2a09c3837e5664f35d3c1839106ab8a80a1e"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#a81044280dda775afea8846b00db99824c7daf79"
 dependencies = [
  "async-trait",
  "bs58",
@@ -4911,7 +4911,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/add-proof-proposals#e74425e3025b3ffcbc95fa8b0b34d86f6df04d4f"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#2c977854b0ce03af63a98ce62aa9997b68b34604"
 dependencies = [
  "async-trait",
  "base64 0.13.1",

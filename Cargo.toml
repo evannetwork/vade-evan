@@ -103,8 +103,7 @@ optional = true
 # didcomm
 [dependencies.vade-didcomm]
 git = "https://github.com/evannetwork/vade-didcomm.git"
-# branch = "develop"
-branch = "feature/update-presentation-proposal-data-format"
+branch = "develop"
 optional = true
 
 # jwt-vc
@@ -148,8 +147,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-# branch = "develop"
-branch = "feature/add-proof-proposals"
+branch = "develop"
 optional = true
 default-features = false
 
