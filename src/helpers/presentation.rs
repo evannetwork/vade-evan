@@ -11,7 +11,9 @@ use vade_evan_bbs::{
     CredentialSchema,
     PresentProofPayload,
     ProofPresentation,
+    ProposeProofPayload,
     RequestProofPayload,
+    RequestProofPayloadFromScratch,
     VerifyProofPayload,
 };
 
@@ -85,6 +87,67 @@ impl<'a> Presentation<'a> {
         Ok(Self { vade_evan })
     }
 
+    /// Proposes to issue a proof for a credential.
+    /// The proof proposal consists of the fields the verifier wants to be revealed per schema.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_did` - DID of schema to request proof for
+    /// * `revealed_attributes` - list of names of revealed attributes in specified schema, reveals all if omitted
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofProposal` as JSON
+    pub async fn create_proof_proposal(
+        &mut self,
+        schema_did: &str,
+        revealed_attributes: Option<&str>,
+    ) -> Result<String, PresentationError> {
+        let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
+        let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
+            .map(|ras| {
+                serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
+                    "revealed attributes",
+                    ras,
+                ))
+            })
+            .transpose()?;
+        let proof_proposal_payload = ProposeProofPayload {
+            verifier_did: None,
+            schemas: vec![schema_did.to_string()],
+            reveal_attributes: self
+                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+                .await?,
+        };
+
+        let proof_proposal_json = serde_json::to_string(&proof_proposal_payload).map_err(
+            PresentationError::to_serialization_error("ProposeProofPayload"),
+        )?;
+
+        self.vade_evan
+            .vc_zkp_propose_proof(EVAN_METHOD, TYPE_OPTIONS, &proof_proposal_json)
+            .await
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
+    }
+
+    /// Requests a proof for a credential by providing a proposal.
+    /// The proof request consists of the fields the verifier wants to be revealed per schema.
+    ///
+    /// # Arguments
+    ///
+    /// * `proof_proposal` - proof proposal to use to generate a proof request from
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `ProofRequest` as JSON
+    pub async fn create_proof_request_from_proposal(
+        &mut self,
+        proof_proposal: &str,
+    ) -> Result<String, PresentationError> {
+        self.vade_evan
+            .vc_zkp_request_proof(EVAN_METHOD, TYPE_OPTIONS, proof_proposal)
+            .await
+            .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
+    }
+
     /// Requests a proof for a credential.
     /// The proof request consists of the fields the verifier wants to be revealed per schema.
     ///
@@ -109,13 +172,14 @@ impl<'a> Presentation<'a> {
                 ))
             })
             .transpose()?;
-        let proof_request_payload = RequestProofPayload {
-            verifier_did: None,
-            schemas: vec![schema_did.to_string()],
-            reveal_attributes: self
-                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
-                .await?,
-        };
+        let proof_request_payload =
+            RequestProofPayload::FromScratch(RequestProofPayloadFromScratch {
+                verifier_did: None,
+                schemas: vec![schema_did.to_string()],
+                reveal_attributes: self
+                    .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+                    .await?,
+            });
 
         let proof_request_json = serde_json::to_string(&proof_request_payload).map_err(
             PresentationError::to_serialization_error("RequestProofPayload"),
@@ -153,7 +217,7 @@ impl<'a> Presentation<'a> {
 
         let credential = presentation.verifiable_credential.get(0).ok_or_else(|| {
             PresentationError::InvalidPresentationError(
-                "Credentail not found in presentation".to_owned(),
+                "Credential not found in presentation".to_owned(),
             )
         })?;
 
@@ -436,7 +500,12 @@ impl<'a> Presentation<'a> {
 mod tests_proof_request {
 
     use anyhow::Result;
-    use vade_evan_bbs::{BbsProofRequest, BbsProofVerification};
+    use vade_evan_bbs::{
+        BbsProofProposal,
+        BbsProofRequest,
+        BbsProofVerification,
+        BbsSubProofRequest,
+    };
 
     use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
 
@@ -489,6 +558,41 @@ mod tests_proof_request {
            "signature":"sZTYWUrmYaVDUGs1L2UM/7f7UlVLSQS2vPQQG1YWU3TQRlcviNXFDx054zztzG8rWc1lw5e+SJNo4c1x+rpOFiXBjjK6IukN3a0zG5c/ayFbIQ6OVjxV7noWX8aTdNXNO5eyVV2Upd1YB4WGAuUO0w=="
         }
     }"###;
+
+    #[tokio::test]
+    async fn helper_can_create_proof_request_from_proposal() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let proposal = BbsProofProposal {
+            verifier: Some("verifier".to_string()),
+            created_at: "created_at".to_string(),
+            nonce: "nonce".to_string(),
+            r#type: "BBS".to_string(),
+            sub_proof_requests: vec![BbsSubProofRequest {
+                schema: SCHEMA_DID.to_string(),
+                revealed_attributes: vec![13, 15],
+            }],
+        };
+        let proposal_str = serde_json::to_string(&proposal)?;
+
+        let result = presentation
+            .create_proof_request_from_proposal(&proposal_str)
+            .await;
+
+        assert!(result.is_ok());
+        let mut parsed: BbsProofRequest = serde_json::from_str(&result?)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [13, 15],);
+
+        Ok(())
+    }
+
     #[tokio::test]
     async fn helper_can_create_proof_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
