@@ -779,7 +779,7 @@ mod tests {
             .await?;
         let did_create_result: DidCreateResponse = serde_json::from_str(&did_create_result)?;
         let mut credential: BbsCredential = serde_json::from_str(CREDENTIAL_ACTIVE)?;
-        let mut credential_status = credential.credential_status.ok_or_else(|| {
+        let credential_status = &mut credential.credential_status.ok_or_else(|| {
             CredentialError::InvalidCredentialStatus(
                 "Error in parsing credential_status".to_string(),
             )

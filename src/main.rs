@@ -156,6 +156,10 @@ async fn main() -> Result<()> {
                 wrap_vade3!(vc_zkp_request_credential, sub_m)
             }
             #[cfg(feature = "vc-zkp-bbs")]
+            ("propose_proof", Some(sub_m)) => {
+                wrap_vade3!(vc_zkp_propose_proof, sub_m)
+            }
+            #[cfg(feature = "vc-zkp-bbs")]
             ("request_proof", Some(sub_m)) => {
                 wrap_vade3!(vc_zkp_request_proof, sub_m)
             }
@@ -260,13 +264,33 @@ async fn main() -> Result<()> {
                     .await?
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
-            ("create_proof_request", Some(sub_m)) => {
+            ("create_proof_proposal", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
-                    .helper_create_proof_request(
+                    .helper_create_proof_proposal(
                         get_argument_value(sub_m, "schema_did", None),
                         get_optional_argument_value(sub_m, "revealed_attributes"),
                     )
                     .await?
+            }
+            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+            ("create_proof_request", Some(sub_m)) => {
+                let proposal = get_optional_argument_value(sub_m, "proof_proposal");
+
+                match proposal {
+                    Some(value) => {
+                        get_vade_evan(sub_m)?
+                            .helper_create_proof_request_from_proposal(value)
+                            .await?
+                    }
+                    None => {
+                        get_vade_evan(sub_m)?
+                            .helper_create_proof_request(
+                                get_argument_value(sub_m, "schema_did", None),
+                                get_optional_argument_value(sub_m, "revealed_attributes"),
+                            )
+                            .await?
+                    }
+                }
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_presentation", Some(sub_m)) => {
@@ -425,10 +449,21 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
-                SubCommand::with_name("create_proof_request")
-                    .about("Requests a proof for a credential.")
+                SubCommand::with_name("create_proof_proposal")
+                    .about("Proposes a proof for a credential.")
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("revealed_attributes")?)
+            );
+        } else {}
+    }
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_proof_request")
+                    .about("Requests a proof for a credential.")
+                    .arg(get_clap_argument("schema_did_optional")?)
+                    .arg(get_clap_argument("revealed_attributes")?)
+                    .arg(get_clap_argument("proof_proposal")?)
             );
         } else {}
     }
@@ -703,6 +738,20 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "vc-zkp-bbs")] {
             subcommand = subcommand.subcommand(
+                SubCommand::with_name("propose_proof")
+                    .about("Proposes a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof proposal consists of the fields the verifier wants to be revealed per schema and can be used as input for a proof request.")
+                    .arg(get_clap_argument("method")?)
+                    .arg(get_clap_argument("options")?)
+                    .arg(get_clap_argument("payload")?)
+                    .arg(get_clap_argument("target")?)
+                    .arg(get_clap_argument("signer")?),
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "vc-zkp-bbs")] {
+            subcommand = subcommand.subcommand(
                 SubCommand::with_name("request_proof")
                     .about("Requests a zero-knowledge proof for one or more credentials issued under one or more specific schemas and is sent by a verifier to a prover. The proof request consists of the fields the verifier wants to be revealed per schema.")
                     .arg(get_clap_argument("method")?)
@@ -885,6 +934,11 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .required(true)
             .help("schema to create the offer for, e.g. 'did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw'")
             .takes_value(true),
+        "schema_did_optional" => Arg::with_name("schema_did")
+            .long("schema_did")
+            .value_name("schema_did")
+            .help("schema to create the offer for, e.g. 'did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw'")
+            .takes_value(true),
         "use_valid_until" => Arg::with_name("use_valid_until")
             .long("use_valid_until")
             .value_name("use_valid_until")
@@ -1001,6 +1055,11 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .help("list of indices to be made as revealed mandatorily in credential presentation")
             .takes_value(true)
             .required(true),
+        "proof_proposal" => Arg::with_name("proof_proposal")
+            .long("proof_proposal")
+            .value_name("proof_proposal")
+            .help("bbs proof proposal for presentation sharing")
+            .takes_value(true),
         "proof_request" => Arg::with_name("proof_request")
             .long("proof_request")
             .value_name("proof_request")

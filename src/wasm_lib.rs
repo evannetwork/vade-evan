@@ -21,6 +21,7 @@ use serde::{
     {Deserialize, Serialize},
 };
 use std::{collections::HashMap, error::Error};
+use vade_evan_bbs::BbsProofProposal;
 use wasm_bindgen::prelude::*;
 
 macro_rules! create_function {
@@ -147,9 +148,23 @@ struct HelperCreateSelfIssuedCredentialPayload {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct HelperCreateProofRequestPayload {
+struct HelperCreateProofProposalPayload {
     pub schema_did: String,
     pub revealed_attributes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateProofRequestFomScratchPayload {
+    pub schema_did: String,
+    pub revealed_attributes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum HelperCreateProofRequestPayload {
+    FromScratch(HelperCreateProofRequestFomScratchPayload),
+    FromProposal(BbsProofProposal),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -254,6 +269,8 @@ cfg_if::cfg_if! {
         create_function!(vc_zkp_present_proof, did_or_method, options, payload, config);
         #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_credential, did_or_method, options, payload, config);
+        #[cfg(feature = "vc-zkp-bbs")]
+        create_function!(vc_zkp_propose_proof, did_or_method, options, payload, config);
         #[cfg(feature = "vc-zkp-bbs")]
         create_function!(vc_zkp_request_proof, did_or_method, options, payload, config);
         #[cfg(feature = "vc-zkp-bbs")]
@@ -423,6 +440,21 @@ cfg_if::cfg_if! {
 
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
+        pub async fn helper_create_proof_proposal(
+            schema_did: String,
+            revealed_attributes: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_proof_proposal(
+                    &schema_did,
+                    revealed_attributes.as_deref(),
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
         pub async fn helper_create_proof_request(
             schema_did: String,
             revealed_attributes: Option<String>,
@@ -433,6 +465,18 @@ cfg_if::cfg_if! {
                     &schema_did,
                     revealed_attributes.as_deref(),
                 ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_proof_request_from_proposal(
+            proposal: &str,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_proof_request_from_proposal(proposal)
+                .await
                 .map_err(jsify_vade_evan_error)?)
         }
 
@@ -621,6 +665,10 @@ pub async fn execute_vade(
             vc_zkp_request_credential(did_or_method, options, payload, config).await
         }
         #[cfg(feature = "vc-zkp-bbs")]
+        "vc_zkp_propose_proof" => {
+            vc_zkp_propose_proof(did_or_method, options, payload, config).await
+        }
+        #[cfg(feature = "vc-zkp-bbs")]
         "vc_zkp_request_proof" => {
             vc_zkp_request_proof(did_or_method, options, payload, config).await
         }
@@ -739,13 +787,28 @@ pub async fn execute_vade(
             }
         }
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_proof_proposal" => {
+            let payload_result = parse::<HelperCreateProofProposalPayload>(&payload);
+            match payload_result {
+                Ok(payload) =>
+                    helper_create_proof_proposal(payload.schema_did, payload.revealed_attributes).await,
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_proof_request" => {
             let payload_result = parse::<HelperCreateProofRequestPayload>(&payload);
             match payload_result {
-                Ok(payload) => {
-                    helper_create_proof_request(payload.schema_did, payload.revealed_attributes)
-                        .await
-                }
+                Ok(parsed_value) =>
+                    match parsed_value {
+                        HelperCreateProofRequestPayload::FromScratch(from_scratch) =>
+                            helper_create_proof_request(from_scratch.schema_did, from_scratch.revealed_attributes).await,
+                        HelperCreateProofRequestPayload::FromProposal(proposal) =>
+                            match serde_json::to_string(&proposal) {
+                                Ok(stringified) => helper_create_proof_request_from_proposal(&stringified).await,
+                                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+                            },
+                    },
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }

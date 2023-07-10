@@ -8,6 +8,7 @@ use vade_evan_bbs::{
     CredentialSchemaReference,
     CredentialStatus,
     CredentialSubject,
+    PrefixedUuid,
     UnsignedBbsCredential,
 };
 
@@ -54,7 +55,7 @@ pub fn create_draft_credential_from_schema(
             "https://schema.org/".to_string(),
             "https://w3id.org/vc-revocation-list-2020/v1".to_string(),
         ],
-        id: "uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string(),
+        id: PrefixedUuid::new("uuid:834ca9da-9f09-4359-8264-c890de13cdc8".to_string()),
         r#type: vec!["VerifiableCredential".to_string()],
         issuer: "did:evan:testcore:placeholder_issuer".to_string(),
         valid_until: if use_valid_until {
@@ -64,6 +65,7 @@ pub fn create_draft_credential_from_schema(
         },
         issuance_date: "2021-01-01T00:00:00.000Z".to_string(),
         credential_subject: CredentialSubject {
+            id: None,
             data: schema // fill ALL subject data fields with empty string (mandatory and optional ones)
                 .properties
                 .clone()
