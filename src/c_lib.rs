@@ -481,6 +481,20 @@ pub extern "C" fn execute_vade(
             )
         }),
         #[cfg(any(feature = "vc-zkp-bbs"))]
+        "vc_zkp_propose_proof" => runtime.block_on({
+            execute_vade_function!(
+                vc_zkp_propose_proof,
+                arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                &str_options,
+                arguments_vec.get(1).unwrap_or_else(|| &no_args),
+                str_config,
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                ptr_request_list,
+                #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                request_function_callback
+            )
+        }),
+        #[cfg(any(feature = "vc-zkp-bbs"))]
         "vc_zkp_request_proof" => runtime.block_on({
             execute_vade_function!(
                 vc_zkp_request_proof,
@@ -643,6 +657,27 @@ pub extern "C" fn execute_vade(
             }
         }),
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_create_proof_proposal" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+
+                vade_evan
+                    .helper_create_proof_proposal(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(1).map(|v| v.as_str()),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)
+            }
+        }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         "helper_create_proof_request" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(
@@ -653,13 +688,23 @@ pub extern "C" fn execute_vade(
                     request_function_callback,
                 )
                 .map_err(stringify_generic_error)?;
-                vade_evan
-                    .helper_create_proof_request(
-                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
-                        arguments_vec.get(1).map(|v| v.as_str()),
-                    )
-                    .await
-                    .map_err(stringify_vade_evan_error)
+
+                let first_arg = arguments_vec.get(0).unwrap_or_else(|| &no_args);
+                match first_arg.starts_with("did:") {
+                    // first arg starts with "did:", assume it's a schema
+                    true => vade_evan
+                        .helper_create_proof_request(
+                            first_arg,
+                            arguments_vec.get(1).map(|v| v.as_str()),
+                        )
+                        .await
+                        .map_err(stringify_vade_evan_error),
+                    // else assume it's a proposal
+                    false => vade_evan
+                        .helper_create_proof_request_from_proposal(first_arg)
+                        .await
+                        .map_err(stringify_vade_evan_error),
+                }
             }
         }),
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]

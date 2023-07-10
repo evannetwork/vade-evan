@@ -4,6 +4,8 @@
 
 ### Features
 
+- add support for `vc_zkp_propose_proof` function in `vade-evan-bbs` plugin
+
 ### Fixes
 
 ### Deprecation
