@@ -449,6 +449,16 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     cfg_if::cfg_if! {
         if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
             subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_proof_proposal")
+                    .about("Proposes a proof for a credential.")
+                    .arg(get_clap_argument("schema_did")?)
+                    .arg(get_clap_argument("revealed_attributes")?)
+            );
+        } else {}
+    }
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
+            subcommand = subcommand.subcommand(
                 SubCommand::with_name("create_proof_request")
                     .about("Requests a proof for a credential.")
                     .arg(get_clap_argument("schema_did_optional")?)
