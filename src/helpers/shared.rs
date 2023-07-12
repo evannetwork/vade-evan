@@ -98,3 +98,15 @@ pub fn check_for_optional_empty_params(param: Option<&str>) -> Option<&str> {
         _ => None,
     }
 }
+
+/// Checks if given value is a DID
+///
+/// # Arguments
+///
+/// * `to_check` - input value to check
+///
+/// # Returns
+/// `true` if DID, otherwise
+pub fn is_did(to_check: &str) -> bool {
+    to_check.starts_with("did:")
+}
