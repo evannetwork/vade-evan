@@ -86,10 +86,10 @@ const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
 /// # Arguments
 ///
 /// * `to_check` - input value to check
-/// * `to_check` - name of the input to check, used for log message
+/// * `name` - name of the input to check, used for log message
 ///
 /// # Returns
-/// `()`or `PresentationError::NotADid`
+/// `()` or `PresentationError::NotADid`
 pub fn fail_if_not_a_did(to_check: &str, name: &str) -> Result<(), PresentationError> {
     if !is_did(to_check) {
         return Err(PresentationError::NotADid(

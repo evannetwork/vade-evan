@@ -89,10 +89,10 @@ fn get_public_key_generator(
 /// # Arguments
 ///
 /// * `to_check` - input value to check
-/// * `to_check` - name of the input to check, used for log message
+/// * `name` - name of the input to check, used for log message
 ///
 /// # Returns
-/// `()`or `CredentialError::NotADid`
+/// `()` or `CredentialError::NotADid`
 pub fn fail_if_not_a_did(to_check: &str, name: &str) -> Result<(), CredentialError> {
     if !is_did(to_check) {
         return Err(CredentialError::NotADid(
