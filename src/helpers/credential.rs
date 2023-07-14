@@ -3,7 +3,7 @@ use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
-use super::shared::{check_for_optional_empty_params, convert_to_nquads, SharedError};
+use super::shared::{check_for_optional_empty_params, convert_to_nquads, is_did, SharedError};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
@@ -60,6 +60,8 @@ pub enum CredentialError {
     CredentialRevoked,
     #[error("wrong number of messages in credential, got {0} but proof was created for {1}")]
     MessageCountMismatch(usize, usize),
+    #[error(r#"value "{0}" given for "{1} is not a DID""#)]
+    NotADid(String, String),
 }
 
 // Master secret is always incorporated, without being mentioned in the credential schema
@@ -80,6 +82,25 @@ fn get_public_key_generator(
     })?;
 
     Ok(public_key_generator)
+}
+
+/// Checks if input is a DID and returns a `CredentialError::NotADid` if not.
+///
+/// # Arguments
+///
+/// * `to_check` - input value to check
+/// * `name` - name of the input to check, used for log message
+///
+/// # Returns
+/// `()` or `CredentialError::NotADid`
+pub fn fail_if_not_a_did(to_check: &str, name: &str) -> Result<(), CredentialError> {
+    if !is_did(to_check) {
+        return Err(CredentialError::NotADid(
+            to_check.to_owned(),
+            name.to_owned(),
+        ));
+    }
+    Ok(())
 }
 
 pub fn is_revoked(
@@ -130,6 +151,8 @@ impl<'a> Credential<'a> {
         is_credential_status_included: bool,
         required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
+        fail_if_not_a_did(issuer_did, "issuer_did")?;
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements)
             .map_err(|err| CredentialError::JsonDeSerialization(err))?;
@@ -171,6 +194,7 @@ impl<'a> Credential<'a> {
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(credential_schema_did, "credential_schema_did")?;
         let credential_schema: CredentialSchema =
             self.get_did_document(credential_schema_did).await?;
 
@@ -352,6 +376,12 @@ impl<'a> Credential<'a> {
         subject_did: &str,
         required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
+        fail_if_not_a_did(subject_did, "subject_did")?;
+        match credential_revocation_did {
+            Some(value) => fail_if_not_a_did(value, "credential_revocation_did")?,
+            None => (),
+        };
         let credential_revocation_did = check_for_optional_empty_params(credential_revocation_did);
         let credential_revocation_id = check_for_optional_empty_params(credential_revocation_id);
         let exp_date = check_for_optional_empty_params(exp_date);
@@ -471,6 +501,7 @@ impl<'a> Credential<'a> {
     where
         T: DeserializeOwned,
     {
+        fail_if_not_a_did(did, "did for did document")?;
         let did_result_str = self
             .vade_evan
             .did_resolve(did)
@@ -495,6 +526,7 @@ impl<'a> Credential<'a> {
         issuer_did: &str,
         verification_method_id: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(issuer_did, "issuer_did")?;
         let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
@@ -689,6 +721,30 @@ mod tests {
             const VERIFICATION_METHOD_ID: &str = "#bbs-key-1";
         } else {
         }
+    }
+
+    #[tokio::test]
+    async fn helper_cannot_create_proof_request_with_invalid_did() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        let result = credential
+            .create_credential_offer("not a did", false, ISSUER_DID, true, "[1]")
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Ok(_) => assert!(false, "expected error but got result"),
+            Err(error) => assert_eq!(
+                error.to_string(),
+                r#"value "not a did" given for "schema_did is not a DID""#.to_string()
+            ),
+        };
+
+        Ok(())
     }
 
     #[tokio::test]

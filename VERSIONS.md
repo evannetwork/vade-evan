@@ -5,6 +5,7 @@
 ### Features
 
 - add support for `vc_zkp_propose_proof` function in `vade-evan-bbs` plugin
+- add checks to ensure inputs that are supposed to be DIDs are really DIDs
 
 ### Fixes
 
@@ -42,7 +43,7 @@
 - fix wasm release and `target-c-sdk` build options
 - update dependencies for critical vulnerabilities
 - fix revocation credential size increase with every revocation
-- fix cli output for commands 
+- fix cli output for commands
 
 ### Deprecation
 
