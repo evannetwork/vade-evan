@@ -573,6 +573,7 @@ mod tests_proof_request {
         BbsProofRequest,
         BbsProofVerification,
         BbsSubProofRequest,
+        ProofPresentation,
     };
 
     use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
@@ -834,6 +835,42 @@ mod tests_proof_request {
             .await;
         assert!(presentation_result.is_ok());
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_create_presentation_and_skip_proof_if_no_prover() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let proof_request_result = presentation
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["test_property_string2"]"#))
+            .await;
+
+        assert!(proof_request_result.is_ok());
+        let proof_request_str = &proof_request_result?;
+        let mut parsed: BbsProofRequest = serde_json::from_str(proof_request_str)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [12],);
+
+        let presentation_result = presentation
+            .create_presentation(
+                proof_request_str,
+                CREDENTIAL,
+                MASTER_SECRET,
+                None,
+                None,
+                None,
+            )
+            .await;
+        assert!(presentation_result.is_ok());
+        let presentation: ProofPresentation = serde_json::from_str(&presentation_result?)?;
+        assert!(presentation.proof.is_none());
         Ok(())
     }
 
