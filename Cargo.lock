@@ -4911,7 +4911,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=experimental/develop-next#78e1ab90424b6931c8c3590fb9ed07d916847789"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/remove-additional-proof-gen-from-presentations#16cc78106dac628ddeadab269dff477b3106a2ed"
 dependencies = [
  "async-trait",
  "base64 0.13.1",

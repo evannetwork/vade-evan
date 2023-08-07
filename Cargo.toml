@@ -147,7 +147,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "experimental/develop-next"
+branch = "feature/remove-additional-proof-gen-from-presentations"
 optional = true
 default-features = false
 

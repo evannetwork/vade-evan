@@ -718,8 +718,8 @@ impl VadeEvan {
     ///                   &proof_request_str,
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
-    ///                   SIGNER_PRIVATE_KEY,
-    ///                   PROVER_DID,
+    ///                   Some(SIGNER_PRIVATE_KEY),
+    ///                   Some(PROVER_DID),
     ///                   None,
     ///                )
     ///                .await;
@@ -736,8 +736,8 @@ impl VadeEvan {
         proof_request_str: &str,
         credential_str: &str,
         master_secret: &str,
-        signing_key: &str,
-        prover_did: &str,
+        signing_key: Option<&str>,
+        prover_did: Option<&str>,
         revealed_attributes: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut presentation_helper = Presentation::new(self)?;

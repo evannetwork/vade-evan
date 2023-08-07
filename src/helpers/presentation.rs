@@ -329,8 +329,8 @@ impl<'a> Presentation<'a> {
         proof_request_str: &str,
         credential_str: &str,
         master_secret: &str,
-        signing_key: &str,
-        prover_did: &str,
+        signing_key: Option<&str>,
+        prover_did: Option<&str>,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
         let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
@@ -413,9 +413,12 @@ impl<'a> Presentation<'a> {
             revealed_properties_schema_map,
             public_key_schema_map,
             master_secret: master_secret.to_owned(),
-            prover_did: prover_did.to_owned(),
-            prover_public_key_did: format!("{}#key-1", prover_did.to_owned()),
-            prover_proving_key: signing_key.to_owned(),
+            prover_did: prover_did.map(|x| x.to_owned()),
+            prover_public_key_did: match prover_did {
+                Some(did) => Some(format!("{}#key-1", did.to_owned())),
+                _ => None,
+            },
+            prover_proving_key: signing_key.map(|x| x.to_owned()),
         };
 
         let payload = serde_json::to_string(&present_proof_payload).map_err(|err| {
@@ -824,8 +827,8 @@ mod tests_proof_request {
                 proof_request_str,
                 CREDENTIAL,
                 MASTER_SECRET,
-                SIGNER_PRIVATE_KEY,
-                SUBJECT_DID,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
                 None,
             )
             .await;
@@ -899,8 +902,8 @@ mod tests_proof_request {
                 proof_request_str,
                 CREDENTIAL,
                 MASTER_SECRET,
-                SIGNER_PRIVATE_KEY,
-                SUBJECT_DID,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
                 None,
             )
             .await;
@@ -935,8 +938,8 @@ mod tests_proof_request {
                 &proof_request_result?,
                 CREDENTIAL,
                 MASTER_SECRET,
-                SIGNER_PRIVATE_KEY,
-                SUBJECT_DID,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
                 None,
             )
             .await;
