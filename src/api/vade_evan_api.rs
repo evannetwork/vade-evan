@@ -896,8 +896,8 @@ impl VadeEvan {
     ///                   &proof_request_str,
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
-    ///                   SIGNER_PRIVATE_KEY,
-    ///                   PROVER_DID,
+    ///                   Some(SIGNER_PRIVATE_KEY),
+    ///                   Some(PROVER_DID),
     ///                   None,
     ///                )
     ///                .await?;
