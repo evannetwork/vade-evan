@@ -166,7 +166,7 @@ struct HelperCreateProofRequestFomScratchPayload {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", untagged)]
 enum HelperCreateProofRequestPayload {
     FromScratch(HelperCreateProofRequestFomScratchPayload),
     FromProposal(BbsProofProposal),
