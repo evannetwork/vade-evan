@@ -9,7 +9,24 @@
 
 ### Fixes
 
+- fix timestamp generation for `vade-didcomm` in `wasm` build
+
 ### Deprecation
+
+## Release candidates
+
+## 0.6.0-rc.6
+
+### Fixes
+
+- fix timestamp generation for `vade-didcomm` in `wasm` build
+
+## 0.6.0-rc.5
+
+### Features
+
+- add support for `vc_zkp_propose_proof` function in `vade-evan-bbs` plugin
+- add checks to ensure inputs that are supposed to be DIDs are really DIDs
 
 ## v0.5.0
 
