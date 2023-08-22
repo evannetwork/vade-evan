@@ -173,8 +173,8 @@ struct HelperCreatePresentationPayload {
     pub proof_request_str: String,
     pub credential_str: String,
     pub master_secret: String,
-    pub signing_key: String,
-    pub prover_did: String,
+    pub signing_key: Option<String>,
+    pub prover_did: Option<String>,
     pub revealed_attributes: Option<String>,
 }
 #[derive(Serialize, Deserialize)]
@@ -486,8 +486,8 @@ cfg_if::cfg_if! {
             proof_request_str:String,
             credential_str: String,
             master_secret: String,
-            signing_key: String,
-            prover_did: String,
+            signing_key: Option<String>,
+            prover_did: Option<String>,
             revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -496,8 +496,8 @@ cfg_if::cfg_if! {
                     &proof_request_str,
                     &credential_str,
                     &master_secret,
-                    &signing_key,
-                    &prover_did,
+                    signing_key.as_deref(),
+                    prover_did.as_deref(),
                     revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
