@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json::{value::Value, Map};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -14,6 +15,7 @@ use vade_evan_bbs::{
     ProposeProofPayload,
     RequestProofPayload,
     RequestProofPayloadFromScratch,
+    UnsignedBbsCredential,
     VerifyProofPayload,
 };
 
@@ -30,6 +32,7 @@ use super::{
 use crate::api::VadeEvan;
 use crate::helpers::credential::Credential;
 use crate::helpers::datatypes::EVAN_METHOD;
+use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum PresentationError {
@@ -53,6 +56,19 @@ pub enum PresentationError {
     SchemaNotFound(String),
     #[error(r#"value "{0}" given for "{1} is not a DID""#)]
     NotADid(String, String),
+    #[error(r#"SelfIssuedCredential are unsigned and can not contain proof"#)]
+    SelfIssuedCredentialWithProof(),
+}
+
+/// A
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SelfIssuedPresentation {
+    #[serde(rename(serialize = "@context", deserialize = "@context"))]
+    pub context: Vec<String>,
+    pub id: String,
+    pub r#type: Vec<String>,
+    pub verifiable_credential: Vec<UnsignedBbsCredential>,
 }
 
 impl PresentationError {
@@ -337,11 +353,13 @@ impl<'a> Presentation<'a> {
         proof_request_str: &str,
         credential_str: &str,
         master_secret: &str,
-        signing_key: &str,
-        prover_did: &str,
+        signing_key: Option<&str>,
+        prover_did: Option<&str>,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
-        fail_if_not_a_did(prover_did, "prover_did")?;
+        prover_did
+            .map(|prover_did_value| fail_if_not_a_did(prover_did_value, "prover_did"))
+            .transpose()?;
         let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
             PresentationError::to_deserialization_error("credential", credential_str),
@@ -422,9 +440,12 @@ impl<'a> Presentation<'a> {
             revealed_properties_schema_map,
             public_key_schema_map,
             master_secret: master_secret.to_owned(),
-            prover_did: prover_did.to_owned(),
-            prover_public_key_did: format!("{}#key-1", prover_did.to_owned()),
-            prover_proving_key: signing_key.to_owned(),
+            prover_did: prover_did.map(|x| x.to_owned()),
+            prover_public_key_did: match prover_did {
+                Some(did) => Some(format!("{}#key-1", did.to_owned())),
+                _ => None,
+            },
+            prover_proving_key: signing_key.map(|x| x.to_owned()),
         };
 
         let payload = serde_json::to_string(&present_proof_payload).map_err(|err| {
@@ -434,6 +455,55 @@ impl<'a> Presentation<'a> {
             .vc_zkp_present_proof(EVAN_METHOD, TYPE_OPTIONS, &payload)
             .await
             .map_err(|err| PresentationError::VadeEvanError(err.to_string()))
+    }
+
+    /// Creates a self issued presentation.
+    /// The presentation has no proof.
+    ///
+    /// # Arguments
+    ///
+    /// * `unsigned_credential` - self issued credential (without proof) to be shared in presentation
+    ///
+    /// # Returns
+    /// * `Option<String>` - A `SelfIssuedPresentation` as JSON
+    pub async fn create_self_issued_presentation(
+        &mut self,
+        unsigned_credential_str: &str,
+    ) -> Result<String, PresentationError> {
+        // Check if shared credential is signed instead of unsigned
+        let parsed = serde_json::from_str::<Value>(unsigned_credential_str).map_err(|err| {
+            PresentationError::JsonSerialization("unsigned credential".to_owned(), err.to_string())
+        })?;
+        if parsed.get("proof").is_some() {
+            return Err(PresentationError::SelfIssuedCredentialWithProof());
+        }
+
+        let unsigned_credential: UnsignedBbsCredential = serde_json::from_str(
+            unsigned_credential_str,
+        )
+        .map_err(PresentationError::to_deserialization_error(
+            "UnsignedCredential",
+            unsigned_credential_str,
+        ))?;
+
+        let self_issued_presentation = SelfIssuedPresentation {
+            context: vec![
+                "https://www.w3.org/2018/credentials/v1".to_owned(),
+                "https://schema.org/".to_owned(),
+                "https://w3id.org/vc-revocation-list-2020/v1".to_owned(),
+            ],
+            id: format!("{}", Uuid::new_v4()),
+            r#type: vec!["VerifiablePresentation".to_owned()],
+            verifiable_credential: vec![unsigned_credential],
+        };
+        let self_issued_presentation_str = serde_json::to_string(&self_issued_presentation)
+            .map_err(|err| {
+                PresentationError::JsonSerialization(
+                    "SelfIssuedPresentation".to_owned(),
+                    err.to_string(),
+                )
+            })?;
+        Ok(self_issued_presentation_str)
     }
 
     async fn get_did_document<T>(&mut self, did: &str) -> Result<T, PresentationError>
@@ -532,6 +602,7 @@ mod tests_proof_request {
         BbsProofRequest,
         BbsProofVerification,
         BbsSubProofRequest,
+        ProofPresentation,
     };
 
     use crate::{VadeEvan, DEFAULT_SIGNER, DEFAULT_TARGET};
@@ -583,6 +654,34 @@ mod tests_proof_request {
               1
            ],
            "signature":"sZTYWUrmYaVDUGs1L2UM/7f7UlVLSQS2vPQQG1YWU3TQRlcviNXFDx054zztzG8rWc1lw5e+SJNo4c1x+rpOFiXBjjK6IukN3a0zG5c/ayFbIQ6OVjxV7noWX8aTdNXNO5eyVV2Upd1YB4WGAuUO0w=="
+        }
+    }"###;
+    const UNSIGNED_CREDENTIAL: &str = r###"{
+        "@context":[
+           "https://www.w3.org/2018/credentials/v1",
+           "https://schema.org/",
+           "https://w3id.org/vc-revocation-list-2020/v1"
+        ],
+        "id":"uuid:4ea2335a-a558-4bd4-b1d5-566838ff1e3a",
+        "type":[
+           "VerifiableCredential"
+        ],
+        "issuer":"did:evan:EiDmRkKsOaey8tPzc6RyQrYkMNjpqXXVTj9ggy0EbiXS4g",
+        "issuanceDate":"2023-05-03T15:21:42.000Z",
+        "credentialSubject":{
+           "data":{
+              "test_property_string":"value"
+           }
+        },
+        "credentialSchema":{
+           "id":"did:evan:EiBmiHCHLMbGVn9hllRM5qQOsshvETToEALBAtFqP3PUIg",
+           "type":"EvanVCSchema"
+        },
+        "credentialStatus":{
+           "id":"did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#0",
+           "type":"RevocationList2021Status",
+           "revocationListIndex":"0",
+           "revocationListCredential":"did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
         }
     }"###;
 
@@ -782,12 +881,89 @@ mod tests_proof_request {
                 proof_request_str,
                 CREDENTIAL,
                 MASTER_SECRET,
-                SIGNER_PRIVATE_KEY,
-                SUBJECT_DID,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
                 None,
             )
             .await;
         assert!(presentation_result.is_ok());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_create_presentation_and_skip_proof_if_no_prover() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let proof_request_result = presentation
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["test_property_string2"]"#))
+            .await;
+
+        assert!(proof_request_result.is_ok());
+        let proof_request_str = &proof_request_result?;
+        let mut parsed: BbsProofRequest = serde_json::from_str(proof_request_str)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [12],);
+
+        let presentation_result = presentation
+            .create_presentation(
+                proof_request_str,
+                CREDENTIAL,
+                MASTER_SECRET,
+                None,
+                None,
+                None,
+            )
+            .await;
+        assert!(presentation_result.is_ok());
+        let presentation: ProofPresentation = serde_json::from_str(&presentation_result?)?;
+        assert!(presentation.proof.is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_create_self_issued_presentation() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let self_presentation_result = presentation
+            .create_self_issued_presentation(UNSIGNED_CREDENTIAL)
+            .await;
+        assert!(self_presentation_result.is_ok());
+        let self_presentation_result_str = self_presentation_result?;
+        assert!(
+            !self_presentation_result_str.contains("proof"),
+            "Self Issued Presentation can not contain proof"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_returns_error_if_self_issued_credential_contains_proof() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let self_presentation_result = presentation
+            .create_self_issued_presentation(CREDENTIAL)
+            .await;
+        match self_presentation_result {
+            Ok(_) => assert!(false, "got unexpected result instead of error"),
+            Err(err) => assert!(err
+                .to_string()
+                .ends_with(r#"SelfIssuedCredential are unsigned and can not contain proof"#)),
+        };
 
         Ok(())
     }
@@ -816,8 +992,8 @@ mod tests_proof_request {
                 proof_request_str,
                 CREDENTIAL,
                 MASTER_SECRET,
-                SIGNER_PRIVATE_KEY,
-                SUBJECT_DID,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
                 None,
             )
             .await;
@@ -852,8 +1028,8 @@ mod tests_proof_request {
                 &proof_request_result?,
                 CREDENTIAL,
                 MASTER_SECRET,
-                SIGNER_PRIVATE_KEY,
-                SUBJECT_DID,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
                 None,
             )
             .await;

@@ -16,19 +16,15 @@ use serde_json::{value::Value, Map};
 use thiserror::Error;
 use vade_evan_bbs::{
     BbsCredential,
-    BbsCredentialRequest,
     CredentialDraftOptions,
     CredentialSchema,
     CredentialStatus,
     CredentialSubject,
-    FinishCredentialPayload,
-    IssueCredentialPayload,
     LdProofVcDetailOptionsCredentialStatusType,
     OfferCredentialPayload,
     RevocationListCredential,
     RevocationListProofKeys,
     RevokeCredentialPayload,
-    UnfinishedBbsCredential,
 };
 
 #[derive(Error, Debug)]
@@ -45,6 +41,8 @@ pub enum CredentialError {
     InvalidCredentialStatus(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
+    #[error(r#"JSON serialization of {0} failed due to "{1}""#)]
+    JsonSerialization(String, String),
     #[error("{0}")]
     JsonLdHandling(#[from] SharedError), // for now only one type of error from shared helper, so just re-package it
     #[error("base64 decoding failed")]
@@ -354,153 +352,51 @@ impl<'a> Credential<'a> {
         Ok(update_result)
     }
 
-    /// Creates a new zero-knowledge proof self issued credential.
-    /// `create_self_issued_credential` function combines `vc_zkp_create_credential_offer`,
-    /// `vc_zkp_create_credential_request`, `vc_zkp_issue_credential` and `vc_zkp_finish_credential`
-    /// and produces self-issued credential with blind signature.
+    /// Creates an unsigned self issued credential.
+    /// `create_self_issued_credential` function produces self-issued credential without proof.
     ///
     /// # Arguments
     ///
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
-    /// * `bbs_secret` - BBS secret
-    /// * `bbs_private_key` - BBS private key
-    /// * `credential_revocation_did` - revocation list DID (or `None` if no revocation is used)
-    /// * `credential_revocation_id` - index in revocation list (or `None` if no revocation is used)
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     /// * `subject_did` - subject did for self issued credential
     ///
     /// # Returns
-    /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
+    /// * credential as JSON serialized [`UnsignedBbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.UnsignedBbsCredential.html)
     pub async fn create_self_issued_credential(
         &mut self,
         schema_did: &str,
         credential_subject_str: &str,
-        bbs_secret: &str,
-        bbs_private_key: &str,
-        credential_revocation_did: Option<&str>,
-        credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
         subject_did: &str,
-        required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
         fail_if_not_a_did(schema_did, "schema_did")?;
         fail_if_not_a_did(subject_did, "subject_did")?;
-        match credential_revocation_did {
-            Some(value) => fail_if_not_a_did(value, "credential_revocation_did")?,
-            None => (),
-        };
-        let credential_revocation_did = check_for_optional_empty_params(credential_revocation_did);
-        let credential_revocation_id = check_for_optional_empty_params(credential_revocation_id);
         let exp_date = check_for_optional_empty_params(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
-        let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements)
-            .map_err(|err| CredentialError::JsonDeSerialization(err))?;
-        let issuer_public_key = self
-            .get_issuer_public_key(&subject_did, "#bbs-key-1")
-            .await?;
-        let use_valid_until: bool = exp_date.is_some();
-        let credential_values_str = serde_json::to_string(&credential_subject.clone().data)?;
 
-        let issuer = subject_did.clone();
+        let use_valid_until: bool = exp_date.is_some();
+
         let valid_until = if use_valid_until {
             Some(exp_date.unwrap_or("").to_string())
         } else {
             None
         };
-        let mut credential_status = None;
-
-        if credential_revocation_did.is_some() && credential_revocation_id.is_some() {
-            let credential_revocation_id = credential_revocation_id.ok_or_else(|| {
-                CredentialError::RevocationIndexInvalid(
-                    "credential_revocation_id is required for CredentialStatus".to_string(),
-                )
-            })?;
-            let credential_revocation_did = credential_revocation_did.ok_or_else(|| {
-                CredentialError::RevocationIndexInvalid(
-                    "credential_revocation_did is required for CredentialStatus".to_string(),
-                )
-            })?;
-
-            credential_status = Some(CredentialStatus {
-                id: format!("{}#{}", credential_revocation_did, credential_revocation_id),
-                r#type: "RevocationList2020Status".to_string(),
-                revocation_list_index: credential_revocation_id.to_string(),
-                revocation_list_credential: credential_revocation_did.to_string(),
-            });
-        }
 
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
+        let draft_credential = schema.to_draft_credential(CredentialDraftOptions {
+            issuer_did: subject_did.to_owned(),
+            id: None,
+            issuance_date: None,
+            valid_until,
+        });
 
-        let payload = OfferCredentialPayload {
-            draft_credential: schema.to_draft_credential(CredentialDraftOptions {
-                issuer_did: issuer.to_owned(),
-                id: None,
-                issuance_date: None,
-                valid_until,
-            }),
-            credential_status_type: match credential_revocation_did.is_some() {
-                true => LdProofVcDetailOptionsCredentialStatusType::RevocationList2021Status,
-                false => LdProofVcDetailOptionsCredentialStatusType::None,
-            },
-            required_reveal_statements,
-        };
-
-        let offer_str = self
-            .vade_evan
-            .vc_zkp_create_credential_offer(
-                EVAN_METHOD,
-                TYPE_OPTIONS,
-                &serde_json::to_string(&payload)?,
-            )
-            .await
-            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
-
-        // Create credential request
-        let request_str = self
-            .create_credential_request(
-                &issuer_public_key,
-                &bbs_secret,
-                &credential_values_str,
-                &offer_str,
-                schema_did,
-            )
-            .await?;
-        let (request, blinding_key): (BbsCredentialRequest, String) =
-            serde_json::from_str(request_str.as_str())?;
-
-        // Issue credentials
-        let payload = IssueCredentialPayload {
-            issuer_public_key_id: "#bbs-key-1".to_string(),
-            issuer_public_key: issuer_public_key.clone(),
-            issuer_secret_key: bbs_private_key.to_string(),
-            credential_request: request.clone(),
-            credential_status,
-        };
-        let payload_str = serde_json::to_string(&payload)?;
-        let credential_str = self
-            .vade_evan
-            .vc_zkp_issue_credential(EVAN_METHOD, TYPE_OPTIONS, &payload_str)
-            .await
-            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
-
-        // Finish credentials
-        let mut parsed_credential: Map<String, Value> = serde_json::from_str(&credential_str)?;
-        parsed_credential.remove("proof");
-        let _credential_without_proof = serde_json::to_string(&parsed_credential)?;
-        let credential: UnfinishedBbsCredential = serde_json::from_str(credential_str.as_str())?;
-        let payload_finish = FinishCredentialPayload {
-            credential,
-            master_secret: bbs_secret.to_string(),
-            issuer_public_key: issuer_public_key.clone(),
-            blinding: blinding_key,
-        };
-        let payload_finish_str = serde_json::to_string(&payload_finish)?;
-        let result = self
-            .vade_evan
-            .vc_zkp_finish_credential(EVAN_METHOD, TYPE_OPTIONS, payload_finish_str.as_str())
-            .await
-            .map_err(|err| CredentialError::VadeEvanError(err.to_string()))?;
+        let mut unsigned_credential = draft_credential.to_unsigned_credential(None);
+        unsigned_credential.credential_subject = credential_subject;
+        let result = serde_json::to_string(&unsigned_credential).map_err(|err| {
+            CredentialError::JsonSerialization("unsigned_credential".to_owned(), err.to_string())
+        })?;
 
         Ok(result)
     }
@@ -975,7 +871,7 @@ mod tests {
         assert!(did_update_result.is_ok());
 
         // check is credential is not revoked
-        match is_revoked(credential_status, &revocation_list)? {
+        match is_revoked(&credential_status, &revocation_list)? {
             false => assert!(true, "credential is active and not revoked as expected"),
             true => assert!(
                 false,
@@ -1011,7 +907,7 @@ mod tests {
         revocation_list = did_result_value.did_document;
 
         // verify credential
-        match is_revoked(credential_status, &revocation_list)? {
+        match is_revoked(&credential_status, &revocation_list)? {
             false => assert!(false, "credential should have been detected as revoked"),
             true => assert!(true, "credential revoked as expected"),
         };
@@ -1049,91 +945,30 @@ mod tests {
     #[tokio::test]
     #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_self_issued_credential() -> Result<()> {
+        use vade_evan_bbs::UnsignedBbsCredential;
+
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: "test",
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
-        let credential_subject_str = r#"{
-            "data": {
-                "email": "value@x.com"
-            }
-        }"#;
+        let credential_subject_str = r#"{"data":{"email":"value@x.com"}}"#;
         let subject_id = "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA";
-        let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
-        let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
         let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
 
         let mut credential = Credential::new(&mut vade_evan)?;
 
         match credential
-            .create_self_issued_credential(
-                schema_did,
-                credential_subject_str,
-                bbs_secret,
-                bbs_private_key,
-                Some("did:revoc:12345"),
-                Some("1"),
-                None,
-                subject_id,
-                "[1]",
-            )
+            .create_self_issued_credential(schema_did, credential_subject_str, None, subject_id)
             .await
         {
             Ok(issued_credential) => {
                 assert!(true, "credential should have been successfully self issued");
-                let issue_credential: BbsCredential = serde_json::from_str(&issued_credential)?;
-                assert_eq!(issue_credential.proof.required_reveal_statements, vec![1]);
-            }
-            Err(_) => assert!(
-                false,
-                "error occured when creating the self issued credential"
-            ),
-        };
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[cfg(feature = "did-sidetree")]
-    async fn helper_can_create_self_issued_credential_without_credential_status() -> Result<()> {
-        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
-            target: "test",
-            signer: "remote|http://127.0.0.1:7070/key/sign",
-        })?;
-        let credential_subject_str = r#"{
-            "data": {
-                "email": "value@x.com"
-            }
-        }"#;
-        let subject_id = "did:evan:EiAOD3RUcQrRXNZIR8BIEXuGvixcUj667_5fdeX-Sp3PpA";
-        let bbs_secret = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
-        let bbs_private_key = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
-        let schema_did = "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw";
-
-        let mut credential = Credential::new(&mut vade_evan)?;
-
-        match credential
-            .create_self_issued_credential(
-                schema_did,
-                credential_subject_str,
-                bbs_secret,
-                bbs_private_key,
-                None,
-                None,
-                None,
-                subject_id,
-                "[1]",
-            )
-            .await
-        {
-            Ok(issued_credential) => {
-                assert!(true, "credential should have been successfully self issued");
-                let issue_credential: BbsCredential = serde_json::from_str(&issued_credential)?;
-                assert!(
-                    issue_credential.credential_status.is_none(),
-                    "credential_status should not be present"
-                );
-                assert_eq!(issue_credential.proof.required_reveal_statements, vec![1]);
+                let unsigned_credential: UnsignedBbsCredential =
+                    serde_json::from_str(&issued_credential)?;
+                let credential_subject =
+                    serde_json::to_string(&unsigned_credential.credential_subject)?;
+                assert_eq!(credential_subject_str, credential_subject.as_str());
+                assert_eq!(unsigned_credential.issuer, subject_id);
             }
             Err(_) => assert!(
                 false,

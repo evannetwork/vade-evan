@@ -76,7 +76,11 @@
 - refactor features to use target specific(c-lib, c-sdk, wasm, cli, java) builds
 - adjust functions to remove `credential_subject.id` from `BbsCredential` and other types
 - add `helper_verify_presentation`
+- add support for `required_reveal_statements` in `vade-evan-bbs`
+- adjust `helper_create_self_issued_credential` to create credentials without proof.
+- add helper function `helper_create_self_issued_presentation` function
 - update `vade-evan-bbs` dependency for revocation fix
+- update `vade-evan-bbs` dependency optional proof in `ProofPresentation`
 
 ### Fixes
 

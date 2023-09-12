@@ -143,13 +143,8 @@ struct HelperVerifyCredentialPayload {
 struct HelperCreateSelfIssuedCredentialPayload {
     pub schema_did: String,
     pub credential_subject_str: String,
-    pub bbs_secret: String,
-    pub bbs_private_key: String,
-    pub credential_revocation_did: Option<String>,
-    pub credential_revocation_id: Option<String>,
     pub exp_date: Option<String>,
     pub subject_did: String,
-    pub required_reveal_statements: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -179,9 +174,14 @@ struct HelperCreatePresentationPayload {
     pub proof_request_str: String,
     pub credential_str: String,
     pub master_secret: String,
-    pub signing_key: String,
-    pub prover_did: String,
+    pub signing_key: Option<String>,
+    pub prover_did: Option<String>,
     pub revealed_attributes: Option<String>,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperCreateSelftIssuedPresentationPayload {
+    unsigned_credential: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -392,6 +392,20 @@ cfg_if::cfg_if! {
                 .map_err(jsify_vade_evan_error)?)
         }
 
+
+        #[cfg(all(feature = "vc-zkp-bbs"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_self_issued_presentation(
+            unsigned_credential: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_self_issued_presentation(
+                    &unsigned_credential
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_verify_credential(
@@ -413,26 +427,31 @@ cfg_if::cfg_if! {
         pub async fn helper_create_self_issued_credential(
             schema_did: String,
             credential_subject_str: String,
-            bbs_secret: String,
-            bbs_private_key: String,
-            credential_revocation_did: Option<String>,
-            credential_revocation_id: Option<String>,
             exp_date: Option<String>,
             subject_did: String,
-            required_reveal_statements: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
                 .helper_create_self_issued_credential(
                     &schema_did,
                     &credential_subject_str,
-                    &bbs_secret,
-                    &bbs_private_key,
-                    credential_revocation_did.as_deref(),
-                    credential_revocation_id.as_deref(),
                     exp_date.as_deref(),
                     &subject_did,
-                    &required_reveal_statements,
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_proof_proposal(
+            schema_did: String,
+            revealed_attributes: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_proof_proposal(
+                    &schema_did,
+                    revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -485,8 +504,8 @@ cfg_if::cfg_if! {
             proof_request_str:String,
             credential_str: String,
             master_secret: String,
-            signing_key: String,
-            prover_did: String,
+            signing_key: Option<String>,
+            prover_did: Option<String>,
             revealed_attributes: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
@@ -495,8 +514,8 @@ cfg_if::cfg_if! {
                     &proof_request_str,
                     &credential_str,
                     &master_secret,
-                    &signing_key,
-                    &prover_did,
+                    signing_key.as_deref(),
+                    prover_did.as_deref(),
                     revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
@@ -778,13 +797,8 @@ pub async fn execute_vade(
                     helper_create_self_issued_credential(
                         payload.schema_did,
                         payload.credential_subject_str,
-                        payload.bbs_secret,
-                        payload.bbs_private_key,
-                        payload.credential_revocation_did,
-                        payload.credential_revocation_id,
                         payload.exp_date,
                         payload.subject_did,
-                        payload.required_reveal_statements,
                     )
                     .await
                 }
@@ -831,6 +845,16 @@ pub async fn execute_vade(
                         payload.revealed_attributes,
                     )
                     .await
+                }
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs"))]
+        "helper_create_self_issued_presentation" => {
+            let payload_result = parse::<HelperCreateSelftIssuedPresentationPayload>(&payload);
+            match payload_result {
+                Ok(payload) => {
+                    helper_create_self_issued_presentation(payload.unsigned_credential).await
                 }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }

@@ -259,13 +259,8 @@ async fn main() -> Result<()> {
                     .helper_create_self_issued_credential(
                         get_argument_value(sub_m, "schema_did", None),
                         get_argument_value(sub_m, "credential_subject", None),
-                        get_argument_value(sub_m, "bbs_secret", None),
-                        get_argument_value(sub_m, "private_key", None),
-                        get_optional_argument_value(sub_m, "credential_revocation_did"),
-                        get_optional_argument_value(sub_m, "credential_revocation_id"),
                         get_optional_argument_value(sub_m, "exp_date"),
                         get_argument_value(sub_m, "subject_did", None),
-                        get_argument_value(sub_m, "required_reveal_statements", None),
                     )
                     .await?
             }
@@ -305,10 +300,20 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "proof_request", None),
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "master_secret", None),
-                        get_argument_value(sub_m, "private_key", None),
-                        get_argument_value(sub_m, "subject_did", None),
+                        get_optional_argument_value(sub_m, "private_key"),
+                        get_optional_argument_value(sub_m, "subject_did"),
                         get_optional_argument_value(sub_m, "revealed_attributes"),
                     )
+                    .await?
+            }
+            #[cfg(all(feature = "vc-zkp-bbs"))]
+            ("create_self_issued_presentation", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_create_self_issued_presentation(get_argument_value(
+                        sub_m,
+                        "unsigned_credential",
+                        None,
+                    ))
                     .await?
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
@@ -436,13 +441,8 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Creates a self issued credential.")
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("credential_subject")?)
-                    .arg(get_clap_argument("bbs_secret")?)
-                    .arg(get_clap_argument("private_key")?)
-                    .arg(get_clap_argument("credential_revocation_did")?)
-                    .arg(get_clap_argument("credential_revocation_id")?)
                     .arg(get_clap_argument("exp_date")?)
                     .arg(get_clap_argument("subject_did")?)
-                    .arg(get_clap_argument("required_reveal_statements")?)
             );
         } else {}
     }
@@ -479,6 +479,15 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("private_key")?)
                     .arg(get_clap_argument("subject_did")?)
                     .arg(get_clap_argument("revealed_attributes")?)
+            );
+        } else {}
+    }
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "vc-zkp-bbs"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("create_self_issued_presentation")
+                    .about("Creates a self issued presentation.")
+                    .arg(get_clap_argument("unsigned_credential")?)
             );
         } else {}
     }
@@ -1001,6 +1010,12 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("credential")
             .required(true)
             .help("credential to verity")
+            .takes_value(true),
+        "unsigned_credential" => Arg::with_name("unsigned_credential")
+            .long("unsigned_credential")
+            .value_name("unsigned_credential")
+            .required(true)
+            .help("Credential without proof")
             .takes_value(true),
         "master_secret" => Arg::with_name("master_secret")
             .long("master_secret")

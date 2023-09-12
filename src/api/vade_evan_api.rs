@@ -718,8 +718,8 @@ impl VadeEvan {
     ///                   &proof_request_str,
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
-    ///                   SIGNER_PRIVATE_KEY,
-    ///                   PROVER_DID,
+    ///                   Some(SIGNER_PRIVATE_KEY),
+    ///                   Some(PROVER_DID),
     ///                   None,
     ///                )
     ///                .await;
@@ -736,8 +736,8 @@ impl VadeEvan {
         proof_request_str: &str,
         credential_str: &str,
         master_secret: &str,
-        signing_key: &str,
-        prover_did: &str,
+        signing_key: Option<&str>,
+        prover_did: Option<&str>,
         revealed_attributes: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut presentation_helper = Presentation::new(self)?;
@@ -750,6 +750,77 @@ impl VadeEvan {
                 prover_did,
                 revealed_attributes,
             )
+            .await
+            .map_err(|err| err.into())
+    }
+
+    /// Creates a self issued presention.
+    /// The presentation doesn't contain proof.
+    ///
+    /// # Arguments
+    ///
+    /// * `unsigned_credential` - unsigned_credential to be shared in presentation
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// cfg_if::cfg_if! {
+    ///     if #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))] {
+    ///         use anyhow::Result;
+    ///         use vade_evan::{VadeEvan, VadeEvanConfig, DEFAULT_TARGET, DEFAULT_SIGNER};
+    ///         const UNSIGNED_CREDENTIAL: &str = r###"{
+    ///             "id": "uuid:70b7ec4e-f035-493e-93d3-2cf5be4c7f88",
+    ///             "type": [
+    ///                 "VerifiableCredential"
+    ///             ],
+    ///             "issuer": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///             "@context": [
+    ///                 "https://www.w3.org/2018/credentials/v1",
+    ///                 "https://schema.org/",
+    ///                 "https://w3id.org/vc-revocation-list-2020/v1"
+    ///             ],
+    ///             "issuanceDate": "2023-02-01T14:08:09.849Z",
+    ///             "credentialSchema": {
+    ///                 "id": "did:evan:EiCimsy3uWJ7PivWK0QUYSCkImQnjrx6fGr6nK8XIg26Kg",
+    ///                 "type": "EvanVCSchema"
+    ///             },
+    ///             "credentialStatus": {
+    ///                 "id": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA#4",
+    ///                 "type": "RevocationList2020Status",
+    ///                 "revocationListIndex": "4",
+    ///                 "revocationListCredential": "did:evan:EiA0Ns-jiPwu2Pl4GQZpkTKBjvFeRXxwGgXRTfG1Lyi8aA"
+    ///             },
+    ///             "credentialSubject": {
+    ///                 "id": "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA",
+    ///                 "data": {
+    ///                     "bio": "biography"
+    ///                 }
+    ///             }
+    ///         }"###;
+    ///         async fn example() -> Result<()> {
+    ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
+    ///
+    ///             let presentation_result = vade_evan
+    ///               .helper_create_self_issued_presentation(
+    ///                  UNSIGNED_CREDENTIAL
+    ///                )
+    ///                .await;
+    ///
+    ///
+    ///             Ok(())
+    ///         }
+    ///     } else {
+    ///         // currently no example for target-c-sdk and c-lib/target-java-lib
+    ///     }
+    /// }
+    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+    pub async fn helper_create_self_issued_presentation(
+        &mut self,
+        unsigned_credential_str: &str,
+    ) -> Result<String, VadeEvanError> {
+        let mut presentation_helper = Presentation::new(self)?;
+        presentation_helper
+            .create_self_issued_presentation(unsigned_credential_str)
             .await
             .map_err(|err| err.into())
     }
@@ -825,8 +896,8 @@ impl VadeEvan {
     ///                   &proof_request_str,
     ///                   CREDENTIAL,
     ///                   MASTER_SECRET,
-    ///                   SIGNER_PRIVATE_KEY,
-    ///                   PROVER_DID,
+    ///                   Some(SIGNER_PRIVATE_KEY),
+    ///                   Some(PROVER_DID),
     ///                   None,
     ///                )
     ///                .await?;
@@ -953,21 +1024,15 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
-    /// Creates a new zero-knowledge proof self issued credential.
-    /// `create_self_issued_credential` function combines `vc_zkp_create_credential_offer`,
-    /// `vc_zkp_create_credential_request`, `vc_zkp_issue_credential` and `vc_zkp_finish_credential`
-    /// and produces self-issued credential with blind signature.
+    /// Creates an unsigned self issued credential.
+    /// `create_self_issued_credential` function produces self-issued credential without proof.
     ///
     /// # Arguments
     ///
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
-    /// * `bbs_secret` - BBS secret
-    /// * `bbs_private_key` - BBS private key
-    /// * `credential_revocation_did` - revocation list DID
-    /// * `credential_revocation_id` - index in revocation list
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
-    /// * `required_revealed_statements` - required_revealed_statements indices array in searialized form
+    /// * `subject_did` - subject did for self issued credential
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -987,8 +1052,6 @@ impl VadeEvan {
     ///                                                           "email":"value@x.com"
     ///                                                         }
     ///                                                }"#;
-    ///         const BBS_SECRET: &str = "GRsdzRB0pf/8MKP/ZBOM2BEV1A8DIDfmLh8T3b1hPKc=";
-    ///         const BBS_PRIVATE_KEY: &str = "WWTZW8pkz35UnvsUCEsof2CJmNHaJQ/X+B5xjWcHr/I=";
     ///         const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     ///
     ///         async fn example() -> Result<()> {
@@ -997,13 +1060,8 @@ impl VadeEvan {
     ///                 .helper_create_self_issued_credential(
     ///                     SCHEMA_DID,
     ///                     CREDENTIAL_SUBJECT_STR,
-    ///                     BBS_SECRET,
-    ///                     BBS_PRIVATE_KEY,
-    ///                     Some("did:revoc:12345"),
-    ///                     Some("1"),
     ///                     None,
     ///                     SUBJECT_DID,
-    ///                     "[1]",
     ///                 )
     ///                 .await?;
     ///
@@ -1019,26 +1077,16 @@ impl VadeEvan {
         &mut self,
         schema_did: &str,
         credential_subject_str: &str,
-        bbs_secret: &str,
-        bbs_private_key: &str,
-        credential_revocation_did: Option<&str>,
-        credential_revocation_id: Option<&str>,
         exp_date: Option<&str>,
         subject_did: &str,
-        required_reveal_statements: &str,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
             .create_self_issued_credential(
                 schema_did,
                 credential_subject_str,
-                bbs_secret,
-                bbs_private_key,
-                credential_revocation_did,
-                credential_revocation_id,
                 exp_date,
                 subject_did,
-                required_reveal_statements,
             )
             .await
             .map_err(|err| err.into())
