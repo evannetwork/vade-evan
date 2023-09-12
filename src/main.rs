@@ -299,8 +299,8 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "proof_request", None),
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "master_secret", None),
-                        get_argument_value(sub_m, "private_key", None),
-                        get_argument_value(sub_m, "subject_did", None),
+                        get_optional_argument_value(sub_m, "private_key"),
+                        get_optional_argument_value(sub_m, "subject_did"),
                         get_optional_argument_value(sub_m, "revealed_attributes"),
                     )
                     .await?
