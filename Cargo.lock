@@ -4912,11 +4912,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-<<<<<<< HEAD
 source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=experimental/develop-next#7ec152939fd3d106b171a8ad58c26f35c8a5c776"
-=======
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=experimental/develop-next#5670c833e971bb56251d8be092024d08e83dfc4a"
->>>>>>> experimental/develop-next
 dependencies = [
  "async-trait",
  "base64 0.13.1",
