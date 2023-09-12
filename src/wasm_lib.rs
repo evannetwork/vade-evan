@@ -441,7 +441,6 @@ cfg_if::cfg_if! {
                 .map_err(jsify_vade_evan_error)?)
         }
 
-        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_proof_proposal(
             schema_did: String,
