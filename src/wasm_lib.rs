@@ -161,7 +161,7 @@ struct HelperCreateProofRequestFomScratchPayload {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", untagged)]
 enum HelperCreateProofRequestPayload {
     FromScratch(HelperCreateProofRequestFomScratchPayload),
     FromProposal(BbsProofProposal),
@@ -434,6 +434,21 @@ cfg_if::cfg_if! {
                     &credential_subject_str,
                     exp_date.as_deref(),
                     &subject_did,
+                ).await
+                .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[wasm_bindgen]
+        pub async fn helper_create_proof_proposal(
+            schema_did: String,
+            revealed_attributes: Option<String>,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            Ok(vade_evan
+                .helper_create_proof_proposal(
+                    &schema_did,
+                    revealed_attributes.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
