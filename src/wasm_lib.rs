@@ -441,20 +441,6 @@ cfg_if::cfg_if! {
                 .map_err(jsify_vade_evan_error)?)
         }
 
-        #[wasm_bindgen]
-        pub async fn helper_create_proof_proposal(
-            schema_did: String,
-            revealed_attributes: Option<String>,
-        ) -> Result<String, JsValue> {
-            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            Ok(vade_evan
-                .helper_create_proof_proposal(
-                    &schema_did,
-                    revealed_attributes.as_deref(),
-                ).await
-                .map_err(jsify_vade_evan_error)?)
-        }
-
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
         #[wasm_bindgen]
         pub async fn helper_create_proof_proposal(
