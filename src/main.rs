@@ -248,7 +248,8 @@ async fn main() -> Result<()> {
                     .helper_revoke_credential(
                         get_argument_value(sub_m, "credential", None),
                         get_argument_value(sub_m, "update_key", None),
-                        get_argument_value(sub_m, "private_key", None),
+                        get_optional_argument_value(sub_m, "issuer_public_key_did"),
+                        get_optional_argument_value(sub_m, "issuer_proving_key"),
                     )
                     .await?
             }
@@ -1012,6 +1013,16 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
             .value_name("private_key")
             .required(true)
             .help("private key to be supplied for local signer")
+            .takes_value(true),
+        "issuer_public_key_did" => Arg::with_name("issuer_public_key_did")
+            .long("issuer_public_key_did")
+            .value_name("issuer_public_key_did")
+            .help("public key used for assertion proofs")
+            .takes_value(true),
+        "issuer_proving_key" => Arg::with_name("issuer_proving_key")
+            .long("issuer_proving_key")
+            .value_name("issuer_proving_key")
+            .help("private key used for assertion proofs")
             .takes_value(true),
         "credential_revocation_did" => Arg::with_name("credential_revocation_did")
             .long("credential_revocation_did")

@@ -4691,7 +4691,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.5",
  "static_assertions",
 ]
@@ -4912,7 +4912,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#2c977854b0ce03af63a98ce62aa9997b68b34604"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=develop#0000431e6c3ea3cd9de9ab2bee6e4be6bb32d4a9"
 dependencies = [
  "async-trait",
  "base64 0.13.1",

@@ -26,6 +26,7 @@ use vade_evan_bbs::{
     LdProofVcDetailOptionsCredentialStatusType,
     OfferCredentialPayload,
     RevocationListCredential,
+    RevocationListProofKeys,
     RevokeCredentialPayload,
     UnfinishedBbsCredential,
 };
@@ -290,12 +291,15 @@ impl<'a> Credential<'a> {
         Ok(())
     }
 
-    /// Revokes a given credential with the help of vade and updates revocation list credential
+    /// Revokes a given credential with the help of vade and updates revocation list credential.
+    ///
+    /// Proof generation is omitted if `issuer_public_key_did` or `issuer_proving_key` is omitted.
     ///
     /// # Arguments
-    /// * `credential_str` - credential to be revoked in seralized string format
+    /// * `credential_str` - credential to be revoked in serialized string format
     /// * `updated_key_jwk` - public key in jwk format to sign did update
-    /// * `private_key` - bbs private key to sign revocaton request
+    /// * `issuer_public_key_did` - private key used for assertion proof
+    /// * `issuer_proving_key` - public key used for assertion proof
     ///
     /// # Returns
     /// * `String` - the result of updated revocation list doc after credential revocation
@@ -304,7 +308,8 @@ impl<'a> Credential<'a> {
         &mut self,
         credential_str: &str,
         update_key_jwk: &str,
-        private_key: &str,
+        issuer_public_key_did: Option<&str>,
+        issuer_proving_key: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
         let credential_status = &credential.credential_status.ok_or_else(|| {
@@ -317,13 +322,16 @@ impl<'a> Credential<'a> {
             .get_did_document(&credential_status.revocation_list_credential)
             .await?;
 
-        let proving_key = private_key;
         let payload = RevokeCredentialPayload {
             issuer: credential.issuer.clone(),
             revocation_list: revocation_list.clone(),
             revocation_id: credential_status.revocation_list_index.to_owned(),
-            issuer_public_key_did: credential.issuer.clone(),
-            issuer_proving_key: proving_key.to_owned(),
+            revocation_list_proof_keys: issuer_public_key_did.zip(issuer_proving_key).map(
+                |(issuer_public_key_did_value, issuer_proving_key_value)| RevocationListProofKeys {
+                    issuer_public_key_did: issuer_public_key_did_value.to_string(),
+                    issuer_proving_key: issuer_proving_key_value.to_string(),
+                },
+            ),
         };
 
         let payload = serde_json::to_string(&payload)?;
@@ -948,6 +956,10 @@ mod tests {
             serde_json::from_str(&did_result_str)?;
         let mut revocation_list = did_result_value.did_document;
         revocation_list.id = did_create_result.did.did_document.id.clone();
+        assert!(revocation_list.proof.is_some());
+        let revocation_list_proof = revocation_list.proof.as_ref().ok_or_else(|| {
+            CredentialError::RevocationListInvalid("revocation list is missing proof".to_string())
+        })?;
 
         credential_status.revocation_list_credential = revocation_list.id.clone();
         credential.credential_status = Some(credential_status.to_owned());
@@ -984,7 +996,8 @@ mod tests {
             .helper_revoke_credential(
                 &serde_json::to_string(&credential)?,
                 &serde_json::to_string(&update_key)?,
-                "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106",
+                Some(&revocation_list_proof.verification_method),
+                Some("dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106"),
             )
             .await;
         assert!(revoke_result.is_ok());

@@ -627,7 +627,8 @@ pub extern "C" fn execute_vade(
                     .helper_revoke_credential(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),
                         arguments_vec.get(1).unwrap_or_else(|| &no_args),
-                        arguments_vec.get(2).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(2).map(|v| v.as_str()),
+                        arguments_vec.get(3).map(|v| v.as_str()),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)?;
