@@ -60,7 +60,7 @@ pub enum PresentationError {
     SelfIssuedCredentialWithProof(),
 }
 
-/// A
+/// Self issued presentation that does not contain a proof.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SelfIssuedPresentation {
