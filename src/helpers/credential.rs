@@ -451,13 +451,35 @@ impl<'a> Credential<'a> {
             )),
         }
     }
+
+    /// Converts a Credential to nquads
+    ///
+    /// # Arguments
+    /// * `credential_str` - Credential to be converted
+    ///
+    /// # Returns
+    /// * `nquads` - Vec of nquads
+    pub async fn convert_credential_to_nquads(
+        &self,
+        credential_str: &str,
+    ) -> Result<String, CredentialError> {
+        // get nquads
+        let mut parsed_credential: Map<String, Value> = serde_json::from_str(credential_str)?;
+        // remove proof if exists
+        if parsed_credential.contains_key("proof") {
+            parsed_credential.remove("proof");
+        }
+        let credential_without_proof = serde_json::to_string(&parsed_credential)?;
+        let did_doc_nquads = convert_to_nquads(&credential_without_proof).await?;
+        Ok(serde_json::to_string(&did_doc_nquads)?)
+    }
 }
 
 #[cfg(test)]
 #[cfg(not(all(feature = "c-lib", feature = "target-c-sdk")))]
 mod tests {
     use crate::helpers::credential::is_revoked;
-
+    const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
     cfg_if::cfg_if! {
         if #[cfg(feature = "did-sidetree")] {
             use anyhow::Result;
@@ -911,6 +933,29 @@ mod tests {
             ),
         };
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "did-sidetree")]
+    async fn helper_can_convert_to_nquads() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+
+        let credential_helper = Credential::new(&mut vade_evan)?;
+        let credential: BbsCredential = serde_json::from_str(CREDENTIAL_ACTIVE)?;
+        // verify the credential issuer
+        let nquads_result = credential_helper
+            .convert_credential_to_nquads(CREDENTIAL_ACTIVE)
+            .await;
+        assert!(nquads_result.is_ok());
+        let nquads: Vec<String> = serde_json::from_str(&nquads_result?)?;
+        assert_eq!(
+            nquads.len() + ADDITIONAL_HIDDEN_MESSAGES_COUNT,
+            credential.proof.credential_message_count
+        );
         Ok(())
     }
 }
