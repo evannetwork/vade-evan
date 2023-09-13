@@ -770,6 +770,26 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
+        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        "helper_convert_credential_to_nquads" => runtime.block_on({
+            async {
+                let mut vade_evan = get_vade_evan(
+                    Some(&str_config),
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    ptr_request_list,
+                    #[cfg(all(feature = "c-lib", feature = "target-c-sdk"))]
+                    request_function_callback,
+                )
+                .map_err(stringify_generic_error)?;
+                vade_evan
+                    .helper_convert_credential_to_nquads(
+                        arguments_vec.get(0).unwrap_or_else(|| &no_args),
+                    )
+                    .await
+                    .map_err(stringify_vade_evan_error)?;
+                Ok("".to_string())
+            }
+        }),
         #[cfg(any(feature = "vc-zkp-bbs"))]
         "run_custom_function" => runtime.block_on({
             execute_vade_function!(
