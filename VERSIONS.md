@@ -5,6 +5,7 @@
 ### Features
 
 - add support for `vc_zkp_propose_proof` function in `vade-evan-bbs` plugin
+- add `helper_convert_credential_to_nquads` helper function
 
 ### Fixes
 
