@@ -815,7 +815,7 @@ pub async fn execute_vade(
             let payload_result = parse::<HelperConvertCredentialToNquads>(&payload);
             match payload_result {
                 Ok(payload) => {
-                    helper_convert_credential_to_nquads(payload.credential).await
+                    helper_convert_credential_to_nquads(payload.credential_str).await
                 }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
