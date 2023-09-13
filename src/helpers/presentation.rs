@@ -25,6 +25,7 @@ use super::{
         check_for_optional_empty_params,
         convert_to_nquads,
         create_draft_credential_from_schema,
+        is_did,
         SharedError,
     },
 };
@@ -53,11 +54,13 @@ pub enum PresentationError {
     SchemaInvalid(String, String),
     #[error(r#"schema with DID "{0}" could not be found"#)]
     SchemaNotFound(String),
+    #[error(r#"value "{0}" given for "{1} is not a DID""#)]
+    NotADid(String, String),
     #[error(r#"SelfIssuedCredential are unsigned and can not contain proof"#)]
     SelfIssuedCredentialWithProof(),
 }
 
-/// A
+/// Self issued presentation that does not contain a proof.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SelfIssuedPresentation {
@@ -94,6 +97,25 @@ const ADDITIONAL_HIDDEN_MESSAGES_COUNT: usize = 1;
 const NQUAD_REGEX: &str = r"^_:c14n[0-9]* <http://schema.org/([^>]+?)>";
 const TYPE_OPTIONS: &str = r#"{ "type": "bbs" }"#;
 
+/// Checks if input is a DID and returns a `PresentationError::NotADid` if not.
+///
+/// # Arguments
+///
+/// * `to_check` - input value to check
+/// * `name` - name of the input to check, used for log message
+///
+/// # Returns
+/// `()` or `PresentationError::NotADid`
+pub fn fail_if_not_a_did(to_check: &str, name: &str) -> Result<(), PresentationError> {
+    if !is_did(to_check) {
+        return Err(PresentationError::NotADid(
+            to_check.to_owned(),
+            name.to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 pub struct Presentation<'a> {
     vade_evan: &'a mut VadeEvan,
 }
@@ -118,6 +140,7 @@ impl<'a> Presentation<'a> {
         schema_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
         let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
             .map(|ras| {
@@ -179,6 +202,7 @@ impl<'a> Presentation<'a> {
         schema_did: &str,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
         let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
             .map(|ras| {
@@ -333,6 +357,9 @@ impl<'a> Presentation<'a> {
         prover_did: Option<&str>,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
+        prover_did
+            .map(|prover_did_value| fail_if_not_a_did(prover_did_value, "prover_did"))
+            .transpose()?;
         let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
             PresentationError::to_deserialization_error("credential", credential_str),
@@ -483,6 +510,7 @@ impl<'a> Presentation<'a> {
     where
         T: DeserializeOwned,
     {
+        fail_if_not_a_did(did, "did for did document")?;
         let did_result_str = self
             .vade_evan
             .did_resolve(did)
@@ -512,6 +540,7 @@ impl<'a> Presentation<'a> {
         schema_did: &str,
         revealed_attributes: Option<Vec<String>>,
     ) -> Result<HashMap<String, Vec<usize>>, PresentationError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
         let regex = Regex::new(NQUAD_REGEX).map_err(|err| {
             PresentationError::InternalError(format!("regex for nquads invalid; {0}", &err))
         })?;
@@ -708,6 +737,30 @@ mod tests_proof_request {
         assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID);
         parsed.sub_proof_requests[0].revealed_attributes.sort();
         assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [13, 15],);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_cannot_create_proof_request_with_invalid_did() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let result = presentation
+            .create_proof_request("not a did", Some(r#"["zip", "country"]"#))
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Ok(_) => assert!(false, "expected error but got result"),
+            Err(error) => assert_eq!(
+                error.to_string(),
+                r#"value "not a did" given for "schema_did is not a DID""#.to_string()
+            ),
+        };
 
         Ok(())
     }

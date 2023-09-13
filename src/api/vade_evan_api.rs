@@ -1002,11 +1002,14 @@ impl VadeEvan {
 
     /// Revokes a given credential with the help of vade and updates revocation list credential
     ///
+    /// Proof generation is omitted if `issuer_public_key_did` or `issuer_proving_key` is omitted.
+    ///
     /// # Arguments
     ///
     /// * `credential` - credential to be revoked as serialized JSON
     /// * `update_key_jwk` - update key in jwk format as serialized JSON
-    /// * `private_key` - private key for local signer to be used for signing
+    /// * `issuer_public_key_did` - private key used for assertion proof
+    /// * `issuer_proving_key` - public key used for assertion proof
     ///
     /// # Example
     ///
@@ -1066,8 +1069,12 @@ impl VadeEvan {
     ///
     ///             // revoke the credential issuer
     ///             vade_evan
-    ///                 .helper_revoke_credential(credential, update_key_jwk, "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106")
-    ///                 .await?;
+    ///                 .helper_revoke_credential(
+    ///                     credential,
+    ///                     update_key_jwk,
+    ///                     Some("did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA#bbs-key-1"),
+    ///                     Some("dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106"),
+    ///                 ).await?;
     ///
     ///             Ok(())
     ///         }
@@ -1080,11 +1087,17 @@ impl VadeEvan {
         &mut self,
         credential: &str,
         update_key_jwk: &str,
-        private_key: &str,
+        issuer_public_key_did: Option<&str>,
+        issuer_proving_key: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential_helper = Credential::new(self)?;
         credential_helper
-            .revoke_credential(credential, update_key_jwk, private_key)
+            .revoke_credential(
+                credential,
+                update_key_jwk,
+                issuer_public_key_did,
+                issuer_proving_key,
+            )
             .await
             .map_err(|err| err.into())
     }

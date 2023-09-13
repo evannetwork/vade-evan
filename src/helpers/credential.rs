@@ -3,7 +3,7 @@ use crate::helpers::datatypes::EVAN_METHOD;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
-use super::shared::{check_for_optional_empty_params, convert_to_nquads, SharedError};
+use super::shared::{check_for_optional_empty_params, convert_to_nquads, is_did, SharedError};
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
@@ -23,6 +23,7 @@ use vade_evan_bbs::{
     LdProofVcDetailOptionsCredentialStatusType,
     OfferCredentialPayload,
     RevocationListCredential,
+    RevocationListProofKeys,
     RevokeCredentialPayload,
 };
 
@@ -58,6 +59,8 @@ pub enum CredentialError {
     CredentialRevoked,
     #[error("wrong number of messages in credential, got {0} but proof was created for {1}")]
     MessageCountMismatch(usize, usize),
+    #[error(r#"value "{0}" given for "{1} is not a DID""#)]
+    NotADid(String, String),
 }
 
 // Master secret is always incorporated, without being mentioned in the credential schema
@@ -78,6 +81,25 @@ fn get_public_key_generator(
     })?;
 
     Ok(public_key_generator)
+}
+
+/// Checks if input is a DID and returns a `CredentialError::NotADid` if not.
+///
+/// # Arguments
+///
+/// * `to_check` - input value to check
+/// * `name` - name of the input to check, used for log message
+///
+/// # Returns
+/// `()` or `CredentialError::NotADid`
+pub fn fail_if_not_a_did(to_check: &str, name: &str) -> Result<(), CredentialError> {
+    if !is_did(to_check) {
+        return Err(CredentialError::NotADid(
+            to_check.to_owned(),
+            name.to_owned(),
+        ));
+    }
+    Ok(())
 }
 
 pub fn is_revoked(
@@ -128,6 +150,8 @@ impl<'a> Credential<'a> {
         is_credential_status_included: bool,
         required_reveal_statements: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
+        fail_if_not_a_did(issuer_did, "issuer_did")?;
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements)
             .map_err(|err| CredentialError::JsonDeSerialization(err))?;
@@ -169,6 +193,7 @@ impl<'a> Credential<'a> {
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(credential_schema_did, "credential_schema_did")?;
         let credential_schema: CredentialSchema =
             self.get_did_document(credential_schema_did).await?;
 
@@ -264,12 +289,15 @@ impl<'a> Credential<'a> {
         Ok(())
     }
 
-    /// Revokes a given credential with the help of vade and updates revocation list credential
+    /// Revokes a given credential with the help of vade and updates revocation list credential.
+    ///
+    /// Proof generation is omitted if `issuer_public_key_did` or `issuer_proving_key` is omitted.
     ///
     /// # Arguments
-    /// * `credential_str` - credential to be revoked in seralized string format
+    /// * `credential_str` - credential to be revoked in serialized string format
     /// * `updated_key_jwk` - public key in jwk format to sign did update
-    /// * `private_key` - bbs private key to sign revocaton request
+    /// * `issuer_public_key_did` - private key used for assertion proof
+    /// * `issuer_proving_key` - public key used for assertion proof
     ///
     /// # Returns
     /// * `String` - the result of updated revocation list doc after credential revocation
@@ -278,7 +306,8 @@ impl<'a> Credential<'a> {
         &mut self,
         credential_str: &str,
         update_key_jwk: &str,
-        private_key: &str,
+        issuer_public_key_did: Option<&str>,
+        issuer_proving_key: Option<&str>,
     ) -> Result<String, CredentialError> {
         let credential: BbsCredential = serde_json::from_str(credential_str)?;
         let credential_status = &credential.credential_status.ok_or_else(|| {
@@ -291,13 +320,16 @@ impl<'a> Credential<'a> {
             .get_did_document(&credential_status.revocation_list_credential)
             .await?;
 
-        let proving_key = private_key;
         let payload = RevokeCredentialPayload {
             issuer: credential.issuer.clone(),
             revocation_list: revocation_list.clone(),
             revocation_id: credential_status.revocation_list_index.to_owned(),
-            issuer_public_key_did: credential.issuer.clone(),
-            issuer_proving_key: proving_key.to_owned(),
+            revocation_list_proof_keys: issuer_public_key_did.zip(issuer_proving_key).map(
+                |(issuer_public_key_did_value, issuer_proving_key_value)| RevocationListProofKeys {
+                    issuer_public_key_did: issuer_public_key_did_value.to_string(),
+                    issuer_proving_key: issuer_proving_key_value.to_string(),
+                },
+            ),
         };
 
         let payload = serde_json::to_string(&payload)?;
@@ -339,6 +371,8 @@ impl<'a> Credential<'a> {
         exp_date: Option<&str>,
         subject_did: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(schema_did, "schema_did")?;
+        fail_if_not_a_did(subject_did, "subject_did")?;
         let exp_date = check_for_optional_empty_params(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
 
@@ -371,6 +405,7 @@ impl<'a> Credential<'a> {
     where
         T: DeserializeOwned,
     {
+        fail_if_not_a_did(did, "did for did document")?;
         let did_result_str = self
             .vade_evan
             .did_resolve(did)
@@ -395,6 +430,7 @@ impl<'a> Credential<'a> {
         issuer_did: &str,
         verification_method_id: &str,
     ) -> Result<String, CredentialError> {
+        fail_if_not_a_did(issuer_did, "issuer_did")?;
         let did_document: IdentityDidDocument = self.get_did_document(issuer_did).await?;
 
         let mut public_key: &str = "";
@@ -614,6 +650,30 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn helper_cannot_create_proof_request_with_invalid_did() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        let result = credential
+            .create_credential_offer("not a did", false, ISSUER_DID, true, "[1]")
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Ok(_) => assert!(false, "expected error but got result"),
+            Err(error) => assert_eq!(
+                error.to_string(),
+                r#"value "not a did" given for "schema_did is not a DID""#.to_string()
+            ),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
     #[cfg(all(
         feature = "did-sidetree",
         not(all(feature = "c-lib", feature = "target-c-sdk"))
@@ -814,6 +874,10 @@ mod tests {
             serde_json::from_str(&did_result_str)?;
         let mut revocation_list = did_result_value.did_document;
         revocation_list.id = did_create_result.did.did_document.id.clone();
+        assert!(revocation_list.proof.is_some());
+        let revocation_list_proof = revocation_list.proof.as_ref().ok_or_else(|| {
+            CredentialError::RevocationListInvalid("revocation list is missing proof".to_string())
+        })?;
 
         credential_status.revocation_list_credential = revocation_list.id.clone();
         credential.credential_status = Some(credential_status.to_owned());
@@ -850,7 +914,8 @@ mod tests {
             .helper_revoke_credential(
                 &serde_json::to_string(&credential)?,
                 &serde_json::to_string(&update_key)?,
-                "dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106",
+                Some(&revocation_list_proof.verification_method),
+                Some("dfcdcb6d5d09411ae9cbe1b0fd9751ba8803dd4b276d5bf9488ae4ede2669106"),
             )
             .await;
         assert!(revoke_result.is_ok());

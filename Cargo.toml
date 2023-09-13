@@ -1,6 +1,6 @@
 [package]
 name = "vade-evan"
-version = "0.6.0-rc.3"
+version = "0.6.0-rc.6"
 authors = ["evan GmbH"]
 edition = "2018"
 license-file = "LICENSE.txt"
@@ -68,7 +68,7 @@ target-cli = ["cli"]
 target-java-lib = ["c-lib", "default"]
 
 # build for usage in wasm
-target-wasm = ["vade-didcomm/wasm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc", "vc-zkp-bbs"]
+target-wasm = ["vade-didcomm/wasm", "didcomm", "vade-evan-bbs/wasm", "did-sidetree", "did-substrate", "jwt-vc", "vc-zkp-bbs"]
 
 ############################################################################### generic dependencies
 [dependencies]

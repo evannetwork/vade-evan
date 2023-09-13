@@ -127,7 +127,8 @@ struct HelperCreateCredentialRequestPayload {
 struct HelperRevokeCredentialPayload {
     pub credential: String,
     pub update_key_jwk: String,
-    pub private_key: String,
+    pub issuer_public_key_did: Option<String>,
+    pub issuer_proving_key: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -161,7 +162,7 @@ struct HelperCreateProofRequestFomScratchPayload {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", untagged)]
 enum HelperCreateProofRequestPayload {
     FromScratch(HelperCreateProofRequestFomScratchPayload),
     FromProposal(BbsProofProposal),
@@ -383,14 +384,16 @@ cfg_if::cfg_if! {
         pub async fn helper_revoke_credential(
             credential: String,
             update_key_jwk: String,
-            private_key: String,
+            issuer_public_key_did: Option<String>,
+            issuer_proving_key: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
                 .helper_revoke_credential(
                     &credential,
                     &update_key_jwk,
-                    &private_key,
+                    issuer_public_key_did.as_deref(),
+                    issuer_proving_key.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -773,7 +776,8 @@ pub async fn execute_vade(
                     helper_revoke_credential(
                         payload.credential,
                         payload.update_key_jwk,
-                        payload.private_key,
+                        payload.issuer_public_key_did,
+                        payload.issuer_proving_key,
                     )
                     .await
                 }
