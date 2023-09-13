@@ -54,13 +54,13 @@ pub enum PresentationError {
     SchemaInvalid(String, String),
     #[error(r#"schema with DID "{0}" could not be found"#)]
     SchemaNotFound(String),
-    #[error(r#"SelfIssuedCredential are unsigned and can not contain proof"#)]
-    SelfIssuedCredentialWithProof(),
     #[error(r#"value "{0}" given for "{1} is not a DID""#)]
     NotADid(String, String),
+    #[error(r#"SelfIssuedCredential are unsigned and can not contain proof"#)]
+    SelfIssuedCredentialWithProof(),
 }
 
-/// A
+/// Self issued presentation that does not contain a proof.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SelfIssuedPresentation {
@@ -357,7 +357,9 @@ impl<'a> Presentation<'a> {
         prover_did: Option<&str>,
         revealed_attributes: Option<&str>,
     ) -> Result<String, PresentationError> {
-        fail_if_not_a_did(prover_did, "prover_did")?;
+        prover_did
+            .map(|prover_did_value| fail_if_not_a_did(prover_did_value, "prover_did"))
+            .transpose()?;
         let revealed_attributes = check_for_optional_empty_params(revealed_attributes);
         let credential: BbsCredential = serde_json::from_str(credential_str).map_err(
             PresentationError::to_deserialization_error("credential", credential_str),
