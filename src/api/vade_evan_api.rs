@@ -754,7 +754,7 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
-    /// Creates a self issued pretention.
+    /// Creates a self issued presentation.
     /// The presentation doesn't contain proof.
     ///
     /// # Arguments
