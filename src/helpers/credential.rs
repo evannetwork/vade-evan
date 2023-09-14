@@ -972,7 +972,7 @@ mod tests {
             }
             Err(_) => assert!(
                 false,
-                "error occured when creating the self issued credential"
+                "error occurred when creating the self issued credential"
             ),
         };
 

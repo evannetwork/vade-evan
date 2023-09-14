@@ -180,7 +180,7 @@ struct HelperCreatePresentationPayload {
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct HelperCreateSelftIssuedPresentationPayload {
+struct HelperCreateSelfIssuedPresentationPayload {
     unsigned_credential: String,
 }
 
@@ -836,7 +836,7 @@ pub async fn execute_vade(
         }
         #[cfg(all(feature = "vc-zkp-bbs"))]
         "helper_create_self_issued_presentation" => {
-            let payload_result = parse::<HelperCreateSelftIssuedPresentationPayload>(&payload);
+            let payload_result = parse::<HelperCreateSelfIssuedPresentationPayload>(&payload);
             match payload_result {
                 Ok(payload) => {
                     helper_create_self_issued_presentation(payload.unsigned_credential).await
