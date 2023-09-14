@@ -14,7 +14,7 @@
 
 ### Fixes
 
-- fix revealed properties in `CredentialStatus` create_presentation helper
+- fix revealed properties in `CredentialSubject`'s data in `create_presentation` helper
 
 ### Deprecation
 
