@@ -447,7 +447,7 @@ cfg_if::cfg_if! {
                 .map_err(jsify_vade_evan_error)?)
         }
 
-        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs"))]
         #[wasm_bindgen]
         pub async fn helper_convert_credential_to_nquads(
             credential: String,
@@ -810,7 +810,7 @@ pub async fn execute_vade(
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
-        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs"))]
         "helper_convert_credential_to_nquads" => {
             let payload_result = parse::<HelperConvertCredentialToNquads>(&payload);
             match payload_result {

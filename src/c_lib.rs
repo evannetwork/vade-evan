@@ -792,7 +792,7 @@ pub extern "C" fn execute_vade(
                     .map_err(stringify_vade_evan_error)
             }
         }),
-        #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+        #[cfg(all(feature = "vc-zkp-bbs"))]
         "helper_convert_credential_to_nquads" => runtime.block_on({
             async {
                 let mut vade_evan = get_vade_evan(

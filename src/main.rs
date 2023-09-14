@@ -253,7 +253,7 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
-            #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+            #[cfg(all(feature = "vc-zkp-bbs"))]
             ("convert_credential_to_nquads", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
                     .helper_convert_credential_to_nquads(get_argument_value(
@@ -434,7 +434,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))] {
+        if #[cfg(all(feature = "vc-zkp-bbs"))] {
             subcommand = subcommand.subcommand(
                 SubCommand::with_name("convert_credential_to_nquads")
                     .about("Converts a given credential to nquads vector.")

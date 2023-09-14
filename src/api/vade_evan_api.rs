@@ -496,7 +496,7 @@ impl VadeEvan {
             .map_err(|err| err.into())
     }
 
-    /// Converts a given credential to nquads Vector
+    /// Converts a Credential to canonized nquads
     ///
     /// # Arguments
     ///
@@ -562,7 +562,7 @@ impl VadeEvan {
     ///         // currently no example for target-c-sdk and c-lib/target-java-lib
     ///     }
     /// }
-    #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
+    #[cfg(all(feature = "vc-zkp-bbs"))]
     pub async fn helper_convert_credential_to_nquads(
         &mut self,
         credential: &str,

@@ -488,13 +488,13 @@ impl<'a> Credential<'a> {
         }
     }
 
-    /// Converts a Credential to nquads
+    /// Converts a Credential to canonized nquads
     ///
     /// # Arguments
     /// * `credential_str` - Credential to be converted
     ///
     /// # Returns
-    /// * `nquads` - Vec of nquads
+    /// * `nquads` - Vec of canonized nquads
     pub async fn convert_credential_to_nquads(
         &self,
         credential_str: &str,
