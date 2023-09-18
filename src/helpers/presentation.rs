@@ -382,8 +382,9 @@ impl<'a> Presentation<'a> {
                 "Proof request schema doesn't match with Credential schema".to_owned(),
             ));
         }
+        let mut revealed_attributes_parsed: Option<Vec<String>> = None;
         if revealed_attributes.is_some() {
-            let revealed_attributes_parsed: Option<Vec<String>> = revealed_attributes
+            revealed_attributes_parsed = revealed_attributes
                 .map(|ras| {
                     serde_json::from_str(ras).map_err(PresentationError::to_deserialization_error(
                         "revealed attributes",
@@ -392,7 +393,7 @@ impl<'a> Presentation<'a> {
                 })
                 .transpose()?;
             let reveal_attributes = self
-                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed)
+                .get_reveal_attributes_indices_map(schema_did, revealed_attributes_parsed.clone())
                 .await?;
             for sub_proof in proof_request.sub_proof_requests.iter_mut() {
                 if &sub_proof.schema == schema_did {
@@ -421,8 +422,20 @@ impl<'a> Presentation<'a> {
 
         // revealed_properties_schema_map
         let mut revealed_properties_schema_map = HashMap::new();
-        let revealed = credential.credential_subject.clone();
-        revealed_properties_schema_map.insert(schema_did.to_owned(), revealed);
+        let mut credential_subject_revealed = credential.credential_subject.clone();
+        if revealed_attributes_parsed.is_some() {
+            let revealed_attributes_parsed = revealed_attributes_parsed.ok_or_else(|| {
+                PresentationError::InternalError(format!(
+                    "RevealedAttributes can not be parsed {}",
+                    schema_did
+                ))
+            })?;
+            // discard properties which are not in revealed_attributes
+            credential_subject_revealed
+                .data
+                .retain(|k, _| revealed_attributes_parsed.contains(k));
+        }
+        revealed_properties_schema_map.insert(schema_did.to_owned(), credential_subject_revealed);
 
         let mut helper_credential = Credential::new(self.vade_evan)
             .map_err(|err| PresentationError::InternalError(err.to_string()))?;
@@ -617,7 +630,7 @@ mod tests_proof_request {
     const SCHEMA_DID: &str = "did:evan:EiBrPL8Yif5NWHOzbKvyh1PX1wKVlWvIa6nTG1v8PXytvg"; // evan.address
     const SCHEMA_DID_2: &str = "did:evan:EiBmiHCHLMbGVn9hllRM5qQOsshvETToEALBAtFqP3PUIg";
     const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
-    const CREDENTIAL: &str = r###"{
+    const CREDENTIAL_WITH_VALID_STATUS: &str = r###"{
         "@context":[
            "https://www.w3.org/2018/credentials/v1",
            "https://schema.org/",
@@ -656,6 +669,49 @@ mod tests_proof_request {
            "signature":"sZTYWUrmYaVDUGs1L2UM/7f7UlVLSQS2vPQQG1YWU3TQRlcviNXFDx054zztzG8rWc1lw5e+SJNo4c1x+rpOFiXBjjK6IukN3a0zG5c/ayFbIQ6OVjxV7noWX8aTdNXNO5eyVV2Upd1YB4WGAuUO0w=="
         }
     }"###;
+    const CREDENTIAL: &str = r###"{
+        "@context":[
+           "https://www.w3.org/2018/credentials/v1",
+           "https://schema.org/",
+           "https://w3id.org/vc-revocation-list-2020/v1"
+        ],
+        "id":"uuid:c2872087-3fe6-4aeb-932d-a528709b0f0a",
+        "type":[
+           "VerifiableCredential"
+        ],
+        "issuer":"did:evan:EiDmRkKsOaey8tPzc6RyQrYkMNjpqXXVTj9ggy0EbiXS4g",
+        "issuanceDate":"2023-05-02T12:56:07.000Z",
+        "credentialSubject":{
+           "data":{
+              "test_property_string3":"value",
+              "test_property_string":"value",
+              "test_property_string4":"value",
+              "test_property_string1":"value",
+              "test_property_string2":"value"
+           }
+        },
+        "credentialSchema":{
+           "id":"did:evan:EiBmiHCHLMbGVn9hllRM5qQOsshvETToEALBAtFqP3PUIg",
+           "type":"EvanVCSchema"
+        },
+        "credentialStatus":{
+           "id":"did:evan:revocation123#0",
+           "type":"RevocationList2021Status",
+           "revocationListIndex":"0",
+           "revocationListCredential":"did:evan:revocation123"
+        },
+        "proof":{
+           "type":"BbsBlsSignature2020",
+           "created":"2023-05-02T12:56:07.000Z",
+           "proofPurpose":"assertionMethod",
+           "verificationMethod":"did:evan:EiDmRkKsOaey8tPzc6RyQrYkMNjpqXXVTj9ggy0EbiXS4g#bbs-key-1",
+           "credentialMessageCount":17,
+           "requiredRevealStatements":[
+              1
+           ],
+           "signature":"i96noCN2UoXK/7iId5K2xSl5nGA7v+Mot+NVxGLLFfjvW/YYrQKWyY9frmH/VYcHUmBvXjIRx3hz41nPZ6JOX14PXPgCczFvs6HOxEBGWnM7kdy88X2Tn/wQQY3zgzuwInkiR1d6Gbm9AfkmAnLufg=="
+        }
+     }"###;
     const UNSIGNED_CREDENTIAL: &str = r###"{
         "@context":[
            "https://www.w3.org/2018/credentials/v1",
@@ -857,7 +913,7 @@ mod tests_proof_request {
     }
 
     #[tokio::test]
-    async fn helper_can_create_presentation() -> Result<()> {
+    async fn helper_can_create_presentation_and_reveal_all_if_none_required_revealed() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -887,6 +943,45 @@ mod tests_proof_request {
             )
             .await;
         assert!(presentation_result.is_ok());
+        let presentation: ProofPresentation = serde_json::from_str(&presentation_result?)?;
+        assert_eq!(presentation.verifiable_credential[0].credential_subject.data.len(), 5);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn helper_can_create_presentation_and_reveal_only_required_attributes_in_credential_subject() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut presentation = Presentation::new(&mut vade_evan)?;
+
+        let proof_request_result = presentation
+            .create_proof_request(SCHEMA_DID_2, Some(r#"["test_property_string"]"#))
+            .await;
+
+        assert!(proof_request_result.is_ok());
+        let proof_request_str = &proof_request_result?;
+        let mut parsed: BbsProofRequest = serde_json::from_str(proof_request_str)?;
+        assert_eq!(parsed.r#type, "BBS");
+        assert_eq!(parsed.sub_proof_requests[0].schema, SCHEMA_DID_2);
+        parsed.sub_proof_requests[0].revealed_attributes.sort();
+        assert_eq!(parsed.sub_proof_requests[0].revealed_attributes, [15],);
+
+        let presentation_result = presentation
+            .create_presentation(
+                proof_request_str,
+                CREDENTIAL,
+                MASTER_SECRET,
+                Some(SIGNER_PRIVATE_KEY),
+                Some(SUBJECT_DID),
+                Some(r#"["test_property_string"]"#),
+            )
+            .await;
+
+        assert!(presentation_result.is_ok());
+        let presentation: ProofPresentation = serde_json::from_str(&presentation_result?)?;
+        assert_eq!(presentation.verifiable_credential[0].credential_subject.data.len(), 1);
 
         Ok(())
     }
@@ -990,7 +1085,7 @@ mod tests_proof_request {
         let presentation_result = presentation
             .create_presentation(
                 proof_request_str,
-                CREDENTIAL,
+                CREDENTIAL_WITH_VALID_STATUS,
                 MASTER_SECRET,
                 Some(SIGNER_PRIVATE_KEY),
                 Some(SUBJECT_DID),

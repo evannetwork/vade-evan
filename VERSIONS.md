@@ -15,6 +15,8 @@
 
 ### Fixes
 
+- fix revealed properties in `CredentialSubject`'s data in `create_presentation` helper
+
 ### Deprecation
 
 - helper calls now have a different setup for `revoke_credential`
