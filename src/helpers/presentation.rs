@@ -949,7 +949,7 @@ mod tests_proof_request {
     }
 
     #[tokio::test]
-    async fn helper_can_create_presentation_and_reveal_only_required_attributes_in_credenital_subject() -> Result<()> {
+    async fn helper_can_create_presentation_and_reveal_only_required_attributes_in_credential_subject() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
