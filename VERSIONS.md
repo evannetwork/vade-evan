@@ -11,6 +11,7 @@
   - these properties in payload are now optional:
     - `issuer_public_key_did`
     - `issuer_proving_key`
+- add `helper_convert_credential_to_nquads` helper function
 
 ### Fixes
 

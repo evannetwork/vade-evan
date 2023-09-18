@@ -253,6 +253,17 @@ async fn main() -> Result<()> {
                     )
                     .await?
             }
+            #[cfg(all(feature = "vc-zkp-bbs"))]
+            ("convert_credential_to_nquads", Some(sub_m)) => {
+                get_vade_evan(sub_m)?
+                    .helper_convert_credential_to_nquads(get_argument_value(
+                        sub_m,
+                        "credential",
+                        None,
+                    ))
+                    .await?;
+                "".to_string()
+            }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_self_issued_credential", Some(sub_m)) => {
                 get_vade_evan(sub_m)?
@@ -418,6 +429,16 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Verifies a given credential by checking if given master secret was incorporated into proof and if proof was signed with issuers public key.")
                     .arg(get_clap_argument("credential")?)
                     .arg(get_clap_argument("master_secret")?)
+            );
+        } else {}
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(all(feature = "vc-zkp-bbs"))] {
+            subcommand = subcommand.subcommand(
+                SubCommand::with_name("convert_credential_to_nquads")
+                    .about("Converts a given credential to nquads vector.")
+                    .arg(get_clap_argument("credential")?)
             );
         } else {}
     }

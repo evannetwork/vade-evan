@@ -190,6 +190,12 @@ struct HelperVerifyPresentationPayload {
     pub presentation_str: String,
     pub proof_request_str: String,
 }
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HelperConvertCredentialToNquads {
+    pub credential_str: String,
+}
+
 
 #[wasm_bindgen]
 pub fn set_panic_hook() {
@@ -439,6 +445,20 @@ cfg_if::cfg_if! {
                     &subject_did,
                 ).await
                 .map_err(jsify_vade_evan_error)?)
+        }
+
+        #[cfg(all(feature = "vc-zkp-bbs"))]
+        #[wasm_bindgen]
+        pub async fn helper_convert_credential_to_nquads(
+            credential: String,
+        ) -> Result<String, JsValue> {
+            let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
+            vade_evan
+                .helper_convert_credential_to_nquads(
+                    &credential,
+                ).await
+                .map_err(jsify_vade_evan_error)?;
+            Ok("".to_string())
         }
 
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
@@ -786,6 +806,16 @@ pub async fn execute_vade(
                         payload.subject_did,
                     )
                     .await
+                }
+                Err(error) => Err(get_parsing_error_message(&error, &payload)),
+            }
+        }
+        #[cfg(all(feature = "vc-zkp-bbs"))]
+        "helper_convert_credential_to_nquads" => {
+            let payload_result = parse::<HelperConvertCredentialToNquads>(&payload);
+            match payload_result {
+                Ok(payload) => {
+                    helper_convert_credential_to_nquads(payload.credential_str).await
                 }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
