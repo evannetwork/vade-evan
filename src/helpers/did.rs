@@ -429,7 +429,7 @@ mod tests {
 
         let service = Service {
             id: "sds".to_string(),
-            service_type: "SecureDataStrore".to_string(),
+            service_type: "SecureDataStore".to_string(),
             service_endpoint: service_endpoint.clone(),
         };
 
@@ -468,7 +468,7 @@ mod tests {
 
         let service = Service {
             id: "sds".to_string(),
-            service_type: "SecureDataStrore".to_string(),
+            service_type: "SecureDataStore".to_string(),
             service_endpoint: service_endpoint.clone(),
         };
 
