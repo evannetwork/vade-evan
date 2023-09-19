@@ -117,7 +117,6 @@ struct HelperCreateCredentialOfferPayload {
 struct HelperCreateCredentialRequestPayload {
     pub issuer_public_key: String,
     pub bbs_secret: String,
-    pub credential_values: String,
     pub credential_offer: String,
     pub credential_schema: String,
 }
@@ -363,7 +362,6 @@ cfg_if::cfg_if! {
         pub async fn helper_create_credential_request(
             issuer_public_key: String,
             bbs_secret: String,
-            credential_values: String,
             credential_offer: String,
             credential_schema: String
         ) -> Result<String, JsValue> {
@@ -372,7 +370,6 @@ cfg_if::cfg_if! {
                 .helper_create_credential_request(
                     &issuer_public_key,
                     &bbs_secret,
-                    &credential_values,
                     &credential_offer,
                     &credential_schema).await
                     .map_err(jsify_vade_evan_error)?;
@@ -759,7 +756,6 @@ pub async fn execute_vade(
                     helper_create_credential_request(
                         payload.issuer_public_key,
                         payload.bbs_secret,
-                        payload.credential_values,
                         payload.credential_offer,
                         payload.credential_schema,
                     )

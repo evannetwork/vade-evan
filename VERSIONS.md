@@ -16,6 +16,7 @@
 ### Fixes
 
 - fix revealed properties in `CredentialSubject`'s data in `create_presentation` helper
+- remove unsued `credential_values` param from `helper_create_credential_request`
 
 ### Deprecation
 

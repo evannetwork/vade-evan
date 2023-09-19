@@ -203,7 +203,6 @@ async fn main() -> Result<()> {
                     .helper_create_credential_request(
                         get_argument_value(sub_m, "issuer_public_key", None),
                         get_argument_value(sub_m, "bbs_secret", None),
-                        get_argument_value(sub_m, "credential_values", None),
                         get_argument_value(sub_m, "credential_offer", None),
                         get_argument_value(sub_m, "schema_did", None),
                     )
@@ -382,7 +381,6 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
                     .arg(get_clap_argument("issuer_public_key")?)
                     .arg(get_clap_argument("bbs_secret")?)
-                    .arg(get_clap_argument("credential_values")?)
                     .arg(get_clap_argument("credential_offer")?)
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("target")?)
