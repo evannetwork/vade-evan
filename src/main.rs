@@ -194,6 +194,7 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "issuer_did", None),
                         include_credential_status,
                         get_argument_value(sub_m, "required_reveal_statements", None),
+                        get_optional_argument_value(sub_m, "credential_values"),
                     )
                     .await?
             }
@@ -370,6 +371,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("issuer_did")?)
                     .arg(get_clap_argument("include_credential_status")?)
                     .arg(get_clap_argument("required_reveal_statements")?)
+                    .arg(get_clap_argument("credential_values")?)
             );
         } else {}
     }
@@ -940,7 +942,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "credential_values" => Arg::with_name("credential_values")
             .long("credential_values")
             .value_name("credential_values")
-            .required(true)
+            .required(false)
             .help("JSON string with cleartext values to be signed in the credential")
             .takes_value(true),
         "bbs_secret" => Arg::with_name("bbs_secret")

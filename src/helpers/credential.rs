@@ -785,6 +785,45 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(all(
+        feature = "did-sidetree",
+        not(all(feature = "c-lib", feature = "target-c-sdk"))
+    ))]
+    async fn helper_can_reject_credential_offer_with_invalid_credential_values() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        let credential_values = r#"{
+            "xyz": "value@x.com"
+        }"#;
+
+        match credential
+            .create_credential_offer(
+                SCHEMA_DID,
+                false,
+                ISSUER_DID,
+                true,
+                "[1]",
+                Some(credential_values),
+            )
+            .await
+        {
+            Ok(_) => assert!(false, "credential offer should reject due to invalid value"),
+            Err(credential_error) => {
+                assert_eq!(
+                        credential_error.to_string(),
+                        format!("credential_value is invalid, value {} doesn't match any property in schema {}","xyz", SCHEMA_DID)
+                    );
+            }
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
     #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_credential_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -792,7 +831,7 @@ mod tests {
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let credential_offer = vade_evan
-            .helper_create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]")
+            .helper_create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]", None)
             .await?;
 
         let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;

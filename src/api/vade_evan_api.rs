@@ -288,6 +288,7 @@ impl VadeEvan {
     /// * `issuer_did` - DID of issuer
     /// * `is_credential_status_included` - true if credentialStatus is included in credential
     /// * `required_reveal_statements` - required_revealed_statements indices array in serialized form
+    /// * `credential_values` - optional key value pairs for credential subject data values
     ///
     /// # Returns
     /// * credential offer as JSON serialized [`BbsCredentialOffer`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredentialOffer.html)
@@ -311,6 +312,7 @@ impl VadeEvan {
     ///                     ISSUER_DID,
     ///                     true,
     ///                     "[1]",
+    ///                     None,
     ///                 )
     ///                 .await?;
     ///
@@ -329,6 +331,7 @@ impl VadeEvan {
         issuer_did: &str,
         is_credential_status_included: bool,
         required_reveal_statements: &str,
+        credential_values: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
@@ -338,6 +341,7 @@ impl VadeEvan {
                 issuer_did,
                 is_credential_status_included,
                 required_reveal_statements,
+                credential_values,
             )
             .await
             .map_err(|err| err.into())
