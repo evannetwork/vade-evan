@@ -223,7 +223,6 @@ impl<'a> Credential<'a> {
         &mut self,
         issuer_public_key: &str,
         bbs_secret: &str,
-        credential_values: &str,
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, CredentialError> {
@@ -235,13 +234,11 @@ impl<'a> Credential<'a> {
             r#"{{
                 "credentialOffer": {},
                 "masterSecret": "{}",
-                "credentialValues": {},
                 "issuerPubKey": "{}",
                 "credentialSchema": {}
             }}"#,
             credential_offer,
             bbs_secret,
-            credential_values,
             issuer_public_key,
             serde_json::to_string(&credential_schema)?
         );
@@ -799,16 +796,13 @@ mod tests {
             .await?;
 
         let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
-        let credential_values = r#"{
-        "email": "value@x.com"
-    }"#;
+
         let issuer_pub_key = r#"jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o"#;
 
         let credential_request = vade_evan
             .helper_create_credential_request(
                 issuer_pub_key,
                 bbs_secret,
-                credential_values,
                 &credential_offer,
                 SCHEMA_DID,
             )
