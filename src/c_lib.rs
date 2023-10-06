@@ -562,6 +562,7 @@ pub extern "C" fn execute_vade(
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),
                         is_credential_status_included,
                         arguments_vec.get(4).unwrap_or_else(|| &no_args),
+                        arguments_vec.get(5).map(|x| &**x),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)
@@ -584,7 +585,6 @@ pub extern "C" fn execute_vade(
                         arguments_vec.get(1).unwrap_or_else(|| &no_args),
                         arguments_vec.get(2).unwrap_or_else(|| &no_args),
                         arguments_vec.get(3).unwrap_or_else(|| &no_args),
-                        arguments_vec.get(4).unwrap_or_else(|| &no_args),
                     )
                     .await
                     .map_err(stringify_vade_evan_error)

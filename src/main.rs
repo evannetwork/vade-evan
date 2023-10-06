@@ -194,6 +194,7 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "issuer_did", None),
                         include_credential_status,
                         get_argument_value(sub_m, "required_reveal_statements", None),
+                        get_optional_argument_value(sub_m, "credential_values"),
                     )
                     .await?
             }
@@ -203,7 +204,6 @@ async fn main() -> Result<()> {
                     .helper_create_credential_request(
                         get_argument_value(sub_m, "issuer_public_key", None),
                         get_argument_value(sub_m, "bbs_secret", None),
-                        get_argument_value(sub_m, "credential_values", None),
                         get_argument_value(sub_m, "credential_offer", None),
                         get_argument_value(sub_m, "schema_did", None),
                     )
@@ -371,6 +371,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("issuer_did")?)
                     .arg(get_clap_argument("include_credential_status")?)
                     .arg(get_clap_argument("required_reveal_statements")?)
+                    .arg(get_clap_argument("credential_values")?)
             );
         } else {}
     }
@@ -382,7 +383,6 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Requests a credential. This message is the response to a credential offering and is sent by the potential credential holder. It incorporates the target schema, credential definition offered by the issuer, and the encoded values the holder wants to get signed. The credential is not stored on-chain and needs to be kept private.")
                     .arg(get_clap_argument("issuer_public_key")?)
                     .arg(get_clap_argument("bbs_secret")?)
-                    .arg(get_clap_argument("credential_values")?)
                     .arg(get_clap_argument("credential_offer")?)
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("target")?)
@@ -942,7 +942,7 @@ fn get_clap_argument(arg_name: &str) -> Result<Arg> {
         "credential_values" => Arg::with_name("credential_values")
             .long("credential_values")
             .value_name("credential_values")
-            .required(true)
+            .required(false)
             .help("JSON string with cleartext values to be signed in the credential")
             .takes_value(true),
         "bbs_secret" => Arg::with_name("bbs_secret")

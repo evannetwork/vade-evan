@@ -12,10 +12,12 @@
     - `issuer_public_key_did`
     - `issuer_proving_key`
 - add `helper_convert_credential_to_nquads` helper function
+- add optional param `credential_values` to `helper_create_credential_offer` helper function
 
 ### Fixes
 
 - fix revealed properties in `CredentialSubject`'s data in `create_presentation` helper
+- remove unsued `credential_values` param from `helper_create_credential_request`
 
 ### Deprecation
 

@@ -288,6 +288,7 @@ impl VadeEvan {
     /// * `issuer_did` - DID of issuer
     /// * `is_credential_status_included` - true if credentialStatus is included in credential
     /// * `required_reveal_statements` - required_revealed_statements indices array in serialized form
+    /// * `credential_values` - optional key value pairs for credential subject data values
     ///
     /// # Returns
     /// * credential offer as JSON serialized [`BbsCredentialOffer`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredentialOffer.html)
@@ -311,6 +312,7 @@ impl VadeEvan {
     ///                     ISSUER_DID,
     ///                     true,
     ///                     "[1]",
+    ///                     None,
     ///                 )
     ///                 .await?;
     ///
@@ -329,6 +331,7 @@ impl VadeEvan {
         issuer_did: &str,
         is_credential_status_included: bool,
         required_reveal_statements: &str,
+        credential_values: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
@@ -338,6 +341,7 @@ impl VadeEvan {
                 issuer_did,
                 is_credential_status_included,
                 required_reveal_statements,
+                credential_values,
             )
             .await
             .map_err(|err| err.into())
@@ -349,7 +353,6 @@ impl VadeEvan {
     ///
     /// * `issuer_public_key` - issuer public key
     /// * `bbs_secret` - master secret of the holder/receiver
-    /// * `credential_values` - JSON string with cleartext values to be signed in the credential
     /// * `credential_offer` - JSON string with credential offer by issuer
     /// * `credential_schema_did` - did for credential schema
     ///
@@ -370,16 +373,12 @@ impl VadeEvan {
     ///                "credentialMessageCount": 2
     ///            }"#;
     ///            let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
-    ///            let credential_values = r#"{
-    ///                "email": "value@x.com"
-    ///            }"#;
     ///            let issuer_pub_key = r#"jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o"#;
     ///
     ///            let credential_request = vade_evan
     ///                .helper_create_credential_request(
     ///                    issuer_pub_key,
     ///                    bbs_secret,
-    ///                    credential_values,
     ///                    credential_offer,
     ///                    "did:evan:EiACv4q04NPkNRXQzQHOEMa3r1p_uINgX75VYP2gaK5ADw",
     ///                )
@@ -397,7 +396,6 @@ impl VadeEvan {
         &mut self,
         issuer_public_key: &str,
         bbs_secret: &str,
-        credential_values: &str,
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, VadeEvanError> {
@@ -406,7 +404,6 @@ impl VadeEvan {
             .create_credential_request(
                 issuer_public_key,
                 bbs_secret,
-                credential_values,
                 credential_offer,
                 credential_schema_did,
             )

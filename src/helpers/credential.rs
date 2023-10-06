@@ -1,5 +1,6 @@
 use crate::api::VadeEvan;
 use crate::helpers::datatypes::EVAN_METHOD;
+use std::collections::HashMap;
 use std::{io::Read, panic};
 
 use super::datatypes::{DidDocumentResult, IdentityDidDocument};
@@ -39,6 +40,8 @@ pub enum CredentialError {
     InvalidCredentialSchema(String),
     #[error("credential_status is invalid, {0}")]
     InvalidCredentialStatus(String),
+    #[error("credential_value is invalid, {0}")]
+    InvalidCredentialValues(String),
     #[error("JSON (de)serialization failed")]
     JsonDeSerialization(#[from] serde_json::Error),
     #[error(r#"JSON serialization of {0} failed due to "{1}""#)]
@@ -149,13 +152,15 @@ impl<'a> Credential<'a> {
         issuer_did: &str,
         is_credential_status_included: bool,
         required_reveal_statements: &str,
+        credential_values: Option<&str>,
     ) -> Result<String, CredentialError> {
         fail_if_not_a_did(schema_did, "schema_did")?;
         fail_if_not_a_did(issuer_did, "issuer_did")?;
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
+
         let required_reveal_statements: Vec<u32> = serde_json::from_str(required_reveal_statements)
             .map_err(|err| CredentialError::JsonDeSerialization(err))?;
-        let payload = OfferCredentialPayload {
+        let mut payload = OfferCredentialPayload {
             draft_credential: schema.to_draft_credential(CredentialDraftOptions {
                 issuer_did: issuer_did.to_string(),
                 id: None,
@@ -172,6 +177,35 @@ impl<'a> Credential<'a> {
             required_reveal_statements,
         };
 
+        if credential_values.is_some() {
+            let credential_values = credential_values.ok_or_else(|| {
+                CredentialError::InvalidCredentialValues(
+                    "Can't parse credential_values".to_string(),
+                )
+            })?;
+            let credential_values: HashMap<String, String> =
+                serde_json::from_str(&credential_values)?;
+
+            for (name, value) in credential_values.iter() {
+                if payload
+                    .draft_credential
+                    .credential_subject
+                    .data
+                    .contains_key(name)
+                {
+                    payload
+                        .draft_credential
+                        .credential_subject
+                        .data
+                        .insert(name.to_owned(), value.to_owned());
+                } else {
+                    return Err(CredentialError::InvalidCredentialValues(format!(
+                        "value {} doesn't match any property in schema {}",
+                        name, schema_did
+                    )));
+                }
+            }
+        }
         let result = self
             .vade_evan
             .vc_zkp_create_credential_offer(
@@ -189,7 +223,6 @@ impl<'a> Credential<'a> {
         &mut self,
         issuer_public_key: &str,
         bbs_secret: &str,
-        credential_values: &str,
         credential_offer: &str,
         credential_schema_did: &str,
     ) -> Result<String, CredentialError> {
@@ -201,13 +234,11 @@ impl<'a> Credential<'a> {
             r#"{{
                 "credentialOffer": {},
                 "masterSecret": "{}",
-                "credentialValues": {},
                 "issuerPubKey": "{}",
                 "credentialSchema": {}
             }}"#,
             credential_offer,
             bbs_secret,
-            credential_values,
             issuer_public_key,
             serde_json::to_string(&credential_schema)?
         );
@@ -658,7 +689,7 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         let result = credential
-            .create_credential_offer("not a did", false, ISSUER_DID, true, "[1]")
+            .create_credential_offer("not a did", false, ISSUER_DID, true, "[1]", None)
             .await;
 
         assert!(result.is_err());
@@ -686,7 +717,7 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         let offer_str = credential
-            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]")
+            .create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]", None)
             .await?;
 
         let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
@@ -704,6 +735,95 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(all(
+        feature = "did-sidetree",
+        not(all(feature = "c-lib", feature = "target-c-sdk"))
+    ))]
+    async fn helper_can_create_credential_offer_with_credential_values() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        let credential_values = r#"{
+            "email": "value@x.com"
+        }"#;
+
+        let offer_str = credential
+            .create_credential_offer(
+                SCHEMA_DID,
+                false,
+                ISSUER_DID,
+                true,
+                "[1]",
+                Some(credential_values),
+            )
+            .await?;
+
+        let offer_obj: BbsCredentialOffer = serde_json::from_str(&offer_str)?;
+        assert_eq!(
+            offer_obj
+                .ld_proof_vc_detail
+                .options
+                .required_reveal_statements,
+            vec![1]
+        );
+        assert_eq!(offer_obj.ld_proof_vc_detail.credential.issuer, ISSUER_DID);
+        assert!(!offer_obj.nonce.is_empty());
+        assert_eq!(
+            offer_obj
+                .ld_proof_vc_detail
+                .credential
+                .credential_subject
+                .data
+                .get("email")
+                .map(|x| x.as_str()),
+            Some("value@x.com")
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(all(
+        feature = "did-sidetree",
+        not(all(feature = "c-lib", feature = "target-c-sdk"))
+    ))]
+    async fn helper_can_reject_credential_offer_with_invalid_credential_values() -> Result<()> {
+        let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
+            target: DEFAULT_TARGET,
+            signer: DEFAULT_SIGNER,
+        })?;
+        let mut credential = Credential::new(&mut vade_evan)?;
+
+        let credential_values = r#"{
+            "xyz": "value@x.com"
+        }"#;
+
+        match credential
+            .create_credential_offer(
+                SCHEMA_DID,
+                false,
+                ISSUER_DID,
+                true,
+                "[1]",
+                Some(credential_values),
+            )
+            .await
+        {
+            Ok(_) => assert!(false, "credential offer should reject due to invalid value"),
+            Err(credential_error) => {
+                assert_eq!(
+                        credential_error.to_string(),
+                        format!("credential_value is invalid, value {} doesn't match any property in schema {}","xyz", SCHEMA_DID)
+                    );
+            }
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
     #[cfg(feature = "did-sidetree")]
     async fn helper_can_create_credential_request() -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
@@ -711,20 +831,17 @@ mod tests {
             signer: "remote|http://127.0.0.1:7070/key/sign",
         })?;
         let credential_offer = vade_evan
-            .helper_create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]")
+            .helper_create_credential_offer(SCHEMA_DID, false, ISSUER_DID, true, "[1]", None)
             .await?;
 
         let bbs_secret = r#"OASkVMA8q6b3qJuabvgaN9K1mKoqptCv4SCNvRmnWuI="#;
-        let credential_values = r#"{
-        "email": "value@x.com"
-    }"#;
+
         let issuer_pub_key = r#"jCv7l26izalfcsFe6j/IqtVlDolo2Y3lNld7xOG63GjSNHBVWrvZQe2O859q9JeVEV4yXtfYofGQSWrMVfgH5ySbuHpQj4fSgLu4xXyFgMidUO1sIe0NHRcXpOorP01o"#;
 
         let credential_request = vade_evan
             .helper_create_credential_request(
                 issuer_pub_key,
                 bbs_secret,
-                credential_values,
                 &credential_offer,
                 SCHEMA_DID,
             )

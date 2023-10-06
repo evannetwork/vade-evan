@@ -110,6 +110,7 @@ struct HelperCreateCredentialOfferPayload {
     pub subject_did: Option<String>,
     pub is_credential_status_included: bool,
     pub required_reveal_statements: String,
+    pub credential_values: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -117,7 +118,6 @@ struct HelperCreateCredentialOfferPayload {
 struct HelperCreateCredentialRequestPayload {
     pub issuer_public_key: String,
     pub bbs_secret: String,
-    pub credential_values: String,
     pub credential_offer: String,
     pub credential_schema: String,
 }
@@ -344,6 +344,7 @@ cfg_if::cfg_if! {
             issuer_did: String,
             is_credential_status_included: bool,
             required_reveal_statements: String,
+            credential_values: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let offer = vade_evan
@@ -353,6 +354,7 @@ cfg_if::cfg_if! {
                     &issuer_did,
                     is_credential_status_included,
                     &required_reveal_statements,
+                    credential_values.as_ref().map(|x| x.as_ref())
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(offer)
@@ -363,7 +365,6 @@ cfg_if::cfg_if! {
         pub async fn helper_create_credential_request(
             issuer_public_key: String,
             bbs_secret: String,
-            credential_values: String,
             credential_offer: String,
             credential_schema: String
         ) -> Result<String, JsValue> {
@@ -372,7 +373,6 @@ cfg_if::cfg_if! {
                 .helper_create_credential_request(
                     &issuer_public_key,
                     &bbs_secret,
-                    &credential_values,
                     &credential_offer,
                     &credential_schema).await
                     .map_err(jsify_vade_evan_error)?;
@@ -745,6 +745,7 @@ pub async fn execute_vade(
                         payload.issuer_did,
                         payload.is_credential_status_included,
                         payload.required_reveal_statements,
+                        payload.credential_values,
                     )
                     .await
                 }
@@ -759,7 +760,6 @@ pub async fn execute_vade(
                     helper_create_credential_request(
                         payload.issuer_public_key,
                         payload.bbs_secret,
-                        payload.credential_values,
                         payload.credential_offer,
                         payload.credential_schema,
                     )
