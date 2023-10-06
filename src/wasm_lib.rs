@@ -110,6 +110,7 @@ struct HelperCreateCredentialOfferPayload {
     pub subject_did: Option<String>,
     pub is_credential_status_included: bool,
     pub required_reveal_statements: String,
+    pub credential_values: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -343,6 +344,7 @@ cfg_if::cfg_if! {
             issuer_did: String,
             is_credential_status_included: bool,
             required_reveal_statements: String,
+            credential_values: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             let offer = vade_evan
@@ -352,6 +354,7 @@ cfg_if::cfg_if! {
                     &issuer_did,
                     is_credential_status_included,
                     &required_reveal_statements,
+                    credential_values.as_ref().map(|x| x.as_ref())
                 ).await
                 .map_err(jsify_vade_evan_error)?;
             Ok(offer)
@@ -742,6 +745,7 @@ pub async fn execute_vade(
                         payload.issuer_did,
                         payload.is_credential_status_included,
                         payload.required_reveal_statements,
+                        payload.credential_values,
                     )
                     .await
                 }
