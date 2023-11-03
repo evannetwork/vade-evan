@@ -147,7 +147,7 @@ optional = true
 
 [dependencies.vade-evan-bbs]
 git = "https://github.com/evannetwork/vade-evan-bbs.git"
-branch = "feature/make-signer-address-optional"
+branch = "experimental/develop-next"
 optional = true
 default-features = false
 
