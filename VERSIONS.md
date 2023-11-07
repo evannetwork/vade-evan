@@ -14,6 +14,7 @@
 - add `helper_convert_credential_to_nquads` helper function
 - add optional param `credential_values` to `helper_create_credential_offer` helper function
 - update `helper_verify_presentation` for optional `signer_address`
+- update didcomm dependency for pthid in `get_did_exchange_message`
 
 ### Fixes
 
