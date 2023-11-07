@@ -103,7 +103,7 @@ optional = true
 # didcomm
 [dependencies.vade-didcomm]
 git = "https://github.com/evannetwork/vade-didcomm.git"
-branch = "feature/fix-comment-in-didcomm-send"
+branch = "develop"
 optional = true
 
 # jwt-vc
