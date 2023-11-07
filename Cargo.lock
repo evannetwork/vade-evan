@@ -4838,7 +4838,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=feature/fix-comment-in-didcomm-send#18e5cc794c193ae73d60b50f1fa9319e6828d1c5"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#68afe13b4e52177058ac2b17a8a323e30f6e7765"
 dependencies = [
  "async-trait",
  "bs58",
