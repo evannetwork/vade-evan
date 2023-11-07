@@ -291,33 +291,42 @@ impl<'a> Presentation<'a> {
                 .map_err(|err| PresentationError::InternalError(err.to_string()))?;
         }
 
+        let mut signer_address = None;
         // extract signing address
-        let mut presentation_value: Value = serde_json::from_str(presentation_str).map_err(
-            PresentationError::to_deserialization_error("presentation", &presentation_str),
-        )?;
+        if presentation.proof.is_some() {
+            let mut presentation_value: Value = serde_json::from_str(presentation_str).map_err(
+                PresentationError::to_deserialization_error("presentation", &presentation_str),
+            )?;
 
-        let presentation_value_with_proof =
-            presentation_value.as_object_mut().ok_or_else(|| {
-                PresentationError::InternalError("Error in parsing presentation proof".to_string())
-            })?;
+            let presentation_value_with_proof =
+                presentation_value.as_object_mut().ok_or_else(|| {
+                    PresentationError::InternalError(
+                        "Error in parsing presentation proof".to_string(),
+                    )
+                })?;
 
-        let presentation_value_without_proof = presentation_value_with_proof
-            .remove("proof")
-            .ok_or_else(|| {
-                PresentationError::InternalError("Error in parsing presentation proof".to_string())
-            })?;
-
-        let (signer_address, _) = recover_address_and_data(
-            presentation_value_without_proof["jws"]
-                .as_str()
+            let presentation_value_without_proof = presentation_value_with_proof
+                .remove("proof")
                 .ok_or_else(|| {
                     PresentationError::InternalError(
                         "Error in parsing presentation proof".to_string(),
                     )
-                })?,
-        )
-        .map_err(|err| PresentationError::InternalError(err.to_string()))?;
-        let signer_address = format!("0x{}", signer_address);
+                })?;
+
+            let (address, _) = recover_address_and_data(
+                presentation_value_without_proof["jws"]
+                    .as_str()
+                    .ok_or_else(|| {
+                        PresentationError::InternalError(
+                            "Error in parsing presentation proof".to_string(),
+                        )
+                    })?,
+            )
+            .map_err(|err| PresentationError::InternalError(err.to_string()))?;
+
+            signer_address = Some(format!("0x{}", address));
+        }
+
         let proof_request = VerifyProofPayload {
             presentation: presentation.clone(),
             proof_request,
@@ -913,7 +922,8 @@ mod tests_proof_request {
     }
 
     #[tokio::test]
-    async fn helper_can_create_presentation_and_reveal_all_if_none_required_revealed() -> Result<()> {
+    async fn helper_can_create_presentation_and_reveal_all_if_none_required_revealed() -> Result<()>
+    {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -944,12 +954,19 @@ mod tests_proof_request {
             .await;
         assert!(presentation_result.is_ok());
         let presentation: ProofPresentation = serde_json::from_str(&presentation_result?)?;
-        assert_eq!(presentation.verifiable_credential[0].credential_subject.data.len(), 5);
+        assert_eq!(
+            presentation.verifiable_credential[0]
+                .credential_subject
+                .data
+                .len(),
+            5
+        );
         Ok(())
     }
 
     #[tokio::test]
-    async fn helper_can_create_presentation_and_reveal_only_required_attributes_in_credential_subject() -> Result<()> {
+    async fn helper_can_create_presentation_and_reveal_only_required_attributes_in_credential_subject(
+    ) -> Result<()> {
         let mut vade_evan = VadeEvan::new(crate::VadeEvanConfig {
             target: DEFAULT_TARGET,
             signer: DEFAULT_SIGNER,
@@ -981,7 +998,13 @@ mod tests_proof_request {
 
         assert!(presentation_result.is_ok());
         let presentation: ProofPresentation = serde_json::from_str(&presentation_result?)?;
-        assert_eq!(presentation.verifiable_credential[0].credential_subject.data.len(), 1);
+        assert_eq!(
+            presentation.verifiable_credential[0]
+                .credential_subject
+                .data
+                .len(),
+            1
+        );
 
         Ok(())
     }

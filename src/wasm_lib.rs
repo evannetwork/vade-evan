@@ -196,7 +196,6 @@ struct HelperConvertCredentialToNquads {
     pub credential_str: String,
 }
 
-
 #[wasm_bindgen]
 pub fn set_panic_hook() {
     console_error_panic_hook::set_once();
@@ -814,9 +813,7 @@ pub async fn execute_vade(
         "helper_convert_credential_to_nquads" => {
             let payload_result = parse::<HelperConvertCredentialToNquads>(&payload);
             match payload_result {
-                Ok(payload) => {
-                    helper_convert_credential_to_nquads(payload.credential_str).await
-                }
+                Ok(payload) => helper_convert_credential_to_nquads(payload.credential_str).await,
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -824,8 +821,10 @@ pub async fn execute_vade(
         "helper_create_proof_proposal" => {
             let payload_result = parse::<HelperCreateProofProposalPayload>(&payload);
             match payload_result {
-                Ok(payload) =>
-                    helper_create_proof_proposal(payload.schema_did, payload.revealed_attributes).await,
+                Ok(payload) => {
+                    helper_create_proof_proposal(payload.schema_did, payload.revealed_attributes)
+                        .await
+                }
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
@@ -833,16 +832,23 @@ pub async fn execute_vade(
         "helper_create_proof_request" => {
             let payload_result = parse::<HelperCreateProofRequestPayload>(&payload);
             match payload_result {
-                Ok(parsed_value) =>
-                    match parsed_value {
-                        HelperCreateProofRequestPayload::FromScratch(from_scratch) =>
-                            helper_create_proof_request(from_scratch.schema_did, from_scratch.revealed_attributes).await,
-                        HelperCreateProofRequestPayload::FromProposal(proposal) =>
-                            match serde_json::to_string(&proposal) {
-                                Ok(stringified) => helper_create_proof_request_from_proposal(&stringified).await,
-                                Err(error) => Err(get_parsing_error_message(&error, &payload)),
-                            },
-                    },
+                Ok(parsed_value) => match parsed_value {
+                    HelperCreateProofRequestPayload::FromScratch(from_scratch) => {
+                        helper_create_proof_request(
+                            from_scratch.schema_did,
+                            from_scratch.revealed_attributes,
+                        )
+                        .await
+                    }
+                    HelperCreateProofRequestPayload::FromProposal(proposal) => {
+                        match serde_json::to_string(&proposal) {
+                            Ok(stringified) => {
+                                helper_create_proof_request_from_proposal(&stringified).await
+                            }
+                            Err(error) => Err(get_parsing_error_message(&error, &payload)),
+                        }
+                    }
+                },
                 Err(error) => Err(get_parsing_error_message(&error, &payload)),
             }
         }
