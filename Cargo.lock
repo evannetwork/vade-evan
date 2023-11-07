@@ -4838,7 +4838,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#cacf8666122fbdf5819629c50c1bba86353847f3"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=feature/fix-pthid-strange-value#f1388006eafe9401c7f2cf2d6d59e770a9fecd62"
 dependencies = [
  "async-trait",
  "bs58",
