@@ -11,6 +11,7 @@
 
 - fix timestamp generation for `vade-didcomm` in `wasm` build
 - update didcomm dependency for pthid in `get_did_exchange_message`
+- update `vade-didcomm` dependency for `comment` fix in `did-exchange`
 
 ### Deprecation
 
