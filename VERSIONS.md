@@ -4,17 +4,48 @@
 
 ### Features
 
-- add support for `vc_zkp_propose_proof` function in `vade-evan-bbs` plugin
-- add checks to ensure inputs that are supposed to be DIDs are really DIDs
+- add support to skip proof generation for revocation lists and when updating them (happens during revocation)
+  - updated functions:
+    - `vc_zkp_create_revocation_registry_definition`
+    - `vc_zkp_revoke_credential`
+  - these properties in payload are now optional:
+    - `issuer_public_key_did`
+    - `issuer_proving_key`
+- add `helper_convert_credential_to_nquads` helper function
+- add optional param `credential_values` to `helper_create_credential_offer` helper function
+- update `helper_verify_presentation` for optional `signer_address`
 
 ### Fixes
 
-- fix timestamp generation for `vade-didcomm` in `wasm` build
-- update didcomm dependency for pthid in `get_did_exchange_message`
+- fix revealed properties in `CredentialSubject`'s data in `create_presentation` helper
+- remove unsued `credential_values` param from `helper_create_credential_request`
 - update `vade-didcomm` dependency for `comment` fix in `did-exchange`
 - update didcomm dependency for pthid in `get_did_exchange_message`
 
 ### Deprecation
+
+- helper calls now have a different setup for `revoke_credential`
+  - CLI calls for `helper revoke_credential`
+    - drop mandatory argument `private_key`
+    - get two new optional arguments `issuer_public_key_did` and `issuer_proving_key`
+  - C calls have the arguments for `helper_revoke_credential` updated
+    - positional 3rd argument (`private_key`) is moved to position 4 (`issuer_proving_key`)
+    - new 3rd argument is now the verification method of the revocation list credential proof (`issuer_public_key_did`)
+    - arguments now have the following order:
+      - `credential: &str,`
+      - `update_key_jwk: &str,`
+      - `issuer_public_key_did: Option<&str>,`
+      - `issuer_proving_key: Option<&str>,`
+  - WASM calls now have the payload for `helper_revoke_credential` updated:
+    - drop mandatory property `private_key`
+    - get two new optional properties `issuer_public_key_did` and `issuer_proving_key`
+- with proofs for revocation lists now being optional, the following updates to the exported types have been made:
+  - `RevocationListCredential::proof` is now optional
+  - `UnproofedRevocationListCredential` has been removed as proof of aforementioned struct can be set to `None`
+- struct `AuthenticationOptions` and its usage has been removed as `identity` and `private_key` (in options) were not used anymore
+- TypeScript typings updates
+  - `UnproofedRevocationListCredential` has been marked as deprecated and will be removed in the future
+  - `AuthenticationOptions` has been marked as deprecated and will be removed in the future
 
 ## Release candidates
 
@@ -53,7 +84,11 @@
 - refactor features to use target specific(c-lib, c-sdk, wasm, cli, java) builds
 - adjust functions to remove `credential_subject.id` from `BbsCredential` and other types
 - add `helper_verify_presentation`
+- add support for `required_reveal_statements` in `vade-evan-bbs`
+- adjust `helper_create_self_issued_credential` to create credentials without proof.
+- add helper function `helper_create_self_issued_presentation` function
 - update `vade-evan-bbs` dependency for revocation fix
+- update `vade-evan-bbs` dependency optional proof in `ProofPresentation`
 
 ### Fixes
 
