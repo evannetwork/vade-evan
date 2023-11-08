@@ -103,7 +103,7 @@ optional = true
 # didcomm
 [dependencies.vade-didcomm]
 git = "https://github.com/evannetwork/vade-didcomm.git"
-branch = "feature/fix-pthid-strange-value"
+branch = "develop"
 optional = true
 
 # jwt-vc
