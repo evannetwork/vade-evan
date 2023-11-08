@@ -10,6 +10,7 @@
 ### Fixes
 
 - fix timestamp generation for `vade-didcomm` in `wasm` build
+- update `vade-didcomm` dependency for `comment` fix in `did-exchange`
 
 ### Deprecation
 
