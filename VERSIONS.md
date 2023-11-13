@@ -20,6 +20,7 @@
 - fix revealed properties in `CredentialSubject`'s data in `create_presentation` helper
 - remove unsued `credential_values` param from `helper_create_credential_request`
 - update `vade-didcomm` dependency for `comment` fix in `did-exchange`
+- update didcomm dependency for pthid in `get_did_exchange_message`
 
 ### Deprecation
 

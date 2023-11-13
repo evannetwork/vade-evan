@@ -4838,7 +4838,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#68afe13b4e52177058ac2b17a8a323e30f6e7765"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#067371beab96d5beda142bd5ba3f1e6319090485"
 dependencies = [
  "async-trait",
  "bs58",
