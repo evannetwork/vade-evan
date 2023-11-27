@@ -8,24 +8,16 @@ use super::shared::{check_for_optional_empty_params, convert_to_nquads, is_did, 
 use bbs::{
     prelude::{DeterministicPublicKey, PublicKey},
     signature::Signature,
-    HashElem,
-    SignatureMessage,
+    HashElem, SignatureMessage,
 };
 use flate2::read::GzDecoder;
 use serde::de::DeserializeOwned;
 use serde_json::{value::Value, Map};
 use thiserror::Error;
 use vade_evan_bbs::{
-    BbsCredential,
-    CredentialDraftOptions,
-    CredentialSchema,
-    CredentialStatus,
-    CredentialSubject,
-    LdProofVcDetailOptionsCredentialStatusType,
-    OfferCredentialPayload,
-    RevocationListCredential,
-    RevocationListProofKeys,
-    RevokeCredentialPayload,
+    BbsCredential, CredentialDraftOptions, CredentialSchema, CredentialStatus, CredentialSubject,
+    LdProofVcDetailOptionsCredentialStatusType, OfferCredentialPayload, RevocationListCredential,
+    RevocationListProofKeys, RevokeCredentialPayload,
 };
 
 #[derive(Error, Debug)]
@@ -391,7 +383,7 @@ impl<'a> Credential<'a> {
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
-    /// * `subject_did` - subject did for self issued credential
+    /// * `issuer_did` - issuer did for self issued credential
     ///
     /// # Returns
     /// * credential as JSON serialized [`UnsignedBbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.UnsignedBbsCredential.html)
@@ -400,10 +392,10 @@ impl<'a> Credential<'a> {
         schema_did: &str,
         credential_subject_str: &str,
         exp_date: Option<&str>,
-        subject_did: &str,
+        issuer_did: &str,
     ) -> Result<String, CredentialError> {
         fail_if_not_a_did(schema_did, "schema_did")?;
-        fail_if_not_a_did(subject_did, "subject_did")?;
+        fail_if_not_a_did(issuer_did, "issuer_did")?;
         let exp_date = check_for_optional_empty_params(exp_date);
         let credential_subject: CredentialSubject = serde_json::from_str(credential_subject_str)?;
 
@@ -417,7 +409,7 @@ impl<'a> Credential<'a> {
 
         let schema: CredentialSchema = self.get_did_document(schema_did).await?;
         let draft_credential = schema.to_draft_credential(CredentialDraftOptions {
-            issuer_did: subject_did.to_owned(),
+            issuer_did: issuer_did.to_owned(),
             id: None,
             issuance_date: None,
             valid_until,

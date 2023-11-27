@@ -144,7 +144,7 @@ struct HelperCreateSelfIssuedCredentialPayload {
     pub schema_did: String,
     pub credential_subject_str: String,
     pub exp_date: Option<String>,
-    pub subject_did: String,
+    pub issuer_did: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -433,7 +433,7 @@ cfg_if::cfg_if! {
             schema_did: String,
             credential_subject_str: String,
             exp_date: Option<String>,
-            subject_did: String,
+            issuer_did: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
@@ -441,7 +441,7 @@ cfg_if::cfg_if! {
                     &schema_did,
                     &credential_subject_str,
                     exp_date.as_deref(),
-                    &subject_did,
+                    &issuer_did,
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -801,7 +801,7 @@ pub async fn execute_vade(
                         payload.schema_did,
                         payload.credential_subject_str,
                         payload.exp_date,
-                        payload.subject_did,
+                        payload.issuer_did,
                     )
                     .await
                 }

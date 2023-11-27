@@ -270,7 +270,7 @@ async fn main() -> Result<()> {
                         get_argument_value(sub_m, "schema_did", None),
                         get_argument_value(sub_m, "credential_subject", None),
                         get_optional_argument_value(sub_m, "exp_date"),
-                        get_argument_value(sub_m, "subject_did", None),
+                        get_argument_value(sub_m, "issuer_did", None),
                     )
                     .await?
             }
@@ -462,7 +462,7 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .arg(get_clap_argument("schema_did")?)
                     .arg(get_clap_argument("credential_subject")?)
                     .arg(get_clap_argument("exp_date")?)
-                    .arg(get_clap_argument("subject_did")?)
+                    .arg(get_clap_argument("issuer_did")?)
             );
         } else {}
     }

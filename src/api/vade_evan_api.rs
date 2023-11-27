@@ -1107,7 +1107,7 @@ impl VadeEvan {
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
     /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
-    /// * `subject_did` - subject did for self issued credential
+    /// * `issuer_did` - issuer did for self issued credential
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -1127,7 +1127,7 @@ impl VadeEvan {
     ///                                                           "email":"value@x.com"
     ///                                                         }
     ///                                                }"#;
-    ///         const SUBJECT_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
+    ///         const ISSUER_DID: &str = "did:evan:EiAee4ixDnSP0eWyp0YFV7Wt9yrZ3w841FNuv9NSLFSCVA";
     ///
     ///         async fn example() -> Result<()> {
     ///             let mut vade_evan = VadeEvan::new(VadeEvanConfig { target: DEFAULT_TARGET, signer: DEFAULT_SIGNER })?;
@@ -1136,7 +1136,7 @@ impl VadeEvan {
     ///                     SCHEMA_DID,
     ///                     CREDENTIAL_SUBJECT_STR,
     ///                     None,
-    ///                     SUBJECT_DID,
+    ///                     ISSUER_DID,
     ///                 )
     ///                 .await?;
     ///
@@ -1153,16 +1153,11 @@ impl VadeEvan {
         schema_did: &str,
         credential_subject_str: &str,
         exp_date: Option<&str>,
-        subject_did: &str,
+        issuer_did: &str,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
-            .create_self_issued_credential(
-                schema_did,
-                credential_subject_str,
-                exp_date,
-                subject_did,
-            )
+            .create_self_issued_credential(schema_did, credential_subject_str, exp_date, issuer_did)
             .await
             .map_err(|err| err.into())
     }
