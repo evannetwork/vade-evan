@@ -5000,7 +5000,7 @@ dependencies = [
 [[package]]
 name = "vade-sidetree"
 version = "0.0.4"
-source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#60bb27d3413fe7e1d74add1a45b4fdea8126d44f"
+source = "git+https://github.com/evannetwork/vade-sidetree.git?branch=develop#87e3f9ffe6e871afc9c5a855977f54ccb1a8558a"
 dependencies = [
  "async-std",
  "async-trait",
