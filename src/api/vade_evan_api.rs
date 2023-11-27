@@ -1106,8 +1106,8 @@ impl VadeEvan {
     ///
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
-    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     /// * `issuer_did` - issuer did for self issued credential
+    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     ///
     /// # Returns
     /// * credential as JSON serialized [`BbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.BbsCredential.html)
@@ -1135,8 +1135,8 @@ impl VadeEvan {
     ///                 .helper_create_self_issued_credential(
     ///                     SCHEMA_DID,
     ///                     CREDENTIAL_SUBJECT_STR,
-    ///                     None,
     ///                     ISSUER_DID,
+    ///                     None,
     ///                 )
     ///                 .await?;
     ///
@@ -1152,12 +1152,12 @@ impl VadeEvan {
         &mut self,
         schema_did: &str,
         credential_subject_str: &str,
-        exp_date: Option<&str>,
         issuer_did: &str,
+        exp_date: Option<&str>,
     ) -> Result<String, VadeEvanError> {
         let mut credential = Credential::new(self)?;
         credential
-            .create_self_issued_credential(schema_did, credential_subject_str, exp_date, issuer_did)
+            .create_self_issued_credential(schema_did, credential_subject_str, issuer_did, exp_date)
             .await
             .map_err(|err| err.into())
     }

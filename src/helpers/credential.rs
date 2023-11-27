@@ -382,8 +382,8 @@ impl<'a> Credential<'a> {
     ///
     /// * `schema_did` - schema to create the credential
     /// * `credential_subject_str` - JSON string of CredentialSubject structure
-    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     /// * `issuer_did` - issuer did for self issued credential
+    /// * `exp_date` - expiration date, string, e.g. "1722-12-03T14:23:42.120Z" (or `None` if no expiration date is used)
     ///
     /// # Returns
     /// * credential as JSON serialized [`UnsignedBbsCredential`](https://docs.rs/vade_evan_bbs/*/vade_evan_bbs/struct.UnsignedBbsCredential.html)
@@ -391,8 +391,8 @@ impl<'a> Credential<'a> {
         &mut self,
         schema_did: &str,
         credential_subject_str: &str,
-        exp_date: Option<&str>,
         issuer_did: &str,
+        exp_date: Option<&str>,
     ) -> Result<String, CredentialError> {
         fail_if_not_a_did(schema_did, "schema_did")?;
         fail_if_not_a_did(issuer_did, "issuer_did")?;
@@ -1089,7 +1089,7 @@ mod tests {
         let mut credential = Credential::new(&mut vade_evan)?;
 
         match credential
-            .create_self_issued_credential(schema_did, credential_subject_str, None, subject_id)
+            .create_self_issued_credential(schema_did, credential_subject_str, subject_id, None)
             .await
         {
             Ok(issued_credential) => {

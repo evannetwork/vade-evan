@@ -269,8 +269,8 @@ async fn main() -> Result<()> {
                     .helper_create_self_issued_credential(
                         get_argument_value(sub_m, "schema_did", None),
                         get_argument_value(sub_m, "credential_subject", None),
-                        get_optional_argument_value(sub_m, "exp_date"),
                         get_argument_value(sub_m, "issuer_did", None),
+                        get_optional_argument_value(sub_m, "exp_date"),
                     )
                     .await?
             }
@@ -449,7 +449,8 @@ fn add_subcommand_helper<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                     .about("Revokes a given credential with vade and updates the revocation list credential.")
                     .arg(get_clap_argument("credential")?)
                     .arg(get_clap_argument("update_key")?)
-                    .arg(get_clap_argument("private_key")?)
+                    .arg(get_clap_argument("issuer_public_key_did")?)
+                    .arg(get_clap_argument("issuer_proving_key")?)
             );
         } else {}
     }

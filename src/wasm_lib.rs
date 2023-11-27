@@ -440,8 +440,8 @@ cfg_if::cfg_if! {
                 .helper_create_self_issued_credential(
                     &schema_did,
                     &credential_subject_str,
-                    exp_date.as_deref(),
                     &issuer_did,
+                    exp_date.as_deref(),
                 ).await
                 .map_err(jsify_vade_evan_error)?)
         }
@@ -800,8 +800,8 @@ pub async fn execute_vade(
                     helper_create_self_issued_credential(
                         payload.schema_did,
                         payload.credential_subject_str,
-                        payload.exp_date,
                         payload.issuer_did,
+                        payload.exp_date,
                     )
                     .await
                 }
