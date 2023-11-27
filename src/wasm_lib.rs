@@ -452,12 +452,11 @@ cfg_if::cfg_if! {
             credential: String,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
-            vade_evan
+            Ok(vade_evan
                 .helper_convert_credential_to_nquads(
                     &credential,
                 ).await
-                .map_err(jsify_vade_evan_error)?;
-            Ok("".to_string())
+                .map_err(jsify_vade_evan_error)?)
         }
 
         #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]

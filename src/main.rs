@@ -261,8 +261,7 @@ async fn main() -> Result<()> {
                         "credential",
                         None,
                     ))
-                    .await?;
-                "".to_string()
+                    .await?
             }
             #[cfg(all(feature = "vc-zkp-bbs", feature = "did-sidetree"))]
             ("create_self_issued_credential", Some(sub_m)) => {

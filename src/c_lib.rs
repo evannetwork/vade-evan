@@ -803,13 +803,12 @@ pub extern "C" fn execute_vade(
                     request_function_callback,
                 )
                 .map_err(stringify_generic_error)?;
-                vade_evan
+                Ok(vade_evan
                     .helper_convert_credential_to_nquads(
                         arguments_vec.get(0).unwrap_or_else(|| &no_args),
                     )
                     .await
-                    .map_err(stringify_vade_evan_error)?;
-                Ok("".to_string())
+                    .map_err(stringify_vade_evan_error)?)
             }
         }),
         #[cfg(any(feature = "vc-zkp-bbs"))]
