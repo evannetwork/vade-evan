@@ -432,8 +432,8 @@ cfg_if::cfg_if! {
         pub async fn helper_create_self_issued_credential(
             schema_did: String,
             credential_subject_str: String,
-            exp_date: Option<String>,
             issuer_did: String,
+            exp_date: Option<String>,
         ) -> Result<String, JsValue> {
             let mut vade_evan = get_vade_evan(None).map_err(jsify_generic_error)?;
             Ok(vade_evan
