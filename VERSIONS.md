@@ -46,6 +46,7 @@
 - TypeScript typings updates
   - `UnproofedRevocationListCredential` has been marked as deprecated and will be removed in the future
   - `AuthenticationOptions` has been marked as deprecated and will be removed in the future
+- remove payload parameter from `create_new_keys` custom function
 
 ## Release candidates
 

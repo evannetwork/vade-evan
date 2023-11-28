@@ -9,7 +9,6 @@ import {
   BbsProofVerification,
   CreateCredentialProposalPayload,
   CreateCredentialSchemaPayload,
-  CreateKeysPayload,
   CreateRevocationListPayload,
   CredentialProposal,
   CredentialSchema,
@@ -128,32 +127,23 @@ class VadeApiBbs extends VadeApiShared {
   /**
    * creates a new keypair for BBS+ based proofs
    *
-   * @param params.keyOwnerDid did that will receive new public key
    * @param options.identity Substrate identity to use (e.g. did:evan:0x12345)
    * @param options.signingKey key to request the signing endpoint with
    */
   public async createBbsKeys(
-    params: CreateKeysPayload,
     options: VadeOptions,
   ): Promise<BbsKeys> {
-    checkRequiredProperties(
-      params,
-      [
-        'keyOwnerDid',
-      ],
-      'params',
-    );
-    const ms = await this.executeVade<BbsAuthenticationOptions, CreateKeysPayload, BbsKeys>(
+
+    const ms = await this.executeVade<BbsAuthenticationOptions, void, BbsKeys>(
       {
         command: 'run_custom_function',
         customFunction: 'create_new_keys',
         method: null,
         options: {
-          privateKey: options.remoteSignerUrl ? params.keyOwnerDid : options.signingKey,
+          privateKey: options.remoteSignerUrl || options.signingKey,
           identity: options.identity,
           type: TYPE_BBS,
         },
-        payload: params,
         signer: options.remoteSignerUrl ? `remote|${options.remoteSignerUrl}` : undefined,
       },
     );
