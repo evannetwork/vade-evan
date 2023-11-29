@@ -125,10 +125,9 @@ async fn main() -> Result<()> {
             }
             #[cfg(feature = "vc-zkp-bbs")]
             ("create_new_keys", Some(sub_m)) => {
-                let payload = get_argument_value(sub_m, "payload", None);
                 let options = get_argument_value(sub_m, "options", None);
                 get_vade_evan(&sub_m)?
-                    .run_custom_function(EVAN_METHOD, "create_new_keys", options, payload)
+                    .run_custom_function(EVAN_METHOD, "create_new_keys", options, "")
                     .await?
             }
             #[cfg(any(feature = "vc-zkp-bbs", feature = "jwt-vct"))]
@@ -640,7 +639,6 @@ fn add_subcommand_vc_zkp<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
                 SubCommand::with_name("create_new_keys")
                     .about("Creates a new key pair and stores it in the DID document.")
                     .arg(get_clap_argument("options")?)
-                    .arg(get_clap_argument("payload")?)
                     .arg(get_clap_argument("signer")?),
             );
         } else {}
