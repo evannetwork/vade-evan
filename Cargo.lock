@@ -4912,7 +4912,7 @@ dependencies = [
 [[package]]
 name = "vade-evan-bbs"
 version = "0.4.0"
-source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=feature/remove-payload-from-create-new-keys#378860a112755a1477a6d79121f5eb4d77fc5798"
+source = "git+https://github.com/evannetwork/vade-evan-bbs.git?branch=experimental/develop-next#cdb6ae348411cc55b6979a41ec09b232f72eec80"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
