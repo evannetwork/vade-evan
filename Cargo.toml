@@ -103,7 +103,7 @@ optional = true
 # didcomm
 [dependencies.vade-didcomm]
 git = "https://github.com/evannetwork/vade-didcomm.git"
-branch = "develop"
+branch = "feature/add-helper-for-pairwise-did-doc"
 optional = true
 
 # jwt-vc
