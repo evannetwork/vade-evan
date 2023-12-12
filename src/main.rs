@@ -102,6 +102,12 @@ async fn main() -> Result<()> {
                     .run_custom_function(EVAN_METHOD, "query_didcomm_messages", "{}", &payload)
                     .await?
             }
+            ("create_pairwise_did", Some(sub_m)) => {
+                let payload = get_argument_value(&sub_m, "payload", None);
+                get_vade_evan(&sub_m)?
+                    .run_custom_function(EVAN_METHOD, "create_pairwise_did", "{}", &payload)
+                    .await?
+            }
             _ => {
                 bail!("invalid subcommand");
             }
@@ -606,6 +612,11 @@ fn add_subcommand_didcomm<'a>(app: App<'a, 'a>) -> Result<App<'a, 'a>> {
             .subcommand(
                 SubCommand::with_name("query_didcomm_messages")
                     .about(r###"Query stored DIDComm messages by prefix (message_{thid}_*) or message id (message_{thid}_{msgid})."###)
+                    .arg(get_clap_argument("payload")?),
+            )
+            .subcommand(
+                SubCommand::with_name("create_pairwise_did")
+                    .about(r###"Create communication did doc for pairwise did."###)
                     .arg(get_clap_argument("payload")?),
             )
     );
