@@ -4838,7 +4838,7 @@ dependencies = [
 [[package]]
 name = "vade-didcomm"
 version = "0.3.0"
-source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=develop#067371beab96d5beda142bd5ba3f1e6319090485"
+source = "git+https://github.com/evannetwork/vade-didcomm.git?branch=feature/add-helper-for-pairwise-did-doc#c312b47a721998bf8aafcef6cf8eb5ee947cfef4"
 dependencies = [
  "async-trait",
  "bs58",
