@@ -4875,7 +4875,7 @@ dependencies = [
  "async-trait",
  "base64 0.13.1",
  "bbs",
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "chrono",
  "clap",
  "console_error_panic_hook",
